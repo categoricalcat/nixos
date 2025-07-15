@@ -3,9 +3,6 @@
 { config, pkgs, ... }:
 
 {
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-
   # System-wide packages
   environment.systemPackages = with pkgs; [
     # System utilities
@@ -20,7 +17,7 @@
     gh
     nixfmt-rfc-style
     # nodejs_24
-    vscode
+    vscode-fhs # Using vscode-fhs instead of vscode to avoid deprecated dependencies
 
     # Security tools
     google-authenticator

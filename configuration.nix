@@ -18,6 +18,22 @@
     ./users.nix # User accounts and shell configuration
   ];
 
+  # Nixpkgs configuration to handle deprecated packages
+  nixpkgs.overlays = [
+    (final: prev: {
+      # Override androidndkPkgs_23b to use androidndkPkgs_23
+      androidndkPkgs_23b = prev.androidndkPkgs_23;
+    })
+  ];
+
+  # Suppress CUDA warnings by setting minimum version
+  nixpkgs.config = {
+    allowUnfree = true; # Allow unfree packages
+    cudaSupport = false; # Disable CUDA support (NVIDIA-only, not needed for AMD)
+    # For AMD GPU compute support, you would use ROCm instead:
+    rocmSupport = true; # Enable if you need AMD GPU compute support
+  };
+
   # NixOS version
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
