@@ -28,6 +28,9 @@
   # Default shell
   users.defaultUserShell = pkgs.zsh;
 
+  # MTR network diagnostic tool
+  programs.mtr.enable = true;
+
   # Zsh configuration
   programs.zsh = {
     enable = true;
@@ -47,7 +50,7 @@
       if [[ -n "$SSH_CONNECTION" ]]; then
         ${pkgs.fastfetch}/bin/fastfetch
       fi
-      
+
       # Enable direnv for automatic environment switching
       eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
     '';

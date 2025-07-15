@@ -22,11 +22,11 @@
       AuthenticationMethods = "publickey keyboard-interactive";
 
       # Port forwarding settings
-      AllowTcpForwarding = "yes";        # Enable TCP port forwarding
-      AllowAgentForwarding = true;       # Allow SSH agent forwarding
+      AllowTcpForwarding = "yes"; # Enable TCP port forwarding
+      AllowAgentForwarding = true; # Allow SSH agent forwarding
       AllowStreamLocalForwarding = "yes"; # Allow Unix domain socket forwarding
-      PermitTunnel = "yes";              # Allow tun device forwarding (VPN over SSH)
-      GatewayPorts = "clientspecified";  # Allow remote hosts to connect to forwarded ports
+      PermitTunnel = "yes"; # Allow tun device forwarding (VPN over SSH)
+      GatewayPorts = "clientspecified"; # Allow remote hosts to connect to forwarded ports
       # Options for GatewayPorts:
       # - "no" = only loopback addresses can connect (default)
       # - "yes" = all interfaces can connect
@@ -78,11 +78,8 @@
     services.sshd.googleAuthenticator.enable = true;
   };
 
-  # GnuPG agent
-  programs.gnupg.agent = {
-    enable = true;
-    enableSSHSupport = true;
-  };
+  # SSH agent - enable at system level
+  programs.ssh.startAgent = true;
 
   # MTR network diagnostic tool
   programs.mtr.enable = true;
