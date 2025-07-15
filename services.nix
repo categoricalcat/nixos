@@ -4,7 +4,7 @@
 
 {
   # Printing service
-  services.printing.enable = true;
+  # services.printing.enable = true;  # Disabled - not typically needed on servers
 
   # Code-server
   services.code-server.enable = true;
