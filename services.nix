@@ -20,6 +20,17 @@
       KbdInteractiveAuthentication = true;
       ChallengeResponseAuthentication = true;
       AuthenticationMethods = "publickey keyboard-interactive";
+      
+      # Port forwarding settings
+      AllowTcpForwarding = "yes";        # Enable TCP port forwarding
+      AllowAgentForwarding = true;       # Allow SSH agent forwarding
+      AllowStreamLocalForwarding = "yes"; # Allow Unix domain socket forwarding
+      PermitTunnel = "yes";              # Allow tun device forwarding (VPN over SSH)
+      GatewayPorts = "clientspecified";  # Allow remote hosts to connect to forwarded ports
+      # Options for GatewayPorts:
+      # - "no" = only loopback addresses can connect (default)
+      # - "yes" = all interfaces can connect
+      # - "clientspecified" = client decides per forwarding
 
       # Performance optimizations
       # UseDNS = false; # Already set by default, but explicitly disable for faster connections

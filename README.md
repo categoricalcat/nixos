@@ -143,52 +143,156 @@ cat /proc/net/bonding/bond0
 - No root login permitted via SSH
 - Desktop auto-login is disabled in headless mode 
 
-## Node.js Version Management with fnm
+## Node.js on NixOS
 
-This configuration includes **fnm (Fast Node Manager)** as an alternative to nvm for managing Node.js versions on NixOS.
+NixOS handles Node.js differently than traditional Linux distributions. Here's how to work with Node.js and npm packages on NixOS:
 
-### Basic fnm Usage
+### System-wide Node.js
 
-After rebuilding your NixOS configuration, you can use fnm commands:
-
+Node.js 20 LTS is installed system-wide. You can verify with:
 ```bash
-# List remote Node.js versions
-fnm list-remote
-
-# Install a specific Node.js version
-fnm install 20.11.0
-fnm install 18  # Install latest v18
-fnm install --lts  # Install latest LTS
-
-# List installed versions
-fnm list
-
-# Use a specific version
-fnm use 20.11.0
-fnm use 18
-
-# Set a default version
-fnm default 20.11.0
-
-# Create .node-version file for project
-echo "20.11.0" > .node-version
-# fnm will automatically switch when you cd into the directory
+node -v  # Should show v20.x.x
+npm -v   # Should show npm version
 ```
 
-### Per-Project Node.js Versions
+### Global NPM Packages
 
-fnm automatically switches Node.js versions when you enter a directory with a `.node-version` or `.nvmrc` file:
+**Important**: You cannot use `npm install -g` on NixOS due to the read-only file system.
 
+Instead, global npm packages are managed through your NixOS configuration. The following are already installed:
+- `pnpm` - Fast, disk space efficient package manager
+- `eslint` - JavaScript linter
+- `typescript` - TypeScript compiler
+- `npm-check-updates` - Update package.json dependencies
+
+To add more global packages, edit `packages.nix` and add them under `nodePackages`:
+```nix
+nodePackages.prettier
+nodePackages.ts-node
+```
+
+### Per-Project Dependencies
+
+For project-specific packages, use npm/pnpm normally:
 ```bash
 # In your project directory
-echo "18.19.0" > .node-version
-# Now when you cd into this directory, fnm will use Node.js 18.19.0
+npm install express
+pnpm add -D @types/node
 ```
 
-### Migration from nvm
+### Managing Multiple Node.js Versions
 
-If you have existing `.nvmrc` files from nvm, fnm will read them automatically. The commands are similar:
-- `nvm install` → `fnm install`
-- `nvm use` → `fnm use`
-- `nvm list` → `fnm list`
-- `nvm alias default` → `fnm default` 
+For different Node.js versions per project, use `nix-shell`:
+
+1. Create a `shell.nix` in your project:
+```nix
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    nodejs_18  # or nodejs_20, nodejs_22, etc.
+    nodePackages.pnpm
+  ];
+}
+```
+
+2. Enter the shell:
+```bash
+nix-shell
+node -v  # Will show the version specified in shell.nix
+```
+
+### Alternative: Using direnv
+
+For automatic environment switching (like nvm), install `direnv`:
+
+1. Add to `packages.nix`: `direnv`
+2. Create `.envrc` in your project:
+```bash
+use nix
+```
+3. Allow direnv: `direnv allow`
+
+Now when you `cd` into the project, it automatically loads the correct Node.js version! 
+
+## SSH Port Forwarding
+
+SSH port forwarding is enabled on this server. Here are the available options:
+
+### Local Port Forwarding (Client → Server)
+Forward a local port to a remote destination through the SSH server:
+```bash
+# Forward local port 8080 to remote_host:80 through SSH server
+ssh -L 8080:remote_host:80 user@server -p 24212
+
+# Forward local port 5432 to PostgreSQL on the SSH server
+ssh -L 5432:localhost:5432 user@server -p 24212
+
+# Bind to all interfaces (not just localhost)
+ssh -L 0.0.0.0:8080:remote_host:80 user@server -p 24212
+```
+
+### Remote Port Forwarding (Server → Client)
+Forward a remote port on the server back to your local machine:
+```bash
+# Make your local web server available on the remote server's port 8080
+ssh -R 8080:localhost:3000 user@server -p 24212
+
+# With GatewayPorts enabled, make it accessible from any interface
+ssh -R 0.0.0.0:8080:localhost:3000 user@server -p 24212
+```
+
+### Dynamic Port Forwarding (SOCKS Proxy)
+Create a SOCKS proxy for tunneling traffic:
+```bash
+# Create SOCKS proxy on local port 1080
+ssh -D 1080 user@server -p 24212
+
+# Then configure your browser/application to use SOCKS5 proxy at localhost:1080
+```
+
+### Persistent Port Forwarding
+Add to your `~/.ssh/config`:
+```
+Host myserver
+  HostName server-ip
+  Port 24212
+  User yourusername
+  
+  # Local forwarding
+  LocalForward 8080 remote-host:80
+  LocalForward 5432 localhost:5432
+  
+  # Remote forwarding
+  RemoteForward 8080 localhost:3000
+  
+  # Dynamic forwarding
+  DynamicForward 1080
+```
+
+Then connect with: `ssh myserver`
+
+### Advanced: VPN over SSH
+With `PermitTunnel` enabled, you can create a VPN:
+```bash
+# Requires root/sudo on both ends
+ssh -w 0:0 root@server -p 24212
+```
+
+## Configuration Structure
+
+```
+/etc/nixos/
+├── configuration.nix       # Main configuration file
+├── boot.nix               # Bootloader & kernel settings
+├── desktop.nix            # GNOME/Wayland desktop environment
+├── hardware-configuration.nix # Auto-generated hardware config
+├── locale.nix             # Timezone (São Paulo) and localization
+├── networking.nix         # Network bonding and firewall
+├── network-performance.nix # TCP/IP performance tuning
+├── packages.nix           # System packages
+├── server-mode.nix        # Headless mode toggle
+├── server-settings.nix    # Server-specific optimizations
+├── services.nix           # SSH, code-server, and other services
+└── users.nix             # User accounts and Zsh configuration
+``` 

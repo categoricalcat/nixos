@@ -16,17 +16,19 @@
     git
     gh
     nixfmt-rfc-style
-    # nodejs_24
+    direnv  # Automatic environment switching
     vscode-fhs # Using vscode-fhs instead of vscode to avoid deprecated dependencies
     
-    # Node.js versions - uncomment the one you need
-    # nodejs_18  # Node.js 18.x LTS
     nodejs_20  # Node.js 20.x LTS
-    # nodejs_22  # Node.js 22.x (current)
-    # nodejs_24  # Node.js 24.x (latest)
     
     # Node.js version manager
-    fnm  # Fast Node Manager - nvm alternative for NixOS
+    # fnm  # Fast Node Manager - nvm alternative for NixOS
+    
+    # Global npm packages (the NixOS way)
+    nodePackages.pnpm
+    nodePackages.eslint
+    nodePackages.typescript
+    nodePackages.npm-check-updates
 
     # Security tools
     google-authenticator

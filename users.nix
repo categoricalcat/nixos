@@ -11,8 +11,6 @@
     extraGroups = [ "wheel" ];
     packages = with pkgs; [
       chromium
-      # nodejs_24
-      fnm  # Node.js version manager
     ];
   };
 
@@ -24,7 +22,6 @@
     packages = with pkgs; [
       chromium
       nodejs_20
-      fnm  # Node.js version manager
     ];
   };
 
@@ -51,10 +48,8 @@
         ${pkgs.fastfetch}/bin/fastfetch
       fi
       
-      # Initialize fnm (Fast Node Manager)
-      if command -v fnm &> /dev/null; then
-        eval "$(fnm env --use-on-cd)"
-      fi
+      # Enable direnv for automatic environment switching
+      eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
     '';
   };
 
