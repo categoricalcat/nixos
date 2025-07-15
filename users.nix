@@ -6,11 +6,23 @@
   # User accounts
   users.users.fufud = {
     isNormalUser = true;
-    description = "fufuwuqi";
+    description = "fufu personal";
     shell = pkgs.zsh;
     extraGroups = [ "wheel" ];
     packages = with pkgs; [
       chromium
+      nodejs_24
+    ];
+  };
+
+  users.users.work = {
+    isNormalUser = true;
+    description = "work account";
+    shell = pkgs.zsh;
+    extraGroups = [ "wheel" ];
+    packages = with pkgs; [
+      chromium
+      nodejs_20
     ];
   };
 

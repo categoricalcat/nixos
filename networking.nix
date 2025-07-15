@@ -33,11 +33,22 @@
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
+          # Uncomment to enable jumbo frames (if your network supports it)
+          # MTU = 9000;
         };
         bondConfig = {
           Mode = "active-backup"; # 802.3ad mode causes link speed/duplex spam
           MIIMonitorSec = "0.100"; # Monitor link status
           PrimaryReselectPolicy = "better"; # Fixes recovery after plugging in USB eno1
+
+          # Performance options for active-backup mode
+          UpDelaySec = 0; # Bring slave up immediately
+          DownDelaySec = 0; # Mark slave down immediately
+
+          # Alternative modes for bandwidth aggregation (if switch supports it):
+          # Mode = "balance-alb"; # Adaptive load balancing (no switch support needed)
+          # Mode = "802.3ad"; # LACP (requires switch support)
+          # LACPTransmitRate = "fast"; # For 802.3ad mode
         };
       };
     };
@@ -50,11 +61,24 @@
           Bond = "bond0";
           PrimarySlave = true; # Ensures eno1 route reactivates after USB ethernet adapter unplug/replug
         };
+        # Performance: Offloading features are usually enabled by default
+        # linkConfig = {
+        #   # Uncomment if you want to enable jumbo frames
+        #   # MTU = 9000;
+        #   # Ensure gigabit speed (if having negotiation issues)
+        #   # BitsPerSecond = "1G";
+        # };
       };
 
       "30-enp4s0" = {
         matchConfig.Name = "enp4s0";
         networkConfig.Bond = "bond0";
+        # IMPORTANT: This interface is only running at 100 Mbps!
+        # Check cable quality and switch port configuration
+        # linkConfig = {
+        #   # Force gigabit if supported by hardware
+        #   # BitsPerSecond = "1G";
+        # };
       };
 
       "40-bond0" = {

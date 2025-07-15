@@ -13,6 +13,7 @@
     ./desktop.nix # Desktop environment and display settings
     ./locale.nix # Timezone and internationalization
     ./networking.nix # Network configuration and firewall
+    ./network-performance.nix # Network performance tuning
     ./packages.nix # System packages
     ./services.nix # System services (SSH, printing, etc.)
     ./users.nix # User accounts and shell configuration

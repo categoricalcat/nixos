@@ -18,7 +18,7 @@
     git
     gh
     nixfmt-rfc-style
-    nodejs_24
+    # nodejs_24
     vscode
 
     # Security tools
