@@ -142,3 +142,53 @@ cat /proc/net/bonding/bond0
 - Firewall is enabled - only specified ports are accessible
 - No root login permitted via SSH
 - Desktop auto-login is disabled in headless mode 
+
+## Node.js Version Management with fnm
+
+This configuration includes **fnm (Fast Node Manager)** as an alternative to nvm for managing Node.js versions on NixOS.
+
+### Basic fnm Usage
+
+After rebuilding your NixOS configuration, you can use fnm commands:
+
+```bash
+# List remote Node.js versions
+fnm list-remote
+
+# Install a specific Node.js version
+fnm install 20.11.0
+fnm install 18  # Install latest v18
+fnm install --lts  # Install latest LTS
+
+# List installed versions
+fnm list
+
+# Use a specific version
+fnm use 20.11.0
+fnm use 18
+
+# Set a default version
+fnm default 20.11.0
+
+# Create .node-version file for project
+echo "20.11.0" > .node-version
+# fnm will automatically switch when you cd into the directory
+```
+
+### Per-Project Node.js Versions
+
+fnm automatically switches Node.js versions when you enter a directory with a `.node-version` or `.nvmrc` file:
+
+```bash
+# In your project directory
+echo "18.19.0" > .node-version
+# Now when you cd into this directory, fnm will use Node.js 18.19.0
+```
+
+### Migration from nvm
+
+If you have existing `.nvmrc` files from nvm, fnm will read them automatically. The commands are similar:
+- `nvm install` → `fnm install`
+- `nvm use` → `fnm use`
+- `nvm list` → `fnm list`
+- `nvm alias default` → `fnm default` 

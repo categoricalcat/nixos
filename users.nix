@@ -6,23 +6,25 @@
   # User accounts
   users.users.fufud = {
     isNormalUser = true;
-    description = "fufu personal";
+    description = "fu's personal";
     shell = pkgs.zsh;
     extraGroups = [ "wheel" ];
     packages = with pkgs; [
       chromium
-      nodejs_24
+      # nodejs_24
+      fnm  # Node.js version manager
     ];
   };
 
-  users.users.work = {
+  users.users.workd = {
     isNormalUser = true;
-    description = "work account";
+    description = "fu's work";
     shell = pkgs.zsh;
     extraGroups = [ "wheel" ];
     packages = with pkgs; [
       chromium
       nodejs_20
+      fnm  # Node.js version manager
     ];
   };
 
@@ -47,6 +49,11 @@
       # Run fastfetch when connecting via SSH
       if [[ -n "$SSH_CONNECTION" ]]; then
         ${pkgs.fastfetch}/bin/fastfetch
+      fi
+      
+      # Initialize fnm (Fast Node Manager)
+      if command -v fnm &> /dev/null; then
+        eval "$(fnm env --use-on-cd)"
       fi
     '';
   };
