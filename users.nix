@@ -56,11 +56,9 @@
     '';
   };
 
-  # Environment variables for Zsh
   environment.variables = {
     ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";
   };
 
-  # Enable Zsh completions
   environment.pathsToLink = [ "/share/zsh" ];
 }

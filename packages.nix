@@ -3,28 +3,24 @@
 { config, pkgs, ... }:
 
 {
-  # System-wide packages
   environment.systemPackages = with pkgs; [
     # System utilities
     btop
     curl
     wget
-    fastfetch # System information tool
+    fastfetch
 
     # Development tools
     emacs
     git
     gh
     nixfmt-rfc-style
-    direnv  # Automatic environment switching
-    vscode-fhs # Using vscode-fhs instead of vscode to avoid deprecated dependencies
-    
-    nodejs_20  # Node.js 20.x LTS
-    
-    # Node.js version manager
-    # fnm  # Fast Node Manager - nvm alternative for NixOS
-    
-    # Global npm packages (the NixOS way)
+    direnv
+    vscode-fhs
+
+    # node stuff
+    nodejs_20
+    # fnm
     nodePackages.pnpm
     nodePackages.eslint
     nodePackages.typescript
