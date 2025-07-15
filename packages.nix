@@ -38,5 +38,7 @@
     zsh-autosuggestions
     zsh-history-substring-search
     zsh-syntax-highlighting
+    
+    maple-mono.NF-CN-unhinted
   ];
 }

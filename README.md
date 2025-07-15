@@ -279,6 +279,41 @@ With `PermitTunnel` enabled, you can create a VPN:
 ssh -w 0:0 root@server -p 24212
 ```
 
+## Font Configuration
+
+This system uses **Maple Mono SC NF** as the default monospace font. It's a beautiful open-source monospace font with:
+- Round corners for better readability
+- Programming ligatures
+- NerdFont icons
+- Full Chinese character support (Simplified Chinese, Traditional Chinese, and Japanese)
+
+### Installed Fonts:
+- **Maple Mono NF** - Base font with NerdFont icons (from nerd-fonts package)
+- **Maple Mono SC NF** - With NerdFont icons and Chinese support
+- **Noto Fonts CJK** - Comprehensive CJK (Chinese, Japanese, Korean) support
+- **Source Han Sans/Serif** - Adobe's open source CJK fonts
+
+### Font Family Names:
+According to the official repository:
+- `Maple Mono` - Base font
+- `Maple Mono NF` - With NerdFont icons
+- `Maple Mono SC` - With Simplified Chinese support
+- `Maple Mono SC NF` - With both NerdFont and Chinese support (this is what we're using)
+
+The installed packages provide both the NF and SC NF variants.
+
+### Font Rendering:
+The system is configured with:
+- Antialiasing enabled
+- Slight hinting for crisp text
+- RGB subpixel rendering
+- Optimized LCD filter
+
+To verify the font installation after rebuilding:
+```bash
+fc-list | grep -i maple
+```
+
 ## Configuration Structure
 
 ```

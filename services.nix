@@ -20,7 +20,7 @@
       KbdInteractiveAuthentication = true;
       ChallengeResponseAuthentication = true;
       AuthenticationMethods = "publickey keyboard-interactive";
-      
+
       # Port forwarding settings
       AllowTcpForwarding = "yes";        # Enable TCP port forwarding
       AllowAgentForwarding = true;       # Allow SSH agent forwarding

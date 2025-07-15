@@ -54,4 +54,40 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?
+  
+  # Font configuration
+  fonts = {
+    # Enable font management
+    fontconfig = {
+      enable = true;
+      defaultFonts = {
+        monospace = [ "Maple Mono NF CN" "Maple Mono" ];
+        sansSerif = [ "Maple Mono NF CN" "Maple Mono" ];
+        serif = [ "Maple Mono NF CN" "Maple Mono" ];
+      };
+      
+      # Better font rendering
+      antialias = true;
+      hinting = {
+        enable = true;
+        style = "slight";
+      };
+      subpixel = {
+        rgba = "rgb";
+        lcdfilter = "default";
+      };
+    };
+    
+    # Font directories
+    fontDir.enable = true;
+    enableDefaultPackages = true;
+    
+    # Additional fonts for better Chinese support
+    packages = with pkgs; [
+      noto-fonts-cjk-sans
+      noto-fonts-cjk-serif
+      source-han-sans
+      source-han-serif
+    ];
+  };
 }
