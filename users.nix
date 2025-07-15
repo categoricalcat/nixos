@@ -41,6 +41,14 @@
       ];
       theme = "agnoster";
     };
+
+    # Configure Zsh to run fastfetch on SSH connections
+    interactiveShellInit = ''
+      # Run fastfetch when connecting via SSH
+      if [[ -n "$SSH_CONNECTION" ]]; then
+        ${pkgs.fastfetch}/bin/fastfetch
+      fi
+    '';
   };
 
   # Environment variables for Zsh

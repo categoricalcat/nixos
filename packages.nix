@@ -12,6 +12,7 @@
     btop
     curl
     wget
+    fastfetch # System information tool
 
     # Development tools
     emacs

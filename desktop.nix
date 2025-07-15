@@ -3,22 +3,38 @@
 { config, pkgs, ... }:
 
 {
-  # X11 windowing system
+  # Wayland-based desktop configuration
   services.xserver = {
-    enable = true;
+    enable = true; # Still needed for GDM/GNOME infrastructure
 
-    # Display manager
-    displayManager.gdm.enable = true;
+    # Force Wayland for GDM
+    displayManager = {
+      gdm = {
+        enable = true;
+        wayland = true; # Ensure GDM runs on Wayland
+      };
+    };
 
-    # Desktop environment
+    # Desktop environment with Wayland
     desktopManager.gnome.enable = true;
 
-    # Keyboard layout
+    # Disable X11 sessions
+    excludePackages = [ pkgs.xterm ];
+
+    # Keyboard layout (works for both X11 and Wayland)
     xkb = {
       layout = "us";
       variant = "alt-intl";
     };
   };
+
+  # Force Wayland for GNOME session
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1"; # Hint Electron apps to use Wayland (including Chromium)
+  };
+
+  # Disable X11 forwarding
+  programs.ssh.forwardX11 = false;
 
   # Console keymap
   console.keyMap = "us";
