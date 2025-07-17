@@ -15,7 +15,10 @@
     ports = [ 24212 ];
     openFirewall = true;
     settings = {
-      AllowUsers = [ "fufud" "workd" ];
+      AllowUsers = [
+        "fufud"
+        "workd"
+      ];
       PermitRootLogin = "no";
       PasswordAuthentication = true;
       KbdInteractiveAuthentication = true;
@@ -118,4 +121,12 @@
   };
 
   services.fail2ban.enable = true;
+
+  services.ollama = {
+    enable = true;
+    acceleration = "rocm";
+    loadModels = [ "deepseek-r1:1.5b" ];
+    # Override for the Radeon 680M (RDNA 2 iGPU)
+    rocmOverrideGfx = "gfx1036";
+  };
 }

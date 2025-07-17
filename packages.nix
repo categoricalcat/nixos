@@ -9,6 +9,7 @@
     curl
     wget
     fastfetch
+    tmux
 
     # Development tools
     emacs

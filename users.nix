@@ -8,7 +8,7 @@
     isNormalUser = true;
     description = "fu's personal";
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" ];
+    extraGroups = [ "wheel" "render" "video" ];
     packages = with pkgs; [
     ];
   };

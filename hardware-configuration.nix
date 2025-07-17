@@ -21,9 +21,11 @@
     "usbhid"
     "sd_mod"
   ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-amd" ];
-  boot.extraModulePackages = [ ];
+  boot.initrd.kernelModules = [ "amdgpu" ];
+  boot.kernelModules = [
+    "kvm-amd"
+    "amdgpu"
+  ];
 
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/f4da9378-1ca6-4261-94c9-05446f4a89b5";
