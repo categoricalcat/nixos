@@ -69,9 +69,6 @@
       options = "--delete-older-than 30d";
     };
   };
-
-  # Disable unnecessary desktop services for servers
-  services.avahi.enable = false; # mDNS not needed on servers
   
   # Time synchronization
   services.chrony = {

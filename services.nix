@@ -15,6 +15,7 @@
     ports = [ 24212 ];
     openFirewall = true;
     settings = {
+      AllowUsers = [ "fufud" "workd" ];
       PermitRootLogin = "no";
       PasswordAuthentication = true;
       KbdInteractiveAuthentication = true;
@@ -36,8 +37,8 @@
       # UseDNS = false; # Already set by default, but explicitly disable for faster connections
       Compression = false; # Disable compression - it hurts performance on fast networks
       TCPKeepAlive = true; # Detect dead connections
-      ClientAliveInterval = 60; # Send keepalive every 60 seconds
-      ClientAliveCountMax = 3; # Disconnect after 3 missed keepalives
+      ClientAliveInterval = 30; # Send keepalive every 60 seconds
+      ClientAliveCountMax = 10; # Disconnect after 3 missed keepalives
 
       # Cipher and algorithm optimizations (fastest first)
       Ciphers = [
@@ -78,9 +79,43 @@
     services.sshd.googleAuthenticator.enable = true;
   };
 
-  # SSH agent - enable at system level
-  programs.ssh.startAgent = true;
-
   # MTR network diagnostic tool
   programs.mtr.enable = true;
+
+  programs.git = {
+    enable = true;
+    config = {
+      user = {
+        name = "categoricalcat";
+        email = "catufuzgu@gmail.com";
+      };
+      init = {
+        defaultBranch = "main";
+      };
+      core = {
+        sshCommand = "ssh";
+      };
+    };
+  };
+
+  # SSH agent - enable at system level
+  programs.ssh = {
+    startAgent = true;
+    # enable = true;
+    agentTimeout = "15m";
+    # addKeysToAgent = "confirm";
+  };
+
+  services.avahi = {
+    enable = true;
+    publish = {
+      enable = true;
+      addresses = true;
+      workstation = true;
+    };
+    nssmdns4 = true;
+    nssmdns6 = true;
+  };
+
+  services.fail2ban.enable = true;
 }

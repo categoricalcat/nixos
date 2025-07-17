@@ -12,11 +12,13 @@
 
     firewall = {
       enable = true;
+      allowPing = true;
       allowedTCPPorts = [
         3000
         3001
         9000
         24212
+        5353
       ];
     };
   };
@@ -48,7 +50,7 @@
         matchConfig.Name = "eno1";
         networkConfig = {
           Bond = "bond0";
-          PrimarySlave = true; 
+          PrimarySlave = true;
         };
         linkConfig = {
           MTUBytes = 1500;

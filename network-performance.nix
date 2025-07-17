@@ -1,9 +1,7 @@
-# Network Performance Tuning Module
-
 { config, pkgs, ... }:
 
 {
-  # Install network diagnostic tools
+  # Install essential network tools
   environment.systemPackages = with pkgs; [
     ethtool
     iperf3
@@ -11,57 +9,61 @@
     iftop
   ];
 
-  # Kernel parameters for network performance
+  # Optimized kernel parameters
   boot.kernel.sysctl = {
-    # Increase network buffer sizes
-    "net.core.rmem_default" = 131072;
-    "net.core.rmem_max" = 134217728;
-    "net.core.wmem_default" = 131072;
-    "net.core.wmem_max" = 134217728;
-    "net.core.netdev_max_backlog" = 5000;
-    "net.core.netdev_budget" = 600;
+    # Network buffer tuning (adjusted for your 19GB RAM)
+    "net.core.rmem_default" = 262144; # Increased from 131072
+    "net.core.rmem_max" = 268435456; # Increased from 134217728
+    "net.core.wmem_default" = 262144; # Increased from 131072
+    "net.core.wmem_max" = 268435456; # Increased from 134217728
+    "net.core.netdev_max_backlog" = 10000; # Increased from 5000 (for 1Gbps+)
+    "net.core.netdev_budget" = 1200; # Increased from 600
 
-    # TCP optimization
-    "net.ipv4.tcp_rmem" = "4096 131072 134217728";
-    "net.ipv4.tcp_wmem" = "4096 65536 134217728";
+    # TCP optimization (BBR-specific tuning)
+    "net.ipv4.tcp_rmem" = "4096 262144 268435456";
+    "net.ipv4.tcp_wmem" = "4096 262144 268435456";
     "net.ipv4.tcp_congestion_control" = "bbr";
-    "net.ipv4.tcp_mtu_probing" = 1;
-    "net.ipv4.tcp_timestamps" = 1;
-    "net.ipv4.tcp_sack" = 1;
-    "net.ipv4.tcp_window_scaling" = 1;
+    "net.ipv4.tcp_mtu_probing" = 2; # More aggressive probing (was 1)
+    "net.ipv4.tcp_notsent_lowat" = 16384; # Reduce bufferbloat
 
-    # Enable TCP Fast Open
-    "net.ipv4.tcp_fastopen" = 3;
+    # Connection handling (optimized for server load)
+    "net.core.somaxconn" = 4096; # Increased from 1024
+    "net.ipv4.tcp_max_syn_backlog" = 8192; # Increased from 2048
+    "net.ipv4.tcp_synack_retries" = 2; # Faster connection failure detection
 
-    # Increase the maximum number of connections
-    "net.core.somaxconn" = 1024;
-    "net.ipv4.tcp_max_syn_backlog" = 2048;
+    # Keepalive optimization
+    "net.ipv4.tcp_keepalive_time" = 300; # Reduced from 600 (5 min)
+    "net.ipv4.tcp_keepalive_probes" = 3; # Reduced from 6
+    "net.ipv4.tcp_keepalive_intvl" = 30; # Reduced from 60
 
-    # Reduce TCP keepalive time for faster detection of dead connections
-    "net.ipv4.tcp_keepalive_time" = 600;
-    "net.ipv4.tcp_keepalive_intvl" = 60;
-    "net.ipv4.tcp_keepalive_probes" = 6;
+    # Memory management
+    "vm.swappiness" = 10; # Reduce swap tendency
+    "vm.vfs_cache_pressure" = 50; # Balance cache reclaim
 
-    # SSH-specific optimizations
-    # Allow TCP to use all available bandwidth (useful for SSH bulk transfers)
-    "net.ipv4.tcp_slow_start_after_idle" = 0;
-
-    # Optimize for low latency (good for interactive SSH)
-    "net.ipv4.tcp_low_latency" = 1;
-
-    # Increase IP packet priority for SSH (port 24212)
-    # Note: This requires iptables rules to mark packets
-    "net.ipv4.ip_local_port_range" = "32768 65535";
+    # Security-hardened TCP settings
+    "net.ipv4.tcp_rfc1337" = 1; # Protect against TIME-WAIT attacks
+    "net.ipv4.tcp_syncookies" = 1; # Enable SYN flood protection
   };
 
-  # Enable BBR congestion control (requires kernel module)
-  boot.kernelModules = [ "tcp_bbr" ];
+  # Essential kernel modules
+  boot.kernelModules = [
+    "tcp_bbr"
+    "tcp_htcp" # Fallback congestion control
+  ];
 
-  # Optional: QoS for SSH traffic using tc (traffic control)
-  # This gives SSH traffic higher priority
-  networking.firewall.extraCommands = ''
-    # Mark SSH packets for QoS (port 24212)
-    iptables -t mangle -A OUTPUT -p tcp --sport 24212 -j MARK --set-mark 0x1
-    iptables -t mangle -A OUTPUT -p tcp --dport 24212 -j MARK --set-mark 0x1
-  '';
+  # SSD-specific optimizations (for your Crucial P3 SSD)
+  services.fstrim.enable = true;
+  fileSystems."/".options = [
+    "noatime"
+    "nodiratime"
+    "discard"
+  ];
+
+  # ZRAM swap configuration (more efficient than disk swap)
+  zramSwap = {
+    enable = true;
+    memoryPercent = 100; # Uses 50% RAM by default
+    algorithm = "zstd"; # Best compression for Ryzen
+  };
+
 }

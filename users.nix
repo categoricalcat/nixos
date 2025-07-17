@@ -10,7 +10,6 @@
     shell = pkgs.zsh;
     extraGroups = [ "wheel" ];
     packages = with pkgs; [
-      chromium
     ];
   };
 
@@ -20,7 +19,6 @@
     shell = pkgs.zsh;
     extraGroups = [ "wheel" ];
     packages = with pkgs; [
-      chromium
       nodejs_20
     ];
   };

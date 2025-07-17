@@ -15,6 +15,7 @@
     # ./desktop.nix
     ./server-settings.nix
     ./server-mode.nix
+    # ./home.nix
   ];
 
   serverMode.headless = true;
@@ -42,18 +43,27 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?
-  
+
   # Font configuration
   fonts = {
     # Enable font management
     fontconfig = {
       enable = true;
       defaultFonts = {
-        monospace = [ "Maple Mono NF CN" "Maple Mono" ];
-        sansSerif = [ "Maple Mono NF CN" "Maple Mono" ];
-        serif = [ "Maple Mono NF CN" "Maple Mono" ];
+        monospace = [
+          "Maple Mono NF CN"
+          "Maple Mono"
+        ];
+        sansSerif = [
+          "Maple Mono NF CN"
+          "Maple Mono"
+        ];
+        serif = [
+          "Maple Mono NF CN"
+          "Maple Mono"
+        ];
       };
-      
+
       # Better font rendering
       antialias = true;
       hinting = {
@@ -65,11 +75,11 @@
         lcdfilter = "default";
       };
     };
-    
+
     # Font directories
     fontDir.enable = true;
     enableDefaultPackages = true;
-    
+
     # Additional fonts for better Chinese support
     packages = with pkgs; [
       noto-fonts-cjk-sans

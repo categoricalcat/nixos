@@ -17,9 +17,10 @@
     nixfmt-rfc-style
     direnv
     vscode-fhs
+    tree
 
     # node stuff
-    nodejs_20
+    nodejs_latest
     # fnm
     nodePackages.pnpm
     nodePackages.eslint
@@ -34,7 +35,7 @@
     zsh-autosuggestions
     zsh-history-substring-search
     zsh-syntax-highlighting
-    
+
     maple-mono.NF-CN-unhinted
   ];
 }
