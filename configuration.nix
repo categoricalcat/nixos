@@ -88,4 +88,15 @@
       source-han-serif
     ];
   };
+
+  hardware.amdgpu.opencl.enable = true;
+  hardware.amdgpu.amdvlk.enable = true;
+  hardware.graphics = {
+    enable = true;
+  };
+  
+  # Create symlink for Ollama to find ROCm libraries
+  systemd.tmpfiles.rules = [
+    "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
+  ];
 }

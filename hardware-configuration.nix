@@ -26,6 +26,7 @@
     "kvm-amd"
     "amdgpu"
   ];
+  boot.extraModulePackages = [ ];
 
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/f4da9378-1ca6-4261-94c9-05446f4a89b5";

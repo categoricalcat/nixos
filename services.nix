@@ -126,7 +126,6 @@
     enable = true;
     acceleration = "rocm";
     loadModels = [ "deepseek-r1:1.5b" ];
-    # Override for the Radeon 680M (RDNA 2 iGPU)
-    rocmOverrideGfx = "gfx1036";
+    # rocmOverrideGfx = "gfx1035";
   };
 }

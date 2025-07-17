@@ -38,5 +38,14 @@
     zsh-syntax-highlighting
 
     maple-mono.NF-CN-unhinted
+
+    # ROCm packages for GPU compute
+    rocmPackages.clr
+    rocmPackages.rocminfo
+    rocmPackages.rocm-smi
+    rocmPackages.rocmPath
+    rocmPackages.hipblas
+    rocmPackages.rocblas
+    rocmPackages.rocsolver
   ];
 }
