@@ -8,7 +8,7 @@
     isNormalUser = true;
     description = "fu's personal";
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" "render" "video" ];
+    extraGroups = [ "wheel" "render" "video" "docker" ];
     packages = with pkgs; [
     ];
   };
@@ -17,7 +17,7 @@
     isNormalUser = true;
     description = "fu's work";
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" ];
+    extraGroups = [ "wheel" "docker" ];
     packages = with pkgs; [
       nodejs_20
     ];

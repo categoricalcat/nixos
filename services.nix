@@ -128,4 +128,6 @@
     loadModels = [ "deepseek-r1:1.5b" ];
     # rocmOverrideGfx = "gfx1035";
   };
+
+  virtualisation.docker.enable = true;
 }

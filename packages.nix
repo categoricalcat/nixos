@@ -12,6 +12,7 @@
     tmux
 
     # Development tools
+    rclone
     emacs
     git
     gh
