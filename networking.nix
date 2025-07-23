@@ -14,11 +14,16 @@
       enable = true;
       allowPing = true;
       allowedTCPPorts = [
-        3000
-        3001
-        9000
-        24212
-        5353
+        3000      # Development servers
+        3001      # Development servers
+        9000      # Various services
+        24212     # SSH custom port
+        5353      # mDNS/Avahi
+        25565     # Minecraft server
+      ];
+      allowedUDPPorts = [
+        25565     # Minecraft server (UDP is required for Minecraft)
+        5353      # mDNS/Avahi
       ];
     };
   };
@@ -67,10 +72,10 @@
 
       "40-bond0" = {
         matchConfig.Name = "bond0";
-        linkConfig.RequiredForOnline = "carrier";
         networkConfig.DHCP = "yes";
         linkConfig = {
           MTUBytes = 1500;
+          RequiredForOnline = "carrier";
         };
       };
     };

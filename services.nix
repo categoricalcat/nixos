@@ -129,5 +129,27 @@
     # rocmOverrideGfx = "gfx1035";
   };
 
-  virtualisation.docker.enable = true;
+  virtualisation.docker = {
+    enable = true;
+    # Docker daemon configuration for better performance
+    daemon.settings = {
+      # Use the default bridge network with proper MTU
+      mtu = 1500;
+      # Enable IPv6 support if needed for Cloudflared
+      ipv6 = true;
+      fixed-cidr-v6 = "2001:db8:1::/64";
+      # Log driver configuration
+      log-driver = "json-file";
+      log-opts = {
+        max-size = "10m";
+        max-file = "3";
+      };
+    };
+    # Ensure Docker starts after network is online
+    # This is important for containers that need immediate network access
+    autoPrune = {
+      enable = true;
+      dates = "weekly";
+    };
+  };
 }
