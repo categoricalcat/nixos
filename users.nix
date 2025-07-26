@@ -8,7 +8,12 @@
     isNormalUser = true;
     description = "fu's personal";
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" "render" "video" "docker" ];
+    extraGroups = [
+      "wheel"
+      "render"
+      "video"
+      "docker"
+    ];
     packages = with pkgs; [
     ];
   };
@@ -17,7 +22,10 @@
     isNormalUser = true;
     description = "fu's work";
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" "docker" ];
+    extraGroups = [
+      "wheel"
+      "docker"
+    ];
     packages = with pkgs; [
       nodejs_20
     ];
@@ -32,26 +40,34 @@
   # Zsh configuration
   programs.zsh = {
     enable = true;
+    enableCompletion = true;
+    autosuggestions.enable = true;
+    syntaxHighlighting.enable = true;
     ohMyZsh = {
       enable = true;
+      theme = "powerlevel10k/powerlevel10k";
       plugins = [
         "docker"
         "git"
         "sudo"
+        "history-substring-search"
+        "dirhistory"
+        "history"
       ];
-      theme = "spaceship";
     };
 
     # Configure Zsh to run fastfetch on SSH connections
     interactiveShellInit = ''
-      # Run fastfetch when connecting via SSH
-      if [[ -n "$SSH_CONNECTION" ]]; then
-        ${pkgs.fastfetch}/bin/fastfetch
-      fi
+      source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
 
       # Enable direnv for automatic environment switching
       eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
+
+      # Export Oh My Zsh location as variable
+      export ZSH="${pkgs.oh-my-zsh}/share/oh-my-zsh"
+
     '';
+
   };
 
   environment.variables = {

@@ -38,6 +38,8 @@
     zsh-autosuggestions
     zsh-history-substring-search
     zsh-syntax-highlighting
+    spaceship-prompt
+    zsh-powerlevel10k
 
     maple-mono.NF-CN-unhinted
 
