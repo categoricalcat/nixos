@@ -39,7 +39,7 @@
         "git"
         "sudo"
       ];
-      theme = "agnoster";
+      theme = "spaceship";
     };
 
     # Configure Zsh to run fastfetch on SSH connections

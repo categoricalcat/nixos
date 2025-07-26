@@ -10,6 +10,7 @@
     wget
     fastfetch
     tmux
+    stow
 
     # Development tools
     rclone
