@@ -43,31 +43,25 @@
     enableCompletion = true;
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
-    ohMyZsh = {
-      enable = true;
-      theme = "powerlevel10k/powerlevel10k";
-      plugins = [
-        "docker"
-        "git"
-        "sudo"
-        "history-substring-search"
-        "dirhistory"
-        "history"
-      ];
-    };
 
-    # Configure Zsh to run fastfetch on SSH connections
+    # Configure Zsh shell
     interactiveShellInit = ''
-      source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+      # Enable starship prompt
+      eval "$(${pkgs.starship}/bin/starship init zsh)"
 
       # Enable direnv for automatic environment switching
       eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
-
-      # Export Oh My Zsh location as variable
-      export ZSH="${pkgs.oh-my-zsh}/share/oh-my-zsh"
-
     '';
+  };
 
+  # Starship prompt configuration
+  programs.starship = {
+    enable = true;
+    # You can add custom settings here later
+    settings = {
+      # Example: simpler prompt format
+      # format = "$all$character";
+    };
   };
 
   environment.variables = {
