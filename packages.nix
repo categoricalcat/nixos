@@ -22,6 +22,9 @@
     vscode-fhs
     tree
 
+    # Container tools (Podman)
+    buildah         # Container image builder (docker buildx alternative)
+    
     # node stuff
     nodejs_latest
     # fnm

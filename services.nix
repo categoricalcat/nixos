@@ -1,6 +1,6 @@
 # Services configuration module
 
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   # Printing service
@@ -129,27 +129,67 @@
     # rocmOverrideGfx = "gfx1035";
   };
 
-  virtualisation.docker = {
+  # Podman configuration (Docker replacement)
+  virtualisation.podman = {
     enable = true;
-    # Docker daemon configuration for better performance
-    daemon.settings = {
-      # Use the default bridge network with proper MTU
+    dockerCompat = false;
+    dockerSocket.enable = false;
+    defaultNetwork.settings = {
+      dns_enabled = true;
+      ipv6_enabled = true;
       mtu = 1500;
-      # Enable IPv6 support if needed for Cloudflared
-      ipv6 = true;
-      fixed-cidr-v6 = "2001:db8:1::/64";
-      # Log driver configuration
-      log-driver = "json-file";
-      log-opts = {
-        max-size = "10m";
-        max-file = "3";
-      };
     };
-    # Ensure Docker starts after network is online
-    # This is important for containers that need immediate network access
+    
     autoPrune = {
       enable = true;
       dates = "weekly";
+      flags = [ "--all" ];
     };
   };
+
+  # Enable container networking
+  virtualisation.containers = {
+    enable = true;
+    
+    storage.settings = {
+      storage = {
+        driver = "overlay";
+        runroot = "/run/containers/storage";
+        graphroot = "/var/lib/containers/storage";
+        options.overlay.mount_program = "${pkgs.fuse-overlayfs}/bin/fuse-overlayfs";
+      };
+    };
+    
+    registries = {
+      search = [ "docker.io" "quay.io" "ghcr.io" ];
+    };
+    
+    containersConf.settings = {
+      containers = {
+        dns_servers = [ "8.8.8.8" "1.1.1.1" ];
+        log_driver = "json-file";
+        log_size_max = 10485760;  # 10MB in bytes (10 * 1024 * 1024)
+        default_ulimits = [
+          "nofile=65536:65536"
+        ];
+      };
+      
+      network = {
+        default_subnet_pools = [
+          { base = "172.17.0.0/16"; size = 24; }
+          { base = "172.18.0.0/16"; size = 24; }
+        ];
+      };
+    };
+  };
+
+  users.users.fufud.extraGroups = [ "podman" ];
+  users.users.workd.extraGroups = [ "podman" ];
+
+  environment.systemPackages = with pkgs; [
+    podman-compose  # open source bitchess
+    podman-tui
+    dive
+    skopeo
+  ];
 }
