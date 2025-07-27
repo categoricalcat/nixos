@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   # Install essential network tools
@@ -46,7 +46,7 @@
   };
 
   # Essential kernel modules
-  boot.kernelModules = [
+  boot.kernelModules = lib.mkAfter [
     "tcp_bbr"
     "tcp_htcp" # Fallback congestion control
   ];

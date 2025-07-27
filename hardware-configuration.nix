@@ -22,7 +22,7 @@
     "sd_mod"
   ];
   boot.initrd.kernelModules = [ "amdgpu" ];
-  boot.kernelModules = [
+  boot.kernelModules = lib.mkAfter [
     "kvm-amd"
     "amdgpu"
   ];
