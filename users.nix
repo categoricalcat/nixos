@@ -43,9 +43,6 @@
     enableCompletion = true;
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
-    promptInit = ''
-      source ~/the.files/.zshrc
-    '';
   };
 
 
