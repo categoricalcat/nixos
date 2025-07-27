@@ -27,6 +27,9 @@
     })
   ];
 
+  # experimental features
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
   # Suppress CUDA warnings by setting minimum version
   nixpkgs.config = {
     allowUnfree = true; # Allow unfree packages

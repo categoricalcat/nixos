@@ -43,26 +43,11 @@
     enableCompletion = true;
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
-
-    # Configure Zsh shell
-    interactiveShellInit = ''
-      # Enable starship prompt
-      eval "$(${pkgs.starship}/bin/starship init zsh)"
-
-      # Enable direnv for automatic environment switching
-      eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
+    promptInit = ''
+      source ~/the.files/.zshrc
     '';
   };
 
-  # Starship prompt configuration
-  programs.starship = {
-    enable = true;
-    # You can add custom settings here later
-    settings = {
-      # Example: simpler prompt format
-      # format = "$all$character";
-    };
-  };
 
   environment.variables = {
     ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";
