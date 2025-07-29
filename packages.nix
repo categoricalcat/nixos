@@ -21,6 +21,7 @@
     direnv
     vscode-fhs
     tree
+    fd  # Fast file finder, works well with fzf
 
     # Container tools (Podman)
     buildah         # Container image builder (docker buildx alternative)
@@ -42,8 +43,10 @@
     zsh-history-substring-search
     zsh-syntax-highlighting
     starship
+    fzf
+    zoxide
 
-    maple-mono.NF-CN-unhinted
+    maple-mono.NF-CN
 
     # ROCm packages for GPU compute
     rocmPackages.clr

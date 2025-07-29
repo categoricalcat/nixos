@@ -28,7 +28,10 @@
   ];
 
   # experimental features
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Suppress CUDA warnings by setting minimum version
   nixpkgs.config = {
@@ -55,15 +58,12 @@
       defaultFonts = {
         monospace = [
           "Maple Mono NF CN"
-          "Maple Mono"
         ];
         sansSerif = [
           "Maple Mono NF CN"
-          "Maple Mono"
         ];
         serif = [
           "Maple Mono NF CN"
-          "Maple Mono"
         ];
       };
 
@@ -79,16 +79,11 @@
       };
     };
 
-    # Font directories
     fontDir.enable = true;
     enableDefaultPackages = true;
 
-    # Additional fonts for better Chinese support
     packages = with pkgs; [
-      noto-fonts-cjk-sans
-      noto-fonts-cjk-serif
-      source-han-sans
-      source-han-serif
+      maple-mono.NF-CN
     ];
   };
 
@@ -97,7 +92,7 @@
   hardware.graphics = {
     enable = true;
   };
-  
+
   # Create symlink for Ollama to find ROCm libraries
   systemd.tmpfiles.rules = [
     "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
