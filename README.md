@@ -40,6 +40,7 @@ When headless mode is disabled, the system runs GNOME on Wayland with auto-login
   - Root login disabled
   - Optimized ciphers for performance
   - Connection multiplexing enabled
+- **USB Serial Console**: Access via USB-to-serial adapter (ttyUSB0)
 - **Code Server**: VS Code in the browser enabled
 - **Users**: Two users configured (fufud, work) with sudo access
 
@@ -60,6 +61,20 @@ When headless mode is disabled, the system runs GNOME on Wayland with auto-login
 ├── services.nix           # SSH, code-server, and other services
 └── users.nix             # User accounts and Zsh configuration
 ```
+
+## USB Serial Console
+
+Connect a USB-to-serial adapter to access the console:
+
+```bash
+# From another computer
+screen /dev/ttyUSB0 115200
+
+# Or using minicom
+minicom -D /dev/ttyUSB0 -b 115200
+```
+
+This provides emergency console access when network is unavailable.
 
 ## System Specifications
 
@@ -330,4 +345,18 @@ fc-list | grep -i maple
 ├── server-settings.nix    # Server-specific optimizations
 ├── services.nix           # SSH, code-server, and other services
 └── users.nix             # User accounts and Zsh configuration
-``` 
+```
+
+## USB Serial Console
+
+Connect a USB-to-serial adapter to access the console:
+
+```bash
+# From another computer
+screen /dev/ttyUSB0 115200
+
+# Or using minicom
+minicom -D /dev/ttyUSB0 -b 115200
+```
+
+This provides emergency console access when network is unavailable. 

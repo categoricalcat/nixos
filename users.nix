@@ -13,6 +13,7 @@
       "render"
       "video"
       "docker"
+      "dialout"  # Access to serial devices
     ];
     packages = with pkgs; [
     ];
@@ -25,6 +26,7 @@
     extraGroups = [
       "wheel"
       "docker"
+      "dialout"  # Access to serial devices
     ];
     packages = with pkgs; [
       nodejs_20

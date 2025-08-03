@@ -186,10 +186,18 @@
   users.users.fufud.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
 
+  # Enable getty on USB serial
+  systemd.services."serial-getty@ttyUSB0" = {
+    enable = true;
+    wantedBy = [ "getty.target" ];
+    serviceConfig.Restart = "always";
+  };
+
   environment.systemPackages = with pkgs; [
     podman-compose  # open source bitchess
     podman-tui
     dive
     skopeo
+    screen  # for serial console access
   ];
 }
