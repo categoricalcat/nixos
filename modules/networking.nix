@@ -78,6 +78,15 @@
           RequiredForOnline = "carrier";
         };
       };
+
+      # USB network interfaces (minimal config)
+      "50-usb" = {
+        matchConfig.Name = "usb* enp*s*u*";  # Match USB network interfaces
+        networkConfig = {
+          DHCP = "yes";
+          LinkLocalAddressing = "ipv4";  # Fallback for direct connections
+        };
+      };
     };
   };
 }
