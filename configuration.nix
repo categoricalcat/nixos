@@ -11,7 +11,6 @@
     ./modules/packages.nix
     ./modules/networking.nix
     ./modules/network-performance.nix
-    ./modules/usb-networking.nix
     ./modules/services.nix
     # ./modules/desktop.nix
     ./modules/server-settings.nix
