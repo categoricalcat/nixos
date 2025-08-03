@@ -3,10 +3,10 @@
 {
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
-  home.username = "workd";
-  home.homeDirectory = "/home/workd";
+  home.username = "fufud";
+  home.homeDirectory = "/home/fufud";
 
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -14,23 +14,8 @@
   # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
     # User-specific packages
-    nodejs_20  # Node.js 20 for workd
-    nodePackages.pnpm
-    nodePackages.eslint
-    nodePackages.typescript
-    nodePackages.npm-check-updates
+    nodejs_latest  # Latest Node.js for fufud
   ];
-
-  # Minimal zsh configuration - just source the.files
-  programs.zsh = {
-    enable = true;
-    initExtra = ''
-      # Source the.files configuration
-      if [[ -f ~/the.files/.zshrc ]]; then
-        source ~/the.files/.zshrc
-      fi
-    '';
-  };
 
   # Clone the.files repository on activation
   home.activation = {

@@ -20,8 +20,8 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.users.fufud = import ./home-fufud.nix;
-          home-manager.users.workd = import ./home-workd.nix;
+          home-manager.users.fufud = import ./users/home-fufud.nix;
+          home-manager.users.workd = import ./users/home-workd.nix;
         }
       ];
     };

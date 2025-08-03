@@ -4,17 +4,17 @@
 
 {
   imports = [
-    ./hardware-configuration.nix
-    ./boot.nix
-    ./locale.nix
-    ./users.nix
-    ./packages.nix
-    ./networking.nix
-    ./network-performance.nix
-    ./services.nix
-    # ./desktop.nix
-    ./server-settings.nix
-    ./server-mode.nix
+    ./hardware/hardware-configuration.nix
+    ./modules/boot.nix
+    ./modules/locale.nix
+    ./users/users.nix
+    ./modules/packages.nix
+    ./modules/networking.nix
+    ./modules/network-performance.nix
+    ./modules/services.nix
+    # ./modules/desktop.nix
+    ./modules/server-settings.nix
+    ./modules/server-mode.nix
     # ./home.nix
   ];
 
