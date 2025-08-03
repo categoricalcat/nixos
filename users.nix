@@ -15,8 +15,7 @@
       "docker"
       "dialout"  # Access to serial devices
     ];
-    packages = with pkgs; [
-    ];
+    packages = with pkgs; [ ];
   };
 
   users.users.workd = {
@@ -28,9 +27,7 @@
       "docker"
       "dialout"  # Access to serial devices
     ];
-    packages = with pkgs; [
-      nodejs_20
-    ];
+    packages = with pkgs; [ ];
   };
 
   # Default shell

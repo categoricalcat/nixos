@@ -11,7 +11,7 @@
     fastfetch
     tmux
     stow
-
+    
     # Development tools
     rclone
     emacs
@@ -22,21 +22,13 @@
     vscode-fhs
     tree
     fd  # Fast file finder, works well with fzf
-
+    
     # Container tools (Podman)
     buildah         # Container image builder (docker buildx alternative)
     
-    # node stuff
-    nodejs_latest
-    # fnm
-    nodePackages.pnpm
-    nodePackages.eslint
-    nodePackages.typescript
-    nodePackages.npm-check-updates
-
     # Security tools
     google-authenticator
-
+    
     # Shell and related tools
     zsh
     zsh-autosuggestions
@@ -45,9 +37,9 @@
     starship
     fzf
     zoxide
-
+    
     maple-mono.NF-CN
-
+    
     # ROCm packages for GPU compute
     rocmPackages.clr
     rocmPackages.rocminfo

@@ -85,22 +85,6 @@
   # MTR network diagnostic tool
   programs.mtr.enable = true;
 
-  programs.git = {
-    enable = true;
-    config = {
-      user = {
-        name = "categoricalcat";
-        email = "catufuzgu@gmail.com";
-      };
-      init = {
-        defaultBranch = "main";
-      };
-      core = {
-        sshCommand = "ssh";
-      };
-    };
-  };
-
   # SSH agent - enable at system level
   programs.ssh = {
     startAgent = true;
