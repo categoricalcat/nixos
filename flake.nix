@@ -36,6 +36,7 @@
                 rocmSupport = true; 
               };
             }
+            ./modules/boot.nix
             ./modules/packages.nix
             ./modules/locale.nix
           ];
