@@ -13,9 +13,10 @@
       "render"
       "video"
       "docker"
-      "dialout"  # Access to serial devices
+      "dialout"
     ];
-    packages = with pkgs; [ ];
+    packages = with pkgs; [
+    ];
   };
 
   users.users.workd = {
@@ -25,9 +26,10 @@
     extraGroups = [
       "wheel"
       "docker"
-      "dialout"  # Access to serial devices
+      "dialout"
     ];
-    packages = with pkgs; [ ];
+    packages = with pkgs; [
+    ];
   };
 
   # Default shell
@@ -43,7 +45,6 @@
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
   };
-
 
   environment.variables = {
     ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";
