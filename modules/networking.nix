@@ -25,6 +25,28 @@
       allowedUDPPorts = [
         25565     # Minecraft server (UDP is required for Minecraft)
         5353      # mDNS/Avahi
+        51820     # WireGuard VPN
+      ];
+    };
+  };
+
+  # WireGuard VPN configuration
+  networking.wireguard.interfaces = {
+    wg0 = {
+      ips = [ "10.100.0.1/24" ];
+      listenPort = 51820;
+      
+      # wg genkey | sudo tee /etc/wireguard/private.key
+      privateKeyFile = "/etc/wireguard/private.key";
+      
+      # Example peer configuration (add your actual peers here)
+      peers = [
+        # {
+        #   publicKey = "peer_public_key_here";
+        #   allowedIPs = [ "10.100.0.2/32" ];
+        #   # endpoint = "peer.example.com:51820";  # For initiating connections
+        #   persistentKeepalive = 25;  # Optional, useful for NAT traversal
+        # }
       ];
     };
   };

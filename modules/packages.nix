@@ -54,5 +54,6 @@
     dive
     skopeo
     screen  # for serial console access
+    kubectl
   ];
 }
