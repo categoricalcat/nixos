@@ -21,15 +21,23 @@
     }@inputs:
     {
       nixosConfigurations = {
-        nixos = nixpkgs.lib.nixosSystem {
+        wsl = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
             nixos-wsl.nixosModules.default
             {
-              system.stateVersion = "25.05";
-              wsl.defaultUser = "wsl-nixos";
+              system.stateVersion = "25.11";
+              wsl.defaultUser = "fufu-wsl";
               wsl.enable = true;
+
+              nixpkgs.config = {
+                allowUnfree = true; 
+                cudaSupport = false; 
+                rocmSupport = true; 
+              };
             }
+            ./modules/packages.nix
+            ./modules/locale.nix
           ];
         };
 

@@ -48,5 +48,11 @@
     rocmPackages.hipblas
     rocmPackages.rocblas
     rocmPackages.rocsolver
+    
+    podman-compose  # open source bitchess
+    podman-tui
+    dive
+    skopeo
+    screen  # for serial console access
   ];
 }

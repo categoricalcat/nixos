@@ -7,7 +7,7 @@
   time.timeZone = "America/Sao_Paulo";
 
   # Default locale
-  i18n.defaultLocale = "en_US.UTF-8";
+  i18n.defaultLocale = "pt_BR.UTF-8";
 
   # Additional locale settings (Brazilian Portuguese for specific categories)
   i18n.extraLocaleSettings = {

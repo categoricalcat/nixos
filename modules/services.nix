@@ -177,11 +177,4 @@
     serviceConfig.Restart = "always";
   };
 
-  environment.systemPackages = with pkgs; [
-    podman-compose  # open source bitchess
-    podman-tui
-    dive
-    skopeo
-    screen  # for serial console access
-  ];
 }
