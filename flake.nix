@@ -32,13 +32,19 @@
 
               programs.nix-ld.enable = true;
 
+              nix.settings.experimental-features = [
+                "nix-command"
+                "flakes"
+              ];
+
+              boot.kernelPackages = pkgs.linuxPackages_latest; # 12.37
+
               nixpkgs.config = {
                 allowUnfree = true;
                 cudaSupport = false;
                 rocmSupport = true;
               };
             }
-            ./modules/boot.nix
             ./modules/packages.nix
             ./modules/locale.nix
           ];
