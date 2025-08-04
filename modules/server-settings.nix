@@ -47,7 +47,7 @@
 
   # Basic system monitoring
   services.smartd = {
-    enable = true; # Monitor disk health
+    enable = !(config.wsl.enable or false); # Monitor disk health
     notifications = {
       wall.enable = true; # Display warnings on console
     };

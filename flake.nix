@@ -25,28 +25,12 @@
           system = "x86_64-linux";
           modules = [
             nixos-wsl.nixosModules.default
-            {
-              system.stateVersion = "25.11";
-              wsl.defaultUser = "fufu-wsl";
-              wsl.enable = true;
-
-              programs.nix-ld.enable = true;
-
-              nix.settings.experimental-features = [
-                "nix-command"
-                "flakes"
-              ];
-
-              boot.kernelPackages = pkgs.linuxPackages_latest; # 12.37
-
-              nixpkgs.config = {
-                allowUnfree = true;
-                cudaSupport = false;
-                rocmSupport = true;
-              };
-            }
+            ./modules/wsl.nix
             ./modules/packages.nix
+            ./modules/server-mode.nix
+            ./modules/server-settings.nix
             ./modules/locale.nix
+            ./users/users.nix
           ];
         };
 
