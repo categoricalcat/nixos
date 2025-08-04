@@ -26,8 +26,8 @@
     cloneDotfiles = lib.hm.dag.entryAfter ["writeBoundary"] ''
       if [ ! -d "$HOME/the.files" ]; then
         echo "Cloning the.files repository..."
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/YOUR_USERNAME/the.files.git $HOME/the.files || \
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone git@github.com:YOUR_USERNAME/the.files.git $HOME/the.files
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/categoricalcat/the.files.git $HOME/the.files || \
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone git@github.com:categoricalcat/the.files.git $HOME/the.files
       else
         echo "the.files repository already exists"
       fi
