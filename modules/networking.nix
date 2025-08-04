@@ -20,6 +20,7 @@
         24212     # SSH custom port
         5353      # mDNS/Avahi
         25565     # Minecraft server
+        9090      # Cockpit
       ];
       allowedUDPPorts = [
         25565     # Minecraft server (UDP is required for Minecraft)

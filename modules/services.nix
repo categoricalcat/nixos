@@ -1,6 +1,11 @@
 # Services configuration module
 
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # Printing service
@@ -116,14 +121,14 @@
   # Podman configuration (Docker replacement)
   virtualisation.podman = {
     enable = true;
-    dockerCompat = false;
-    dockerSocket.enable = false;
+    dockerCompat = true;
+    dockerSocket.enable = true;
     defaultNetwork.settings = {
       dns_enabled = true;
       ipv6_enabled = true;
       mtu = 1500;
     };
-    
+
     autoPrune = {
       enable = true;
       dates = "weekly";
@@ -134,7 +139,7 @@
   # Enable container networking
   virtualisation.containers = {
     enable = true;
-    
+
     storage.settings = {
       storage = {
         driver = "overlay";
@@ -143,25 +148,38 @@
         options.overlay.mount_program = "${pkgs.fuse-overlayfs}/bin/fuse-overlayfs";
       };
     };
-    
+
     registries = {
-      search = [ "docker.io" "quay.io" "ghcr.io" ];
+      search = [
+        "docker.io"
+        "quay.io"
+        "ghcr.io"
+      ];
     };
-    
+
     containersConf.settings = {
       containers = {
-        dns_servers = [ "8.8.8.8" "1.1.1.1" ];
+        dns_servers = [
+          "8.8.8.8"
+          "1.1.1.1"
+        ];
         log_driver = "json-file";
-        log_size_max = 10485760;  # 10MB in bytes (10 * 1024 * 1024)
+        log_size_max = 10485760; # 10MB in bytes (10 * 1024 * 1024)
         default_ulimits = [
           "nofile=65536:65536"
         ];
       };
-      
+
       network = {
         default_subnet_pools = [
-          { base = "172.17.0.0/16"; size = 24; }
-          { base = "172.18.0.0/16"; size = 24; }
+          {
+            base = "172.17.0.0/16";
+            size = 24;
+          }
+          {
+            base = "172.18.0.0/16";
+            size = 24;
+          }
         ];
       };
     };
@@ -177,4 +195,25 @@
     serviceConfig.Restart = "always";
   };
 
+  services.cockpit = {
+    enable = true;
+    port = 9090;
+    allowed-origins = [
+      "https://fufuwuqi.local:9090"
+      "http://fufuwuqi.local:9090"
+      "https://localhost:9090"
+      "http://localhost:9090"
+      "https://cockpit.fufu.land"
+    ];
+    settings = {
+      WebService = {
+        AllowUnencrypted = true;
+      };
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    cockpit
+    pcp
+  ];
 }
