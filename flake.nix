@@ -31,6 +31,12 @@
             ./modules/server-settings.nix
             ./modules/locale.nix
             ./users/users.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.fufud = import ./users/home-fufud.nix;
+            }
           ];
         };
 

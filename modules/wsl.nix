@@ -9,7 +9,7 @@
 
 {
   system.stateVersion = "25.11";
-  wsl.defaultUser = "fufu-wsl";
+  wsl.defaultUser = "fufud";
   wsl.enable = true;
 
   programs.nix-ld.enable = true;
