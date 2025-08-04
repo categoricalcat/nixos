@@ -30,10 +30,12 @@
               wsl.defaultUser = "fufu-wsl";
               wsl.enable = true;
 
+              programs.nix-ld.enable = true;
+
               nixpkgs.config = {
-                allowUnfree = true; 
-                cudaSupport = false; 
-                rocmSupport = true; 
+                allowUnfree = true;
+                cudaSupport = false;
+                rocmSupport = true;
               };
             }
             ./modules/boot.nix
