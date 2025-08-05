@@ -212,6 +212,8 @@
     };
   };
 
+  services.nginx.enable = true;
+
   environment.systemPackages = with pkgs; [
     cockpit
     pcp

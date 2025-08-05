@@ -14,6 +14,8 @@
       enable = true;
       allowPing = true;
       allowedTCPPorts = [
+        80        # HTTP (nginx)
+        443       # HTTPS (nginx)
         3000      # Development servers
         3001      # Development servers
         9000      # Various services
