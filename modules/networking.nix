@@ -45,14 +45,19 @@
         listenPort = 51820;
         mtu = 1492;
 
-        # wg genkey | sudo tee /etc/wireguard/private.key
-        privateKeyFile = "/etc/wireguard/private.key";
+        privateKeyFile = "/etc/wireguard/private.key"; # wg genkey | sudo tee /etc/wireguard/private.key
 
         peers = [
           {
             # macos
             publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
             allowedIPs = [ "10.100.0.2/32" ];
+            persistentKeepalive = 25;
+          }
+          {
+            # windows
+            publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
+            allowedIPs = [ "10.100.0.3/32" ];
             persistentKeepalive = 25;
           }
         ];
