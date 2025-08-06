@@ -151,7 +151,7 @@
     defaultNetwork.settings = {
       dns_enabled = true;
       ipv6_enabled = true;
-      mtu = 1500;
+      mtu = 1492;
     };
 
     autoPrune = {

@@ -43,6 +43,7 @@
       wg0 = {
         ips = [ "10.100.0.1/28" ];
         listenPort = 51820;
+        mtu = 1492;
 
         # wg genkey | sudo tee /etc/wireguard/private.key
         privateKeyFile = "/etc/wireguard/private.key";
@@ -69,7 +70,7 @@
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
-          MTUBytes = 1500;
+          MTUBytes = 1492;
         };
         bondConfig = {
           Mode = "active-backup";
@@ -89,7 +90,7 @@
           PrimarySlave = true;
         };
         linkConfig = {
-          MTUBytes = 1500;
+          MTUBytes = 1492;
         };
       };
 
@@ -97,7 +98,7 @@
         matchConfig.Name = "enp4s0";
         networkConfig.Bond = "bond0";
         linkConfig = {
-          MTUBytes = 1500;
+          MTUBytes = 1492;
         };
       };
 
@@ -105,7 +106,7 @@
         matchConfig.Name = "bond0";
         networkConfig.DHCP = "yes";
         linkConfig = {
-          MTUBytes = 1500;
+          MTUBytes = 1492;
           RequiredForOnline = "carrier";
         };
       };
