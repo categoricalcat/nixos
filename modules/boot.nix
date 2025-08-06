@@ -7,9 +7,17 @@
       efi.canTouchEfiVariables = true;
     };
 
-    kernelPackages = pkgs.linuxPackages_latest; # 12.37
+    kernelPackages = pkgs.linuxPackages_latest;
 
     # Serial console on USB
-    kernelParams = [ "console=ttyUSB0,115200n8" "console=tty0" ];
+    kernelParams = [
+      "console=ttyUSB0,115200n8"
+      "console=tty0"
+    ];
+
+    kernel.sysctl = {
+      "net.ipv4.ip_forward" = 1;
+      "net.ipv6.conf.all.forwarding" = 1;
+    };
   };
 }

@@ -14,42 +14,48 @@
       enable = true;
       allowPing = true;
       allowedTCPPorts = [
-        80        # HTTP (nginx)
-        443       # HTTPS (nginx)
-        3000      # Development servers
-        3001      # Development servers
-        9000      # Various services
-        24212     # SSH custom port
-        5353      # mDNS/Avahi
-        25565     # Minecraft server
-        9090      # Cockpit
+        80
+        443
+        # 3000
+        # 3001
+        # 9000
+        # 24212
+        5353 # mDNS/Avahi
+        25565 # Minecraft server
+        # 9090 # Cockpit
       ];
       allowedUDPPorts = [
-        25565     # Minecraft server (UDP is required for Minecraft)
-        5353      # mDNS/Avahi
-        51820     # WireGuard VPN
+        25565 # Minecraft server
+        5353 # mDNS/Avahi
+        51820 # WireGuard VPN
       ];
-    };
-  };
 
-  # WireGuard VPN configuration
-  networking.wireguard.interfaces = {
-    wg0 = {
-      ips = [ "10.100.0.1/24" ];
-      listenPort = 51820;
-      
-      # wg genkey | sudo tee /etc/wireguard/private.key
-      privateKeyFile = "/etc/wireguard/private.key";
-      
-      # Example peer configuration (add your actual peers here)
-      peers = [
-        # {
-        #   publicKey = "peer_public_key_here";
-        #   allowedIPs = [ "10.100.0.2/32" ];
-        #   # endpoint = "peer.example.com:51820";  # For initiating connections
-        #   persistentKeepalive = 25;  # Optional, useful for NAT traversal
-        # }
-      ];
+      trustedInterfaces = [ "wg0" ];
+    };
+
+    nat = {
+      enable = true;
+      externalInterface = "bond0";
+      internalInterfaces = [ "wg0" ];
+    };
+
+    wireguard.interfaces = {
+      wg0 = {
+        ips = [ "10.100.0.1/28" ];
+        listenPort = 51820;
+
+        # wg genkey | sudo tee /etc/wireguard/private.key
+        privateKeyFile = "/etc/wireguard/private.key";
+
+        peers = [
+          {
+            # macos
+            publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
+            allowedIPs = [ "10.100.0.2/32" ];
+            persistentKeepalive = 25;
+          }
+        ];
+      };
     };
   };
 
@@ -106,10 +112,10 @@
 
       # USB network interfaces (minimal config)
       "50-usb" = {
-        matchConfig.Name = "usb* enp*s*u*";  # Match USB network interfaces
+        matchConfig.Name = "usb* enp*s*u*"; # Match USB network interfaces
         networkConfig = {
           DHCP = "yes";
-          LinkLocalAddressing = "ipv4";  # Fallback for direct connections
+          LinkLocalAddressing = "ipv4"; # Fallback for direct connections
         };
       };
     };

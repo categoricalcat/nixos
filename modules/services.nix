@@ -107,6 +107,31 @@
     };
     nssmdns4 = true;
     nssmdns6 = true;
+    
+    # Enable Avahi on VPN interface
+    allowInterfaces = [ "wg0" "bond0" ];
+    
+    # Reflect mDNS packets between interfaces (optional)
+    # This allows discovery between VPN clients and local network
+    reflector = true;
+    
+    # Additional settings for VPN usage
+    extraConfig = ''
+      [server]
+      # Allow point-to-point interfaces like VPN
+      allow-point-to-point=yes
+      
+      # Enable IPv4 and IPv6
+      use-ipv4=yes
+      use-ipv6=yes
+      
+      # Cache entries from all interfaces
+      cache-entries-max=4096
+      
+      [reflector]
+      # Enable reflection between all interfaces
+      enable-reflector=yes
+    '';
   };
 
   services.fail2ban.enable = true;
