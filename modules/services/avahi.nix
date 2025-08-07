@@ -6,8 +6,8 @@
     domains = [ "~." ];  # Handle all domains
     fallbackDns = [ "8.8.8.8" "1.1.1.1" ];  # Fallback DNS servers
     extraConfig = ''
-      MulticastDNS=yes
-      DNSStubListenerExtra=172.17.0.1
+      MulticastDNS=no  # Avahi provides mDNS; avoid duplicate responders
+      DNSStubListenerExtra=172.17.0.1  # Docker bridge stub
     '';
   };
   
