@@ -1,15 +1,6 @@
 { config, lib, ... }:
 {
-  # services.resolved = {
-  #   enable = true;  # Enable systemd-resolved for DNS resolution
-  #   dnssec = "false";  # Disable DNSSEC to avoid potential issues
-  #   domains = [ "~." ];  # Handle all domains
-  #   fallbackDns = [ "8.8.8.8" "1.1.1.1" ];  # Fallback DNS servers
-  #   extraConfig = ''
-  #     MulticastDNS=no  # Avahi provides mDNS; avoid duplicate responders
-  #     DNSStubListenerExtra=172.17.0.1  # Docker bridge stub
-  #   '';
-  # };
+  services.resolved.enable = false;
   
   services.avahi = {
     enable = true;  # For zero-config service discovery
