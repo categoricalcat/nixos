@@ -1,15 +1,15 @@
 { config, lib, ... }:
 {
-  services.resolved = {
-    enable = true;  # Enable systemd-resolved for DNS resolution
-    dnssec = "false";  # Disable DNSSEC to avoid potential issues
-    domains = [ "~." ];  # Handle all domains
-    fallbackDns = [ "8.8.8.8" "1.1.1.1" ];  # Fallback DNS servers
-    extraConfig = ''
-      MulticastDNS=no  # Avahi provides mDNS; avoid duplicate responders
-      DNSStubListenerExtra=172.17.0.1  # Docker bridge stub
-    '';
-  };
+  # services.resolved = {
+  #   enable = true;  # Enable systemd-resolved for DNS resolution
+  #   dnssec = "false";  # Disable DNSSEC to avoid potential issues
+  #   domains = [ "~." ];  # Handle all domains
+  #   fallbackDns = [ "8.8.8.8" "1.1.1.1" ];  # Fallback DNS servers
+  #   extraConfig = ''
+  #     MulticastDNS=no  # Avahi provides mDNS; avoid duplicate responders
+  #     DNSStubListenerExtra=172.17.0.1  # Docker bridge stub
+  #   '';
+  # };
   
   services.avahi = {
     enable = true;  # For zero-config service discovery
@@ -26,10 +26,12 @@
     };
 
     allowInterfaces = [
-      "wg0"    # Share services over VPN
+      # "wg0"    # Share services over VPN
       "bond0"  # Share on local network
+      "eno1"   # Primary NIC
+      "enp4s0" # Secondary NIC
     ];
-
+    
     extraServiceFiles = {  # Services to advertise
       ssh = '' 
         <?xml version="1.0" standalone='no'?>

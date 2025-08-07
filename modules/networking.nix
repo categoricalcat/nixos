@@ -10,6 +10,12 @@
     useNetworkd = true;
     useDHCP = false;
 
+    # Set DNS resolvers since systemd-resolved is disabled
+    nameservers = [
+      "1.1.1.1" # Cloudflare
+      "8.8.8.8"  # Google
+    ];
+
     firewall = {
       enable = true;
       allowPing = true;

@@ -23,6 +23,10 @@
 
       log-queries = true;  # For troubleshooting DNS issues
       log-facility = "/var/log/dnsmasq-vpn.log";  # Keep DNS logs separate
+      
+      # Disable mDNS to avoid conflicts with Avahi
+      no-mdns = true;
+      no-hosts = true;
     };
   };
 }
