@@ -1,6 +1,15 @@
 { config, lib, ... }:
 {
-  services.resolved.enable = false;  # Use Avahi exclusively for mDNS
+  services.resolved = {
+    enable = true;  # Enable systemd-resolved for DNS resolution
+    dnssec = "false";  # Disable DNSSEC to avoid potential issues
+    domains = [ "~." ];  # Handle all domains
+    fallbackDns = [ "8.8.8.8" "1.1.1.1" ];  # Fallback DNS servers
+    extraConfig = ''
+      MulticastDNS=yes
+      DNSStubListenerExtra=172.17.0.1
+    '';
+  };
   
   services.avahi = {
     enable = true;  # For zero-config service discovery
