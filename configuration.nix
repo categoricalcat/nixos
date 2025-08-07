@@ -11,11 +11,11 @@
     ./modules/packages.nix
     ./modules/networking.nix
     ./modules/network-performance.nix
-    ./modules/services.nix
+    ./modules/services/services.nix
+    ./modules/services/avahi.nix
     # ./modules/desktop.nix
     ./modules/server-settings.nix
     ./modules/server-mode.nix
-    # ./home.nix
   ];
 
   serverMode.headless = true;

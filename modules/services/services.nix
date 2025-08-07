@@ -98,49 +98,11 @@
     # addKeysToAgent = "confirm";
   };
 
-  services.avahi = {
-    enable = true;
-    nssmdns4 = true;
-    nssmdns6 = true;
-    reflector = true;
-
-    publish = {
-      enable = true;
-      addresses = true;
-      workstation = true;
-      domain = true;
-    };
-
-    allowInterfaces = [
-      "wg0"
-      "bond0"
-    ];
-
-    extraConfig = ''
-      [server]
-      # Allow point-to-point interfaces like VPN
-      allow-point-to-point=yes
-
-      # Enable IPv4 and IPv6
-      use-ipv4=yes
-      use-ipv6=yes
-
-      # Cache entries from all interfaces
-      cache-entries-max=4096
-
-      [reflector]
-      # Enable reflection between all interfaces
-      enable-reflector=yes
-    '';
-  };
-
   services.fail2ban.enable = true;
 
   services.ollama = {
     enable = true;
     acceleration = "rocm";
-    loadModels = [ "deepseek-r1:1.5b" ];
-    # rocmOverrideGfx = "gfx1035";
   };
 
   # Podman configuration (Docker replacement)

@@ -18,8 +18,8 @@ in
   config = lib.mkIf cfg.headless {
     # Disable GUI services when in headless mode
     services.xserver.enable = lib.mkForce false;
-    services.xserver.displayManager.gdm.enable = lib.mkForce false;
-    services.xserver.desktopManager.gnome.enable = lib.mkForce false;
+    services.displayManager.gdm.enable = lib.mkForce false;
+    services.desktopManager.gnome.enable = lib.mkForce false;
     
     # Disable auto-login
     services.displayManager.autoLogin.enable = lib.mkForce false;
