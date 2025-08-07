@@ -10,12 +10,6 @@
     useNetworkd = true;
     useDHCP = false;
 
-    # Set DNS resolvers since systemd-resolved is disabled
-    nameservers = [
-      "8.8.8.8"  # Google
-      "1.1.1.1" # Cloudflare
-    ];
-
     firewall = {
       enable = true;
       allowPing = true;
@@ -74,6 +68,7 @@
   # Systemd network configuration for bonding
   systemd.network = {
     enable = true;
+    wait-online.enable = true;
 
     # Network device configuration
     netdevs = {
@@ -115,7 +110,13 @@
 
       "40-bond0" = {
         matchConfig.Name = "bond0";
-        networkConfig.DHCP = "yes";
+        networkConfig = {
+          DHCP = "yes";
+          DNS = [
+            "8.8.8.8"
+            "1.1.1.1"
+          ];
+        };
         linkConfig = {
           MTUBytes = 1492;
           RequiredForOnline = "carrier";
@@ -132,4 +133,12 @@
       };
     };
   };
+
+  # Provide a static resolver file so lookups work without systemd-resolved
+  # This keeps DNS predictable under systemd-networkd-only setups
+  environment.etc."resolv.conf".text = ''
+    options edns0
+    nameserver 8.8.8.8   # Google
+    nameserver 1.1.1.1   # Cloudflare
+  '';
 }
