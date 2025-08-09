@@ -17,7 +17,7 @@
     };
 
     allowInterfaces = [
-      # "wg0"    # Share services over VPN
+      "wg0"    # Share services over VPN
       "bond0"  # Share on local network
       "eno1"   # Primary NIC
       "enp4s0" # Secondary NIC
