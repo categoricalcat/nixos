@@ -20,7 +20,6 @@
         # 3001
         # 9000
         # 24212
-        5353 # mDNS/Avahi
         25565 # Minecraft server
         # 9090 # Cockpit
       ];
@@ -127,8 +126,7 @@
       "50-usb" = {
         matchConfig.Name = "usb* enp*s*u*"; # Match USB network interfaces
         networkConfig = {
-          DHCP = "yes";
-          LinkLocalAddressing = "ipv4"; # Fallback for direct connections
+          Address = "192.168.100.1/24";
         };
       };
     };

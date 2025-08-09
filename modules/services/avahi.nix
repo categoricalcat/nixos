@@ -7,6 +7,7 @@
     nssmdns4 = true;  # So apps can find .local hostnames
     nssmdns6 = true;  # Same for IPv6
     reflector = true;  # Share services between VPN and LAN
+    openFirewall = true; # "safe" up to LAN
 
     publish = {
       enable = true;  # Let others discover our services
