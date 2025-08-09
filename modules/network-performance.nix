@@ -1,13 +1,11 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
-  # Install essential network tools
-  environment.systemPackages = with pkgs; [
-    ethtool
-    iperf3
-    nethogs
-    iftop
-  ];
 
   # Optimized kernel parameters
   boot.kernel.sysctl = {
