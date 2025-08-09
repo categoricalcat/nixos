@@ -62,5 +62,6 @@
     iperf3
     nethogs
     iftop
+    nmap
   ];
 }
