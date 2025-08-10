@@ -9,6 +9,12 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixowos = {
+      url = "github:yunfachi/nixowos";
+      # Optional:
+      # inputs.nixpkgs.follows = "nixpkgs";
+      # inputs.denix.follows = "denix";
+    };
   };
 
   outputs =
@@ -17,6 +23,7 @@
       nixpkgs,
       home-manager,
       nixos-wsl,
+      nixowos,
       ...
     }@inputs:
     {
@@ -44,6 +51,7 @@
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
           modules = [
+            nixowos.nixosModules.default
             ./configuration.nix
             home-manager.nixosModules.home-manager
             {
@@ -51,6 +59,10 @@
               home-manager.useUserPackages = true;
               home-manager.users.fufud = import ./users/home-fufud.nix;
               home-manager.users.workd = import ./users/home-workd.nix;
+            }
+            {
+              # Enable NixOwOS
+              nixowos.enable = true;
             }
           ];
         };
