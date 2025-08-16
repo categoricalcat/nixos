@@ -199,5 +199,16 @@
     };
   };
 
-  services.nginx.enable = true;
+  services.nginx = {
+    enable = true;
+    virtualHosts = {
+      "fufuwuqi.local" = {
+        serverName = "fufuwuqi.local";
+        forceSSL = false;
+        locations."/" = {
+          return = "200 \" hello, gently, from self :3 \"";
+        };
+      };
+    };
+  };
 }
