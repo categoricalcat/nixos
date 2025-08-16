@@ -11,9 +11,7 @@
     };
     nixowos = {
       url = "github:yunfachi/nixowos";
-      # Optional:
-      # inputs.nixpkgs.follows = "nixpkgs";
-      # inputs.denix.follows = "denix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -31,6 +29,7 @@
         wsl = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
+            nixowos.nixosModules.default
             nixos-wsl.nixosModules.default
             ./modules/wsl.nix
             ./modules/packages.nix
@@ -64,6 +63,14 @@
               # Enable NixOwOS
               nixowos.enable = true;
             }
+          ];
+        };
+      };
+
+      homeConfigurations = {
+        standaloneHomeManagerConfig = home-manager.lib.homeManagerConfiguration {
+          modules = [
+            nixowos.homeModules.default
           ];
         };
       };
