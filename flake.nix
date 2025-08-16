@@ -31,6 +31,7 @@
           modules = [
             nixowos.nixosModules.default
             nixos-wsl.nixosModules.default
+            nixowos.nixosModules.default
             ./modules/wsl.nix
             ./modules/packages.nix
             ./modules/server-mode.nix
@@ -42,6 +43,9 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.users.fufud = import ./users/home-fufud.nix;
+            }
+            {
+              nixowos.enable = true;
             }
           ];
         };
@@ -60,7 +64,6 @@
               home-manager.users.workd = import ./users/home-workd.nix;
             }
             {
-              # Enable NixOwOS
               nixowos.enable = true;
             }
           ];
