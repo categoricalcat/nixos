@@ -175,12 +175,12 @@
   users.users.fufud.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
 
-  # Enable getty on USB serial
-  systemd.services."serial-getty@ttyUSB0" = {
-    enable = true;
-    wantedBy = [ "getty.target" ];
-    serviceConfig.Restart = "always";
-  };
+  # # Enable getty on USB serial
+  # systemd.services."serial-getty@ttyUSB0" = {
+  #   enable = true;
+  #   wantedBy = [ "getty.target" ];
+  #   serviceConfig.Restart = "always";
+  # };
 
   services.cockpit = {
     enable = true;
@@ -206,7 +206,10 @@
         serverName = "fufuwuqi.local";
         forceSSL = false;
         locations."/" = {
-          return = "200 \" hello, gently, from self :3 \"";
+          extraConfig = ''
+            add_header Content-Type text/plain;
+            return 200 "hello, gently, from self :3";
+          '';
         };
       };
     };
