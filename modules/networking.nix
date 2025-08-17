@@ -6,6 +6,13 @@
   networking = {
     hostName = "fufuwuqi";
 
+    nameservers = [
+      "2001:4860:4860::8888" # Google IPv6 DNS
+      "2606:4700:4700::1111" # Cloudflare IPv6 DNS
+      "1.1.1.1" # Cloudflare IPv4 DNS (fallback)
+      "8.8.8.8" # Google IPv4 DNS (fallback)
+    ];
+
     networkmanager.enable = false;
     useNetworkd = true;
     useDHCP = false;
@@ -111,10 +118,6 @@
         matchConfig.Name = "bond0";
         networkConfig = {
           DHCP = "yes";
-          DNS = [
-            "8.8.8.8"
-            "1.1.1.1"
-          ];
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -136,7 +139,9 @@
   # This keeps DNS predictable under systemd-networkd-only setups
   environment.etc."resolv.conf".text = ''
     options edns0
-    nameserver 8.8.8.8   # Google
-    nameserver 1.1.1.1   # Cloudflare
+    nameserver 2001:4860:4860::8888   # Google IPv6
+    nameserver 2606:4700:4700::1111   # Cloudflare IPv6
+    nameserver 8.8.8.8                # Google IPv4 (fallback)
+    nameserver 1.1.1.1                # Cloudflare IPv4 (fallback)
   '';
 }

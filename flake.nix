@@ -54,14 +54,14 @@
           specialArgs = { inherit inputs; };
           modules = [
             nixowos.nixosModules.default
-            ./configuration.nix
             home-manager.nixosModules.home-manager
-            {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.fufud = import ./users/home-fufud.nix;
-              home-manager.users.workd = import ./users/home-workd.nix;
-            }
+            ./configuration.nix
+            # {
+            #   home-manager.useGlobalPkgs = true;
+            #   home-manager.useUserPackages = true;
+            #   home-manager.users.fufud = import ./users/home-fufud.nix;
+            #   home-manager.users.workd = import ./users/home-workd.nix;
+            # }
             {
               nixowos.enable = true;
             }
@@ -69,12 +69,12 @@
         };
       };
 
-      homeConfigurations = {
-        standaloneHomeManagerConfig = home-manager.lib.homeManagerConfiguration {
-          modules = [
-            nixowos.homeModules.default
-          ];
-        };
-      };
+      # homeConfigurations = {
+      #   standaloneHomeManagerConfig = home-manager.lib.homeManagerConfiguration {
+      #     modules = [
+      #       nixowos.homeModules.default
+      #     ];
+      #   };
+      # };
     };
 }
