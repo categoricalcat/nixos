@@ -31,7 +31,6 @@
           modules = [
             nixowos.nixosModules.default
             nixos-wsl.nixosModules.default
-            nixowos.nixosModules.default
             ./modules/wsl.nix
             ./modules/packages.nix
             ./modules/server-mode.nix

@@ -59,7 +59,7 @@ Flake-based modular NixOS configuration for home server use with home-manager in
 
 ```bash
 # Build and switch to configuration
-cd /home/fufud/nixos
+cd /etc/nixos
 sudo nixos-rebuild switch --flake .#fufuwuqi
 
 # Update flake inputs
@@ -69,7 +69,7 @@ nix flake update
 ## Structure
 
 ```
-/home/fufud/nixos/
+/etc/nixos/
 ├── flake.nix              # Flake definitions
 ├── configuration.nix      # Main config for fufuwuqi
 ├── hardware/
