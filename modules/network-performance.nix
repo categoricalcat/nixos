@@ -9,6 +9,13 @@
 
   # Optimized kernel parameters
   boot.kernel.sysctl = {
+    # Prefer IPv6 over IPv4
+    "net.ipv6.conf.all.disable_ipv6" = 0;
+    # Enable IPv6 privacy extensions
+    "net.ipv6.conf.all.use_tempaddr" = 2;
+    # Accept router advertisements
+    "net.ipv6.conf.all.accept_ra" = 1;
+
     # Network buffer tuning (adjusted for your 19GB RAM)
     "net.core.rmem_default" = 262144; # Increased from 131072
     "net.core.rmem_max" = 268435456; # Increased from 134217728

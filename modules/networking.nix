@@ -2,16 +2,23 @@
 
 { config, pkgs, ... }:
 
+let
+  dnsServers = [
+    "2001:4860:4860::8888" # Google IPv6 DNS
+    "2606:4700:4700::1111" # Cloudflare IPv6 DNS
+    # "8.8.8.8" # Google IPv4 DNS (fallback)
+    # "1.1.1.1" # Cloudflare IPv4 DNS (fallback)
+  ];
+in
 {
   networking = {
     hostName = "fufuwuqi";
 
-    nameservers = [
-      "2001:4860:4860::8888" # Google IPv6 DNS
-      "2606:4700:4700::1111" # Cloudflare IPv6 DNS
-      "1.1.1.1" # Cloudflare IPv4 DNS (fallback)
-      "8.8.8.8" # Google IPv4 DNS (fallback)
-    ];
+    nameservers = dnsServers;
+
+    # IPv6 configuration - prefer IPv6 over IPv4
+    enableIPv6 = true;
+    tempAddresses = "enabled"; # Privacy extensions for IPv6
 
     networkmanager.enable = false;
     useNetworkd = true;
@@ -95,11 +102,24 @@
     };
 
     networks = {
+      "20-wlp2s0" = {
+        matchConfig.Name = "wlp2s0";
+        linkConfig = {
+          ActivationPolicy = "down";
+          RequiredForOnline = "no";
+        };
+        networkConfig = {
+          DHCP = "no";
+          IPv6AcceptRA = "no";
+        };
+      };
+
       "30-eno1" = {
         matchConfig.Name = "eno1";
         networkConfig = {
           Bond = "bond0";
           PrimarySlave = true;
+          DNS = dnsServers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -108,7 +128,10 @@
 
       "30-enp4s0" = {
         matchConfig.Name = "enp4s0";
-        networkConfig.Bond = "bond0";
+        networkConfig = {
+          Bond = "bond0";
+          DNS = dnsServers;
+        };
         linkConfig = {
           MTUBytes = 1492;
         };
@@ -118,10 +141,28 @@
         matchConfig.Name = "bond0";
         networkConfig = {
           DHCP = "yes";
+          DNS = dnsServers;
+          IPv6AcceptRA = "yes";
+          LinkLocalAddressing = "ipv6";
         };
         linkConfig = {
           MTUBytes = 1492;
           RequiredForOnline = "carrier";
+        };
+
+        dhcpV4Config = {
+          UseDNS = false;
+          RouteMetric = 20;
+        };
+
+        ipv6AcceptRAConfig = {
+          UseDNS = false;
+          RouteMetric = 10;
+        };
+
+        dhcpV6Config = {
+          UseDNS = false;
+          RouteMetric = 10;
         };
       };
 
@@ -139,9 +180,20 @@
   # This keeps DNS predictable under systemd-networkd-only setups
   environment.etc."resolv.conf".text = ''
     options edns0
-    nameserver 2001:4860:4860::8888   # Google IPv6
-    nameserver 2606:4700:4700::1111   # Cloudflare IPv6
-    nameserver 8.8.8.8                # Google IPv4 (fallback)
-    nameserver 1.1.1.1                # Cloudflare IPv4 (fallback)
+    ${builtins.concatStringsSep "\n    " (map (dns: "nameserver ${dns}") dnsServers)}
+  '';
+
+  # Configure address selection to prefer IPv6
+  environment.etc."gai.conf".text = ''
+    # Prefer IPv6 over IPv4 for address selection
+    # See gai.conf(5) for details
+    precedence ::1/128       50     # localhost (IPv6)
+    precedence ::/0          40     # IPv6 global
+    precedence ::ffff:0:0/96 30     # IPv4-mapped IPv6
+    precedence 2002::/16     20     # 6to4
+    precedence 2001::/32     5      # Teredo
+    precedence fc00::/7      3      # ULA
+    precedence ::/96         1      # IPv4-compatible IPv6
+    precedence ::1/128       50     # localhost
   '';
 }
