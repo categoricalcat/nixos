@@ -95,7 +95,10 @@
           treefmtEval = treefmt-nix.lib.evalModule pkgs {
             projectRootFile = "flake.nix";
             programs = {
-              nixfmt.enable = true;
+              nixfmt = {
+                enable = true;
+                package = pkgs.nixfmt-rfc-style;
+              };
               statix.enable = true;
               deadnix.enable = true;
             };
@@ -106,6 +109,22 @@
 
       # No flake checks for treefmt; enforce via CI using `nix fmt -- --check`
 
-      # No devShell needed for minimal setup
+      # Development shell with Nix language server
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              nil
+              statix
+              deadnix
+              nixfmt-rfc-style
+            ];
+          };
+        }
+      );
     };
 }
