@@ -1,6 +1,6 @@
 # User configuration module
 
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   # User accounts

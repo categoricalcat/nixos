@@ -13,17 +13,23 @@
       url = "github:yunfachi/nixowos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Formatting and linting integration (minimal)
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
     {
-      self,
       nixpkgs,
       home-manager,
       nixos-wsl,
       nixowos,
+      treefmt-nix,
       ...
     }@inputs:
+    let
+      systems = [ "x86_64-linux" ];
+      forAllSystems = nixpkgs.lib.genAttrs systems;
+    in
     {
       nixosConfigurations = {
         wsl = nixpkgs.lib.nixosSystem {
@@ -39,9 +45,11 @@
             ./users/users.nix
             home-manager.nixosModules.home-manager
             {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.fufud = import ./users/home-fufud.nix;
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                users.fufud = import ./users/home-fufud.nix;
+              };
             }
             {
               nixowos.enable = true;
@@ -57,10 +65,12 @@
             home-manager.nixosModules.home-manager
             ./configuration.nix
             {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.fufud = import ./users/home-fufud.nix;
-              home-manager.users.workd = import ./users/home-workd.nix;
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                users.fufud = import ./users/home-fufud.nix;
+                users.workd = import ./users/home-workd.nix;
+              };
             }
             {
               nixowos.enable = true;
@@ -76,5 +86,26 @@
           ];
         };
       };
+
+      # nix fmt uses this (treefmt wrapper)
+      formatter = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          treefmtEval = treefmt-nix.lib.evalModule pkgs {
+            projectRootFile = "flake.nix";
+            programs = {
+              nixfmt.enable = true;
+              statix.enable = true;
+              deadnix.enable = true;
+            };
+          };
+        in
+        treefmtEval.config.build.wrapper
+      );
+
+      # No flake checks for treefmt; enforce via CI using `nix fmt -- --check`
+
+      # No devShell needed for minimal setup
     };
 }

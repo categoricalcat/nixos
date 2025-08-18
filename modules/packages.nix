@@ -1,6 +1,6 @@
 # System packages configuration module
 
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   environment.systemPackages = with pkgs; [

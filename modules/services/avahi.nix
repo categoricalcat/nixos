@@ -1,31 +1,31 @@
-{ config, lib, ... }:
-{
+_: {
   services.resolved.enable = false;
-  
+
   services.avahi = {
-    enable = true;  # For zero-config service discovery
-    nssmdns4 = true;  # So apps can find .local hostnames
-    nssmdns6 = true;  # Same for IPv6
-    reflector = true;  # Share services between VPN and LAN
+    enable = true; # For zero-config service discovery
+    nssmdns4 = true; # So apps can find .local hostnames
+    nssmdns6 = true; # Same for IPv6
+    reflector = true; # Share services between VPN and LAN
     openFirewall = true; # "safe" up to LAN
 
     publish = {
-      enable = true;  # Let others discover our services
-      addresses = true;  # Share our IP for direct connections
-      workstation = true;  # Show up in network browsers
-      domain = true;  # Advertise our .local domain
-      userServices = true;  # Allow user-level service sharing
+      enable = true; # Let others discover our services
+      addresses = true; # Share our IP for direct connections
+      workstation = true; # Show up in network browsers
+      domain = true; # Advertise our .local domain
+      userServices = true; # Allow user-level service sharing
     };
 
     allowInterfaces = [
-      "wg0"    # Share services over VPN
-      "bond0"  # Share on local network
-      "eno1"   # Primary NIC
+      "wg0" # Share services over VPN
+      "bond0" # Share on local network
+      "eno1" # Primary NIC
       "enp4s0" # Secondary NIC
     ];
-    
-    extraServiceFiles = {  # Services to advertise
-      ssh = '' 
+
+    extraServiceFiles = {
+      # Services to advertise
+      ssh = ''
         <?xml version="1.0" standalone='no'?>
         <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
         <service-group>

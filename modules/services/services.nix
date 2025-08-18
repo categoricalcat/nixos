@@ -1,9 +1,7 @@
 # Services configuration module
 
 {
-  config,
   pkgs,
-  lib,
   ...
 }:
 

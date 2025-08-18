@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}:
-{
+_: {
   # OpenSSH daemon
   services.openssh = {
     enable = true;

@@ -1,5 +1,4 @@
-{ config, pkgs, ... }:
-{
+_: {
   services.dnsmasq = {
     enable = true; # Provides DNS for VPN clients
     settings = {

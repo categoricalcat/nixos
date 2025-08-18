@@ -5,14 +5,15 @@
 - [ ] Secure Cockpit with TLS via `security.acme` and/or reverse proxy in `services.nginx`; set `AllowUnencrypted = false`; restrict `allowed-origins`.
 - [ ] SSH: set `PasswordAuthentication = no` once keys+2FA are confirmed; optionally add `Match` blocks to restrict by `AddressFamily`/`From`.
 - [x] README: fix path to `/etc/nixos` and add brief usage notes for flake builds.
-- [ ] Remove `docker` group from users; keep `podman` only.
+- [x] Remove `docker` group from users; keep `podman` only.
 - [x] WSL: deduplicate `nixowos.nixosModules.default` import.
 
 ### Security
 
 - [ ] Integrate `sops-nix` or `agenix` for secrets (WireGuard keys, future tokens).
 - [ ] Fail2ban: add nginx/cockpit jails if exposing HTTP(S); tune bans.
-- [ ] SSH: keep 2FA, `MaxAuthTries = 3`, `LoginGraceTime = 30s` (already present/close; re-validate values).
+- [x] SSH: keep 2FA, `MaxAuthTries = 3`, `LoginGraceTime = 30s` (already present/close; re-validate values).
+- [ ] Enable audit logs: `security.auditd.enable = true` and consider basic audit rules.
 
 ### Networking
 
@@ -20,36 +21,35 @@
 - [x] Import `modules/services/dnsmasq.nix` for VPN-scoped DNS on `wg0`.
 - [ ] WireGuard: consider an IPv6 ULA prefix for clients and Router Advertisements; validate firewall for IPv6.
 - [ ] Bonding: relax `MIIMonitorSec` to ~1s and add modest `UpDelaySec`/`DownDelaySec` to reduce flapping.
+- [ ] Replace static `resolv.conf` with `services.resolved` integrated with `systemd-networkd`; document DNS fallbacks and DoT if desired.
+- [ ] Add log rotation for `/var/log/dnsmasq-vpn.log` via `services.logrotate`.
 
 ### Containers (Podman)
 
-- [ ] Switch container log driver to `journald` for central logging.
+- [x] Switch container log driver to `journald` for central logging.
 - [ ] Consider `podman-auto-update` with units/healthchecks for long-running services.
 - [ ] Re-validate MTU 1492 end-to-end (bond0 ↔ WAN ↔ VPN/containers) and document rationale.
+- [ ] Enable `virtualisation.podman.autoUpdate.enable = true;` and add healthchecks in units/compose for critical containers.
+- [ ] Set `events_logger = "journald"` in `containers.conf` for complete journal integration.
 
 ### Performance and reliability
 
-- [ ] ZRAM: tune `zramSwap.memoryPercent` to 25–50 unless workloads need more.
-- [ ] Remove `discard` from `/` mount options; rely on weekly `fstrim`.
-- [ ] Review aggressive TCP buffer/sysctl sizing; document rationale per setting.
 - [ ] Add `boot.loader.systemd-boot.configurationLimit = 10`.
-
-### GPU / Compute (ROCm)
-
-- [ ] Gate graphics/GUI bits when `serverMode.headless = true`; keep only compute essentials (ROCm, OpenCL) for Ollama.
-- [x] Keep `/opt/rocm` tmpfiles symlink for consumers (Ollama) – already present.
+- [ ] Add kernel safety nets: `kernel.panic = 10`, `kernel.panic_on_oops = 1`.
+- [ ] Raise inotify limits for dev/containers: `fs.inotify.max_user_watches`/`max_user_instances`.
+- [ ] Rate-limit journald bursts: `RateLimitIntervalSec=30s`, `RateLimitBurst=1000`.
 
 ### Nix / Flakes / DevEx
 
-- [ ] Add pre-commit with `statix`, `deadnix`, and one formatter (`nixfmt-rfc-style` or `alejandra`) via `treefmt-nix`.
-- [ ] CI: run `nix flake check`, build `.#nixosConfigurations.{fufuwuqi,wsl}`, and lint (`statix`, `deadnix`).
-- [ ] DevShell with `nil` (Nix LSP), lint tools, and `pre-commit`.
-- [ ] Optional: deploy tooling (`deploy-rs` or `colmena`).
+- [x] Add pre-commit with `statix`, `deadnix`, and one formatter (`nixfmt-rfc-style` or `alejandra`) via `treefmt-nix`.
+- [x] CI: run `nix flake check`, build `.#nixosConfigurations.{fufuwuqi,wsl}`, and lint (`statix`, `deadnix`).
+- [x] DevShell with `nil` (Nix LSP), lint tools, and `pre-commit`.
 
 ### Documentation
 
 - [ ] Add a short Architecture section (boot, networking, services, server-mode; how `serverMode.headless` gates features).
 - [ ] Keep a minimal `CHANGES.md` for operational changes (ports, exposure, services).
+- [ ] Update README `Users` section to reflect `podman` (not `docker`) access.
 
 ### Cleanup and consistency
 
@@ -58,8 +58,6 @@
 
 ### System-specific
 
-- [ ] Enable `security.tpm2` and `services.fwupd` for firmware updates.
-- [ ] Ensure `hardware.enableRedistributableFirmware = true;` so AMD microcode updates apply.
+- [x] Enable `security.tpm2` and `services.fwupd` for firmware updates.
+- [x] Ensure `hardware.enableRedistributableFirmware = true;` so AMD microcode updates apply.
 - [ ] Cockpit metrics: enable `services.pcp` and optionally `services.pmlogger`.
-
-Note: Items with [x] are already implemented in this repo; others are recommended next steps.

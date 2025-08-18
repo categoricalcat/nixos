@@ -1,6 +1,6 @@
 # Locale and internationalization configuration module
 
-{ config, pkgs, ... }:
+_:
 
 {
   # Time zone

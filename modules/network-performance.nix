@@ -1,6 +1,4 @@
 {
-  config,
-  pkgs,
   lib,
   ...
 }:
@@ -56,19 +54,17 @@
     "tcp_htcp" # Fallback congestion control
   ];
 
-  # SSD-specific optimizations (for your Crucial P3 SSD)
   services.fstrim.enable = true;
   fileSystems."/".options = [
     "noatime"
     "nodiratime"
-    "discard"
   ];
 
   # ZRAM swap configuration (more efficient than disk swap)
   zramSwap = {
     enable = true;
-    memoryPercent = 100; # Uses 50% RAM by default
-    algorithm = "zstd"; # Best compression for Ryzen
+    memoryPercent = 75;
+    algorithm = "zstd";
   };
 
 }

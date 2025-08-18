@@ -21,7 +21,7 @@
 
   # Nixpkgs configuration to handle deprecated packages
   nixpkgs.overlays = [
-    (final: prev: {
+    (_final: prev: {
       androidndkPkgs_23b = prev.androidndkPkgs_23;
     })
   ];

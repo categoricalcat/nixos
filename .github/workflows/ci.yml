@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: nix flake check
+        run: nix flake check --print-build-logs
+
+      - name: Enforce formatting and lint (treefmt-nix)
+        run: nix fmt -- --check
+
+      - name: Build NixOS - fufuwuqi
+        run: nix build .#nixosConfigurations.fufuwuqi.config.system.build.toplevel
+
+      - name: Build NixOS - wsl
+        run: nix build .#nixosConfigurations.wsl.config.system.build.toplevel
+
+      # treefmt-nix check is wired into `nix flake check`
+

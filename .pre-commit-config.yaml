@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/numtide/treefmt-pre-commit
+    rev: v1.6.1
+    hooks:
+      - id: treefmt
+        additional_dependencies: []
+  - repo: local
+    hooks:
+      - id: statix
+        name: statix
+        entry: bash -lc 'nix run nixpkgs#statix -- check'
+        language: system
+        files: \.(nix|nix.in)$
+      - id: deadnix
+        name: deadnix
+        entry: bash -lc 'nix run nixpkgs#deadnix --'
+        language: system
+        files: \.(nix|nix.in)$
+
