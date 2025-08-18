@@ -17,6 +17,9 @@
     emacs
     git
     gh
+    nil
+    statix
+    deadnix
     nixfmt-rfc-style
     direnv
     vscode-fhs

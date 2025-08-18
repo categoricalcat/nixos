@@ -116,14 +116,7 @@
           pkgs = import nixpkgs { inherit system; };
         in
         {
-          default = pkgs.mkShell {
-            packages = with pkgs; [
-              nil
-              statix
-              deadnix
-              nixfmt-rfc-style
-            ];
-          };
+          default = pkgs.mkShell { };
         }
       );
     };
