@@ -81,7 +81,13 @@
 
   hardware.amdgpu.opencl.enable = true;
   hardware.amdgpu.amdvlk.enable = true;
+  hardware.cpu.amd.updateMicrocode = true;
+  hardware.enableRedistributableFirmware = true;
   hardware.graphics = {
+    enable = true;
+  };
+
+  security.tpm2 = {
     enable = true;
   };
 

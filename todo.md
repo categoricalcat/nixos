@@ -60,7 +60,6 @@
 
 - [ ] Enable `security.tpm2` and `services.fwupd` for firmware updates.
 - [ ] Ensure `hardware.enableRedistributableFirmware = true;` so AMD microcode updates apply.
-- [ ] Optionally consider `pkgs.linuxPackages_lts` for stability; pin latest only if needed for AMDGPU.
 - [ ] Cockpit metrics: enable `services.pcp` and optionally `services.pmlogger`.
 
 Note: Items with [x] are already implemented in this repo; others are recommended next steps.

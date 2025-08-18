@@ -14,21 +14,14 @@
     ./dnsmasq.nix
   ];
 
-  # Printing service
-  # services.printing.enable = true;  # Disabled - not typically needed on servers
-
-  # Code-server
   services.code-server.enable = true;
 
-  # PAM configuration for SSH with Google Authenticator
   security.pam = {
     services.sshd.googleAuthenticator.enable = true;
   };
 
-  # MTR network diagnostic tool
   programs.mtr.enable = true;
 
-  # SSH agent - enable at system level
   programs.ssh = {
     startAgent = true;
     # enable = true;
@@ -84,11 +77,11 @@
 
     containersConf.settings = {
       containers = {
-        dns_servers = [
-          "8.8.8.8"
-          "1.1.1.1"
-        ];
-        log_driver = "json-file";
+        # dns_servers = [
+        #   "8.8.8.8"
+        #   "1.1.1.1"
+        # ];
+        log_driver = "journald";
         log_size_max = 10485760; # 10MB in bytes (10 * 1024 * 1024)
         default_ulimits = [
           "nofile=65536:65536"
@@ -113,15 +106,14 @@
   users.users.fufud.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
 
-  # # Enable getty on USB serial
-  # systemd.services."serial-getty@ttyUSB0" = {
-  #   enable = true;
-  #   wantedBy = [ "getty.target" ];
-  #   serviceConfig.Restart = "always";
-  # };
+  systemd.services."serial-getty@ttyUSB0" = {
+    enable = false;
+    wantedBy = [ "getty.target" ];
+    serviceConfig.Restart = "always";
+  };
 
   services.cockpit = {
-    enable = true;
+    enable = false;
     port = 9090;
     allowed-origins = [
       "https://fufuwuqi.local:9090"
@@ -152,4 +144,6 @@
       };
     };
   };
+
+  services.fwupd.enable = true;
 }

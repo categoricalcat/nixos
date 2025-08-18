@@ -12,7 +12,6 @@
       "wheel"
       "render"
       "video"
-      "docker"
       "dialout"
     ];
     packages = with pkgs; [
@@ -25,7 +24,6 @@
     shell = pkgs.zsh;
     extraGroups = [
       "wheel"
-      "docker"
       "dialout"
     ];
     packages = with pkgs; [
