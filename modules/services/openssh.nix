@@ -22,7 +22,7 @@ _: {
       AllowAgentForwarding = true; # Allow SSH agent forwarding
       AllowStreamLocalForwarding = "yes"; # Allow Unix domain socket forwarding
       PermitTunnel = "yes"; # Allow tun device forwarding (VPN over SSH)
-      GatewayPorts = "clientspecified"; # Allow remote hosts to connect to forwarded ports
+      GatewayPorts = "yes"; # Allow remote hosts to connect to forwarded ports
       # Options for GatewayPorts:
       # - "no" = only loopback addresses can connect (default)
       # - "yes" = all interfaces can connect
