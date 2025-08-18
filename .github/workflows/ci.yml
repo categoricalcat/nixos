@@ -23,7 +23,7 @@ jobs:
         run: nix flake check --print-build-logs
 
       - name: Enforce formatting and lint (treefmt-nix)
-        run: nix fmt -- --check
+        run: nix fmt -- --ci
 
       - name: Build NixOS - fufuwuqi
         run: nix build .#nixosConfigurations.fufuwuqi.config.system.build.toplevel
