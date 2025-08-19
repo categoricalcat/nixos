@@ -1,4 +1,4 @@
-_: {
+{ dnsServers, ... }: {
   services.dnsmasq = {
     enable = true; # Provides DNS for VPN clients
     settings = {
@@ -11,12 +11,8 @@ _: {
 
       no-resolv = true; # Use our DNS servers instead of system ones
 
-      server = [
-        "2606:4700:4700::1111" # Cloudflare IPv6 DNS
-        "2001:4860:4860::8888" # Google IPv6 DNS
-        "1.1.1.1" # Primary: Cloudflare for speed
-        "8.8.8.8" # Backup: Google for reliability
-      ];
+      # Use the same DNS servers as defined in networking.nix
+      server = dnsServers;
 
       domain = "vpn"; # Makes all VPN clients part of .vpn domain
       local = "/vpn/"; # Keeps VPN DNS queries private

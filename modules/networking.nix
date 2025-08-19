@@ -1,16 +1,18 @@
 # Networking configuration module
 
-_:
+{ lib, ... }:
 
 let
   dnsServers = [
     "2001:4860:4860::8888" # Google IPv6 DNS
     "2606:4700:4700::1111" # Cloudflare IPv6 DNS
-    # "8.8.8.8" # Google IPv4 DNS (fallback)
-    # "1.1.1.1" # Cloudflare IPv4 DNS (fallback)
+    "8.8.8.8" # Google IPv4 DNS (fallback)
+    "1.1.1.1" # Cloudflare IPv4 DNS (fallback)
   ];
 in
 {
+  # Export DNS servers for use by other modules
+  _module.args.dnsServers = dnsServers;
   networking = {
     hostName = "fufuwuqi";
 
@@ -154,11 +156,26 @@ in
       "40-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
-          DHCP = "yes";
+          # Disable DHCP completely
+          DHCP = "no";
           DNS = dnsServers;
+
+          # Still accept Router Advertisements for IPv6 SLAAC
           IPv6AcceptRA = "yes";
           LinkLocalAddressing = "ipv6";
+
+          # Add static IPv4 address
+          Address = [
+            "192.168.1.40/24"
+            "fe80::40/64"
+          ];
+
+          Gateway = [
+            "192.168.1.1"
+            "fe80::1"
+          ];
         };
+
         linkConfig = {
           MTUBytes = 1492;
           RequiredForOnline = "carrier";
@@ -172,12 +189,14 @@ in
         ipv6AcceptRAConfig = {
           UseDNS = false;
           RouteMetric = 10;
+          UseGateway = true;
         };
 
         dhcpV6Config = {
           UseDNS = false;
           RouteMetric = 10;
         };
+
       };
 
       # USB network interfaces (minimal config)
