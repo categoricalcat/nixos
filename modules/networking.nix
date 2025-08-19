@@ -44,6 +44,12 @@ in
       ];
 
       trustedInterfaces = [ "wg0" ];
+
+      # Allow LAN clients on bond0 to query dnsmasq (TCP/UDP 53)
+      interfaces.bond0 = {
+        allowedTCPPorts = [ 53 ];
+        allowedUDPPorts = [ 53 ];
+      };
     };
 
     nat = {
@@ -62,15 +68,14 @@ in
 
         peers = [
           {
-            # macos
             publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
-            allowedIPs = [ "10.100.0.2/32" ];
+            allowedIPs = [ "10.100.0.2/32" ]; # macos
             persistentKeepalive = 25;
           }
           {
-            # windows
+
             publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
-            allowedIPs = [ "10.100.0.3/32" ];
+            allowedIPs = [ "10.100.0.3/32" ]; # windows
             persistentKeepalive = 25;
           }
         ];

@@ -2,9 +2,9 @@ _: {
   services.dnsmasq = {
     enable = true; # Provides DNS for VPN clients
     settings = {
-      interface = [ "wg0" ]; # For security, only serve DNS on VPN
+      interface = [ "wg0" "bond0" ]; # Serve DNS on VPN and LAN
       bind-interfaces = true; # Prevents DNS leaks to other interfaces
-      listen-address = [ "10.100.0.1" ]; # VPN server address
+      # No listen-address: bind on all addresses of listed interfaces
 
       no-resolv = true; # Use our DNS servers instead of system ones
 
