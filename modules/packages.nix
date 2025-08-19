@@ -25,6 +25,7 @@
     vscode-fhs
     tree
     fd # Fast file finder, works well with fzf
+    k6
 
     # Container tools (Podman)
     buildah # Container image builder (docker buildx alternative)
