@@ -66,5 +66,6 @@
     nethogs
     iftop
     nmap
+    traceroute
   ];
 }

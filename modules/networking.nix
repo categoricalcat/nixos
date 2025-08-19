@@ -76,6 +76,15 @@ in
         ];
       };
     };
+
+    # Ensure the VPN server IP does not resolve to localhost
+    # and gives a stable hostname for tools like traceroute
+    hosts = {
+      "10.100.0.1" = [
+        "fufuwuqi.vpn"
+        "fufuwuqi"
+      ];
+    };
   };
 
   # Systemd network configuration for bonding
