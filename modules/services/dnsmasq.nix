@@ -2,13 +2,18 @@ _: {
   services.dnsmasq = {
     enable = true; # Provides DNS for VPN clients
     settings = {
-      interface = [ "wg0" "bond0" ]; # Serve DNS on VPN and LAN
+      interface = [
+        "wg0"
+        "bond0"
+      ]; # Serve DNS on VPN and LAN
       bind-interfaces = true; # Prevents DNS leaks to other interfaces
       # No listen-address: bind on all addresses of listed interfaces
 
       no-resolv = true; # Use our DNS servers instead of system ones
 
       server = [
+        "2606:4700:4700::1111" # Cloudflare IPv6 DNS
+        "2001:4860:4860::8888" # Google IPv6 DNS
         "1.1.1.1" # Primary: Cloudflare for speed
         "8.8.8.8" # Backup: Google for reliability
       ];
