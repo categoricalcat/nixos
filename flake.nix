@@ -13,8 +13,12 @@
       url = "github:yunfachi/nixowos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Formatting and linting integration (minimal)
     treefmt-nix.url = "github:numtide/treefmt-nix";
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -24,6 +28,7 @@
       nixos-wsl,
       nixowos,
       treefmt-nix,
+      sops-nix,
       ...
     }@inputs:
     let
@@ -61,19 +66,19 @@
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
           modules = [
+            sops-nix.nixosModules.sops
             nixowos.nixosModules.default
             home-manager.nixosModules.home-manager
             ./configuration.nix
             {
+              nixowos.enable = true;
+
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 users.fufud = import ./users/home-fufud.nix;
                 users.workd = import ./users/home-workd.nix;
               };
-            }
-            {
-              nixowos.enable = true;
             }
           ];
         };
