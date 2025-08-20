@@ -6,8 +6,8 @@ let
   dnsServers = [
     "2001:4860:4860::8888" # Google IPv6 DNS
     "2606:4700:4700::1111" # Cloudflare IPv6 DNS
-    "8.8.8.8" # Google IPv4 DNS (fallback)
-    "1.1.1.1" # Cloudflare IPv4 DNS (fallback)
+    "8.8.8.8" # Google IPv4 DNS
+    "1.1.1.1" # Cloudflare IPv4 DNS
   ];
 in
 {
@@ -52,6 +52,12 @@ in
         allowedTCPPorts = [ 53 ];
         allowedUDPPorts = [ 53 ];
       };
+
+      # Allow VPN clients on wg0 to query dnsmasq
+      interfaces.wg0 = {
+        allowedTCPPorts = [ 53 ];
+        allowedUDPPorts = [ 53 ];
+      };
     };
 
     nat = {
@@ -62,7 +68,12 @@ in
 
     wireguard.interfaces = {
       wg0 = {
-        ips = [ "10.100.0.1/28" ];
+        # IPv6 ULA: fd00::/8 prefix, using fd00:100::/64
+        # IPv4: 10.100.0.0/24 for VPN
+        ips = [
+          "fd00:100::1/64"
+          "10.100.0.1/24"
+        ];
         listenPort = 51820;
         mtu = 1492;
 
@@ -71,22 +82,29 @@ in
         peers = [
           {
             publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
-            allowedIPs = [ "10.100.0.2/32" ]; # macos
+            allowedIPs = [
+              "fd00:100::2/128"
+              "10.100.0.2/32"
+            ];
             persistentKeepalive = 25;
           }
           {
-
             publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
-            allowedIPs = [ "10.100.0.3/32" ]; # windows
+            allowedIPs = [
+              "fd00:100::3/128"
+              "10.100.0.3/32"
+            ];
             persistentKeepalive = 25;
           }
         ];
       };
     };
 
-    # Ensure the VPN server IP does not resolve to localhost
-    # and gives a stable hostname for tools like traceroute
     hosts = {
+      "fd00:100::1" = [
+        "fufuwuqi.vpn"
+        "fufuwuqi"
+      ];
       "10.100.0.1" = [
         "fufuwuqi.vpn"
         "fufuwuqi"
@@ -156,23 +174,15 @@ in
       "40-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
-          # Disable DHCP completely
           DHCP = "no";
           DNS = dnsServers;
 
-          # Still accept Router Advertisements for IPv6 SLAAC
-          IPv6AcceptRA = "yes";
-          LinkLocalAddressing = "ipv6";
+          IPv6AcceptRA = "no";
+          LinkLocalAddressing = "yes";
 
-          # Add static IPv4 address
           Address = [
+            "2804:41fc:802d:52f0::40/64"
             "192.168.1.40/24"
-            "fe80::40/64"
-          ];
-
-          Gateway = [
-            "192.168.1.1"
-            "fe80::1"
           ];
         };
 
@@ -181,21 +191,18 @@ in
           RequiredForOnline = "carrier";
         };
 
-        dhcpV4Config = {
-          UseDNS = false;
-          RouteMetric = 20;
-        };
-
-        ipv6AcceptRAConfig = {
-          UseDNS = false;
-          RouteMetric = 10;
-          UseGateway = true;
-        };
-
-        dhcpV6Config = {
-          UseDNS = false;
-          RouteMetric = 10;
-        };
+        routes = [
+          {
+            Gateway = "fe80::1";
+            GatewayOnLink = true;
+            Metric = 5;
+          }
+          {
+            Gateway = "192.168.1.1";
+            GatewayOnLink = true;
+            Metric = 1000;
+          }
+        ];
 
       };
 
@@ -211,8 +218,9 @@ in
 
   # Provide a static resolver file so lookups work without systemd-resolved
   # This keeps DNS predictable under systemd-networkd-only setups
+  # single-request-reopen
   environment.etc."resolv.conf".text = ''
-    options edns0
+    options edns0 inet6
     ${builtins.concatStringsSep "\n    " (map (dns: "nameserver ${dns}") dnsServers)}
   '';
 

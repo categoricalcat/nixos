@@ -17,7 +17,10 @@
       domain = "vpn"; # Makes all VPN clients part of .vpn domain
       local = "/vpn/"; # Keeps VPN DNS queries private
 
-      address = "/fufuwuqi.vpn/10.100.0.1"; # Let VPN clients find server by name
+      address = [
+        "/fufuwuqi.vpn/fd00:100::1"
+        "/fufuwuqi.vpn/10.100.0.1"
+      ];
 
       cache-size = 1000; # Reduces latency for repeated queries
 
