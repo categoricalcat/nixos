@@ -26,10 +26,10 @@ jobs:
         run: nix fmt -- --ci
 
       - name: Build NixOS - fufuwuqi
-        run: nix build .#nixosConfigurations.fufuwuqi.config.system.build.toplevel
+        run: nix eval --raw .#nixosConfigurations.fufuwuqi.config.system.build.toplevel.drvPath
 
       - name: Build NixOS - wsl
-        run: nix build .#nixosConfigurations.wsl.config.system.build.toplevel
+        run: nix eval --raw .#nixosConfigurations.wsl.config.system.build.toplevel.drvPath
 
       # treefmt-nix check is wired into `nix flake check`
 
