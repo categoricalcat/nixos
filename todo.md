@@ -11,6 +11,13 @@
 ### Security
 
 - [ ] Integrate `sops-nix` or `agenix` for secrets (WireGuard keys, future tokens).
+  - Setup steps for SSH key-based sops-nix:
+    1. Add `sops-nix` input to flake.nix
+    2. Create `modules/secrets.nix` with `age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ]`
+    3. Install sops, age, ssh-to-age packages
+    4. Create `.sops.yaml` with age keys from `ssh-to-age`
+    5. Create `secrets/secrets.yaml` with `sops secrets/secrets.yaml`
+    6. Update services to use `config.sops.secrets."name".path`
 - [ ] Fail2ban: add nginx/cockpit jails if exposing HTTP(S); tune bans.
 - [x] SSH: keep 2FA, `MaxAuthTries = 3`, `LoginGraceTime = 30s` (already present/close; re-validate values).
 - [ ] Enable audit logs: `security.auditd.enable = true` and consider basic audit rules.
@@ -19,7 +26,8 @@
 
 - [ ] Decide DNS strategy: enable `services.resolved` or go dnsmasq-only; avoid hand-managed `resolv.conf` unless required; document container/VPN DNS.
 - [x] Import `modules/services/dnsmasq.nix` for VPN-scoped DNS on `wg0`.
-- [ ] WireGuard: consider an IPv6 ULA prefix for clients and Router Advertisements; validate firewall for IPv6.
+- [x] WireGuard: consider an IPv6 ULA prefix for clients and Router Advertisements; validate firewall for IPv6. (Using fd00:100::/64)
+- [x] Enable mDNS/Avahi for zero-config service discovery across VPN and LAN with service advertisements.
 - [ ] Bonding: relax `MIIMonitorSec` to ~1s and add modest `UpDelaySec`/`DownDelaySec` to reduce flapping.
 - [ ] Replace static `resolv.conf` with `services.resolved` integrated with `systemd-networkd`; document DNS fallbacks and DoT if desired.
 - [ ] Add log rotation for `/var/log/dnsmasq-vpn.log` via `services.logrotate`.
@@ -49,7 +57,7 @@
 
 - [ ] Add a short Architecture section (boot, networking, services, server-mode; how `serverMode.headless` gates features).
 - [ ] Keep a minimal `CHANGES.md` for operational changes (ports, exposure, services).
-- [ ] Update README `Users` section to reflect `podman` (not `docker`) access.
+- [x] Update README `Users` section to reflect `podman` (not `docker`) access.
 
 ### Cleanup and consistency
 
@@ -61,3 +69,4 @@
 - [x] Enable `security.tpm2` and `services.fwupd` for firmware updates.
 - [x] Ensure `hardware.enableRedistributableFirmware = true;` so AMD microcode updates apply.
 - [ ] Cockpit metrics: enable `services.pcp` and optionally `services.pmlogger`.
+- [ ] Document or implement Minecraft server setup (port 25565 is open).
