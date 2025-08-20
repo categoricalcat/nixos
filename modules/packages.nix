@@ -22,6 +22,7 @@
     deadnix
     nixfmt-rfc-style
     direnv
+    nix-direnv
     vscode-fhs
     tree
     fd # Fast file finder, works well with fzf

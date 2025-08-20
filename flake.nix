@@ -50,14 +50,13 @@
             ./users/users.nix
             home-manager.nixosModules.home-manager
             {
+              nixowos.enable = true;
+
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 users.fufud = import ./users/home-fufud.nix;
               };
-            }
-            {
-              nixowos.enable = true;
             }
           ];
         };
