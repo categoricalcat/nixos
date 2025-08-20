@@ -178,7 +178,7 @@ in
           DNS = dnsServers;
 
           IPv6AcceptRA = "no";
-          LinkLocalAddressing = "yes";
+          LinkLocalAddressing = "ipv6";
 
           Address = [
             "2804:41fc:802d:52f0::40/64"
