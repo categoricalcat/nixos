@@ -1,4 +1,5 @@
-{ dnsServers, ... }: {
+{ dnsServers, ... }:
+{
   services.dnsmasq = {
     enable = true; # Provides DNS for VPN clients
     settings = {

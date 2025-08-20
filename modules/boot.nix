@@ -19,7 +19,7 @@
       # Dual-stack setup - enable both IPv4 and IPv6 forwarding
       "net.ipv4.ip_forward" = 1;
       "net.ipv6.conf.all.forwarding" = 1;
-      
+
       # WireGuard VPN specific settings
       "net.ipv4.conf.wg0.forwarding" = 1;
       "net.ipv6.conf.wg0.forwarding" = 1;

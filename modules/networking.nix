@@ -1,6 +1,6 @@
 # Networking configuration module
 
-{ lib, ... }:
+_:
 
 let
   dnsServers = [
