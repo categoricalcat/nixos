@@ -11,7 +11,16 @@ in
 {
   _module.args.dnsServers = dnsServers;
 
-  services.resolved.enable = true;
+  services.resolved = {
+    enable = true;
+    dnsovertls = "opportunistic";
+    dnssec = "allow-downgrade";
+    fallbackDns = dnsServers;
+    llmnr = "false";
+    extraConfig = ''
+      MulticastDNS=yes
+    '';
+  };
 
   networking = {
     hostName = "fufuwuqi";
@@ -175,7 +184,7 @@ in
         networkConfig = {
           DHCP = "no";
           DNS = dnsServers;
-
+          MulticastDNS = "yes";
           IPv6AcceptRA = "no";
           LinkLocalAddressing = "ipv6";
 

@@ -24,12 +24,12 @@
 
 ### Networking
 
-- [ ] Decide DNS strategy: enable `services.resolved` or go dnsmasq-only; avoid hand-managed `resolv.conf` unless required; document container/VPN DNS.
+- [x] Decide DNS strategy: enable `services.resolved` or go dnsmasq-only; avoid hand-managed `resolv.conf` unless required; document container/VPN DNS.
 - [x] Import `modules/services/dnsmasq.nix` for VPN-scoped DNS on `wg0`.
 - [x] WireGuard: consider an IPv6 ULA prefix for clients and Router Advertisements; validate firewall for IPv6. (Using fd00:100::/64)
 - [x] Enable mDNS/Avahi for zero-config service discovery across VPN and LAN with service advertisements.
 - [ ] Bonding: relax `MIIMonitorSec` to ~1s and add modest `UpDelaySec`/`DownDelaySec` to reduce flapping.
-- [ ] Replace static `resolv.conf` with `services.resolved` integrated with `systemd-networkd`; document DNS fallbacks and DoT if desired.
+- [x] Replace static `resolv.conf` with `services.resolved` integrated with `systemd-networkd`; document DNS fallbacks and DoT if desired.
 - [ ] Add log rotation for `/var/log/dnsmasq-vpn.log` via `services.logrotate`.
 
 ### Containers (Podman)
