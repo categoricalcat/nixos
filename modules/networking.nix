@@ -74,40 +74,6 @@ in
       internalInterfaces = [ "wg0" ];
     };
 
-    wireguard.interfaces = {
-      wg0 = {
-        # IPv6 ULA: fd00::/8 prefix, using fd00:100::/64
-        # IPv4: 10.100.0.0/24 for VPN
-        ips = [
-          "fd00:100::1/64"
-          "10.100.0.1/24"
-        ];
-        listenPort = 51820;
-        mtu = 1492;
-
-        privateKeyFile = "/etc/wireguard/private.key"; # wg genkey | sudo tee /etc/wireguard/private.key
-
-        peers = [
-          {
-            publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
-            allowedIPs = [
-              "fd00:100::2/128"
-              "10.100.0.2/32"
-            ];
-            persistentKeepalive = 25;
-          }
-          {
-            publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
-            allowedIPs = [
-              "fd00:100::3/128"
-              "10.100.0.3/32"
-            ];
-            persistentKeepalive = 25;
-          }
-        ];
-      };
-    };
-
     hosts = {
       "fd00:100::1" = [
         "fufuwuqi.vpn"
@@ -120,12 +86,10 @@ in
     };
   };
 
-  # Systemd network configuration for bonding
   systemd.network = {
     enable = true;
     wait-online.enable = true;
 
-    # Network device configuration
     netdevs = {
       "10-bond0" = {
         netdevConfig = {
@@ -140,6 +104,35 @@ in
           UpDelaySec = 0;
           DownDelaySec = 0;
         };
+      };
+      "30-wg0" = {
+        netdevConfig = {
+          Kind = "wireguard";
+          Name = "wg0";
+          MTUBytes = 1492;
+        };
+        wireguardConfig = {
+          PrivateKeyFile = "/etc/wireguard/private.key";
+          ListenPort = 51820;
+        };
+        wireguardPeers = [
+          {
+            PublicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
+            AllowedIPs = [
+              "fd00:100::2/128"
+              "10.100.0.2/32"
+            ];
+            PersistentKeepalive = 25;
+          }
+          {
+            PublicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
+            AllowedIPs = [
+              "fd00:100::3/128"
+              "10.100.0.3/32"
+            ];
+            PersistentKeepalive = 25;
+          }
+        ];
       };
     };
 
@@ -214,19 +207,37 @@ in
 
       };
 
-      # USB network interfaces (minimal config)
       "50-usb" = {
-        matchConfig.Name = "usb* enp*s*u*"; # Match USB network interfaces
+        matchConfig.Name = "usb* enp*s*u*";
         networkConfig = {
           Address = "192.168.100.1/24";
+        };
+      };
+
+      "60-wg0" = {
+        matchConfig.Name = "wg0";
+        address = [
+          "fd00:100::1/64"
+          "10.100.0.1/24"
+        ];
+        networkConfig = {
+          DHCP = "no";
+          IPv6AcceptRA = "no";
+          DNS = [
+            "fd00:100::1"
+            "10.100.0.1"
+          ];
+          Domains = [ "~vpn" ];
+          DNSDefaultRoute = false;
+          MulticastDNS = "yes";
+        };
+        linkConfig = {
+          MTUBytes = 1492;
         };
       };
     };
   };
 
-  # resolv.conf is managed by systemd-resolved now
-
-  # Configure address selection to prefer IPv6
   environment.etc."gai.conf".text = ''
     # Prefer IPv6 over IPv4 for address selection
     # See gai.conf(5) for details
