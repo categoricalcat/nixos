@@ -1,5 +1,5 @@
 keys:
-  - &host_fufuwuqi age16l88r20mnn69urp3wm78th405k4pc98dn98hy73a26kh4znytykqk6mjln
+  - &host_fufuwuqi age1qlsvsl66n5wn4laayrzarpqft42rfwuuyynrag2jugzaa9cr5aaqezmqy2
 
 creation_rules:
   - path_regex: secrets/secrets\.yaml$

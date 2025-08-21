@@ -1,3 +1,2 @@
-# secrets/secrets.yaml is encrypted and safe to commit
-# Only ignore unencrypted secrets
 secrets/secrets.yaml
+secrets/key.txt
