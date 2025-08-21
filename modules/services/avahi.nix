@@ -1,5 +1,4 @@
 _: {
-  services.resolved.enable = false;
 
   services.avahi = {
     enable = true; # For zero-config service discovery

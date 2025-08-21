@@ -1,5 +1,3 @@
-# Networking configuration module
-
 _:
 
 let
@@ -11,16 +9,17 @@ let
   ];
 in
 {
-  # Export DNS servers for use by other modules
   _module.args.dnsServers = dnsServers;
+
+  services.resolved.enable = true;
+
   networking = {
     hostName = "fufuwuqi";
 
     nameservers = dnsServers;
 
-    # IPv6 configuration - prefer IPv6 over IPv4
     enableIPv6 = true;
-    tempAddresses = "enabled"; # Privacy extensions for IPv6
+    tempAddresses = "enabled";
 
     networkmanager.enable = false;
     useNetworkd = true;
@@ -216,13 +215,7 @@ in
     };
   };
 
-  # Provide a static resolver file so lookups work without systemd-resolved
-  # This keeps DNS predictable under systemd-networkd-only setups
-  # single-request-reopen
-  environment.etc."resolv.conf".text = ''
-    options edns0 inet6
-    ${builtins.concatStringsSep "\n    " (map (dns: "nameserver ${dns}") dnsServers)}
-  '';
+  # resolv.conf is managed by systemd-resolved now
 
   # Configure address selection to prefer IPv6
   environment.etc."gai.conf".text = ''
