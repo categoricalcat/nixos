@@ -10,7 +10,7 @@ jobs:
   build-and-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Nix
@@ -19,17 +19,17 @@ jobs:
       - name: Setup Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
-      - name: nix flake check
+      - name: Check flake outputs
         run: nix flake check --print-build-logs
 
-      - name: Enforce formatting and lint (treefmt-nix)
+      - name: Check formatting and linting
         run: nix fmt -- --ci
 
-      - name: Build NixOS - fufuwuqi
-        run: nix eval --raw .#nixosConfigurations.fufuwuqi.config.system.build.toplevel.drvPath
+      - name: Build NixOS configuration (fufuwuqi)
+        run: nix build .#nixosConfigurations.fufuwuqi.config.system.build.toplevel --no-link
 
-      - name: Build NixOS - wsl
-        run: nix eval --raw .#nixosConfigurations.wsl.config.system.build.toplevel.drvPath
+      - name: Build NixOS configuration (wsl)
+        run: nix build .#nixosConfigurations.wsl.config.system.build.toplevel --no-link
 
       # treefmt-nix check is wired into `nix flake check`
 
