@@ -14,15 +14,8 @@ concurrency:
 jobs:
   # Run checks first - these are quick and should pass before building
   check:
-    runs-on: ubuntu-latest
-    container:
-      image: debian:12-slim
+    runs-on: ubuntu-22.04
     steps:
-      - name: Install dependencies
-        run: |
-          apt-get update -y
-          apt-get install -y git curl xz-utils sudo
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -41,19 +34,12 @@ jobs:
   # Evaluate NixOS configurations in parallel using matrix strategy
   eval:
     needs: check  # Only eval if checks pass
-    runs-on: ubuntu-latest
-    container:
-      image: debian:12-slim
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         system: [fufuwuqi, wsl]
       fail-fast: false  # Continue evaluating other systems even if one fails
     steps:
-      - name: Install dependencies
-        run: |
-          apt-get update -y
-          apt-get install -y git curl xz-utils sudo
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
