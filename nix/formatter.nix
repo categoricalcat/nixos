@@ -3,7 +3,6 @@
   system,
   nixpkgs,
   treefmt-nix,
-  ...
 }:
 
 let

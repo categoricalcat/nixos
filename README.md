@@ -121,6 +121,12 @@ nixos/
 │   ├── sops.nix          # sops-nix configuration
 │   ├── secrets.yaml      # Encrypted secrets (passwords)
 │   └── key.txt           # Age key for decryption
+├── nix/
+│   ├── devshell.nix      # Development shell configuration
+│   ├── formatter.nix     # Treefmt configuration
+│   ├── nixos-fufuwuqi.nix # Main server NixOS configuration
+│   ├── nixos-wsl.nix     # WSL NixOS configuration
+│   └── pre-commit-hooks.nix # Pre-commit hooks configuration
 ├── .sops.yaml            # sops configuration with age recipients
 └── .gitignore            # Ignores unencrypted secrets
 ```
@@ -164,6 +170,7 @@ nixos/
 - **CI/CD**: GitHub Actions workflow for flake checks and formatting
 - **Code Quality**: treefmt-nix with nixfmt-rfc-style, statix, and deadnix
 - **Pre-commit Hooks**: Automatic formatting and validation on git commit
+- **Modular Configuration**: All major components (formatter, dev shell, NixOS configs) in separate files
 - **Flake Features**: nixowos integration for enhanced NixOS modules
 
 ### Pre-commit Hooks

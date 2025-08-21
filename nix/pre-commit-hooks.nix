@@ -3,7 +3,6 @@
   system,
   nixpkgs,
   pre-commit-hooks,
-  ...
 }:
 
 let
