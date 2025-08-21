@@ -1,0 +1,8 @@
+keys:
+  - &host_fufuwuqi age16l88r20mnn69urp3wm78th405k4pc98dn98hy73a26kh4znytykqk6mjln
+
+creation_rules:
+  - path_regex: secrets/secrets\.yaml$
+    key_groups:
+      - age:
+          - *host_fufuwuqi

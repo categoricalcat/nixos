@@ -15,6 +15,7 @@
     # ./modules/desktop.nix
     ./modules/server-settings.nix
     ./modules/server-mode.nix
+    ./secrets/sops.nix
   ];
 
   serverMode.headless = true;

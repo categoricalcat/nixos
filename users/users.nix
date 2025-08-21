@@ -1,6 +1,6 @@
 # User configuration module
 
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   # User accounts
@@ -28,6 +28,7 @@
     ];
     packages = with pkgs; [
     ];
+    hashedPasswordFile = config.sops.secrets."passwords/workd".path;
   };
 
   # Default shell
