@@ -14,6 +14,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     treefmt-nix.url = "github:numtide/treefmt-nix";
+    pre-commit-hooks = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -28,6 +32,7 @@
       nixos-wsl,
       nixowos,
       treefmt-nix,
+      pre-commit-hooks,
       sops-nix,
       ...
     }@inputs:
@@ -113,16 +118,44 @@
         treefmtEval.config.build.wrapper
       );
 
-      # No flake checks for treefmt; enforce via CI using `nix fmt -- --check`
-
-      # Development shell with Nix language server
+      # Development shell with pre-commit hooks
       devShells = forAllSystems (
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          pre-commit-check = pre-commit-hooks.lib.${system}.run {
+            src = ./.;
+            hooks = {
+              # Check formatting without modifying files
+              nix-fmt-check = {
+                enable = true;
+                name = "nix fmt check";
+                entry = "${pkgs.writeShellScript "nix-fmt-check" ''
+                  echo "Checking formatting..."
+                  nix fmt -- --ci
+                ''}";
+                files = "\\.nix$";
+                pass_filenames = false;
+              };
+
+              # Run flake check
+              flake-check = {
+                enable = true;
+                name = "nix flake check";
+                entry = "${pkgs.writeShellScript "flake-check" ''
+                  echo "Running flake check..."
+                  nix flake check --no-build
+                ''}";
+                files = "\\.(nix|lock)$";
+                pass_filenames = false;
+              };
+            };
+          };
         in
         {
-          default = pkgs.mkShell { };
+          default = pkgs.mkShell {
+            inherit (pre-commit-check) shellHook;
+          };
         }
       );
     };

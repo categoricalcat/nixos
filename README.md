@@ -14,6 +14,7 @@ Flake-based modular NixOS configuration for home server use with home-manager in
 - Home-manager for user-specific configurations
 - Modular configuration structure
 - AMD GPU support (ROCm, AMDVLK, OpenCL)
+- sops-nix for secure secrets management
 
 ### Server Optimizations
 - Power management disabled (24/7 operation)
@@ -22,6 +23,7 @@ Flake-based modular NixOS configuration for home server use with home-manager in
 - SMART disk monitoring
 - Journal limited to 2GB with 1-month retention
 - Headless mode toggle (`serverMode.headless`)
+- ZRAM swap with zstd compression (75% memory)
 
 ### Networking
 - Dual NIC bonding (active-backup mode)
@@ -68,18 +70,26 @@ Flake-based modular NixOS configuration for home server use with home-manager in
 ## Usage
 
 ```bash
-# Build and switch to configuration
-cd /etc/nixos
+# Build and switch to configuration (from project directory)
 sudo nixos-rebuild switch --flake .#fufuwuqi
+
+# Build and switch to configuration (from anywhere)
+sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi
 
 # Update flake inputs
 nix flake update
+
+# Format code with treefmt
+nix fmt
+
+# Run flake checks
+nix flake check
 ```
 
 ## Structure
 
 ```
-/etc/nixos/
+nixos/
 ├── flake.nix              # Flake definitions with treefmt-nix
 ├── flake.lock            # Pinned dependencies
 ├── configuration.nix      # Main config for fufuwuqi
@@ -107,7 +117,12 @@ nix flake update
 │   ├── users.nix         # User accounts
 │   ├── home-fufud.nix    # fufud's home-manager
 │   └── home-workd.nix    # workd's home-manager
-└── todo.md               # Live improvement checklist
+├── secrets/
+│   ├── sops.nix          # sops-nix configuration
+│   ├── secrets.yaml      # Encrypted secrets (passwords)
+│   └── key.txt           # Age key for decryption
+├── .sops.yaml            # sops configuration with age recipients
+└── .gitignore            # Ignores unencrypted secrets
 ```
 
 ## Users
@@ -135,12 +150,51 @@ nix flake update
   - fail2ban: Intrusion prevention
   - fwupd: Firmware updates
   - Chrony: NTP time synchronization
+  - SMART disk monitoring (smartd)
+- **Security**:
+  - sops-nix: Age-based secrets management
+  - Google Authenticator for SSH 2FA
+  - TPM2 support enabled
 - **Other**:
   - USB serial console support (ttyUSB0, disabled)
-  - GnuPG agent with SSH support
+  - SSH agent with 15-minute timeout
 
 ## Development Features
 
 - **CI/CD**: GitHub Actions workflow for flake checks and formatting
 - **Code Quality**: treefmt-nix with nixfmt-rfc-style, statix, and deadnix
+- **Pre-commit Hooks**: Automatic formatting and validation on git commit
 - **Flake Features**: nixowos integration for enhanced NixOS modules
+
+### Pre-commit Hooks
+
+The development shell automatically installs minimal git pre-commit hooks that run:
+- `nix fmt -- --ci` - Checks formatting without modifying files
+- `nix flake check` - Validates the flake configuration
+
+To use:
+```bash
+# Enter development shell (hooks install automatically)
+nix develop
+
+# Bypass hooks if needed
+git commit --no-verify
+```
+
+## Secrets Management
+
+The configuration uses sops-nix with age encryption for sensitive data:
+
+- **Encrypted secrets**: User passwords stored in `secrets/secrets.yaml`
+- **Age key**: Host-specific key in `secrets/key.txt`
+- **Recipients**: Configured in `.sops.yaml` for host_fufuwuqi
+- **Auto-decryption**: Secrets available at runtime via `config.sops.secrets`
+
+To edit secrets:
+```bash
+# Edit encrypted secrets file
+sops secrets/secrets.yaml
+
+# Add new age recipients
+ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
+```
