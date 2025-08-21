@@ -39,6 +39,80 @@
     let
       systems = [ "x86_64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
+
+      # Helper functions for modular configuration
+      mkFormatter =
+        {
+          system,
+          nixpkgs,
+          treefmt-nix,
+        }:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          treefmtEval = treefmt-nix.lib.evalModule pkgs {
+            projectRootFile = "flake.nix";
+            programs = {
+              nixfmt = {
+                enable = true;
+                package = pkgs.nixfmt-rfc-style;
+              };
+              statix.enable = true;
+              deadnix.enable = true;
+            };
+          };
+        in
+        treefmtEval.config.build.wrapper;
+
+      mkPreCommitCheck =
+        {
+          system,
+          nixpkgs,
+          pre-commit-hooks,
+        }:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pre-commit-hooks.lib.${system}.run {
+          src = ./.;
+          hooks = {
+            # Check formatting without modifying files
+            nix-fmt-check = {
+              enable = true;
+              name = "nix fmt check";
+              entry = "${pkgs.writeShellScript "nix-fmt-check" ''
+                echo "Checking formatting..."
+                nix fmt -- --ci
+              ''}";
+              files = "\\.nix$";
+              pass_filenames = false;
+            };
+
+            # Run flake check
+            flake-check = {
+              enable = true;
+              name = "nix flake check";
+              entry = "${pkgs.writeShellScript "flake-check" ''
+                echo "Running flake check..."
+                nix flake check --no-build
+              ''}";
+              files = "\\.(nix|lock)$";
+              pass_filenames = false;
+            };
+          };
+        };
+
+      mkDevShell =
+        {
+          system,
+          nixpkgs,
+          pre-commit-check,
+        }:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.mkShell {
+          inherit (pre-commit-check) shellHook;
+        };
     in
     {
       nixosConfigurations = {
@@ -101,60 +175,22 @@
       # nix fmt uses this (treefmt wrapper)
       formatter = forAllSystems (
         system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-          treefmtEval = treefmt-nix.lib.evalModule pkgs {
-            projectRootFile = "flake.nix";
-            programs = {
-              nixfmt = {
-                enable = true;
-                package = pkgs.nixfmt-rfc-style;
-              };
-              statix.enable = true;
-              deadnix.enable = true;
-            };
-          };
-        in
-        treefmtEval.config.build.wrapper
+        mkFormatter {
+          inherit system nixpkgs treefmt-nix;
+        }
       );
 
       # Development shell with pre-commit hooks
       devShells = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
-          pre-commit-check = pre-commit-hooks.lib.${system}.run {
-            src = ./.;
-            hooks = {
-              # Check formatting without modifying files
-              nix-fmt-check = {
-                enable = true;
-                name = "nix fmt check";
-                entry = "${pkgs.writeShellScript "nix-fmt-check" ''
-                  echo "Checking formatting..."
-                  nix fmt -- --ci
-                ''}";
-                files = "\\.nix$";
-                pass_filenames = false;
-              };
-
-              # Run flake check
-              flake-check = {
-                enable = true;
-                name = "nix flake check";
-                entry = "${pkgs.writeShellScript "flake-check" ''
-                  echo "Running flake check..."
-                  nix flake check --no-build
-                ''}";
-                files = "\\.(nix|lock)$";
-                pass_filenames = false;
-              };
-            };
+          pre-commit-check = mkPreCommitCheck {
+            inherit system nixpkgs pre-commit-hooks;
           };
         in
         {
-          default = pkgs.mkShell {
-            inherit (pre-commit-check) shellHook;
+          default = mkDevShell {
+            inherit system nixpkgs pre-commit-check;
           };
         }
       );
