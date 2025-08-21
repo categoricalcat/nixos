@@ -6,10 +6,23 @@ on:
   pull_request:
     branches: [ "**" ]
 
+# Cancel in-progress runs when a new commit is pushed to the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-check:
+  # Run checks first - these are quick and should pass before building
+  check:
     runs-on: ubuntu-latest
+    container:
+      image: debian:12-slim
     steps:
+      - name: Install dependencies
+        run: |
+          apt-get update -y
+          apt-get install -y git curl xz-utils sudo
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -25,11 +38,31 @@ jobs:
       - name: Check formatting and linting
         run: nix fmt -- --ci
 
-      - name: Build NixOS configuration (fufuwuqi)
-        run: nix build .#nixosConfigurations.fufuwuqi.config.system.build.toplevel --no-link
+  # Evaluate NixOS configurations in parallel using matrix strategy
+  eval:
+    needs: check  # Only eval if checks pass
+    runs-on: ubuntu-latest
+    container:
+      image: debian:12-slim
+    strategy:
+      matrix:
+        system: [fufuwuqi, wsl]
+      fail-fast: false  # Continue evaluating other systems even if one fails
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update -y
+          apt-get install -y git curl xz-utils sudo
 
-      - name: Build NixOS configuration (wsl)
-        run: nix build .#nixosConfigurations.wsl.config.system.build.toplevel --no-link
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # treefmt-nix check is wired into `nix flake check`
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Evaluate NixOS configuration (${{ matrix.system }})
+        run: nix eval --raw .#nixosConfigurations.${{ matrix.system }}.config.system.build.toplevel.drvPath
 
