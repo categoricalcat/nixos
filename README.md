@@ -7,7 +7,7 @@ Flake-based modular NixOS configuration for home server use with home-manager in
 - **fufuwuqi**: Main server configuration
 - **wsl**: Windows Subsystem for Linux configuration
 
-## [todo](todo.md)
+> [todo list](todo.md)
 
 ## Features
 
