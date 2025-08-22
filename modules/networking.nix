@@ -12,8 +12,8 @@ in
   _module.args.dnsServers = dnsServers;
 
   imports = [
-    ./firewall.nix
-    ./interfaces
+    ./networking/firewall.nix
+    ./networking/interfaces.nix
   ];
 
   services.resolved = {

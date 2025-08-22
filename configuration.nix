@@ -9,7 +9,7 @@
     ./modules/locale.nix
     ./users/users.nix
     ./modules/packages.nix
-    ./modules/networking/networking.nix
+    ./modules/networking.nix
     ./modules/network-performance.nix
     ./modules/services/services.nix
     # ./modules/desktop.nix

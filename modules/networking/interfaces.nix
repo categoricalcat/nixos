@@ -2,8 +2,8 @@
 
 {
   imports = [
-    ./bond0.nix
-    ./wg0.nix
+    ./interfaces/bond0.nix
+    ./interfaces/wg0.nix
   ];
 
   systemd.network = {
