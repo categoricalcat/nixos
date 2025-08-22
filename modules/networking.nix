@@ -14,6 +14,7 @@ in
   imports = [
     ./networking/firewall.nix
     ./networking/interfaces.nix
+    ./networking/tweaks.nix
   ];
 
   services.resolved = {
