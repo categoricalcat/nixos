@@ -1,10 +1,31 @@
 _: {
-  # OpenSSH daemon
+
+  systemd.services.sshd = {
+    wants = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+      "avahi-daemon.service"
+      "systemd-resolved.service"
+    ];
+  };
+
   services.openssh = {
     enable = true;
-    ports = [ 24212 ];
-    openFirewall = true;
+
+    listenAddresses = [
+      {
+        addr = "192.168.1.40";
+        port = 24212;
+      }
+      {
+        addr = "10.100.0.1";
+        port = 24212;
+      }
+    ];
+
     settings = {
+      UseDns = true;
+
       AllowUsers = [
         "fufud"
         "workd"

@@ -19,7 +19,7 @@
       local = "/vpn/"; # Keeps VPN DNS queries private
 
       address = [
-        "/fufuwuqi.vpn/fd00:100::1"
+        "/fufuwuqi.vpn/2804:41fc:802d:52f1::1"
         "/fufuwuqi.vpn/10.100.0.1"
       ];
 

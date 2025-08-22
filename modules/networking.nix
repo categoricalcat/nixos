@@ -41,11 +41,19 @@ in
     useDHCP = false;
 
     hosts = {
-      "fd00:100::1" = [
+      "2804:41fc:802d:52f1::1" = [
         "fufuwuqi.vpn"
       ];
       "10.100.0.1" = [
         "fufuwuqi.vpn"
+      ];
+      "127.0.0.1" = [
+        "fufuwuqi.local"
+        "localhost"
+      ];
+      "::1" = [
+        "fufuwuqi.local"
+        "localhost"
       ];
     };
   };
