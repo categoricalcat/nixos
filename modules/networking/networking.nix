@@ -42,21 +42,9 @@ in
     hosts = {
       "fd00:100::1" = [
         "fufuwuqi.vpn"
-        "fufuwuqi"
       ];
       "10.100.0.1" = [
         "fufuwuqi.vpn"
-        "fufuwuqi"
-      ];
-      "2804:41fc:802d:52f0::40" = [
-        "fufuwuqi.vpn"
-        "fufuwuqi.local"
-        "fufuwuqi"
-      ];
-      "192.168.1.40" = [
-        "fufuwuqi.vpn"
-        "fufuwuqi.local"
-        "fufuwuqi"
       ];
     };
   };
