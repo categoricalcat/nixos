@@ -8,7 +8,7 @@
 
   systemd.network = {
     networks = {
-      "20-wlp2so" = {
+      "20-wlp2s0" = {
         matchConfig.Name = "wlp2s0";
         linkConfig = {
           ActivationPolicy = "down";
