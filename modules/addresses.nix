@@ -19,13 +19,15 @@ _: {
     network = {
       vpn = {
         interface = "wg0";
-        ipv6 = {
-          address = "2804:41fc:8030:ace1::1/64";
+        ipv6 = rec {
           host = "2804:41fc:8030:ace1::1";
+          prefixLength = 64;
+          address = "${host}/${builtins.toString prefixLength}";
         };
-        ipv4 = {
-          address = "10.100.0.1/24";
+        ipv4 = rec {
           host = "10.100.0.1";
+          prefixLength = 24;
+          address = "${host}/${builtins.toString prefixLength}";
         };
         peers = [
           {
@@ -49,18 +51,24 @@ _: {
 
       lan = {
         interface = "bond0";
-        ipv6 = {
-          address = "2804:41fc:8030:ace0::40/64";
+        ipv6 = rec {
+          host = "2804:41fc:8030:ace0::40";
+          prefixLength = 64;
+          address = "${host}/${builtins.toString prefixLength}";
           gateway = "fe80::1";
         };
-        ipv4 = {
-          address = "192.168.1.40/24";
+        ipv4 = rec {
+          host = "192.168.1.40";
+          prefixLength = 24;
+          address = "${host}/${builtins.toString prefixLength}";
           gateway = "192.168.1.1";
         };
       };
 
-      usb = {
-        address = "192.168.100.1/24";
+      usb = rec {
+        host = "192.168.100.1";
+        prefixLength = 24;
+        address = "${host}/${builtins.toString prefixLength}";
       };
     };
 

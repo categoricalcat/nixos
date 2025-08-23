@@ -12,6 +12,8 @@
       listen-address = [
         addresses.network.vpn.ipv6.host
         addresses.network.vpn.ipv4.host
+        addresses.network.lan.ipv6.host
+        addresses.network.lan.ipv4.host
       ];
 
       no-resolv = true; # Use our DNS servers instead of system ones
@@ -31,6 +33,8 @@
       address = [
         "/${addresses.hostName}.${addresses.dns.domain}/${addresses.network.vpn.ipv6.host}"
         "/${addresses.hostName}.${addresses.dns.domain}/${addresses.network.vpn.ipv4.host}"
+        "/${addresses.hostName}.${addresses.dns.domain}/${addresses.network.lan.ipv6.host}"
+        "/${addresses.hostName}.${addresses.dns.domain}/${addresses.network.lan.ipv4.host}"
       ];
 
       cache-size = 1000; # Reduces latency for repeated queries
