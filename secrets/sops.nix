@@ -17,5 +17,10 @@ _: {
       owner = "workd";
       group = "users";
     };
+    "tokens/cloudflare-ddclient" = {
+      mode = "0400";
+      owner = "ddclient";
+      group = "ddclient";
+    };
   };
 }

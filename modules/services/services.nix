@@ -3,6 +3,7 @@
 {
   pkgs,
   addresses,
+  config,
   ...
 }:
 
@@ -96,6 +97,14 @@
   users.users.fufud.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
 
+  # Ensure ddclient user/group exist for sops secret ownership and service
+  users.groups.ddclient = { };
+  users.users.ddclient = {
+    isSystemUser = true;
+    group = "ddclient";
+    description = "ddclient daemon user";
+  };
+
   systemd.services."serial-getty@ttyUSB0" = {
     enable = false;
     wantedBy = [ "getty.target" ];
@@ -133,6 +142,25 @@
         };
       };
     };
+  };
+
+  # Dynamic DNS via ddclient (Cloudflare)
+  services.ddclient = {
+    enable = true;
+    package = pkgs.ddclient;
+    interval = "5min"; # seconds
+    ssl = true;
+    protocol = "cloudflare";
+    usev4 = "webv4";
+    usev6 = "webv6";
+    verbose = true;
+    zone = "fufu.land"; # TODO: change if different
+    username = "catufuzgu@gmail.com"; # using API token auth
+    passwordFile = config.sops.secrets."tokens/cloudflare-ddclient".path;
+    domains = [
+      "fufu.land"
+      "cockpit.fufu.land"
+    ];
   };
 
   services.fwupd.enable = true;

@@ -6,7 +6,7 @@
         netdevConfig = {
           Kind = "wireguard";
           Name = addresses.network.vpn.interface;
-          MTUBytes = 1412;
+          MTUBytes = 1380;
         };
         wireguardConfig = {
           PrivateKeyFile = "/etc/wireguard/private.key";
@@ -39,7 +39,7 @@
           MulticastDNS = "yes";
         };
         linkConfig = {
-          MTUBytes = 1412;
+          MTUBytes = 1380;
         };
       };
     };
