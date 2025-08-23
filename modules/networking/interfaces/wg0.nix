@@ -1,54 +1,40 @@
-_:
-
+{ addresses, ... }:
 {
   systemd.network = {
     netdevs = {
       "30-wg0" = {
         netdevConfig = {
           Kind = "wireguard";
-          Name = "wg0";
+          Name = addresses.network.vpn.interface;
           MTUBytes = 1492;
         };
         wireguardConfig = {
           PrivateKeyFile = "/etc/wireguard/private.key";
-          ListenPort = 51820;
+          ListenPort = addresses.wireguard.listenPort;
         };
-        wireguardPeers = [
-          {
-            PublicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
-            AllowedIPs = [
-              "2804:41fc:8030:ace1::2/128"
-              "10.100.0.2/32"
-            ];
-            PersistentKeepalive = 25;
-          }
-          {
-            PublicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
-            AllowedIPs = [
-              "2804:41fc:8030:ace1::3/128"
-              "10.100.0.3/32"
-            ];
-            PersistentKeepalive = 25;
-          }
-        ];
+        wireguardPeers = map (peer: {
+          PublicKey = peer.publicKey;
+          AllowedIPs = peer.allowedIPs;
+          PersistentKeepalive = peer.keepalive;
+        }) addresses.network.vpn.peers;
       };
     };
 
     networks = {
       "60-wg0" = {
-        matchConfig.Name = "wg0";
+        matchConfig.Name = addresses.network.vpn.interface;
         address = [
-          "2804:41fc:8030:ace1::1/64"
-          "10.100.0.1/24"
+          addresses.network.vpn.ipv6.address
+          addresses.network.vpn.ipv4.address
         ];
         networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = "no";
           DNS = [
-            "2804:41fc:8030:ace1::1"
-            "10.100.0.1"
+            addresses.network.vpn.ipv6.host
+            addresses.network.vpn.ipv4.host
           ];
-          Domains = [ "~vpn" ];
+          Domains = [ "~${addresses.dns.domain}" ];
           DNSDefaultRoute = false;
           MulticastDNS = "yes";
         };

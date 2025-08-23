@@ -4,6 +4,7 @@
 
 {
   imports = [
+    ./modules/addresses.nix
     ./hardware/hardware-configuration.nix
     ./modules/boot.nix
     ./modules/locale.nix

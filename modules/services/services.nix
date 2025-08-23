@@ -2,6 +2,7 @@
 
 {
   pkgs,
+  addresses,
   ...
 }:
 
@@ -87,16 +88,7 @@
       };
 
       network = {
-        default_subnet_pools = [
-          {
-            base = "172.17.0.0/16";
-            size = 24;
-          }
-          {
-            base = "172.18.0.0/16";
-            size = 24;
-          }
-        ];
+        default_subnet_pools = addresses.containers.subnetPools;
       };
     };
   };

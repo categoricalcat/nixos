@@ -1,4 +1,4 @@
-{ systemNameservers, ... }:
+{ addresses, systemNameservers, ... }:
 
 {
   systemd.network = {
@@ -6,7 +6,7 @@
       "10-bond0" = {
         netdevConfig = {
           Kind = "bond";
-          Name = "bond0";
+          Name = addresses.network.lan.interface;
           MTUBytes = 1492;
         };
         bondConfig = {
@@ -23,9 +23,9 @@
       "30-eno1" = {
         matchConfig.Name = "eno1";
         networkConfig = {
-          Bond = "bond0";
+          Bond = addresses.network.lan.interface;
           PrimarySlave = true;
-          DNS = systemNameservers;
+          DNS = addresses.dns.systemNameservers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -35,8 +35,8 @@
       "30-enp4s0" = {
         matchConfig.Name = "enp4s0";
         networkConfig = {
-          Bond = "bond0";
-          DNS = systemNameservers;
+          Bond = addresses.network.lan.interface;
+          DNS = addresses.dns.systemNameservers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -44,17 +44,17 @@
       };
 
       "40-bond0" = {
-        matchConfig.Name = "bond0";
+        matchConfig.Name = addresses.network.lan.interface;
         networkConfig = {
           DHCP = "no";
-          DNS = systemNameservers;
+          DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
           IPv6AcceptRA = "no";
           LinkLocalAddressing = "ipv6";
 
           Address = [
-            "2804:41fc:8030:ace0::40/64"
-            "192.168.1.40/24"
+            addresses.network.lan.ipv6.address
+            addresses.network.lan.ipv4.address
           ];
         };
 
@@ -65,12 +65,12 @@
 
         routes = [
           {
-            Gateway = "fe80::1";
+            Gateway = addresses.network.lan.ipv6.gateway;
             GatewayOnLink = true;
             Metric = 5;
           }
           {
-            Gateway = "192.168.1.1";
+            Gateway = addresses.network.lan.ipv4.gateway;
             GatewayOnLink = true;
             Metric = 1000;
           }

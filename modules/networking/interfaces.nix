@@ -1,4 +1,4 @@
-{ ... }:
+{ addresses, ... }:
 
 {
   imports = [
@@ -8,7 +8,7 @@
 
   systemd.network = {
     networks = {
-      "20-wlp2s0" = {
+      "20-wlp2so" = {
         matchConfig.Name = "wlp2s0";
         linkConfig = {
           ActivationPolicy = "down";
@@ -23,7 +23,7 @@
       "50-usb" = {
         matchConfig.Name = "usb* enp*s*u*";
         networkConfig = {
-          Address = "192.168.100.1/24";
+          Address = addresses.network.usb.address;
         };
       };
     };

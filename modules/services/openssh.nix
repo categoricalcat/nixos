@@ -1,4 +1,5 @@
-_: {
+{ addresses, ... }:
+{
 
   systemd.services.sshd = {
     wants = [ "network-online.target" ];
@@ -12,20 +13,17 @@ _: {
   services.openssh = {
     enable = true;
 
-    listenAddresses = [
-      {
-        addr = "192.168.1.40";
-        port = 24212;
-      }
-      {
-        addr = "10.100.0.1";
-        port = 24212;
-      }
-      {
-        addr = "[::]";
-        port = 24212;
-      }
-    ];
+    listenAddresses =
+      (map (addr: {
+        inherit addr;
+        port = addresses.ssh.listenPort;
+      }) addresses.ssh.listenAddresses)
+      ++ [
+        {
+          addr = addresses.ssh.listenWildcardIPv6;
+          port = addresses.ssh.listenPort;
+        }
+      ];
 
     settings = {
       UseDns = true;
