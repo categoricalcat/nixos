@@ -17,7 +17,7 @@ _:
           {
             PublicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
             AllowedIPs = [
-              "2804:41fc:802d:52f1::2/128"
+              "2804:41fc:8030:ace1::2/128"
               "10.100.0.2/32"
             ];
             PersistentKeepalive = 25;
@@ -25,7 +25,7 @@ _:
           {
             PublicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
             AllowedIPs = [
-              "2804:41fc:802d:52f1::3/128"
+              "2804:41fc:8030:ace1::3/128"
               "10.100.0.3/32"
             ];
             PersistentKeepalive = 25;
@@ -38,14 +38,14 @@ _:
       "60-wg0" = {
         matchConfig.Name = "wg0";
         address = [
-          "2804:41fc:802d:52f1::1/64"
+          "2804:41fc:8030:ace1::1/64"
           "10.100.0.1/24"
         ];
         networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = "no";
           DNS = [
-            "2804:41fc:802d:52f1::1"
+            "2804:41fc:8030:ace1::1"
             "10.100.0.1"
           ];
           Domains = [ "~vpn" ];

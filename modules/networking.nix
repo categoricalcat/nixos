@@ -1,7 +1,14 @@
 _:
 
 let
-  dnsServers = [
+  # Local resolvers served by this host (dnsmasq on wg0)
+  systemNameservers = [
+    "2804:41fc:8030:ace1::1"
+    "10.100.0.1"
+  ];
+
+  # Public upstream resolvers that dnsmasq should forward to
+  upstreamDnsServers = [
     "2001:4860:4860::8888" # Google IPv6 DNS
     "2606:4700:4700::1111" # Cloudflare IPv6 DNS
     "8.8.8.8" # Google IPv4 DNS
@@ -9,7 +16,8 @@ let
   ];
 in
 {
-  _module.args.dnsServers = dnsServers;
+  _module.args.systemNameservers = systemNameservers;
+  _module.args.upstreamDnsServers = upstreamDnsServers;
 
   imports = [
     ./networking/firewall.nix
@@ -21,7 +29,7 @@ in
     enable = true;
     dnsovertls = "opportunistic";
     dnssec = "allow-downgrade";
-    fallbackDns = dnsServers;
+    fallbackDns = systemNameservers;
     llmnr = "false";
     extraConfig = ''
       MulticastDNS=yes
@@ -31,7 +39,7 @@ in
   networking = {
     hostName = "fufuwuqi";
 
-    nameservers = dnsServers;
+    nameservers = systemNameservers;
 
     enableIPv6 = true;
     tempAddresses = "enabled";
@@ -41,7 +49,7 @@ in
     useDHCP = false;
 
     hosts = {
-      "2804:41fc:802d:52f1::1" = [
+      "2804:41fc:8030:ace1::1" = [
         "fufuwuqi.vpn"
       ];
       "10.100.0.1" = [

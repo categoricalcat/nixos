@@ -1,4 +1,4 @@
-{ dnsServers, ... }:
+{ systemNameservers, ... }:
 
 {
   systemd.network = {
@@ -25,7 +25,7 @@
         networkConfig = {
           Bond = "bond0";
           PrimarySlave = true;
-          DNS = dnsServers;
+          DNS = systemNameservers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -36,7 +36,7 @@
         matchConfig.Name = "enp4s0";
         networkConfig = {
           Bond = "bond0";
-          DNS = dnsServers;
+          DNS = systemNameservers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -47,13 +47,13 @@
         matchConfig.Name = "bond0";
         networkConfig = {
           DHCP = "no";
-          DNS = dnsServers;
+          DNS = systemNameservers;
           MulticastDNS = "yes";
           IPv6AcceptRA = "no";
           LinkLocalAddressing = "ipv6";
 
           Address = [
-            "2804:41fc:802d:52f0::40/64"
+            "2804:41fc:8030:ace0::40/64"
             "192.168.1.40/24"
           ];
         };
