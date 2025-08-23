@@ -21,6 +21,7 @@
     "net.core.wmem_max" = 268435456; # Increased from 134217728
     "net.core.netdev_max_backlog" = 10000; # Increased from 5000 (for 1Gbps+)
     "net.core.netdev_budget" = 1200; # Increased from 600
+    "net.core.default_qdisc" = "fq";
 
     # TCP optimization (BBR-specific tuning)
     "net.ipv4.tcp_rmem" = "4096 262144 268435456";
