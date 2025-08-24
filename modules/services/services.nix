@@ -14,7 +14,14 @@
     ./dnsmasq.nix
   ];
 
-  services.code-server.enable = true;
+  services.code-server = {
+    enable = true;
+    host = "0.0.0.0";
+    port = 4444;
+    user = "fufud";
+    group = "users";
+    disableTelemetry = true;
+  };
 
   security.pam = {
     services.sshd.googleAuthenticator.enable = true;
@@ -29,11 +36,38 @@
     # addKeysToAgent = "confirm";
   };
 
-  services.fail2ban.enable = true;
+  services.fail2ban = {
+    enable = true;
+    jails = {
+      "nginx-http-auth".enabled = true;
+      "nginx-botsearch".enabled = true;
+      "nginx-badbots".enabled = true;
+    };
+  };
 
   services.ollama = {
     enable = true;
     acceleration = "rocm";
+  };
+
+  # Let's Encrypt via ACME, using Cloudflare DNS-01 (optional)
+  security.acme = {
+    acceptTerms = true;
+    defaults = {
+      email = "catufuzgu@gmail.com";
+      dnsProvider = "cloudflare";
+      credentialsFile = config.sops.secrets."tokens/cloudflare-acme".path;
+      dnsPropagationCheck = true;
+      listenHTTP = null; # not needed for DNS-01; set to ":80" only if using HTTP-01
+    };
+    certs = {
+      "fufu.land" = {
+        domain = "fufu.land";
+        extraDomainNames = [ "cockpit.fufu.land" ];
+      };
+      # Alternatively, separate certs per host:
+      # "cockpit.fufu.land" = { domain = "cockpit.fufu.land"; };
+    };
   };
 
   # Podman configuration (Docker replacement)
@@ -112,7 +146,7 @@
   };
 
   services.cockpit = {
-    enable = false;
+    enable = true;
     port = 9090;
     allowed-origins = [
       "https://fufuwuqi.local:9090"
@@ -130,7 +164,12 @@
 
   services.nginx = {
     enable = true;
+    recommendedGzipSettings = true;
+    recommendedProxySettings = true;
+    recommendedTlsSettings = true;
+
     virtualHosts = {
+      # Local test vhost
       "fufuwuqi.local" = {
         serverName = "fufuwuqi.local";
         forceSSL = false;
@@ -141,8 +180,35 @@
           '';
         };
       };
+
+      # Public site proxied via Nginx with ACME (Let's Encrypt)
+      "fufu.land" = {
+        forceSSL = true; # redirects 80 -> 443
+        useACMEHost = "fufu.land";
+        extraConfig = ''
+          add_header Content-Type text/plain;
+          return 200 "hello, gently, from self :3";
+        '';
+      };
+
+      # Cockpit admin UI behind Nginx (shares the ACME cert for fufu.land)
+      "cockpit.fufu.land" = {
+        forceSSL = true;
+        useACMEHost = "fufu.land";
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:9090";
+          extraConfig = ''
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+          '';
+        };
+      };
     };
   };
+
+  # Ensure nginx can read ACME certificates (group-owned by "acme")
+  users.users.nginx.extraGroups = [ "acme" ];
 
   # Dynamic DNS via ddclient (Cloudflare)
   services.ddclient = {
@@ -158,8 +224,8 @@
     username = "catufuzgu@gmail.com"; # using API token auth
     passwordFile = config.sops.secrets."tokens/cloudflare-ddclient".path;
     domains = [
-      "fufu.land"
-      "cockpit.fufu.land"
+      "@"
+      "cockpit"
     ];
   };
 

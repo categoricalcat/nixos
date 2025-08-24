@@ -10,7 +10,7 @@
 
 ### Security
 
-- [ ] Integrate `sops-nix` or `agenix` for secrets (WireGuard keys, future tokens).
+- [x] Integrate `sops-nix` or `agenix` for secrets (WireGuard keys, future tokens).
   - Setup steps for SSH key-based sops-nix:
     1. Add `sops-nix` input to flake.nix
     2. Create `modules/secrets.nix` with `age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ]`
@@ -31,6 +31,35 @@
 - [ ] Bonding: relax `MIIMonitorSec` to ~1s and add modest `UpDelaySec`/`DownDelaySec` to reduce flapping.
 - [x] Replace static `resolv.conf` with `services.resolved` integrated with `systemd-networkd`; document DNS fallbacks and DoT if desired.
 - [ ] Add log rotation for `/var/log/dnsmasq-vpn.log` via `services.logrotate`.
+
+#### Migrate dnsmasq → AdGuard Home (network-wide ad blocking)
+
+- [ ] Deploy AdGuard Home: enable `services.adguardhome` with DNS on port 53 for LAN+VPN (bind to `0.0.0.0` and `::` or specific IPs on `bond0` and `wg0`).
+- [ ] Disable dnsmasq (`services.dnsmasq.enable = false;`) to avoid port 53 conflicts.
+- [ ] Recreate local `.vpn` DNS in AdGuard Home “Local DNS” (rewrites/hosts):
+  - [ ] Add A/AAAA for `fufuwuqi.vpn` to LAN IPv4/IPv6.
+  - [ ] Add A/AAAA (or separate names) for VPN IPv4/IPv6 if needed.
+  - [ ] Optional: add PTR records for reverse lookups of LAN/VPN IPs.
+- [ ] Configure upstreams in AdGuard Home (`upstream_dns`); prefer DoH/DoT and set `bootstrap_dns` accordingly.
+- [ ] Ensure firewall still permits TCP/UDP 53 on `bond0` and `wg0` (already allowed per-interface in firewall module).
+- [ ] Test end-to-end:
+  - [ ] From LAN and VPN clients, resolve `fufuwuqi.vpn` and verify A/AAAA results.
+  - [ ] Confirm ad blocking works (query logs show blocks; typical ad domains are filtered).
+  - [ ] Verify IPv6 and EDNS work without fragmentation issues.
+- [ ] Secure AdGuard Home UI:
+  - [ ] Either bind UI to localhost and expose via Nginx reverse proxy with auth, or restrict to LAN/VPN and set an admin password.
+- [ ] Cleanup: remove dnsmasq-specific log rotation and docs once AGH is stable.
+
+### Reverse proxy / Nginx + Cloudflare
+
+- [x] Dynamic DNS (ddclient) using Cloudflare API token via `sops-nix`.
+- [ ] Nginx: create reverse-proxy vhosts for `fufu.land` and `cockpit.fufu.land`.
+- [ ] TLS: use Cloudflare Origin Certificate + key stored with `sops-nix`; set Cloudflare SSL mode to Full (strict); configure `ssl_certificate`/`ssl_certificate_key` in Nginx.
+- [ ] Firewall: open TCP 80/443; keep HTTP → HTTPS redirect on 80.
+- [ ] Cloudflare real IP: trust CF IP ranges (`real_ip_from`) and `real_ip_header CF-Connecting-IP`; forward proxy headers.
+- [ ] Hardening: add security headers and proxy timeouts; optional gzip/brotli.
+- [ ] Fail2ban: add nginx jail when exposing HTTP(S).
+- [ ] Docs: record Cloudflare proxying mode and origin cert handling.
 
 ### Containers (Podman)
 

@@ -143,7 +143,8 @@ nixos/
 - **SSH** (port 24212): Hardened config with 2FA, optimized ciphers, port forwarding enabled
 - **WireGuard VPN**: Dual-stack IPv4/IPv6 with dedicated DNS
 - **Web Services**:
-  - Nginx (basic hello world on port 80)
+  - Nginx reverse proxy for `fufu.land` and `cockpit.fufu.land` with Cloudflare Origin TLS
+  - Optional: ACME (Let's Encrypt) via Cloudflare DNS-01
   - Code-server (VS Code in browser)
   - Cockpit (port 9090, currently disabled)
 - **Network Services**:
@@ -206,4 +207,33 @@ sops secrets/secrets.yaml
 
 # Add new age recipients
 ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+### Cloudflare + Nginx Setup
+
+1. In Cloudflare dashboard for `fufu.land`, set SSL/TLS mode to Full (strict).
+2. Create a Cloudflare Origin Certificate for `fufu.land` and `cockpit.fufu.land`.
+3. Store the cert/key in `secrets/secrets.yaml` under:
+   - `tls/cloudflare-origin.crt`
+   - `tls/cloudflare-origin.key`
+   The sops-nix declarations are in `secrets/sops.nix`.
+4. DNS: Ensure `A/AAAA` records exist for `fufu.land` and `cockpit.fufu.land` (orange-cloud proxied). `ddclient` is configured to update Cloudflare.
+5. Deploy:
+   - `sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi`
+6. Firewall opens TCP 80/443, Nginx redirects HTTP→HTTPS, and trusts Cloudflare real IP headers.
+7. Optional: Enable brotli by adding the nginx brotli module and turning it on in `services.nginx.commonHttpConfig`.
+ 
+### Optional: Use ACME (Let's Encrypt) instead of Cloudflare Origin cert
+
+1. Create a Cloudflare API token with DNS edit for the zone `fufu.land`.
+2. Save it in `secrets/secrets.yaml` as `tokens/cloudflare-acme`.
+3. The configuration already enables `security.acme` with DNS-01 using that secret.
+4. To switch Nginx vhosts to ACME certs, replace in `services.nginx.virtualHosts`:
+   - `sslCertificate = config.sops.secrets."tls/cloudflare-origin.crt".path;`
+   - `sslCertificateKey = config.sops.secrets."tls/cloudflare-origin.key".path;`
+   with:
+   - `useACMEHost = "fufu.land";` (and ensure `cockpit.fufu.land` is in `extraDomainNames`)
+5. Rebuild:
+```bash
+sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi
 ```

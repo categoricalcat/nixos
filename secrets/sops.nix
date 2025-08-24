@@ -22,5 +22,10 @@ _: {
       owner = "ddclient";
       group = "ddclient";
     };
+    "tokens/cloudflare-acme" = {
+      mode = "0400";
+      owner = "acme";
+      group = "acme";
+    };
   };
 }

@@ -6,8 +6,8 @@ _:
       enable = true;
       allowPing = true;
       allowedTCPPorts = [
-        # 80
-        # 443
+        80
+        443
         # 3000
         # 3001
         # 9000
