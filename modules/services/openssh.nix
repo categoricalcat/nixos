@@ -26,8 +26,6 @@
       ];
 
     settings = {
-      UseDns = true;
-
       AllowUsers = [
         "fufud"
         "workd"
@@ -40,7 +38,7 @@
       MaxAuthTries = 3;
       LoginGraceTime = 30;
 
-      # Port forwarding settings
+      GSSAPIAuthentication = false;
       AllowTcpForwarding = "yes"; # Enable TCP port forwarding
       AllowAgentForwarding = true; # Allow SSH agent forwarding
       AllowStreamLocalForwarding = "yes"; # Allow Unix domain socket forwarding
@@ -52,7 +50,7 @@
       # - "clientspecified" = client decides per forwarding
 
       # Performance optimizations
-      # UseDNS = false; # Already set by default, but explicitly disable for faster connections
+      UseDns = false;
       Compression = false; # Disable compression - it hurts performance on fast networks
       TCPKeepAlive = true; # Detect dead connections
       ClientAliveInterval = 30; # Send keepalive every 60 seconds
@@ -83,8 +81,8 @@
 
     # Additional performance settings
     extraConfig = ''
-      MaxSessions 10
-      MaxStartups 10:30:100
+      MaxSessions 20
+      # MaxStartups 10:30:100
 
       # Faster SFTP (if using internal-sftp)
       Subsystem sftp internal-sftp
