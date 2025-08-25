@@ -4,7 +4,8 @@ _: {
 
     dns = {
       systemNameservers = [
-        "2804:41fc:8030:ace1::1"
+        # "2804:41fc:8030:ace1::1"
+        "192.168.1.40"
         "10.100.0.1"
       ];
       upstreamDnsServers = [

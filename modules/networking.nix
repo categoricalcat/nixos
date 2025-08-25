@@ -27,7 +27,7 @@
     nameservers = addresses.dns.systemNameservers;
 
     enableIPv6 = true;
-    tempAddresses = "enabled";
+    tempAddresses = "disabled";
 
     networkmanager.enable = false;
     useNetworkd = true;

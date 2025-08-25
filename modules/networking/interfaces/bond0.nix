@@ -49,11 +49,11 @@
           DHCP = "no";
           DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
-          IPv6AcceptRA = "no";
+          IPv6AcceptRA = "yes";
           LinkLocalAddressing = "ipv6";
 
           Address = [
-            addresses.network.lan.ipv6.address
+            # addresses.network.lan.ipv6.address
             addresses.network.lan.ipv4.address
           ];
         };
@@ -64,11 +64,11 @@
         };
 
         routes = [
-          {
-            Gateway = addresses.network.lan.ipv6.gateway;
-            GatewayOnLink = true;
-            Metric = 5;
-          }
+          # {
+          #   Gateway = addresses.network.lan.ipv6.gateway;
+          #   GatewayOnLink = true;
+          #   Metric = 5;
+          # }
           {
             Gateway = addresses.network.lan.ipv4.gateway;
             GatewayOnLink = true;
@@ -76,6 +76,9 @@
           }
         ];
 
+        ipv6AcceptRAConfig = {
+          RouteMetric = 5;
+        };
       };
     };
   };
