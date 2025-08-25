@@ -63,7 +63,7 @@
     certs = {
       "fufu.land" = {
         domain = "fufu.land";
-        extraDomainNames = [ "cockpit.fufu.land" ];
+        # extraDomainNames = [ "cockpit.fufu.land" ];
       };
       # Alternatively, separate certs per host:
       # "cockpit.fufu.land" = { domain = "cockpit.fufu.land"; };
@@ -146,7 +146,7 @@
   };
 
   services.cockpit = {
-    enable = true;
+    enable = false;
     port = 9090;
     allowed-origins = [
       "https://fufuwuqi.local:9090"
@@ -176,7 +176,7 @@
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "hello, gently, from self :3";
+            return 200 "fufuwuqi.local ok";
           '';
         };
       };
@@ -187,23 +187,22 @@
         useACMEHost = "fufu.land";
         extraConfig = ''
           add_header Content-Type text/plain;
-          return 200 "hello, gently, from self :3";
+          return 200 "fufu.land ok";
         '';
       };
 
-      # Cockpit admin UI behind Nginx (shares the ACME cert for fufu.land)
-      "cockpit.fufu.land" = {
-        forceSSL = true;
-        useACMEHost = "fufu.land";
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:9090";
-          extraConfig = ''
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $connection_upgrade;
-          '';
-        };
-      };
+      # "cockpit.fufu.land" = {
+      #   forceSSL = true;
+      #   useACMEHost = "fufu.land";
+      #   locations."/" = {
+      #     proxyPass = "http://127.0.0.1:9090";
+      #     extraConfig = ''
+      #       proxy_http_version 1.1;
+      #       proxy_set_header Upgrade $http_upgrade;
+      #       proxy_set_header Connection $connection_upgrade;
+      #     '';
+      #   };
+      # };
     };
   };
 
@@ -225,7 +224,7 @@
     passwordFile = config.sops.secrets."tokens/cloudflare-ddclient".path;
     domains = [
       "@"
-      "cockpit"
+      # "cockpit"
     ];
   };
 
