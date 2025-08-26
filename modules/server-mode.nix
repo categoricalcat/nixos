@@ -25,11 +25,6 @@ in
         autoLogin.enable = lib.mkForce false;
       };
       desktopManager.gnome.enable = lib.mkForce false;
-      # Minimal TTY configuration
-      logind.extraConfig = lib.mkForce ''
-        NAutoVTs=2
-        ReserveVT=0
-      '';
     };
 
     # Boot to multi-user target instead of graphical

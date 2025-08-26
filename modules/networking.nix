@@ -14,7 +14,7 @@
     enable = true;
     dnsovertls = "opportunistic";
     dnssec = "allow-downgrade";
-    fallbackDns = addresses.dns.systemNameservers;
+    fallbackDns = addresses.dns.upstreamDnsServers;
     llmnr = "false";
     extraConfig = ''
       MulticastDNS=yes
@@ -24,7 +24,7 @@
   networking = {
     inherit (addresses) hostName;
 
-    nameservers = addresses.dns.systemNameservers;
+    nameservers = addresses.dns.upstreamDnsServers;
 
     enableIPv6 = true;
     tempAddresses = "disabled";

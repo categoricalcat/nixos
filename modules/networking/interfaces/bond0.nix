@@ -1,4 +1,4 @@
-{ addresses, systemNameservers, ... }:
+{ addresses, ... }:
 
 {
   systemd.network = {
@@ -25,7 +25,6 @@
         networkConfig = {
           Bond = addresses.network.lan.interface;
           PrimarySlave = true;
-          DNS = addresses.dns.systemNameservers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -36,7 +35,6 @@
         matchConfig.Name = "enp4s0";
         networkConfig = {
           Bond = addresses.network.lan.interface;
-          DNS = addresses.dns.systemNameservers;
         };
         linkConfig = {
           MTUBytes = 1492;
@@ -47,7 +45,7 @@
         matchConfig.Name = addresses.network.lan.interface;
         networkConfig = {
           DHCP = "no";
-          DNS = addresses.dns.systemNameservers;
+          DNS = addresses.dns.upstreamDnsServers;
           MulticastDNS = "yes";
           IPv6AcceptRA = "yes";
           LinkLocalAddressing = "ipv6";

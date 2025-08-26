@@ -17,21 +17,13 @@
   services = {
     logind = {
       # Disable lid switch actions (if server is a laptop)
-      lidSwitch = "ignore";
-      lidSwitchDocked = "ignore";
-      lidSwitchExternalPower = "ignore";
-
-      # Disable power button and suspend key actions
-      extraConfig = ''
-        HandlePowerKey=ignore
-        HandleSuspendKey=ignore
-        HandleHibernateKey=ignore
-        HandleLidSwitch=ignore
-        HandleLidSwitchDocked=ignore
-        HandleLidSwitchExternalPower=ignore
-        IdleAction=ignore
-        IdleActionSec=0
-      '';
+      settings = {
+        Login = {
+          HandleLidSwitch = "ignore";
+          HandleLidSwitchDocked = "ignore";
+          HandleLidSwitchExternalPower = "ignore";
+        };
+      };
     };
   };
 

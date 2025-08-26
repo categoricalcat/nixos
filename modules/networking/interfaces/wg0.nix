@@ -30,10 +30,6 @@
         networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = "no";
-          DNS = [
-            addresses.network.vpn.ipv6.host
-            addresses.network.vpn.ipv4.host
-          ];
           Domains = [ "~${addresses.dns.domain}" ];
           DNSDefaultRoute = false;
           MulticastDNS = "yes";
