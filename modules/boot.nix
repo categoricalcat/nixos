@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   boot = {
@@ -8,6 +8,17 @@
     };
 
     kernelPackages = pkgs.linuxPackages_latest;
+
+    # Additional hardware-specific kernel modules
+    initrd.availableKernelModules = lib.mkAfter [
+      "usb_storage"
+      "usbhid"
+      "sd_mod"
+    ];
+
+    initrd.kernelModules = lib.mkAfter [ "amdgpu" ];
+
+    kernelModules = lib.mkAfter [ "amdgpu" ];
 
     # Serial console on USB
     kernelParams = [
