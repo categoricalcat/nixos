@@ -34,21 +34,25 @@
 
 #### Migrate dnsmasq → AdGuard Home (network-wide ad blocking)
 
-- [ ] Deploy AdGuard Home: enable `services.adguardhome` with DNS on port 53 for LAN+VPN (bind to `0.0.0.0` and `::` or specific IPs on `bond0` and `wg0`).
-- [ ] Disable dnsmasq (`services.dnsmasq.enable = false;`) to avoid port 53 conflicts.
-- [ ] Recreate local `.vpn` DNS in AdGuard Home “Local DNS” (rewrites/hosts):
-  - [ ] Add A/AAAA for `fufuwuqi.vpn` to LAN IPv4/IPv6.
-  - [ ] Add A/AAAA (or separate names) for VPN IPv4/IPv6 if needed.
-  - [ ] Optional: add PTR records for reverse lookups of LAN/VPN IPs.
-- [ ] Configure upstreams in AdGuard Home (`upstream_dns`); prefer DoH/DoT and set `bootstrap_dns` accordingly.
-- [ ] Ensure firewall still permits TCP/UDP 53 on `bond0` and `wg0` (already allowed per-interface in firewall module).
-- [ ] Test end-to-end:
-  - [ ] From LAN and VPN clients, resolve `fufuwuqi.vpn` and verify A/AAAA results.
-  - [ ] Confirm ad blocking works (query logs show blocks; typical ad domains are filtered).
-  - [ ] Verify IPv6 and EDNS work without fragmentation issues.
-- [ ] Secure AdGuard Home UI:
-  - [ ] Either bind UI to localhost and expose via Nginx reverse proxy with auth, or restrict to LAN/VPN and set an admin password.
-- [ ] Cleanup: remove dnsmasq-specific log rotation and docs once AGH is stable.
+- [ ] Enable AdGuard Home as the single DNS on the host
+  - [ ] `services.adguardhome.enable = true;` and bind DNS on port 53 for `bond0` and `wg0` (IPv4/IPv6)
+  - [ ] Configure upstreams (`upstream_dns`) to DoH/DoT and set `bootstrap_dns`
+  - [ ] Recreate local `.vpn` records via Local DNS/rewrites (A/AAAA and optional PTR)
+- [ ] Make the NixOS host itself use AdGuard Home for all lookups
+  - [ ] Disable `services.resolved` (or ensure stub resolver does not conflict with :53)
+  - [ ] Point system nameservers to `127.0.0.1` and `::1`; ensure `/etc/resolv.conf` uses AGH (enable resolvconf if needed)
+- [ ] Allow clients on LAN and VPN to use this DNS
+  - [ ] Keep TCP/UDP 53 open on `bond0` and `wg0` (already in firewall; re-validate)
+  - [ ] WireGuard clients: set DNS to `10.100.0.1` (document/update client configs)
+  - [ ] LAN clients: configure router/DHCP to hand out `192.168.1.40` as DNS
+- [ ] Decommission dnsmasq
+  - [ ] `services.dnsmasq.enable = false;` and remove its configuration
+  - [ ] Cleanup: remove dnsmasq-specific log rotation and docs once AGH is stable
+- [ ] Test end-to-end
+  - [ ] From LAN and VPN clients, resolve `fufuwuqi.vpn` and verify A/AAAA
+  - [ ] Confirm ad blocking works and IPv6/EDNS behave correctly
+- [ ] Secure AdGuard Home UI
+  - [ ] Either bind UI to localhost and expose via Nginx with auth, or restrict to LAN/VPN and set an admin password
 
 ### Reverse proxy / Nginx + Cloudflare
 

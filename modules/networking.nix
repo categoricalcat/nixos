@@ -1,9 +1,6 @@
 { addresses, ... }:
 
 {
-  _module.args.systemNameservers = addresses.dns.systemNameservers;
-  _module.args.upstreamDnsServers = addresses.dns.upstreamDnsServers;
-
   imports = [
     ./networking/firewall.nix
     ./networking/interfaces.nix
@@ -11,20 +8,13 @@
   ];
 
   services.resolved = {
-    enable = true;
-    dnsovertls = "opportunistic";
-    dnssec = "allow-downgrade";
-    fallbackDns = addresses.dns.upstreamDnsServers;
-    llmnr = "false";
-    extraConfig = ''
-      MulticastDNS=yes
-    '';
+    enable = false;
   };
 
   networking = {
     inherit (addresses) hostName;
 
-    nameservers = addresses.dns.upstreamDnsServers;
+    nameservers = addresses.dns.systemNameservers;
 
     enableIPv6 = true;
     tempAddresses = "disabled";

@@ -45,7 +45,7 @@
         matchConfig.Name = addresses.network.lan.interface;
         networkConfig = {
           DHCP = "no";
-          DNS = addresses.dns.upstreamDnsServers;
+          DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
           IPv6AcceptRA = "yes";
           LinkLocalAddressing = "ipv6";

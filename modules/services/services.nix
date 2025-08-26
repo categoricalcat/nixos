@@ -11,7 +11,7 @@
   imports = [
     ./avahi.nix
     ./openssh.nix
-    ./dnsmasq.nix
+    ./adguardhome.nix
   ];
 
   services.code-server = {

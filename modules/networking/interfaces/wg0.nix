@@ -31,6 +31,7 @@
           DHCP = "no";
           IPv6AcceptRA = "no";
           Domains = [ "~${addresses.dns.domain}" ];
+          DNS = addresses.dns.systemNameservers;
           DNSDefaultRoute = false;
           MulticastDNS = "yes";
         };
