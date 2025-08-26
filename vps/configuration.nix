@@ -16,7 +16,11 @@
 
   # No SSH on VPS; install only Emacs
   services.openssh.enable = false;
-  environment.systemPackages = with pkgs; [ emacs ];
+  environment.systemPackages = with pkgs; [
+    emacs
+    git
+    btop
+  ];
 
   # Make this configuration evaluatable in CI without real disks/bootloader
   boot.isContainer = true;
