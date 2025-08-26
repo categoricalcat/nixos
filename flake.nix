@@ -46,6 +46,7 @@
         let
           wslConfig = import ./nix/nixos-wsl.nix;
           fufuwuqiConfig = import ./nix/nixos-fufuwuqi.nix;
+          vpsConfig = import ./nix/nixos-vps.nix;
         in
         {
           wsl = wslConfig {
@@ -65,6 +66,14 @@
               nixowos
               home-manager
               inputs
+              ;
+          };
+
+          vps = vpsConfig {
+            inherit
+              nixpkgs
+              sops-nix
+              nixowos
               ;
           };
         };

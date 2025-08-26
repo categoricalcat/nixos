@@ -27,5 +27,12 @@ _: {
       owner = "acme";
       group = "acme";
     };
+
+    # FRP shared token for client/server
+    "tokens/frp" = {
+      mode = "0400";
+      owner = "root";
+      group = "root";
+    };
   };
 }

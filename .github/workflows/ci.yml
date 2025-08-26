@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        system: [fufuwuqi, wsl]
+        system: [fufuwuqi, wsl, vps]
       fail-fast: false  # Continue evaluating other systems even if one fails
     steps:
       - name: Checkout repository
