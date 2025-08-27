@@ -24,7 +24,7 @@
       "60-wg0" = {
         matchConfig.Name = addresses.network.vpn.interface;
         address = [
-          addresses.network.vpn.ipv6.address
+          # addresses.network.vpn.ipv6.address
           addresses.network.vpn.ipv4.address
         ];
         networkConfig = {

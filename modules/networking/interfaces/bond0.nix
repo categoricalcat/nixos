@@ -47,8 +47,8 @@
           DHCP = "no";
           DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
-          IPv6AcceptRA = "yes";
-          LinkLocalAddressing = "ipv6";
+          IPv6AcceptRA = "no";
+          LinkLocalAddressing = "no";
 
           Address = [
             # addresses.network.lan.ipv6.address
@@ -74,9 +74,9 @@
           }
         ];
 
-        ipv6AcceptRAConfig = {
-          RouteMetric = 5;
-        };
+        # ipv6AcceptRAConfig = {
+        #   RouteMetric = 5;
+        # };
       };
     };
   };
