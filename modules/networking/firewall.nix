@@ -21,7 +21,10 @@ _:
         51820 # WireGuard VPN
       ];
 
-      trustedInterfaces = [ "wg0" ];
+      trustedInterfaces = [
+        "wg0"
+        "bond0"
+      ];
 
       # Allow LAN clients on bond0 to query dnsmasq (TCP/UDP 53)
       interfaces.bond0 = {
