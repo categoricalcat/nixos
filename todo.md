@@ -44,7 +44,7 @@
 - [ ] Allow clients on LAN and VPN to use this DNS
   - [ ] Keep TCP/UDP 53 open on `bond0` and `wg0` (already in firewall; re-validate)
   - [ ] WireGuard clients: set DNS to `10.100.0.1` (document/update client configs)
-  - [ ] LAN clients: configure router/DHCP to hand out `192.168.1.40` as DNS
+  - [ ] LAN clients: configure router/DHCP to hand out `192.168.1.42` as DNS
 - [ ] Decommission dnsmasq
   - [ ] `services.dnsmasq.enable = false;` and remove its configuration
   - [ ] Cleanup: remove dnsmasq-specific log rotation and docs once AGH is stable
