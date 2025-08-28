@@ -27,5 +27,13 @@ _: {
       owner = "acme";
       group = "acme";
     };
+    "ngrok/config" = {
+      mode = "0400";
+      owner = "ngrok";
+      group = "ngrok";
+    };
   };
+
+  environment.variables.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
+  systemd.globalEnvironment.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
 }

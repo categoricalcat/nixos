@@ -14,6 +14,7 @@ nixpkgs.lib.nixosSystem {
   modules = [
     sops-nix.nixosModules.sops
     nixowos.nixosModules.default
+    inputs.ngrok.nixosModules.ngrok
     home-manager.nixosModules.home-manager
     ../configuration.nix
     {

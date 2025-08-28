@@ -237,3 +237,30 @@ ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
 ```bash
 sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi
 ```
+
+### Ngrok service
+
+- Enabled via the upstream module `ngrok/ngrok-nix` and configured in `modules/services/ngrok.nix`.
+- Secrets are managed with sops. Add your ngrok config (e.g., authtoken) under the `ngrok/config` key in `secrets/secrets.yaml`:
+
+```bash
+sops secrets/secrets.yaml
+# Add YAML snippet:
+# ngrok:
+#   config: |
+#     authtoken: YOUR_TOKEN
+#     version: 3
+#     # region: us
+```
+
+- The service merges `extraConfig` and `extraConfigFiles`, so you can keep secrets in sops and tunnels declarative in Git.
+- Example tunnels (edit `modules/services/ngrok.nix`):
+
+```nix
+services.ngrok.tunnels = {
+  http-8080 = {
+    proto = "http";
+    addr = 8080;
+  };
+};
+```

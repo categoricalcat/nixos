@@ -12,6 +12,7 @@
     ./avahi.nix
     ./openssh.nix
     ./adguardhome.nix
+    ./ngrok.nix
   ];
 
   services.code-server = {

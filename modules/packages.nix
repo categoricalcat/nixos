@@ -28,6 +28,7 @@
     fd # Fast file finder, works well with fzf
     k6
     dig
+    sops
 
     # Container tools (Podman)
     buildah # Container image builder (docker buildx alternative)
