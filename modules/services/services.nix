@@ -168,6 +168,7 @@
     recommendedGzipSettings = true;
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
+    serverTokens = false;
 
     virtualHosts = {
       # Local test vhost
@@ -182,13 +183,12 @@
         };
       };
 
-      # Public site proxied via Nginx with ACME (Let's Encrypt)
       "fufu.land" = {
-        forceSSL = true; # redirects 80 -> 443
-        useACMEHost = "fufu.land";
+        forceSSL = false;
+        # useACMEHost = "fufu.land";
         extraConfig = ''
-          add_header Content-Type text/plain;
-          return 200 "fufu.land ok";
+          add_header Content-Type text/markdown;
+          return 200 "fufu.land is ok";
         '';
       };
 

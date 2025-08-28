@@ -17,6 +17,10 @@
         proto = "http";
         addr = 80;
       };
+      # "fufu.land-https" = {
+      #   proto = "tls";
+      #   addr = 443;
+      # };
     };
   };
 }
