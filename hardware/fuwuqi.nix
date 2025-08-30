@@ -24,20 +24,20 @@
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/f4da9378-1ca6-4261-94c9-05446f4a89b5";
     fsType = "ext4";
+    options = [
+      "noatime"
+      "nodiratime"
+    ];
   };
 
   fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/E9B8-1C69";
     fsType = "vfat";
-    options = [
-      "fmask=0077"
-      "dmask=0077"
-    ];
+    options = [ "umask=0077" ];
   };
 
-  swapDevices = [
-    { device = "/dev/disk/by-uuid/1ed8f29e-7b1c-4c70-91ff-199169ae36d1"; }
-  ];
+  # Using zram for swap instead of physical partition
+  swapDevices = [ ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;

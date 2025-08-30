@@ -53,14 +53,11 @@
   ];
 
   services.fstrim.enable = true;
-  fileSystems."/".options = [
-    "noatime"
-    "nodiratime"
-  ];
 
   # ZRAM swap configuration (more efficient than disk swap)
   zramSwap = {
     enable = true;
+    priority = 100;
     memoryPercent = 75;
     algorithm = "zstd";
   };
