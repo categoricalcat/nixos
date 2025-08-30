@@ -3,7 +3,6 @@
 {
   pkgs,
   addresses,
-  config,
   ...
 }:
 
@@ -12,7 +11,7 @@
     ./avahi.nix
     ./openssh.nix
     ./adguardhome.nix
-    ./ngrok.nix
+    ./cloudflared.nix
   ];
 
   services.code-server = {
@@ -52,24 +51,24 @@
   };
 
   # Let's Encrypt via ACME, using Cloudflare DNS-01 (optional)
-  security.acme = {
-    acceptTerms = true;
-    defaults = {
-      email = "catufuzgu@gmail.com";
-      dnsProvider = "cloudflare";
-      credentialsFile = config.sops.secrets."tokens/cloudflare-acme".path;
-      dnsPropagationCheck = true;
-      listenHTTP = null; # not needed for DNS-01; set to ":80" only if using HTTP-01
-    };
-    certs = {
-      "fufu.land" = {
-        domain = "fufu.land";
-        # extraDomainNames = [ "cockpit.fufu.land" ];
-      };
-      # Alternatively, separate certs per host:
-      # "cockpit.fufu.land" = { domain = "cockpit.fufu.land"; };
-    };
-  };
+  # security.acme = {
+  #   acceptTerms = true;
+  #   defaults = {
+  #     email = "catufuzgu@gmail.com";
+  #     dnsProvider = "cloudflare";
+  #     credentialsFile = config.sops.secrets."tokens/cloudflare-acme".path;
+  #     dnsPropagationCheck = true;
+  #     listenHTTP = null; # not needed for DNS-01; set to ":80" only if using HTTP-01
+  #   };
+  #   certs = {
+  #     "fufu.land" = {
+  #       domain = "fufu.land";
+  #       # extraDomainNames = [ "cockpit.fufu.land" ];
+  #     };
+  #     # Alternatively, separate certs per host:
+  #     # "cockpit.fufu.land" = { domain = "cockpit.fufu.land"; };
+  #   };
+  # };
 
   # Podman configuration (Docker replacement)
   virtualisation.podman = {
@@ -205,28 +204,6 @@
       #   };
       # };
     };
-  };
-
-  # Ensure nginx can read ACME certificates (group-owned by "acme")
-  users.users.nginx.extraGroups = [ "acme" ];
-
-  # Dynamic DNS via ddclient (Cloudflare)
-  services.ddclient = {
-    enable = true;
-    package = pkgs.ddclient;
-    interval = "5min"; # seconds
-    ssl = true;
-    protocol = "cloudflare";
-    usev4 = "webv4";
-    usev6 = "webv6";
-    verbose = true;
-    zone = "fufu.land"; # TODO: change if different
-    username = "catufuzgu@gmail.com"; # using API token auth
-    passwordFile = config.sops.secrets."tokens/cloudflare-ddclient".path;
-    domains = [
-      "@"
-      # "cockpit"
-    ];
   };
 
   services.fwupd.enable = true;

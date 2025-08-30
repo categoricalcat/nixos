@@ -17,20 +17,16 @@ _: {
       owner = "workd";
       group = "users";
     };
-    "tokens/cloudflare-ddclient" = {
-      mode = "0400";
-      owner = "ddclient";
-      group = "ddclient";
-    };
-    "tokens/cloudflare-acme" = {
-      mode = "0400";
-      owner = "acme";
-      group = "acme";
-    };
-    "ngrok/config" = {
-      mode = "0400";
-      owner = "ngrok";
-      group = "ngrok";
+    # "tokens/cloudflare-acme" = {
+    #   mode = "0400";
+    #   owner = "acme";
+    #   group = "acme";
+    # };
+    "tokens/cloudflared" = {
+      mode = "0640";
+      owner = "cloudflared";
+      group = "cloudflared";
+      path = "/etc/cloudflared/token";
     };
   };
 
