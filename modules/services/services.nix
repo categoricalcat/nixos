@@ -149,8 +149,8 @@
     enable = false;
     port = 9090;
     allowed-origins = [
-      "https://fufuwuqi.local:9090"
-      "http://fufuwuqi.local:9090"
+      "https://fuwuqi.local:9090"
+      "http://fuwuqi.local:9090"
       "https://localhost:9090"
       "http://localhost:9090"
       "https://cockpit.fufu.land"
@@ -171,13 +171,13 @@
 
     virtualHosts = {
       # Local test vhost
-      "fufuwuqi.local" = {
-        serverName = "fufuwuqi.local";
+      "fuwuqi.local" = {
+        serverName = "fuwuqi.local";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "fufuwuqi.local ok";
+            return 200 "fuwuqi.local ok";
           '';
         };
       };

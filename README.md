@@ -1,250 +1,106 @@
 # 福福的NixOS配置
 
-Flake-based modular NixOS configuration for home server use with home-manager integration.
+- purpose: flake-based, modular NixOS for home server with Home Manager integration
+- systems: `fuwuqi` (server), `wsl` (WSL)
+- mode: headless enabled (`serverMode.headless = true`)
+- stateVersion: `25.11`
+- link: see `nixos/todo.md` for open items
 
-## Systems
+## Core
 
-- **fufuwuqi**: Main server configuration
-- **wsl**: Windows Subsystem for Linux configuration
+- nixpkgs: `nixos-unstable`
+- modules: boot, networking, services, server-mode, server-settings, locale, packages, secrets (sops-nix)
+- home-manager: enabled (`fufud`, `workd` on server; `fufud` on WSL)
+- formatter/lint: `nixfmt-rfc-style`, `statix`, `deadnix` via `treefmt-nix`
 
-> [todo list](todo.md)
+## Networking
 
-## Features
+- stack: systemd-networkd, nftables, NAT
+- bond0: `eno1` + `enp4s0` (active-backup, MTU 1492)
+- lan: 192.168.1.42/24, gw 192.168.1.1
+- vpn: WireGuard `wg0` 10.100.0.1/24, MTU 1380, port 51820
+- dns (host): AdGuard Home on LAN/VPN/lo; upstreams = Quad9 + Google + Cloudflare; rewrites for `fuwuqi.vpn` and `fuwuqi`
+- mdns: Avahi on `bond0` and `wg0`, advertises SSH/HTTP/HTTPS/3000/Cockpit/Minecraft
+- ipv6: enabled; forwarding on; selective RA settings
+- tcp tuning: BBR, larger buffers, MSS clamp on forward
 
-### Core
-- NixOS unstable channel with flakes
-- Home-manager for user-specific configurations
-- Modular configuration structure
-- AMD GPU support (ROCm, AMDVLK, OpenCL)
-- sops-nix for secure secrets management
+## Firewall / Ports
 
-### Server Optimizations
-- Power management disabled (24/7 operation)
-- CPU governor: performance mode
-- Weekly SSD TRIM and Nix garbage collection
-- SMART disk monitoring
-- Journal limited to 2GB with 1-month retention
-- Headless mode toggle (`serverMode.headless`)
-- ZRAM swap with zstd compression (75% memory)
-
-### Networking
-- Dual NIC bonding (active-backup mode)
-- BBR congestion control
-- Optimized TCP buffers (up to 268MB)
-- SSH on port 24212 with 2FA (Google Authenticator)
-- WireGuard VPN (port 51820) with IPv4/IPv6 dual-stack
-- IPv6 ULA prefix (fd00:100::/64) for VPN clients
-- mDNS/Avahi for zero-config service discovery
-- dnsmasq for VPN client DNS resolution
-- Open ports: 25565 (Minecraft), 53 (DNS on VPN/LAN interfaces)
-- Firewall allows mDNS (UDP 5353) and WireGuard (UDP 51820)
-
-### Software Stack
-
-**System Tools**
-- btop, tmux, screen, tree, fd
-- fastfetch, curl, wget, stow
-- mtr (network diagnostic)
-- ethtool, iperf3, nethogs, iftop
-- nmap, traceroute
-- kubectl, k6
-
-**Development**
-- Emacs, VS Code (FHS)
-- Git, GitHub CLI
-- direnv, rclone
-- nixfmt-rfc-style, statix, deadnix
-- nil (Nix language server)
-- treefmt-nix integration
-
-**Container Management**
-- Podman ecosystem (podman, podman-compose, podman-tui)
-- buildah, dive, skopeo
-
-**Shell**
-- Zsh with syntax highlighting and auto-suggestions
-- Starship prompt
-- fzf, zoxide
-
-**Font**
-- Maple Mono NF CN (monospace with NerdFont icons and Chinese support)
-
-## Usage
-
-```bash
-# Build and switch to configuration (from project directory)
-sudo nixos-rebuild switch --flake .#fufuwuqi
-
-# Build and switch to configuration (from anywhere)
-sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi
-
-# Update flake inputs
-nix flake update
-
-# Format code with treefmt
-nix fmt
-
-# Run flake checks
-nix flake check
-```
-
-## Structure
-
-```
-nixos/
-├── flake.nix              # Flake definitions with treefmt-nix
-├── flake.lock            # Pinned dependencies
-├── configuration.nix      # Main config for fufuwuqi
-├── .github/
-│   └── workflows/
-│       └── ci.yml        # CI/CD with nix flake check and formatting
-├── hardware/
-│   └── hardware-configuration.nix
-├── modules/
-│   ├── boot.nix          # Bootloader & kernel (IPv4/IPv6 forwarding)
-│   ├── desktop.nix       # GNOME/Wayland (when not headless)
-│   ├── locale.nix        # Timezone & localization (pt_BR.UTF-8)
-│   ├── networking.nix    # Network bonding, firewall, WireGuard
-│   ├── network-performance.nix  # TCP/network optimization
-│   ├── packages.nix      # System packages
-│   ├── server-mode.nix   # Headless toggle
-│   ├── server-settings.nix  # Server-specific settings
-│   ├── services/
-│   │   ├── services.nix  # Main services configuration
-│   │   ├── avahi.nix     # mDNS/zero-config discovery
-│   │   ├── dnsmasq.nix   # DNS for VPN clients
-│   │   └── openssh.nix   # SSH with 2FA and optimizations
-│   └── wsl.nix          # WSL-specific config
-├── users/
-│   ├── users.nix         # User accounts
-│   ├── home-fufud.nix    # fufud's home-manager
-│   └── home-workd.nix    # workd's home-manager
-├── secrets/
-│   ├── sops.nix          # sops-nix configuration
-│   ├── secrets.yaml      # Encrypted secrets (passwords)
-│   └── key.txt           # Age key for decryption
-├── nix/
-│   ├── devshell.nix      # Development shell configuration
-│   ├── formatter.nix     # Treefmt configuration
-│   ├── nixos-fufuwuqi.nix # Main server NixOS configuration
-│   ├── nixos-wsl.nix     # WSL NixOS configuration
-│   └── pre-commit-hooks.nix # Pre-commit hooks configuration
-├── .sops.yaml            # sops configuration with age recipients
-└── .gitignore            # Ignores unencrypted secrets
-```
-
-## Users
-
-- **fufud**: Personal account with sudo, render, video, podman access
-- **workd**: Work account with sudo, podman access
+- trusted interfaces: `wg0`, `bond0`
+- tcp open: 80, 443, 3333 (AdGuardHome UI), 24212 (SSH), 25565 (Minecraft)
+- udp open: 25565 (Minecraft), 5353 (mDNS), 51820 (WireGuard)
+- dns for clients: TCP/UDP 53 allowed on `bond0` and `wg0`
 
 ## Services
 
-- **SSH** (port 24212): Hardened config with 2FA, optimized ciphers, port forwarding enabled
-- **WireGuard VPN**: Dual-stack IPv4/IPv6 with dedicated DNS
-- **Web Services**:
-  - Nginx reverse proxy for `fufu.land` and `cockpit.fufu.land` with Cloudflare Origin TLS
-  - Optional: ACME (Let's Encrypt) via Cloudflare DNS-01
-  - Code-server (VS Code in browser)
-  - Cockpit (port 9090, currently disabled)
-- **Network Services**:
-  - dnsmasq: DNS server for VPN and LAN clients
-  - Avahi: mDNS/zero-config service discovery
-- **Container Runtime**:
-  - Podman with Docker compatibility
-  - Auto-pruning and journald logging
-- **AI/ML**:
-  - Ollama with ROCm acceleration for AMD GPUs
-- **System Services**:
-  - fail2ban: Intrusion prevention
-  - fwupd: Firmware updates
-  - Chrony: NTP time synchronization
-  - SMART disk monitoring (smartd)
-- **Security**:
-  - sops-nix: Age-based secrets management
-  - Google Authenticator for SSH 2FA
-  - TPM2 support enabled
-- **Other**:
-  - USB serial console support (ttyUSB0, disabled)
-  - SSH agent with 15-minute timeout
+- AdGuard Home: DNS with DNSSEC, HTTP/3, cache tuned, UI on 3333
+- Nginx: minimal vhosts (`fuwuqi.local`, `fufu.land`), TLS optional (CF/ACME)
+- cloudflared: Podman container, host network, token via sops at `/etc/cloudflared/token`
+- code-server: enabled on 4444
+- ollama: enabled with ROCm acceleration
+- chrony: NTP
+- smartd: disk monitoring (non-WSL)
+- fwupd: firmware updates
 
-## Development Features
+## Security
 
-- **CI/CD**: GitHub Actions workflow for flake checks and formatting
-- **Code Quality**: treefmt-nix with nixfmt-rfc-style, statix, and deadnix
-- **Pre-commit Hooks**: Automatic formatting and validation on git commit
-- **Modular Configuration**: All major components (formatter, dev shell, NixOS configs) in separate files
-- **Flake Features**: nixowos integration for enhanced NixOS modules
+- OpenSSH: port 24212; 2FA (Google Authenticator); publickey + keyboard-interactive; hardened ciphers/KEX/MACs; forwarding enabled
+- sops-nix: age-based secrets with `/etc/nixos/secrets/{secrets.yaml,key.txt}` and `.sops.yaml`
+- fail2ban: nginx-related jails enabled
+- TPM2: enabled
+- journald: 2G cap, 1-month retention
 
-### Pre-commit Hooks
+## Containers (Podman)
 
-The development shell automatically installs minimal git pre-commit hooks that run:
-- `nix fmt -- --ci` - Checks formatting without modifying files
-- `nix flake check` - Validates the flake configuration
+- dockerCompat, socket, journald logging
+- autoPrune: weekly, `--all`
+- network: dns enabled, IPv6 enabled, MTU 1492; default subnet pools configured
+- registries: docker.io, quay.io, ghcr.io
 
-To use:
-```bash
-# Enter development shell (hooks install automatically)
-nix develop
+## Hardware / GPU
 
-# Bypass hooks if needed
-git commit --no-verify
-```
+- amdgpu + AMDVLK + OpenCL
+- ROCm packages: rocblas, hipblas, rocm-smi, rocminfo, rocmPath
+- /opt/rocm symlink to `${rocmPath}`
+- AMD microcode + redistributable firmware
 
-## Secrets Management
+## System
 
-The configuration uses sops-nix with age encryption for sensitive data:
+- kernel: latest; IPv4/IPv6 forwarding on; USB serial console params present
+- power: performance governor; sleep/suspend/hibernate disabled
+- storage: weekly fstrim; root `noatime,nodiratime`
+- swap: ZRAM (zstd) at 75% memory
+- fonts: Maple Mono NF CN as default mono/sans/serif
 
-- **Encrypted secrets**: User passwords stored in `secrets/secrets.yaml`
-- **Age key**: Host-specific key in `secrets/key.txt`
-- **Recipients**: Configured in `.sops.yaml` for host_fufuwuqi
-- **Auto-decryption**: Secrets available at runtime via `config.sops.secrets`
+## Users
 
-To edit secrets:
-```bash
-# Edit encrypted secrets file
-sops secrets/secrets.yaml
+- accounts: `fufud` (wheel, render, video, dialout, podman), `workd` (wheel, dialout, podman)
+- shell: zsh default; autosuggestions + syntax highlighting
+- passwords: `workd` from sops; `fufud` secret present
+- ssh agent: 15-minute timeout
+- home-manager: user packages include Node.js variants; clones `the.files` on activation
 
-# Add new age recipients
-ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
-```
+## Dev / CI
 
-### Cloudflare + Nginx Setup
+- flake inputs: nixpkgs, home-manager, nixowos, treefmt-nix, pre-commit-hooks, sops-nix, nixos-wsl
+- formatter output: treefmt wrapper exposed via `formatter`
+- devshell: pre-commit hooks for `nix fmt -- --ci` and `nix flake check`
+- ci workflow: `nix flake check`, `nix fmt -- --ci`, evaluation of `.#nixosConfigurations.{fuwuqi,wsl}`
 
-1. In Cloudflare dashboard for `fufu.land`, set SSL/TLS mode to Full (strict).
-2. Create a Cloudflare Origin Certificate for `fufu.land` and `cockpit.fufu.land`.
-3. Store the cert/key in `secrets/secrets.yaml` under:
-   - `tls/cloudflare-origin.crt`
-   - `tls/cloudflare-origin.key`
-   The sops-nix declarations are in `secrets/sops.nix`.
-4. DNS: Ensure `A/AAAA` records exist for `fufu.land` and `cockpit.fufu.land` (orange-cloud proxied). `ddclient` is configured to update Cloudflare.
-5. Deploy:
-   - `sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi`
-6. Firewall opens TCP 80/443, Nginx redirects HTTP→HTTPS, and trusts Cloudflare real IP headers.
-7. Optional: Enable brotli by adding the nginx brotli module and turning it on in `services.nginx.commonHttpConfig`.
- 
-### Optional: Use ACME (Let's Encrypt) instead of Cloudflare Origin cert
+## Secrets (catalog)
 
-1. Create a Cloudflare API token with DNS edit for the zone `fufu.land`.
-2. Save it in `secrets/secrets.yaml` as `tokens/cloudflare-acme`.
-3. The configuration already enables `security.acme` with DNS-01 using that secret.
-4. To switch Nginx vhosts to ACME certs, replace in `services.nginx.virtualHosts`:
-   - `sslCertificate = config.sops.secrets."tls/cloudflare-origin.crt".path;`
-   - `sslCertificateKey = config.sops.secrets."tls/cloudflare-origin.key".path;`
-   with:
-   - `useACMEHost = "fufu.land";` (and ensure `cockpit.fufu.land` is in `extraDomainNames`)
-5. Rebuild:
-```bash
-sudo nixos-rebuild switch --flake /home/fufud/nixos#fufuwuqi
-```
+- passwords: `passwords/{fufud,workd}`
+- tokens: `tokens/cloudflared` (used); `tokens/cloudflare-acme` (optional)
+- age key: `secrets/key.txt`; recipients in `.sops.yaml`
 
-### Cloudflare Tunnel (cloudflared)
+## Structure (selected)
 
-- Runs `cloudflared` as an OCI container via Podman, configured in `modules/services/cloudflared.nix`.
-- Token mode: store the issued token under `cloudflared/token` in `secrets/secrets.yaml` (managed by sops-nix). The container reads it from `/etc/cloudflared/token` and runs:
-
-```bash
-cloudflared tunnel --no-autoupdate run --token $(cat /etc/cloudflared/token)
-```
-
-- You can alternatively use credentials JSON mode by mounting a credentials file and switching the container args accordingly.
+- flake: `flake.nix`, `flake.lock`
+- systems: `nix/nixos-fuwuqi.nix`, `nix/nixos-wsl.nix`
+- entry: `configuration.nix`
+- modules: `modules/{boot,networking,services,server-mode,server-settings,locale,packages}.nix`
+- services: `modules/services/{services,openssh,avahi,adguardhome,cloudflared}.nix`
+- secrets: `secrets/{sops.nix,secrets.yaml,key.txt}`, `.sops.yaml`
+- users: `users/{users.nix,home-fufud.nix,home-workd.nix}`
+- ci: `.github/workflows/ci.yml`
+- todo: `todo.md`

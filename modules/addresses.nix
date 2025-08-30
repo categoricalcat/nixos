@@ -1,6 +1,6 @@
 _: {
   _module.args.addresses = {
-    hostName = "fufuwuqi";
+    hostName = "fuwuqi";
 
     dns = {
       systemNameservers = [

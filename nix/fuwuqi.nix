@@ -1,4 +1,4 @@
-# Main server (fufuwuqi) NixOS configuration
+# Main server (fuwuqi) NixOS configuration
 {
   nixpkgs,
   sops-nix,

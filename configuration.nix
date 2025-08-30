@@ -4,7 +4,7 @@
 
 {
   imports = [
-    ./hardware/fufuwuqi.nix
+    ./hardware/fuwuqi.nix
     ./modules/addresses.nix
     ./modules/boot.nix
     ./modules/locale.nix

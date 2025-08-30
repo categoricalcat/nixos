@@ -44,8 +44,8 @@
     {
       nixosConfigurations =
         let
-          wslConfig = import ./nix/nixos-wsl.nix;
-          fufuwuqiConfig = import ./nix/nixos-fufuwuqi.nix;
+          wslConfig = import ./nix/wsl.nix;
+          fuwuqiConfig = import ./nix/fuwuqi.nix;
         in
         {
           wsl = wslConfig {
@@ -58,7 +58,7 @@
               ;
           };
 
-          fufuwuqi = fufuwuqiConfig {
+          fuwuqi = fuwuqiConfig {
             inherit
               nixpkgs
               sops-nix

@@ -2,8 +2,7 @@
 
 ### Quick wins
 
-- [ ] Secure Cockpit with TLS via `security.acme` and/or reverse proxy in `services.nginx`; set `AllowUnencrypted = false`; restrict `allowed-origins`.
-- [ ] SSH: set `PasswordAuthentication = no` once keys+2FA are confirmed; optionally add `Match` blocks to restrict by `AddressFamily`/`From`.
+- [ ] consider SSH: set `PasswordAuthentication = no` once keys+2FA are confirmed; optionally add `Match` blocks to restrict by `AddressFamily`/`From`.
 - [x] README: fix path to `/etc/nixos` and add brief usage notes for flake builds.
 - [x] Remove `docker` group from users; keep `podman` only.
 - [x] WSL: deduplicate `nixowos.nixosModules.default` import.
@@ -18,7 +17,6 @@
     4. Create `.sops.yaml` with age keys from `ssh-to-age`
     5. Create `secrets/secrets.yaml` with `sops secrets/secrets.yaml`
     6. Update services to use `config.sops.secrets."name".path`
-- [ ] Fail2ban: add nginx/cockpit jails if exposing HTTP(S); tune bans.
 - [x] SSH: keep 2FA, `MaxAuthTries = 3`, `LoginGraceTime = 30s` (already present/close; re-validate values).
 - [ ] Enable audit logs: `security.auditd.enable = true` and consider basic audit rules.
 
@@ -30,14 +28,13 @@
 - [x] Enable mDNS/Avahi for zero-config service discovery across VPN and LAN with service advertisements.
 - [ ] Bonding: relax `MIIMonitorSec` to ~1s and add modest `UpDelaySec`/`DownDelaySec` to reduce flapping.
 - [x] Replace static `resolv.conf` with `services.resolved` integrated with `systemd-networkd`; document DNS fallbacks and DoT if desired.
-- [ ] Add log rotation for `/var/log/dnsmasq-vpn.log` via `services.logrotate`.
 
 #### Migrate dnsmasq → AdGuard Home (network-wide ad blocking)
 
-- [ ] Enable AdGuard Home as the single DNS on the host
-  - [ ] `services.adguardhome.enable = true;` and bind DNS on port 53 for `bond0` and `wg0` (IPv4/IPv6)
-  - [ ] Configure upstreams (`upstream_dns`) to DoH/DoT and set `bootstrap_dns`
-  - [ ] Recreate local `.vpn` records via Local DNS/rewrites (A/AAAA and optional PTR)
+- [x] Enable AdGuard Home as the single DNS on the host
+  - [x] `services.adguardhome.enable = true;` and bind DNS on port 53 for `bond0` and `wg0` (IPv4/IPv6)
+  - [x] Configure upstreams (`upstream_dns`) to DoH/DoT and set `bootstrap_dns`
+  - [x] Recreate local `.vpn` records via Local DNS/rewrites (A/AAAA and optional PTR)
 - [ ] Make the NixOS host itself use AdGuard Home for all lookups
   - [ ] Disable `services.resolved` (or ensure stub resolver does not conflict with :53)
   - [ ] Point system nameservers to `127.0.0.1` and `::1`; ensure `/etc/resolv.conf` uses AGH (enable resolvconf if needed)
@@ -49,7 +46,7 @@
   - [ ] `services.dnsmasq.enable = false;` and remove its configuration
   - [ ] Cleanup: remove dnsmasq-specific log rotation and docs once AGH is stable
 - [ ] Test end-to-end
-  - [ ] From LAN and VPN clients, resolve `fufuwuqi.vpn` and verify A/AAAA
+  - [ ] From LAN and VPN clients, resolve `fuwuqi.vpn` and verify A/AAAA
   - [ ] Confirm ad blocking works and IPv6/EDNS behave correctly
 - [ ] Secure AdGuard Home UI
   - [ ] Either bind UI to localhost and expose via Nginx with auth, or restrict to LAN/VPN and set an admin password
@@ -83,7 +80,7 @@
 ### Nix / Flakes / DevEx
 
 - [x] Add pre-commit with `statix`, `deadnix`, and one formatter (`nixfmt-rfc-style` or `alejandra`) via `treefmt-nix`.
-- [x] CI: run `nix flake check`, build `.#nixosConfigurations.{fufuwuqi,wsl}`, and lint (`statix`, `deadnix`).
+- [x] CI: run `nix flake check`, build `.#nixosConfigurations.{fuwuqi,wsl}`, and lint (`statix`, `deadnix`).
 - [x] DevShell with `nil` (Nix LSP), lint tools, and `pre-commit`.
 
 ### Documentation
