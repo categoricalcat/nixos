@@ -21,23 +21,6 @@
     networkmanager.enable = false;
     useNetworkd = true;
     useDHCP = false;
-
-    hosts = {
-      "${addresses.network.lan.ipv4.host}" = [
-        "${addresses.hostName}.${addresses.dns.domain}"
-        "${addresses.hostName}.local"
-      ];
-      "${addresses.network.vpn.ipv4.host}" = [
-        "${addresses.hostName}.${addresses.dns.domain}"
-        "${addresses.hostName}.local"
-      ];
-      "127.0.0.1" = [
-        "localhost"
-      ];
-      "::1" = [
-        "localhost"
-      ];
-    };
   };
 
   systemd.network = {

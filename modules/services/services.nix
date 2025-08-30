@@ -182,6 +182,17 @@
         };
       };
 
+      "fuwuqi.vpn" = {
+        serverName = "fuwuqi.vpn";
+        forceSSL = false;
+        locations."/" = {
+          extraConfig = ''
+            add_header Content-Type text/plain;
+            return 200 "fuwuqi.vpn ok";
+          '';
+        };
+      };
+
       "fufu.land" = {
         forceSSL = false;
         # useACMEHost = "fufu.land";
