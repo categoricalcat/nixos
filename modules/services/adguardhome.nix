@@ -15,9 +15,8 @@
       # Listen on LAN and VPN addresses explicitly (IPv4/IPv6)
       dns = {
         bind_hosts = [
-          addresses.network.lan.ipv4.host
-          addresses.network.vpn.ipv4.host
-          "127.0.0.1"
+          "0.0.0.0"
+          "::"
         ];
         # Upstreams: DoH/DoT; bootstrap for DoH resolution
         upstream_dns = addresses.dns.quad9 ++ addresses.dns.google ++ addresses.dns.cloudflare;
@@ -29,26 +28,30 @@
         ecs_use_subnet_opt = true;
         ratelimit = 0; # no per-client rate limit
         enable_dnssec = true;
-        ipv6_disabled = true;
+        ipv6_disabled = false;
         cache_size = 200000; # entries
         max_goroutines = 300;
         upstream_timeout = "5s";
         serve_http3 = true;
       };
 
-      # Local domain rewrites for .vpn
-      rewrites = [
-        {
-          domain = "${addresses.hostName}.${addresses.dns.domain}";
-          answer = addresses.network.vpn.ipv4.host;
-        }
-        {
-          domain = "${addresses.hostName}";
-          answer = addresses.network.lan.ipv4.host;
-        }
-      ];
+      filtering = {
+        rewrites = [
+          {
+            domain = "${addresses.hostName}.${addresses.dns.domain}";
+            answer = addresses.network.vpn.ipv4.host;
+          }
+          {
+            domain = "${addresses.hostName}.lan";
+            answer = addresses.network.lan.ipv4.host;
+          }
+          {
+            domain = "${addresses.hostName}";
+            answer = addresses.network.lan.ipv4.host;
+          }
+        ];
+      };
 
-      # TLS for upstreams; not serving TLS on :53
       tls = {
         enabled = false;
       };

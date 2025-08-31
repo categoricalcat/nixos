@@ -16,11 +16,12 @@
 
   services.code-server = {
     enable = true;
-    host = "0.0.0.0";
+    host = "10.100.0.1";
     port = 4444;
     user = "fufud";
     group = "users";
     disableTelemetry = true;
+    auth = "none";
   };
 
   security.pam = {

@@ -6,6 +6,7 @@ _:
       enable = true;
       allowPing = true;
       allowedTCPPorts = [
+        53 # DNS
         80
         443
         3333
@@ -16,6 +17,7 @@ _:
         # 9090 # Cockpit
       ];
       allowedUDPPorts = [
+        53 # DNS
         25565 # Minecraft server
         5353 # mDNS/Avahi
         51820 # WireGuard VPN
@@ -25,18 +27,6 @@ _:
         "wg0"
         "bond0"
       ];
-
-      # Allow LAN clients on bond0 to query dnsmasq (TCP/UDP 53)
-      interfaces.bond0 = {
-        allowedTCPPorts = [ 53 ];
-        allowedUDPPorts = [ 53 ];
-      };
-
-      # Allow VPN clients on wg0 to query dnsmasq
-      interfaces.wg0 = {
-        allowedTCPPorts = [ 53 ];
-        allowedUDPPorts = [ 53 ];
-      };
     };
 
     nftables = {

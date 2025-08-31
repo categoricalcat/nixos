@@ -1,4 +1,7 @@
-{ addresses, ... }:
+{
+  addresses,
+  ...
+}:
 {
   systemd.network = {
     netdevs = {
