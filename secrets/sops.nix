@@ -17,11 +17,6 @@ _: {
       owner = "workd";
       group = "users";
     };
-    # "tokens/cloudflare-acme" = {
-    #   mode = "0400";
-    #   owner = "acme";
-    #   group = "acme";
-    # };
     "tokens/cloudflared" = {
       mode = "0640";
       owner = "cloudflared";

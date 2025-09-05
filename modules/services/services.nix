@@ -16,12 +16,21 @@
 
   services.code-server = {
     enable = true;
-    host = "10.100.0.1";
+    inherit (addresses.network.vpn.ipv4) host;
     port = 4444;
     user = "fufud";
     group = "users";
     disableTelemetry = true;
     auth = "none";
+  };
+
+  systemd.services."code-server" = {
+    wants = [
+      "network-online.target"
+    ];
+    after = [
+      "network-online.target"
+    ];
   };
 
   security.pam = {

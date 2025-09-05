@@ -7,6 +7,16 @@
 
   # Optimized kernel parameters
   boot.kernel.sysctl = {
+    # Dual-stack setup - enable both IPv4 and IPv6 forwarding
+    "net.ipv4.ip_forward" = 1;
+    "net.ipv6.conf.all.forwarding" = 1;
+    "net.ipv6.conf.default.forwarding" = 1;
+
+    # WireGuard VPN specific settings
+    "net.ipv4.conf.wg0.forwarding" = 1;
+    "net.ipv6.conf.wg0.forwarding" = 1;
+    "net.ipv6.conf.wg0.accept_ra" = 2; # Accept RAs even when forwarding is enabled
+
     "net.ipv6.conf.all.disable_ipv6" = 0;
     "net.ipv6.conf.all.use_tempaddr" = 0;
     "net.ipv6.conf.all.accept_ra" = 1;
@@ -44,6 +54,10 @@
     # Security-hardened TCP settings
     "net.ipv4.tcp_rfc1337" = 1; # Protect against TIME-WAIT attacks
     "net.ipv4.tcp_syncookies" = 1; # Enable SYN flood protection
+    # Required by wg-easy / WireGuard in containers to properly mark packets
+    "net.ipv4.conf.all.src_valid_mark" = 1;
+    # Enable only if routing IPv6 via WireGuard
+    # "net.ipv6.conf.all.forwarding" = 1;
   };
 
   # Essential kernel modules

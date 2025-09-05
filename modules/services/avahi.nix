@@ -87,6 +87,18 @@ _: {
           </service>
         </service-group>
       '';
+
+      wg_vpn = ''
+        <?xml version="1.0" standalone='no'?>
+        <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+        <service-group>
+          <name replace-wildcards="yes">%h WG UI</name>
+          <service>
+            <type>_http._tcp</type>
+            <port>51821</port>
+          </service>
+        </service-group>
+      '';
     };
   };
 }

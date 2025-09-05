@@ -29,6 +29,7 @@
     k6
     dig
     sops
+    nftables
 
     # Container tools (Podman)
     buildah # Container image builder (docker buildx alternative)
@@ -46,6 +47,7 @@
     zoxide
 
     maple-mono.NF-CN
+    python3
 
     # ROCm packages for GPU compute
     rocmPackages.clr

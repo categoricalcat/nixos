@@ -6,7 +6,7 @@ _:
       enable = true;
       allowPing = true;
       allowedTCPPorts = [
-        53 # DNS
+        53
         80
         443
         3333

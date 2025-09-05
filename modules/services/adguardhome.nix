@@ -12,7 +12,6 @@
         session_ttl = "12h";
       };
 
-      # Listen on LAN and VPN addresses explicitly (IPv4/IPv6)
       dns = {
         bind_hosts = [
           "0.0.0.0"
@@ -62,5 +61,14 @@
       querylog_interval = "168h"; # one week
       querylog_size_memory = 10485760; # 10MiB
     };
+  };
+
+  systemd.services.adguardhome = {
+    wants = [
+      "network-online.target"
+    ];
+    after = [
+      "network-online.target"
+    ];
   };
 }
