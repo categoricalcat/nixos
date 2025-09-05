@@ -4,6 +4,7 @@
   sops-nix,
   nixowos,
   home-manager,
+  vscode-server,
   inputs,
   ...
 }:
@@ -15,6 +16,7 @@ nixpkgs.lib.nixosSystem {
     sops-nix.nixosModules.sops
     nixowos.nixosModules.default
     home-manager.nixosModules.home-manager
+    vscode-server.nixosModules.default
     ../configuration.nix
     {
       nixowos.enable = true;

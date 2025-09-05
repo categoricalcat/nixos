@@ -14,17 +14,20 @@
     ./cloudflared.nix
   ];
 
-  services.code-server = {
+  services.openvscode-server = {
     enable = true;
     inherit (addresses.network.vpn.ipv4) host;
     port = 4444;
     user = "fufud";
     group = "users";
-    disableTelemetry = true;
-    auth = "none";
+    telemetryLevel = "off";
+    withoutConnectionToken = true;
   };
 
-  systemd.services."code-server" = {
+  services.vscode-server.enable = true;
+  programs.nix-ld.enable = true;
+
+  systemd.services."openvscode-server" = {
     wants = [
       "network-online.target"
     ];
@@ -147,12 +150,6 @@
     isSystemUser = true;
     group = "ddclient";
     description = "ddclient daemon user";
-  };
-
-  systemd.services."serial-getty@ttyUSB0" = {
-    enable = false;
-    wantedBy = [ "getty.target" ];
-    serviceConfig.Restart = "always";
   };
 
   services.cockpit = {

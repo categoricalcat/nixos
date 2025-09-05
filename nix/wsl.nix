@@ -5,6 +5,7 @@
   nixowos,
   nixos-wsl,
   home-manager,
+  vscode-server,
   ...
 }:
 
@@ -15,6 +16,7 @@ nixpkgs.lib.nixosSystem {
     nixowos.nixosModules.default
     nixos-wsl.nixosModules.default
     home-manager.nixosModules.home-manager
+    vscode-server.nixosModules.default
     ../modules/wsl.nix
     ../secrets/sops.nix
     ../modules/packages.nix

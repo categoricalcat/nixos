@@ -66,7 +66,7 @@
 
 ## System
 
-- kernel: latest; IPv4/IPv6 forwarding on; USB serial console params present
+- kernel: latest; IPv4/IPv6 forwarding on
 - power: performance governor; sleep/suspend/hibernate disabled
 - storage: weekly fstrim; root `noatime,nodiratime`
 - swap: ZRAM (zstd) at 75% memory

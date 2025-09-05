@@ -1,4 +1,4 @@
-{ addresses, ... }:
+{ ... }:
 
 {
   imports = [
@@ -17,13 +17,6 @@
         networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = "no";
-        };
-      };
-
-      "50-usb" = {
-        matchConfig.Name = "usb* enp*s*u*";
-        networkConfig = {
-          Address = addresses.network.usb.address;
         };
       };
     };

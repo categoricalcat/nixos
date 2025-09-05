@@ -23,6 +23,11 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    vscode-server = {
+      url = "github:nix-community/nixos-vscode-server";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -34,6 +39,7 @@
       treefmt-nix,
       pre-commit-hooks,
       sops-nix,
+      vscode-server,
       ...
     }@inputs:
     let
@@ -55,6 +61,7 @@
               nixowos
               nixos-wsl
               home-manager
+              vscode-server
               ;
           };
 
@@ -64,6 +71,7 @@
               sops-nix
               nixowos
               home-manager
+              vscode-server
               inputs
               ;
           };

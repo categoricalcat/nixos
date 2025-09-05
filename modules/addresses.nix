@@ -78,12 +78,6 @@ _: {
           gateway = "192.168.1.1";
         };
       };
-
-      usb = rec {
-        host = "192.168.100.1";
-        prefixLength = 24;
-        address = "${host}/${builtins.toString prefixLength}";
-      };
     };
 
     wireguard = {

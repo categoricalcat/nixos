@@ -4,6 +4,13 @@
 
 {
   environment.systemPackages = with pkgs; [
+    gnumake
+    gcc
+    pkg-config
+    libusb1
+    eudev
+    udev
+
     # System utilities
     btop
     curl
