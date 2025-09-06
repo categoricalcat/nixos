@@ -1,12 +1,12 @@
 { addresses, ... }:
 {
+  # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file
   services.adguardhome = {
     enable = true;
     host = "0.0.0.0";
     port = 3333;
-    mutableSettings = false; # keep settings declarative
+    mutableSettings = false;
     settings = {
-      # Web UI: bind away from default 3000
       http = {
         address = "0.0.0.0:3333";
         session_ttl = "12h";
@@ -24,10 +24,12 @@
         upstream_mode = "parallel";
         all_servers = true;
 
+        bootstrap_prefer_ipv6 = true;
         bootstrap_dns = [
           "2620:fe::fe"
           "9.9.9.9"
         ];
+
         edns_client_subnet = {
           enabled = true;
           use_custom = false;
@@ -38,7 +40,7 @@
         ipv6_disabled = false;
         cache_size = 200000; # entries
         max_goroutines = 300;
-        upstream_timeout = "5s";
+        upstream_timeout = "4s";
         serve_http3 = true;
       };
 
