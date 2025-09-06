@@ -17,10 +17,15 @@
           "0.0.0.0"
           "::"
         ];
-        # Upstreams: DoH/DoT; bootstrap for DoH resolution
+
         upstream_dns =
           addresses.dns.quad9 ++ addresses.dns.adguard ++ addresses.dns.google ++ addresses.dns.cloudflare;
+
+        upstream_mode = "parallel";
+        all_servers = true;
+
         bootstrap_dns = [
+          "2620:fe::fe"
           "9.9.9.9"
         ];
         edns_client_subnet = {
@@ -74,13 +79,13 @@
       querylog = {
         enabled = true;
         file_enabled = true;
-        interval = "731h";
+        interval = "2160h";
         size_memory = 10485760; # 10MiB
       };
 
       statistics = {
         enabled = true;
-        interval = "731h";
+        interval = "744h";
       };
     };
   };
