@@ -4,9 +4,8 @@ _: {
 
     dns = {
       systemNameservers = [
-        # "2804:41fc:8030:ace1::1"
-        "0.0.0.0"
-        "::"
+        "::1"
+        "127.0.0.1"
       ];
       quad9 = [
         "dns.quad9.net"

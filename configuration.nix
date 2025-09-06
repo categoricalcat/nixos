@@ -20,32 +20,20 @@
 
   serverMode.headless = true;
 
-  # Nixpkgs configuration to handle deprecated packages
-  nixpkgs.overlays = [
-    (_final: prev: {
-      androidndkPkgs_23b = prev.androidndkPkgs_23;
-    })
-  ];
-
-  # experimental features
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
   ];
 
-  # Suppress CUDA warnings by setting minimum version
   nixpkgs.config = {
-    allowUnfree = true; # Allow unfree packages
-    cudaSupport = false; # Disable CUDA support (NVIDIA-only, not needed for AMD)
-    # For AMD GPU compute support, you would use ROCm instead:
-    rocmSupport = true; # Enable if you need AMD GPU compute support
+    allowUnfree = true;
+    cudaSupport = false;
+    rocmSupport = true;
   };
 
   system.stateVersion = "25.11";
 
-  # Font configuration
   fonts = {
-    # Enable font management
     fontconfig = {
       enable = true;
       defaultFonts = {
@@ -60,7 +48,6 @@
         ];
       };
 
-      # Better font rendering
       antialias = true;
       hinting = {
         enable = true;
@@ -92,7 +79,6 @@
     enable = true;
   };
 
-  # Create symlink for Ollama to find ROCm libraries
   systemd.tmpfiles.rules = [
     "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
   ];

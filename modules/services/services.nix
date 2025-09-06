@@ -40,8 +40,6 @@
     services.sshd.googleAuthenticator.enable = true;
   };
 
-  programs.mtr.enable = true;
-
   programs.ssh = {
     startAgent = true;
     # enable = true;
