@@ -18,8 +18,11 @@
           "::"
         ];
         # Upstreams: DoH/DoT; bootstrap for DoH resolution
-        upstream_dns = addresses.dns.quad9 ++ addresses.dns.google ++ addresses.dns.cloudflare;
-        bootstrap_dns = addresses.dns.quad9;
+        upstream_dns =
+          addresses.dns.quad9 ++ addresses.dns.adguard ++ addresses.dns.google ++ addresses.dns.cloudflare;
+        bootstrap_dns = [
+          "9.9.9.9"
+        ];
         edns_client_subnet = {
           enabled = true;
           use_custom = false;
@@ -51,15 +54,34 @@
         ];
       };
 
+      filters = [
+        {
+          url = "https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt";
+          name = "AdGuard Home Default Filter";
+          enabled = true;
+        }
+        {
+          url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt";
+          name = "Hagezi Multi PRO Adblock List";
+          enabled = true;
+        }
+      ];
+
       tls = {
         enabled = false;
       };
 
-      # Query log settings
-      querylog_enabled = true;
-      querylog_file_enabled = true;
-      querylog_interval = "168h"; # one week
-      querylog_size_memory = 10485760; # 10MiB
+      querylog = {
+        enabled = true;
+        file_enabled = true;
+        interval = "731h";
+        size_memory = 10485760; # 10MiB
+      };
+
+      statistics = {
+        enabled = true;
+        interval = "731h";
+      };
     };
   };
 

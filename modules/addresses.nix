@@ -5,27 +5,39 @@ _: {
     dns = {
       systemNameservers = [
         # "2804:41fc:8030:ace1::1"
-        "192.168.1.42"
-        "10.100.0.1"
-        "127.0.0.1"
+        "0.0.0.0"
+        "::"
       ];
       quad9 = [
-        "9.9.9.9"
-        "149.112.112.112"
+        "dns.quad9.net"
+        "https://dns.quad9.net/dns-query"
         "2620:fe::fe"
         "2620:fe::9"
+        "9.9.9.9"
+        "149.112.112.112"
+
       ];
       google = [
-        "8.8.8.8"
-        "8.8.4.4"
+        "dns.google.com"
+        "https://dns.google/dns-query"
         "2001:4860:4860::8888"
         "2001:4860:4860::8844"
+        "8.8.8.8"
+        "8.8.4.4"
       ];
       cloudflare = [
-        "1.1.1.1"
-        "1.0.0.1"
+        "1dot1dot1dot1.cloudflare-dns.com"
+        "https://cloudflare-dns.com/dns-query"
         "2606:4700:4700::1111"
         "2606:4700:4700::1001"
+        "1.1.1.1"
+        "1.0.0.1"
+      ];
+      adguard = [
+        "dns.adguard-dns.com"
+        "https://dns.adguard-dns.com/dns-query"
+        "94.140.14.14"
+
       ];
       domain = "vpn";
     };
