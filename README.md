@@ -1,104 +1,71 @@
-# 福福的NixOS配置
+## NixOS flake (declarative overview)
 
-Flake-based modular NixOS configuration for home server use with home-manager integration.
+### What this is
+- **flake**: NixOS/home-manager setup for `x86_64-linux`
+- **systems**:
+  - `nixosConfigurations.fufuwuqi`: main server
+  - `nixosConfigurations.wsl`: NixOS-WSL
+- **style**: strictly declarative modules; secrets via `sops-nix`
 
-## Systems
+### Key features
+- **Networking**: `systemd-networkd`, `bond0` (active-backup), `wg0` (WireGuard), MTU tuned (1492/1380)
+- **Firewall/NAT**: nftables firewall with mss clamp, NAT `bond0`⇄`wg0`
+- **DNS**: AdGuard Home on :3333, parallel upstreams (Quad9/AdGuard/Google/Cloudflare)
+- **Remote**: OpenSSH hardened, Google Authenticator PAM, Fail2ban jails
+- **Reverse proxy**: Nginx vhosts for `*.local`, `*.vpn` (TLS via Cloudflare optional)
+- **Containers**: Podman + dockerCompat, journald logs, overlayfs, default subnet pools
+- **Tunnels**: `cloudflared` (token from sops)
+- **Dev remote**: `openvscode-server` on VPN, `vscode-server` native module
+- **AI/Compute**: ROCm stack and `services.ollama` (acceleration="rocm")
+- **Server mode**: `serverMode.headless = true` disables GUI paths
 
-- **fufuwuqi**: Main server configuration
-- **wsl**: Windows Subsystem for Linux configuration
+### Layout
+- **root**: `flake.nix`, `flake.lock`
+- **nix/**: per-system entrypoints (`fufuwuqi.nix`, `wsl.nix`), devshell/formatter/hooks
+- **modules/**: `boot`, `locale`, `packages`, `networking` (firewall/interfaces/tweaks), `services` (ssh, avahi, adguardhome, cloudflared, nginx, etc.), `server-mode`, `server-settings`
+- **hardware/**: machine HW profile
+- **users/**: `users.nix`, `home-*.nix`
+- **secrets/**: `sops.nix` (points to `/etc/nixos/secrets/...`)
 
-## Features
-
-### Core
-- NixOS unstable channel with flakes
-- Home-manager for user-specific configurations
-- Modular configuration structure
-- AMD GPU support (ROCm, AMDVLK, OpenCL)
-
-### Server Optimizations
-- Power management disabled (24/7 operation)
-- CPU governor: performance mode
-- Weekly SSD TRIM and Nix garbage collection
-- SMART disk monitoring
-- Journal limited to 2GB with 1-month retention
-- Headless mode toggle (`serverMode.headless`)
-
-### Networking
-- Dual NIC bonding (active-backup mode)
-- BBR congestion control
-- Optimized TCP buffers (up to 128MB)
-- SSH on port 24212 with 2FA (Google Authenticator)
-- Open ports: 3000, 3001, 9000, 24212
-
-### Software Stack
-
-**System Tools**
-- btop, tmux, screen, tree, fd
-- fastfetch, curl, wget
-- mtr (network diagnostic)
-
-**Development**
-- Emacs, VS Code (FHS)
-- Git, GitHub CLI
-- direnv, rclone
-- nixfmt-rfc-style
-
-**Container Management**
-- Podman ecosystem (podman, podman-compose, podman-tui)
-- buildah, dive, skopeo
-
-**Shell**
-- Zsh with syntax highlighting and auto-suggestions
-- Starship prompt
-- fzf, zoxide
-
-**Font**
-- Maple Mono NF CN (monospace with NerdFont icons and Chinese support)
-
-## Usage
-
+### Usage
+- **enter dev shell**:
 ```bash
-# Build and switch to configuration
-cd /home/fufud/nixos
+nix develop
+```
+- **format + lint (CI parity)**:
+```bash
+nix fmt -- --ci
+nix flake check --print-build-logs
+```
+- **evaluate systems**:
+```bash
+nix eval --raw .#nixosConfigurations.fufuwuqi.config.system.build.toplevel.drvPath
+nix eval --raw .#nixosConfigurations.wsl.config.system.build.toplevel.drvPath
+```
+- **build or switch (on target host)**:
+```bash
+# on fufuwuqi
 sudo nixos-rebuild switch --flake .#fufuwuqi
 
-# Update flake inputs
-nix flake update
+# inside WSL instance
+sudo nixos-rebuild switch --flake .#wsl
 ```
 
-## Structure
+### Secrets (sops-nix)
+- **age key paths**: `/etc/ssh/ssh_host_ed25519_key` and `/etc/nixos/secrets/key.txt`
+- **default files**: `/etc/nixos/secrets/secrets.yaml`
+- **declared secrets**: user passwords, `tokens/cloudflared` (mapped read-only into container)
 
-```
-/home/fufud/nixos/
-├── flake.nix              # Flake definitions
-├── configuration.nix      # Main config for fufuwuqi
-├── hardware/
-│   └── hardware-configuration.nix
-├── modules/
-│   ├── boot.nix          # Bootloader & kernel
-│   ├── desktop.nix       # GNOME/Wayland (when not headless)
-│   ├── locale.nix        # Timezone & localization
-│   ├── networking.nix    # Network bonding & firewall
-│   ├── network-performance.nix
-│   ├── packages.nix      # System packages
-│   ├── server-mode.nix   # Headless toggle
-│   ├── server-settings.nix
-│   ├── services.nix      # SSH, code-server, etc.
-│   └── wsl.nix          # WSL-specific config
-└── users/
-    ├── users.nix         # User accounts
-    ├── home-fufud.nix    # fufud's home-manager
-    └── home-workd.nix    # workd's home-manager
-```
+### Notes
+- **toggle GUI**: set `serverMode.headless = true|false` in `configuration.nix`
+- **DNS clients**: system pref IPv6; AdGuard Home listens on `0.0.0.0`/`::`, rewrites for `*.vpn`, `*.lan`
+- **Interfaces trusted**: firewall trusts `wg0` and `bond0`
+- **ROCm**: ROCm path linked at `/opt/rocm`
 
-## Users
+### CI
+- **GitHub Actions**: format/lint + flake check, then evaluate `fufuwuqi` and `wsl` in matrix
 
-- **fufud**: Personal account with sudo, render, video, docker access
-- **workd**: Work account with sudo, docker access
+### License
+- **GPL-3.0-only**: see `LICENSE`
 
-## Services
 
-- SSH with hardened config and 2FA
-- Code-server (VS Code in browser)
-- USB serial console support (ttyUSB0)
-- GnuPG agent with SSH support
