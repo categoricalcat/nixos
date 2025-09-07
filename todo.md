@@ -36,12 +36,6 @@
 ### Documentation
 
 - [ ] Add a short Architecture section (boot, networking, services, server-mode; how `serverMode.headless` gates features).
-- [ ] Keep a minimal `CHANGES.md` for operational changes (ports, exposure, services).
-
-### Cleanup and consistency
-
-- [ ] Remove duplicate `programs.mtr.enable` (present in both `users/users.nix` and `modules/services/services.nix`).
-- [ ] Clarify/remove unused overlay `androidndkPkgs_23b`.
 
 ### System-specific
 

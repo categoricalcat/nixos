@@ -154,8 +154,8 @@
     enable = false;
     port = 9090;
     allowed-origins = [
-      "https://fuwuqi.local:9090"
-      "http://fuwuqi.local:9090"
+      "https://fufuwuqi.local:9090"
+      "http://fufuwuqi.local:9090"
       "https://localhost:9090"
       "http://localhost:9090"
       "https://cockpit.fufu.land"
@@ -176,24 +176,24 @@
 
     virtualHosts = {
       # Local test vhost
-      "fuwuqi.local" = {
-        serverName = "fuwuqi.local";
+      "fufuwuqi.local" = {
+        serverName = "fufuwuqi.local";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "fuwuqi.local ok";
+            return 200 "fufuwuqi.local ok";
           '';
         };
       };
 
-      "fuwuqi.vpn" = {
-        serverName = "fuwuqi.vpn";
+      "fufuwuqi.vpn" = {
+        serverName = "fufuwuqi.vpn";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "fuwuqi.vpn ok";
+            return 200 "fufuwuqi.vpn ok";
           '';
         };
       };

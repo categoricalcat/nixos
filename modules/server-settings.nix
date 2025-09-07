@@ -52,6 +52,8 @@
     SystemMaxUse=2G
     SystemKeepFree=5G
     MaxRetentionSec=1month
+    RateLimitIntervalSec=30s
+    RateLimitBurst=1000
   '';
 
   # Garbage collection for Nix store

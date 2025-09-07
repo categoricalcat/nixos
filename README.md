@@ -1,7 +1,7 @@
 # 福福的NixOS配置
 
 - purpose: flake-based, modular NixOS for home server with Home Manager integration
-- systems: `fuwuqi` (server), `wsl` (WSL)
+- systems: `fufuwuqi` (server), `wsl` (WSL)
 - mode: headless enabled (`serverMode.headless = true`)
 - stateVersion: `25.11`
 - link: see `nixos/todo.md` for open items
@@ -19,7 +19,7 @@
 - bond0: `eno1` + `enp4s0` (active-backup, MTU 1492)
 - lan: 192.168.1.42/24, gw 192.168.1.1
 - vpn: WireGuard `wg0` 10.100.0.1/24, MTU 1380, port 51820
-- dns (host): AdGuard Home on LAN/VPN/lo; upstreams = Quad9 + Google + Cloudflare; rewrites for `fuwuqi.vpn` and `fuwuqi`
+- dns (host): AdGuard Home on LAN/VPN/lo; upstreams = Quad9 + Google + Cloudflare; rewrites for `fufuwuqi.vpn` and `fufuwuqi`
 - mdns: Avahi on `bond0` and `wg0`, advertises SSH/HTTP/HTTPS/WG-UI(51821)/Minecraft
 - ipv6: enabled; forwarding on; selective RA settings
 - tcp tuning: BBR, larger buffers, MSS clamp on forward
@@ -35,7 +35,7 @@
 ## Services
 
 - AdGuard Home: DNS with DNSSEC, HTTP/3, cache tuned, UI on 3333
-- Nginx: minimal vhosts (`fuwuqi.local`, `fuwuqi.vpn`, `fufu.land`), TLS optional (currently disabled)
+- Nginx: minimal vhosts (`fufuwuqi.local`, `fufuwuqi.vpn`, `fufu.land`), TLS optional (currently disabled)
 - cloudflared: Podman container, host network, token via sops at `/etc/cloudflared/token`
 - OpenVSCode Server: enabled on 4444 (VPN IP only)
 - VSCode Server: enabled for remote development
@@ -89,7 +89,7 @@
 - flake inputs: nixpkgs, home-manager, nixowos, treefmt-nix, pre-commit-hooks, sops-nix, nixos-wsl, vscode-server
 - formatter output: treefmt wrapper exposed via `formatter`
 - devshell: pre-commit hooks for `nix fmt -- --ci` and `nix flake check`
-- ci workflow: `nix flake check`, `nix fmt -- --ci`, evaluation of `.#nixosConfigurations.{fuwuqi,wsl}`
+- ci workflow: `nix flake check`, `nix fmt -- --ci`, evaluation of `.#nixosConfigurations.{fufuwuqi,wsl}`
 
 ## Secrets (catalog)
 
@@ -101,7 +101,7 @@
 ## Structure (selected)
 
 - flake: `flake.nix`, `flake.lock`
-- systems: `nix/fuwuqi.nix`, `nix/wsl.nix`
+- systems: `nix/fufuwuqi.nix`, `nix/wsl.nix`
 - entry: `configuration.nix`
 - modules: `modules/{boot,networking,services,server-mode,server-settings,locale,packages,addresses,wsl}.nix`
 - networking: `modules/networking/{firewall,interfaces,tweaks}.nix`, `modules/networking/interfaces/{bond0,wg0}.nix`
