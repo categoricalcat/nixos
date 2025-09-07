@@ -1,4 +1,6 @@
-## NixOS flake (declarative overview)
+# 福福的NixOS配置
+
+lucky nix configs
 
 ### What this is
 - **flake**: NixOS/home-manager setup for `x86_64-linux`
