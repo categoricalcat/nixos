@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ pkgs, lib, ... }:
 
 {
   # Home Manager needs a bit of information about you and the
@@ -14,12 +14,12 @@
   # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
     # User-specific packages
-    nodejs_latest  # Latest Node.js for fufud
+    nodejs_latest # Latest Node.js for fufud
   ];
 
   # Clone the.files repository on activation
   home.activation = {
-    cloneDotfiles = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    cloneDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ ! -d "$HOME/the.files" ]; then
         echo "Cloning the.files repository..."
         $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/categoricalcat/the.files.git $HOME/the.files || \

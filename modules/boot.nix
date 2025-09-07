@@ -1,15 +1,33 @@
-{ config, pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
+
   boot = {
     loader = {
-      systemd-boot.enable = true;
+      systemd-boot = {
+        enable = true;
+        configurationLimit = 15;
+      };
       efi.canTouchEfiVariables = true;
     };
 
-    kernelPackages = pkgs.linuxPackages_latest; # 12.37
+    kernel.sysctl = {
+      "kernel.panic" = 10;
+      "kernel.panic_on_oops" = 1;
+    };
 
-    # Serial console on USB
-    kernelParams = [ "console=ttyUSB0,115200n8" "console=tty0" ];
+    kernelPackages = pkgs.linuxPackages_latest;
+
+    initrd.availableKernelModules = lib.mkAfter [
+      "sd_mod"
+    ];
+
+    initrd.kernelModules = lib.mkAfter [ "amdgpu" ];
+
+    kernelModules = lib.mkAfter [
+      "amdgpu"
+      "wireguard"
+      "nft_masq"
+    ];
   };
 }

@@ -1,92 +1,43 @@
-# Networking configuration module
-
-{ config, pkgs, ... }:
-
+{ addresses, ... }:
 {
+  imports = [
+    ./networking/firewall.nix
+    ./networking/interfaces.nix
+    ./networking/tweaks.nix
+  ];
+
+  services.resolved = {
+    enable = false;
+  };
+
   networking = {
-    hostName = "fufuwuqi";
+    inherit (addresses) hostName;
+
+    nameservers = addresses.dns.systemNameservers;
+
+    enableIPv6 = true;
+    tempAddresses = "disabled";
 
     networkmanager.enable = false;
     useNetworkd = true;
     useDHCP = false;
-
-    firewall = {
-      enable = true;
-      allowPing = true;
-      allowedTCPPorts = [
-        3000      # Development servers
-        3001      # Development servers
-        9000      # Various services
-        24212     # SSH custom port
-        5353      # mDNS/Avahi
-        25565     # Minecraft server
-      ];
-      allowedUDPPorts = [
-        25565     # Minecraft server (UDP is required for Minecraft)
-        5353      # mDNS/Avahi
-      ];
-    };
   };
 
-  # Systemd network configuration for bonding
   systemd.network = {
     enable = true;
-
-    # Network device configuration
-    netdevs = {
-      "10-bond0" = {
-        netdevConfig = {
-          Kind = "bond";
-          Name = "bond0";
-          MTUBytes = 1500;
-        };
-        bondConfig = {
-          Mode = "active-backup";
-          MIIMonitorSec = "0.05";
-          PrimaryReselectPolicy = "better";
-          UpDelaySec = 0;
-          DownDelaySec = 0;
-        };
-      };
-    };
-
-    networks = {
-      "30-eno1" = {
-        matchConfig.Name = "eno1";
-        networkConfig = {
-          Bond = "bond0";
-          PrimarySlave = true;
-        };
-        linkConfig = {
-          MTUBytes = 1500;
-        };
-      };
-
-      "30-enp4s0" = {
-        matchConfig.Name = "enp4s0";
-        networkConfig.Bond = "bond0";
-        linkConfig = {
-          MTUBytes = 1500;
-        };
-      };
-
-      "40-bond0" = {
-        matchConfig.Name = "bond0";
-        networkConfig.DHCP = "yes";
-        linkConfig = {
-          MTUBytes = 1500;
-          RequiredForOnline = "carrier";
-        };
-      };
-
-      # USB network interfaces (minimal config)
-      "50-usb" = {
-        matchConfig.Name = "usb* enp*s*u*";  # Match USB network interfaces
-        networkConfig = {
-          DHCP = "yes";
-          LinkLocalAddressing = "ipv4";  # Fallback for direct connections
-        };
-      };
-    };
+    wait-online.enable = true;
   };
+
+  environment.etc."gai.conf".text = ''
+    # Prefer IPv6 over IPv4 for address selection
+    # See gai.conf(5) for details
+    precedence ::1/128       50     # localhost (IPv6)
+    precedence ::/0          40     # IPv6 global
+    precedence ::ffff:0:0/96 30     # IPv4-mapped IPv6
+    precedence 2002::/16     20     # 6to4
+    precedence 2001::/32     5      # Teredo
+    precedence fc00::/7      3      # ULA
+    precedence ::/96         1      # IPv4-compatible IPv6
+    precedence ::1/128       50     # localhost
+  '';
 }

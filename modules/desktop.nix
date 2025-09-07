@@ -1,6 +1,6 @@
 # Desktop environment configuration module
 
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   # Wayland-based desktop configuration

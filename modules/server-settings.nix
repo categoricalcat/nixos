@@ -1,7 +1,7 @@
 # Minimal server-specific settings for home server
 # Focuses on preventing sleep/suspend and essential server optimizations
 
-{ config, pkgs, lib, ... }:
+{ config, ... }:
 
 {
   # Disable sleep, hibernation, suspend, and other power management features
@@ -14,23 +14,17 @@
   };
 
   # Power management settings
-  services.logind = {
-    # Disable lid switch actions (if server is a laptop)
-    lidSwitch = "ignore";
-    lidSwitchDocked = "ignore";
-    lidSwitchExternalPower = "ignore";
-
-    # Disable power button and suspend key actions
-    extraConfig = ''
-      HandlePowerKey=ignore
-      HandleSuspendKey=ignore
-      HandleHibernateKey=ignore
-      HandleLidSwitch=ignore
-      HandleLidSwitchDocked=ignore
-      HandleLidSwitchExternalPower=ignore
-      IdleAction=ignore
-      IdleActionSec=0
-    '';
+  services = {
+    logind = {
+      # Disable lid switch actions (if server is a laptop)
+      settings = {
+        Login = {
+          HandleLidSwitch = "ignore";
+          HandleLidSwitchDocked = "ignore";
+          HandleLidSwitchExternalPower = "ignore";
+        };
+      };
+    };
   };
 
   # Disable power management features
@@ -58,6 +52,8 @@
     SystemMaxUse=2G
     SystemKeepFree=5G
     MaxRetentionSec=1month
+    RateLimitIntervalSec=30s
+    RateLimitBurst=1000
   '';
 
   # Garbage collection for Nix store
@@ -69,7 +65,7 @@
       options = "--delete-older-than 30d";
     };
   };
-  
+
   # Time synchronization
   services.chrony = {
     enable = true;
@@ -83,4 +79,4 @@
 
   # Disable GUI-related power management if present
   services.upower.enable = false;
-} 
+}

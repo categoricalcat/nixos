@@ -1,51 +1,39 @@
 # Main NixOS Configuration
 
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   imports = [
-    ./hardware/hardware-configuration.nix
+    ./hardware/fufuwuqi.nix
+    ./modules/addresses.nix
     ./modules/boot.nix
     ./modules/locale.nix
     ./users/users.nix
     ./modules/packages.nix
     ./modules/networking.nix
-    ./modules/network-performance.nix
-    ./modules/services.nix
+    ./modules/services/services.nix
     # ./modules/desktop.nix
     ./modules/server-settings.nix
     ./modules/server-mode.nix
-    # ./home.nix
+    ./secrets/sops.nix
   ];
 
   serverMode.headless = true;
 
-  # Nixpkgs configuration to handle deprecated packages
-  nixpkgs.overlays = [
-    (final: prev: {
-      androidndkPkgs_23b = prev.androidndkPkgs_23;
-    })
-  ];
-
-  # experimental features
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
   ];
 
-  # Suppress CUDA warnings by setting minimum version
   nixpkgs.config = {
-    allowUnfree = true; # Allow unfree packages
-    cudaSupport = false; # Disable CUDA support (NVIDIA-only, not needed for AMD)
-    # For AMD GPU compute support, you would use ROCm instead:
-    rocmSupport = true; # Enable if you need AMD GPU compute support
+    allowUnfree = true;
+    cudaSupport = false;
+    rocmSupport = true;
   };
 
   system.stateVersion = "25.11";
 
-  # Font configuration
   fonts = {
-    # Enable font management
     fontconfig = {
       enable = true;
       defaultFonts = {
@@ -60,7 +48,6 @@
         ];
       };
 
-      # Better font rendering
       antialias = true;
       hinting = {
         enable = true;
@@ -82,11 +69,16 @@
 
   hardware.amdgpu.opencl.enable = true;
   hardware.amdgpu.amdvlk.enable = true;
+  hardware.cpu.amd.updateMicrocode = true;
+  hardware.enableRedistributableFirmware = true;
   hardware.graphics = {
     enable = true;
   };
 
-  # Create symlink for Ollama to find ROCm libraries
+  security.tpm2 = {
+    enable = true;
+  };
+
   systemd.tmpfiles.rules = [
     "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
   ];

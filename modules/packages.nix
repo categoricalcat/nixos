@@ -1,9 +1,16 @@
 # System packages configuration module
 
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   environment.systemPackages = with pkgs; [
+    gnumake
+    gcc
+    pkg-config
+    libusb1
+    eudev
+    udev
+
     # System utilities
     btop
     curl
@@ -11,24 +18,32 @@
     fastfetch
     tmux
     stow
-    
+
     # Development tools
     rclone
     emacs
     git
     gh
+    nil
+    statix
+    deadnix
     nixfmt-rfc-style
     direnv
+    nix-direnv
     vscode-fhs
     tree
-    fd  # Fast file finder, works well with fzf
-    
+    fd # Fast file finder, works well with fzf
+    k6
+    dig
+    sops
+    nftables
+
     # Container tools (Podman)
-    buildah         # Container image builder (docker buildx alternative)
-    
+    buildah # Container image builder (docker buildx alternative)
+
     # Security tools
     google-authenticator
-    
+
     # Shell and related tools
     zsh
     zsh-autosuggestions
@@ -37,9 +52,11 @@
     starship
     fzf
     zoxide
-    
+
     maple-mono.NF-CN
-    
+    python3
+    systemd
+
     # ROCm packages for GPU compute
     rocmPackages.clr
     rocmPackages.rocminfo
@@ -48,11 +65,23 @@
     rocmPackages.hipblas
     rocmPackages.rocblas
     rocmPackages.rocsolver
-    
-    podman-compose  # open source bitchess
+
+    podman-compose # open source bitchess
     podman-tui
     dive
     skopeo
-    screen  # for serial console access
+    screen # for serial console access
+    kubectl
+
+    cockpit
+    pcp
+    ethtool
+    iperf3
+    nethogs
+    iftop
+    nmap
+    traceroute
+    tcpdump
+    wireguard-tools
   ];
 }

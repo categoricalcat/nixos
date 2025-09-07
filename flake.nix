@@ -9,51 +9,104 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixowos = {
+      url = "github:yunfachi/nixowos";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    treefmt-nix.url = "github:numtide/treefmt-nix";
+    pre-commit-hooks = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    vscode-server = {
+      url = "github:nix-community/nixos-vscode-server";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     {
-      self,
       nixpkgs,
       home-manager,
       nixos-wsl,
+      nixowos,
+      treefmt-nix,
+      pre-commit-hooks,
+      sops-nix,
+      vscode-server,
       ...
     }@inputs:
+    let
+      systems = [ "x86_64-linux" ];
+      forAllSystems = nixpkgs.lib.genAttrs systems;
+
+    in
     {
-      nixosConfigurations = {
-        wsl = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            nixos-wsl.nixosModules.default
-            ./modules/wsl.nix
-            ./modules/packages.nix
-            ./modules/server-mode.nix
-            ./modules/server-settings.nix
-            ./modules/locale.nix
-            ./users/users.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.fufud = import ./users/home-fufud.nix;
-            }
-          ];
+      nixosConfigurations =
+        let
+          wslConfig = import ./nix/wsl.nix;
+          fufuwuqiConfig = import ./nix/fufuwuqi.nix;
+        in
+        {
+          wsl = wslConfig {
+            inherit
+              nixpkgs
+              sops-nix
+              nixowos
+              nixos-wsl
+              home-manager
+              vscode-server
+              ;
+          };
+
+          fufuwuqi = fufuwuqiConfig {
+            inherit
+              nixpkgs
+              sops-nix
+              nixowos
+              home-manager
+              vscode-server
+              inputs
+              ;
+          };
+
         };
 
-        fufuwuqi = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
+      homeConfigurations = {
+        standaloneHomeManagerConfig = home-manager.lib.homeManagerConfiguration {
           modules = [
-            ./configuration.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.fufud = import ./users/home-fufud.nix;
-              home-manager.users.workd = import ./users/home-workd.nix;
-            }
+            nixowos.homeModules.default
           ];
         };
       };
+
+      # nix fmt uses this (treefmt wrapper)
+      formatter = forAllSystems (
+        system:
+        import ./nix/formatter.nix {
+          inherit system nixpkgs treefmt-nix;
+        }
+      );
+
+      # Development shell with pre-commit hooks
+      devShells = forAllSystems (
+        system:
+        let
+          pre-commit-check = import ./nix/pre-commit-hooks.nix {
+            inherit system nixpkgs pre-commit-hooks;
+          };
+        in
+        {
+          default = import ./nix/devshell.nix {
+            inherit system nixpkgs pre-commit-check;
+          };
+        }
+      );
     };
 }
