@@ -1,6 +1,6 @@
 # Main NixOS Configuration
 
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   imports = [

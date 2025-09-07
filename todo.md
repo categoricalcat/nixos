@@ -26,13 +26,6 @@
 - [ ] Enable `virtualisation.podman.autoUpdate.enable = true;` and add healthchecks in units/compose for critical containers.
 - [ ] Set `events_logger = "journald"` in `containers.conf` for complete journal integration.
 
-### Performance and reliability
-
-- [ ] Add `boot.loader.systemd-boot.configurationLimit = 10`.
-- [ ] Add kernel safety nets: `kernel.panic = 10`, `kernel.panic_on_oops = 1`.
-- [ ] Raise inotify limits for dev/containers: `fs.inotify.max_user_watches`/`max_user_instances`.
-- [ ] Rate-limit journald bursts: `RateLimitIntervalSec=30s`, `RateLimitBurst=1000`.
-
 ### Documentation
 
 - [ ] Add a short Architecture section (boot, networking, services, server-mode; how `serverMode.headless` gates features).

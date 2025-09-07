@@ -55,6 +55,7 @@
 
     maple-mono.NF-CN
     python3
+    systemd
 
     # ROCm packages for GPU compute
     rocmPackages.clr

@@ -1,7 +1,6 @@
 # WSL-specific configuration module
 
 {
-  config,
   pkgs,
   ...
 }:

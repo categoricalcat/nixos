@@ -10,4 +10,8 @@ let
 in
 pkgs.mkShell {
   inherit (pre-commit-check) shellHook;
+
+  packages = with pkgs; [
+    udev
+  ];
 }
