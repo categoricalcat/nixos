@@ -12,6 +12,7 @@
     ./openssh.nix
     ./adguardhome.nix
     ./cloudflared.nix
+    ./playit-agent.nix
   ];
 
   services.openvscode-server = {
