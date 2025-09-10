@@ -23,6 +23,12 @@ _: {
       group = "cloudflared";
       path = "/etc/cloudflared/token";
     };
+    "tokens/playit-agent" = {
+      mode = "0640";
+      owner = "playit";
+      group = "playit";
+      path = "/etc/playit/token";
+    };
   };
 
   environment.variables.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
