@@ -58,7 +58,6 @@ _: {
           {
             publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
             allowedIPs = [
-              "2804:41fc:8030:ace1::2/128"
               "10.100.0.2/32"
             ];
             keepalive = 25;
@@ -66,8 +65,14 @@ _: {
           {
             publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
             allowedIPs = [
-              "2804:41fc:8030:ace1::3/128"
               "10.100.0.3/32"
+            ];
+            keepalive = 25;
+          }
+          {
+            publicKey = "azePQG6Sbg9O2jNDVMU99jPO96yfNGjd+FM0FdsI0Q8=";
+            allowedIPs = [
+              "10.100.0.4/32"
             ];
             keepalive = 25;
           }
