@@ -1,36 +1,42 @@
 # User configuration module
 
-{ config, pkgs, ... }:
+{ pkgs, config, ... }:
 
 {
-  # User accounts
-  users.users.fufud = {
-    isNormalUser = true;
-    description = "fu's personal";
-    shell = pkgs.zsh;
-    extraGroups = [
-      "wheel"
-      "render"
-      "video"
-      "dialout"
-    ];
-    packages = with pkgs; [
-    ];
-  };
+  users = {
+    mutableUsers = false;
+    defaultUserShell = pkgs.zsh;
 
-  users.users.workd = {
-    isNormalUser = true;
-    description = "fu's work";
-    shell = pkgs.zsh;
-    extraGroups = [
-      "workd"
-    ];
-    packages = with pkgs; [
-    ];
-    hashedPasswordFile = config.sops.secrets."passwords/workd".path;
-  };
+    groups = {
+      fufud = { };
+      workd = { };
+    };
 
-  users.defaultUserShell = pkgs.zsh;
+    users = {
+      fufud = {
+        isNormalUser = true;
+        description = "fu's personal";
+        group = "fufud";
+        hashedPasswordFile = config.sops.secrets."passwords/fufud".path;
+        extraGroups = [
+          "wheel"
+          "render"
+          "video"
+          "dialout"
+        ];
+        packages = with pkgs; [ ];
+      };
+
+      workd = {
+        isNormalUser = true;
+        description = "fu's work";
+        group = "workd";
+        hashedPasswordFile = config.sops.secrets."passwords/workd".path;
+        extraGroups = [ "wheel" ];
+        packages = with pkgs; [ ];
+      };
+    };
+  };
 
   programs.mtr.enable = true;
 
