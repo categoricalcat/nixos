@@ -23,21 +23,17 @@
     description = "fu's work";
     shell = pkgs.zsh;
     extraGroups = [
-      "wheel"
-      "dialout"
+      "workd"
     ];
     packages = with pkgs; [
     ];
     hashedPasswordFile = config.sops.secrets."passwords/workd".path;
   };
 
-  # Default shell
   users.defaultUserShell = pkgs.zsh;
 
-  # MTR network diagnostic tool
   programs.mtr.enable = true;
 
-  # Zsh configuration
   programs.zsh = {
     enable = true;
     enableCompletion = true;

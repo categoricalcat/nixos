@@ -21,8 +21,7 @@
         upstream_dns =
           addresses.dns.quad9 ++ addresses.dns.adguard ++ addresses.dns.google ++ addresses.dns.cloudflare;
 
-        upstream_mode = "parallel";
-        all_servers = true;
+        upstream_mode = "load_balance";
 
         bootstrap_prefer_ipv6 = true;
         bootstrap_dns = [

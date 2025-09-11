@@ -6,10 +6,6 @@
   environment.systemPackages = with pkgs; [
     gnumake
     gcc
-    pkg-config
-    libusb1
-    eudev
-    udev
 
     # System utilities
     btop
@@ -21,7 +17,6 @@
 
     # Development tools
     rclone
-    emacs
     git
     gh
     nil
