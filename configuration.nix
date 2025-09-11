@@ -20,10 +20,13 @@
 
   serverMode.headless = true;
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix.settings = {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+    download-buffer-size = 1073741824;
+  };
 
   nixpkgs.config = {
     allowUnfree = true;

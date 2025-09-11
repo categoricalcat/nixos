@@ -1,13 +1,5 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
-let
-  the-files = pkgs.fetchFromGitHub {
-    owner = "categoricalcat";
-    repo = "the.files";
-    rev = "main";
-    sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-  };
-in
 {
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -29,11 +21,15 @@ in
     nodePackages.npm-check-updates
   ];
 
-  home.file.".zshrc" = {
-    source = "${the-files}/zshrc";
-  };
-
-  home.file."the.files" = {
-    source = the-files;
+  home.activation = {
+    cloneDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ ! -d "$HOME/the.files" ]; then
+        echo "Cloning the.files repository..."
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/categoricalcat/the.files.git $HOME/the.files || \
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone git@github.com:categoricalcat/the.files.git $HOME/the.files
+      else
+        echo "the.files repository already exists"
+      fi
+    '';
   };
 }
