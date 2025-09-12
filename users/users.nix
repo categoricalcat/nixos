@@ -4,7 +4,7 @@
 
 {
   users = {
-    mutableUsers = false;
+    mutableUsers = true;
     defaultUserShell = pkgs.zsh;
 
     groups = {
@@ -12,12 +12,21 @@
       workd = { };
     };
 
+    extraUsers = {
+      tempd = {
+        isNormalUser = true;
+        description = "temp";
+        group = "wheel";
+        initialPassword = "temp";
+      };
+    };
+
     users = {
       fufud = {
         isNormalUser = true;
         description = "fu's personal";
         group = "fufud";
-        hashedPasswordFile = config.sops.secrets."passwords/fufud".path;
+        initialHashedPassword = config.sops.secrets."passwords/fufud".path;
         extraGroups = [
           "wheel"
           "render"
@@ -32,7 +41,6 @@
         description = "fu's work";
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
-        extraGroups = [ "wheel" ];
         packages = with pkgs; [ ];
       };
     };
