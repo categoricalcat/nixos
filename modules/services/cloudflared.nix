@@ -38,12 +38,6 @@
     ];
   };
 
-  users.groups.cloudflared = { };
-  users.users.cloudflared = {
-    isSystemUser = true;
-    group = "cloudflared";
-  };
-
   systemd.tmpfiles.rules = [
     "d /etc/cloudflared 0750 root root -"
   ];

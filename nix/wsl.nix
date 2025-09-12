@@ -32,6 +32,11 @@ nixpkgs.lib.nixosSystem {
         useUserPackages = true;
         users.fufud = import ../users/home-fufud.nix;
       };
+
+      services.openssh = {
+        enable = true; # This creates the keys.
+        listenAddresses = [ ]; # This stops the server from listening on any network port.
+      };
     }
   ];
 }

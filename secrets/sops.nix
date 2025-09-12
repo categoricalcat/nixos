@@ -33,4 +33,16 @@ _: {
 
   environment.variables.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
   systemd.globalEnvironment.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
+
+  users.groups.cloudflared = { };
+  users.users.cloudflared = {
+    isSystemUser = true;
+    group = "cloudflared";
+  };
+
+  users.groups.playit = { };
+  users.users.playit = {
+    isSystemUser = true;
+    group = "playit";
+  };
 }

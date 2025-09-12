@@ -19,6 +19,14 @@
         group = "wheel";
         initialPassword = "temp";
       };
+
+      wsl = {
+        isNormalUser = true;
+        description = "WSL default user";
+        group = "wheel";
+        initialPassword = "wsl";
+        packages = with pkgs; [ ];
+      };
     };
 
     users = {
