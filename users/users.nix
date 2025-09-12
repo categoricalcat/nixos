@@ -12,6 +12,16 @@
       workd = { };
     };
 
+    extraUsers = {
+      wsl = {
+        isNormalUser = true;
+        description = "WSL default user";
+        group = "wheel";
+        initialPassword = "wsl";
+        packages = with pkgs; [ ];
+      };
+    };
+
     users = {
       fufud = {
         isNormalUser = true;

@@ -30,9 +30,4 @@
     ];
   };
 
-  users.groups.playit = { };
-  users.users.playit = {
-    isSystemUser = true;
-    group = "playit";
-  };
 }
