@@ -85,4 +85,13 @@
   systemd.tmpfiles.rules = [
     "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
   ];
+
+  nixowos.enable = true;
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.fufud = import ../../users/home-fufud.nix;
+    users.workd = import ../../users/home-workd.nix;
+  };
 }

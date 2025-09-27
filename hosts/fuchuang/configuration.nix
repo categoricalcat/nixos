@@ -24,4 +24,17 @@
     cudaSupport = false;
     rocmSupport = true;
   };
+
+  nixowos.enable = true;
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.fufud = import ../../users/home-fufud.nix;
+  };
+
+  services.openssh = {
+    enable = true;
+    listenAddresses = [ ];
+  };
 }

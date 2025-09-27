@@ -50,11 +50,11 @@
     {
       nixosConfigurations =
         let
-          wslConfig = import ./nix/wsl.nix;
+          fuchuangConfig = import ./nix/fuchuang.nix;
           fufuwuqiConfig = import ./nix/fufuwuqi.nix;
         in
         {
-          wsl = wslConfig {
+          fuchuang = fuchuangConfig {
             inherit
               nixpkgs
               sops-nix
