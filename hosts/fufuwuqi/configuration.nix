@@ -1,21 +1,21 @@
-# Main NixOS Configuration
+# Main NixOS Configuration (host: fufuwuqi)
 
 { pkgs, ... }:
 
 {
   imports = [
-    ./hardware/fufuwuqi.nix
-    ./modules/addresses.nix
-    ./modules/boot.nix
-    ./modules/locale.nix
-    ./users/users.nix
-    ./modules/packages.nix
-    ./modules/networking.nix
-    ./modules/services/services.nix
-    # ./modules/desktop.nix
-    ./modules/server-settings.nix
-    ./modules/server-mode.nix
-    ./secrets/sops.nix
+    ./hardware.nix
+    ./addresses.nix
+    ../../modules/boot.nix
+    ../../modules/locale.nix
+    ../../users/users.nix
+    ../../modules/packages.nix
+    ../../modules/networking.nix
+    ../../modules/services/services.nix
+    # ../../modules/desktop.nix
+    ../../modules/server-settings.nix
+    ../../modules/server-mode.nix
+    ../../secrets/sops.nix
   ];
 
   serverMode.headless = true;

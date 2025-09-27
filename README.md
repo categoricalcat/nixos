@@ -24,8 +24,9 @@ lucky nix configs
 ### Layout
 - **root**: `flake.nix`, `flake.lock`
 - **nix/**: per-system entrypoints (`fufuwuqi.nix`, `wsl.nix`), devshell/formatter/hooks
-- **modules/**: `boot`, `locale`, `packages`, `networking` (firewall/interfaces/tweaks), `services` (ssh, avahi, adguardhome, cloudflared, nginx, etc.), `server-mode`, `server-settings`
-- **hardware/**: machine HW profile
+- **hosts/**: per-host configs
+  - `fufuwuqi/` → `hardware.nix`, `addresses.nix`, `configuration.nix`
+- **modules/**: shared modules (`boot`, `locale`, `packages`, `networking`, `services`, `server-mode`, `server-settings`)
 - **users/**: `users.nix`, `home-*.nix`
 - **secrets/**: `sops.nix` (points to `/etc/nixos/secrets/...`)
 
@@ -59,7 +60,7 @@ sudo nixos-rebuild switch --flake .#wsl
 - **declared secrets**: user passwords, `tokens/cloudflared` (mapped read-only into container)
 
 ### Notes
-- **toggle GUI**: set `serverMode.headless = true|false` in `configuration.nix`
+- **toggle GUI**: set `serverMode.headless = true|false` in the host `configuration.nix`
 - **DNS clients**: system pref IPv6; AdGuard Home listens on `0.0.0.0`/`::`, rewrites for `*.vpn`, `*.lan`
 - **Interfaces trusted**: firewall trusts `wg0` and `bond0`
 - **ROCm**: ROCm path linked at `/opt/rocm`
