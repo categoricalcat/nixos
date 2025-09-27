@@ -70,12 +70,15 @@
     ];
   };
 
-  hardware.amdgpu.opencl.enable = true;
-  hardware.amdgpu.amdvlk.enable = true;
-  hardware.cpu.amd.updateMicrocode = true;
-  hardware.enableRedistributableFirmware = true;
-  hardware.graphics = {
-    enable = true;
+  hardware = {
+    enableRedistributableFirmware = true;
+    cpu.amd.updateMicrocode = true;
+    graphics.enable = true;
+
+    amdgpu = {
+      opencl.enable = true;
+      amdvlk.enable = true;
+    };
   };
 
   security.tpm2 = {
