@@ -22,6 +22,7 @@ nixpkgs.lib.nixosSystem {
     ../modules/server-mode.nix
     ../modules/server-settings.nix
     ../modules/locale.nix
+    # ../modules/desktop.nix
     ../users/users.nix
     ../hosts/fuchuang/configuration.nix
   ];

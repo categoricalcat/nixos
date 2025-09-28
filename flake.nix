@@ -14,10 +14,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    pre-commit-hooks = {
-      url = "github:cachix/pre-commit-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+
+    systems.url = "github:nix-systems/default";
+    git-hooks.url = "github:cachix/git-hooks.nix";
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -33,19 +32,18 @@
   outputs =
     {
       nixpkgs,
+      systems,
       home-manager,
       nixos-wsl,
       nixowos,
       treefmt-nix,
-      pre-commit-hooks,
+      git-hooks,
       sops-nix,
       vscode-server,
       ...
     }@inputs:
     let
-      systems = [ "x86_64-linux" ];
-      forAllSystems = nixpkgs.lib.genAttrs systems;
-
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
     in
     {
       nixosConfigurations =
@@ -87,7 +85,7 @@
       };
 
       # nix fmt uses this (treefmt wrapper)
-      formatter = forAllSystems (
+      formatter = forEachSystem (
         system:
         import ./nix/formatter.nix {
           inherit system nixpkgs treefmt-nix;
@@ -95,11 +93,11 @@
       );
 
       # Development shell with pre-commit hooks
-      devShells = forAllSystems (
+      devShells = forEachSystem (
         system:
         let
-          pre-commit-check = import ./nix/pre-commit-hooks.nix {
-            inherit system nixpkgs pre-commit-hooks;
+          pre-commit-check = import ./nix/git-hooks.nix {
+            inherit system nixpkgs git-hooks;
           };
         in
         {
