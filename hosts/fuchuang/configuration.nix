@@ -6,6 +6,17 @@
 }:
 
 {
+  imports = [
+    ../../secrets/sops.nix
+    ../../modules/packages.nix
+    ../../modules/server-mode.nix
+    ../../modules/server-settings.nix
+    ../../modules/locale.nix
+    ../../modules/fonts.nix
+    # ../modules/desktop.nix
+    ../../users/users.nix
+  ];
+
   system.stateVersion = "25.11";
   wsl.defaultUser = "fufud";
   wsl.enable = true;

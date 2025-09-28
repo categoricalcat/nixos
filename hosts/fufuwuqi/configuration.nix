@@ -8,6 +8,7 @@
     ./addresses.nix
     ../../modules/boot.nix
     ../../modules/locale.nix
+    ../../modules/fonts.nix
     ../../users/users.nix
     ../../modules/packages.nix
     ../../modules/networking.nix

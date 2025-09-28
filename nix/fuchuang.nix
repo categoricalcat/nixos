@@ -17,13 +17,6 @@ nixpkgs.lib.nixosSystem {
     nixos-wsl.nixosModules.default
     home-manager.nixosModules.home-manager
     vscode-server.nixosModules.default
-    ../secrets/sops.nix
-    ../modules/packages.nix
-    ../modules/server-mode.nix
-    ../modules/server-settings.nix
-    ../modules/locale.nix
-    # ../modules/desktop.nix
-    ../users/users.nix
     ../hosts/fuchuang/configuration.nix
   ];
 }
