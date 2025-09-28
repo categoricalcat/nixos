@@ -16,6 +16,7 @@
 
     extraUsers = {
       tempd = {
+        enable = false;
         isNormalUser = true;
         description = "temp";
         group = "wheel";
@@ -44,7 +45,6 @@
         description = "lucky work";
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
-
       };
     };
   };
