@@ -9,8 +9,6 @@
     replace = true;
     extraLabels = [
       "self-hosted"
-      "nixos"
-      "fufuwuqi"
     ];
     extraPackages = with pkgs; [
       bash

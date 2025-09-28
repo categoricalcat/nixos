@@ -31,7 +31,6 @@ jobs:
     needs: check
     runs-on: 
       - self-hosted
-      - ubuntu-latest
     strategy:
       matrix:
         host: [fufuwuqi, fuchuang, fuyidong]
