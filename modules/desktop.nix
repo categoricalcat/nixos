@@ -1,58 +1,41 @@
-# Desktop environment configuration module
+# Desktop environment configuration module (Hyprland)
 
 { pkgs, ... }:
 
 {
-  # Wayland-based desktop configuration
-  services.xserver = {
-    enable = true; # Still needed for GDM/GNOME infrastructure
+  programs.hyprland.enable = true;
+  programs.xwayland.enable = true;
 
-    # Force Wayland for GDM
-    displayManager = {
-      gdm = {
-        enable = true;
-        wayland = true; # Ensure GDM runs on Wayland
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "Hyprland";
+        user = "fufud";
       };
     };
-
-    # Desktop environment with Wayland
-    desktopManager.gnome.enable = true;
-
-    # Disable X11 sessions
-    excludePackages = [ pkgs.xterm ];
-
-    # Keyboard layout (works for both X11 and Wayland)
-    xkb = {
-      layout = "us";
-      variant = "alt-intl";
-    };
   };
 
-  # Force Wayland for GNOME session
+  # Wayland-friendly desktop portals
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+
+  # Wayland environment hints for apps (Electron, Mozilla, Qt)
   environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1"; # Hint Electron apps to use Wayland (including Chromium)
+    NIXOS_OZONE_WL = "1";
+    XDG_SESSION_TYPE = "wayland";
+    MOZ_ENABLE_WAYLAND = "1";
+    QT_QPA_PLATFORM = "wayland";
   };
 
-  # Disable X11 forwarding
   programs.ssh.forwardX11 = false;
 
   # Console keymap
   console.keyMap = "us";
 
-  # Audio services (disabled in favor of custom setup)
+  # Audio services (kept minimal here)
   services.pulseaudio.enable = false;
   security.rtkit.enable = false;
-
-  # Display manager auto-login
-  services.displayManager.autoLogin = {
-    enable = true;
-    user = "fufud";
-  };
-
-  # Workaround for GNOME autologin
-  # https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
-  systemd.services."getty@tty1".enable = true;
-  systemd.services."autovt@tty1".enable = true;
 
   # Disable power management targets
   systemd.targets = {
