@@ -29,20 +29,34 @@ _: {
       group = "playit";
       path = "/etc/playit/token";
     };
+    "tokens/github-runner-nixos" = {
+      mode = "0640";
+      owner = "github-runner";
+      group = "github-runner";
+    };
   };
 
   environment.variables.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
   systemd.globalEnvironment.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
 
-  users.groups.cloudflared = { };
-  users.users.cloudflared = {
-    isSystemUser = true;
-    group = "cloudflared";
+  users.groups = {
+    cloudflared = { };
+    playit = { };
+    github-runner = { };
   };
 
-  users.groups.playit = { };
-  users.users.playit = {
-    isSystemUser = true;
-    group = "playit";
+  users.users = {
+    cloudflared = {
+      isSystemUser = true;
+      group = "cloudflared";
+    };
+    playit = {
+      isSystemUser = true;
+      group = "playit";
+    };
+    github-runner = {
+      isSystemUser = true;
+      group = "github-runner";
+    };
   };
 }

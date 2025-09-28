@@ -13,6 +13,7 @@
     ./adguardhome.nix
     ./cloudflared.nix
     ./playit-agent.nix
+    ./github-runner.nix
   ];
 
   services.openvscode-server = {
@@ -20,7 +21,7 @@
     inherit (addresses.network.vpn.ipv4) host;
     port = 4444;
     user = "fufud";
-    group = "users";
+    group = "fufud";
     telemetryLevel = "off";
     withoutConnectionToken = true;
   };
