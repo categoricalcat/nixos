@@ -6,13 +6,11 @@ on:
   pull_request:
     branches: [ "**" ]
 
-# Cancel in-progress runs when a new commit is pushed to the same branch/PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Run checks first - these are quick and should pass before building
   check:
     runs-on: ubuntu-22.04
     steps:
@@ -28,23 +26,19 @@ jobs:
       - name: Check formatting and linting
         run: nix fmt -- --ci
 
-  # Evaluate NixOS configurations in parallel using matrix strategy
   eval:
-    needs: check  # Only eval if checks pass
+    needs: check
     runs-on: ubuntu-22.04
     strategy:
       matrix:
         system: [fufuwuqi, fuchuang, fuyidong]
-      fail-fast: false  # Continue evaluating other systems even if one fails
+      fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v14
-
-      - name: Setup Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
+        uses: cachix/install-nix-action@v31
 
       - name: Evaluate NixOS configuration (${{ matrix.system }})
         run: nix eval --raw .#nixosConfigurations.${{ matrix.system }}.config.system.build.toplevel.drvPath
