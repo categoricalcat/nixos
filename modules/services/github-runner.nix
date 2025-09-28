@@ -5,7 +5,7 @@
     enable = true;
     url = "https://github.com/categoricalcat/nixos";
     tokenFile = config.sops.secrets."tokens/github-runner-nixos".path;
-    ephemeral = true;
+    ephemeral = false;
     replace = true;
     extraLabels = [
       "self-hosted"
