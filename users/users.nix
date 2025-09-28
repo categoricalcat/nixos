@@ -19,20 +19,12 @@
         group = "wheel";
         initialPassword = "temp";
       };
-
-      wsl = {
-        isNormalUser = true;
-        description = "WSL default user";
-        group = "wheel";
-        initialPassword = "wsl";
-        packages = with pkgs; [ ];
-      };
     };
 
     users = {
       fufud = {
         isNormalUser = true;
-        description = "fu's personal";
+        description = "lucky personal";
         group = "fufud";
         initialHashedPassword = config.sops.secrets."passwords/fufud".path;
         extraGroups = [
@@ -46,7 +38,7 @@
 
       workd = {
         isNormalUser = true;
-        description = "fu's work";
+        description = "lucky work";
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
         packages = with pkgs; [ ];
