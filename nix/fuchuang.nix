@@ -1,22 +1,22 @@
-# Main server (fufuwuqi) NixOS configuration
+# WSL NixOS configuration
 {
   nixpkgs,
   sops-nix,
   nixowos,
+  nixos-wsl,
   home-manager,
   vscode-server,
-  inputs,
   ...
 }:
 
 nixpkgs.lib.nixosSystem {
   system = "x86_64-linux";
-  specialArgs = { inherit inputs; };
   modules = [
     sops-nix.nixosModules.sops
     nixowos.nixosModules.default
+    nixos-wsl.nixosModules.default
     home-manager.nixosModules.home-manager
     vscode-server.nixosModules.default
-    ../hosts/fufuwuqi/configuration.nix
+    ../hosts/fuchuang/configuration.nix
   ];
 }

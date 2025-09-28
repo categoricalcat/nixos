@@ -1,21 +1,22 @@
-# Main NixOS Configuration
+# Main NixOS Configuration (host: fufuwuqi)
 
 { pkgs, ... }:
 
 {
   imports = [
-    ./hardware/fufuwuqi.nix
-    ./modules/addresses.nix
-    ./modules/boot.nix
-    ./modules/locale.nix
-    ./users/users.nix
-    ./modules/packages.nix
-    ./modules/networking.nix
-    ./modules/services/services.nix
-    # ./modules/desktop.nix
-    ./modules/server-settings.nix
-    ./modules/server-mode.nix
-    ./secrets/sops.nix
+    ./hardware.nix
+    ./addresses.nix
+    ./boot.nix
+    ../../modules/locale.nix
+    ../../modules/fonts.nix
+    ../../users/users.nix
+    ../../modules/packages.nix
+    ../../modules/networking.nix
+    ../../modules/services/services.nix
+    # ../../modules/desktop.nix
+    ../../modules/server-settings.nix
+    ../../modules/server-mode.nix
+    ../../secrets/sops.nix
   ];
 
   serverMode.headless = true;
@@ -70,12 +71,15 @@
     ];
   };
 
-  hardware.amdgpu.opencl.enable = true;
-  hardware.amdgpu.amdvlk.enable = true;
-  hardware.cpu.amd.updateMicrocode = true;
-  hardware.enableRedistributableFirmware = true;
-  hardware.graphics = {
-    enable = true;
+  hardware = {
+    enableRedistributableFirmware = true;
+    cpu.amd.updateMicrocode = true;
+    graphics.enable = true;
+
+    amdgpu = {
+      opencl.enable = true;
+      amdvlk.enable = true;
+    };
   };
 
   security.tpm2 = {
@@ -85,4 +89,13 @@
   systemd.tmpfiles.rules = [
     "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
   ];
+
+  nixowos.enable = true;
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.fufud = import ../../users/home-fufud.nix;
+    users.workd = import ../../users/home-workd.nix;
+  };
 }

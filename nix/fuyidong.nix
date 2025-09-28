@@ -1,4 +1,3 @@
-# Main server (fufuwuqi) NixOS configuration
 {
   nixpkgs,
   sops-nix,
@@ -17,6 +16,6 @@ nixpkgs.lib.nixosSystem {
     nixowos.nixosModules.default
     home-manager.nixosModules.home-manager
     vscode-server.nixosModules.default
-    ../hosts/fufuwuqi/configuration.nix
+    ../hosts/fuyidong/configuration.nix
   ];
 }

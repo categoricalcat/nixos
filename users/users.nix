@@ -1,10 +1,12 @@
-# User configuration module
-
-{ pkgs, config, ... }:
+{
+  pkgs,
+  config,
+  ...
+}:
 
 {
   users = {
-    mutableUsers = true;
+    mutableUsers = false;
     defaultUserShell = pkgs.zsh;
 
     groups = {
@@ -14,42 +16,35 @@
 
     extraUsers = {
       tempd = {
+        enable = false;
         isNormalUser = true;
         description = "temp";
         group = "wheel";
         initialPassword = "temp";
-      };
-
-      wsl = {
-        isNormalUser = true;
-        description = "WSL default user";
-        group = "wheel";
-        initialPassword = "wsl";
-        packages = with pkgs; [ ];
       };
     };
 
     users = {
       fufud = {
         isNormalUser = true;
-        description = "fu's personal";
+        description = "lucky personal";
         group = "fufud";
-        initialHashedPassword = config.sops.secrets."passwords/fufud".path;
+        # alway rember to change
+        initialHashedPassword = "$y$j9T$TbPknJF9F.7RE1sww8obj/$3.hMSrDCFms5HsGJGsbr15Zde8GoB71uPRfBvlwLXa2";
         extraGroups = [
           "wheel"
           "render"
           "video"
           "dialout"
         ];
-        packages = with pkgs; [ ];
+
       };
 
       workd = {
         isNormalUser = true;
-        description = "fu's work";
+        description = "lucky work";
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
-        packages = with pkgs; [ ];
       };
     };
   };

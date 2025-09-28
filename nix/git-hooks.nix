@@ -2,13 +2,13 @@
 {
   system,
   nixpkgs,
-  pre-commit-hooks,
+  git-hooks,
 }:
 
 let
   pkgs = import nixpkgs { inherit system; };
 in
-pre-commit-hooks.lib.${system}.run {
+git-hooks.lib.${system}.run {
   src = ../.;
   hooks = {
     # Check formatting without modifying files
