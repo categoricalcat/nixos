@@ -6,7 +6,7 @@
   imports = [
     ./hardware.nix
     ./addresses.nix
-    ../../modules/boot.nix
+    ./boot.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../users/users.nix

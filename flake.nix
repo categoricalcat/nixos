@@ -74,6 +74,17 @@
               ;
           };
 
+          fuyidong = import ./nix/fuyidong.nix {
+            inherit
+              nixpkgs
+              sops-nix
+              nixowos
+              home-manager
+              vscode-server
+              inputs
+              ;
+          };
+
         };
 
       homeConfigurations = {
