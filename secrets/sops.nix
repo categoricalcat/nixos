@@ -10,12 +10,12 @@ _: {
     "passwords/fufud" = {
       mode = "0600";
       owner = "fufud";
-      group = "users";
+      group = "fufud";
     };
     "passwords/workd" = {
       mode = "0600";
       owner = "workd";
-      group = "users";
+      group = "workd";
     };
     "tokens/cloudflared" = {
       mode = "0640";
