@@ -12,7 +12,8 @@ concurrency:
 
 jobs:
   check:
-    runs-on: self-hosted
+    runs-on: 
+      - self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -28,7 +29,9 @@ jobs:
 
   eval:
     needs: check
-    runs-on: self-hosted
+    runs-on: 
+      - self-hosted
+      - ubuntu-latest
     strategy:
       matrix:
         host: [fufuwuqi, fuchuang, fuyidong]
