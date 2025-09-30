@@ -27,7 +27,7 @@
     users = {
       fufud = {
         isNormalUser = true;
-        description = "lucky personal";
+        description = "lucky'";
         group = "fufud";
         # alway rember to change
         initialHashedPassword = "$y$j9T$TbPknJF9F.7RE1sww8obj/$3.hMSrDCFms5HsGJGsbr15Zde8GoB71uPRfBvlwLXa2";
@@ -36,6 +36,7 @@
           "render"
           "video"
           "dialout"
+          "networkmanager"
         ];
 
       };

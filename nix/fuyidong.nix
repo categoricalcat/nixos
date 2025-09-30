@@ -1,5 +1,5 @@
 {
-  nixpkgs,
+  nixpkgs-stable,
   sops-nix,
   nixowos,
   home-manager,
@@ -8,7 +8,7 @@
   ...
 }:
 
-nixpkgs.lib.nixosSystem {
+nixpkgs-stable.lib.nixosSystem {
   system = "x86_64-linux";
   specialArgs = { inherit inputs; };
   modules = [
