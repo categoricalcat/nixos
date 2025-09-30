@@ -65,10 +65,10 @@
 
   environment.pathsToLink = [ "/share/zsh" ];
 
-  services.emacs = {
-    enable = true;
-    install = true;
-    defaultEditor = true;
-    startWithGraphical = false;
-  };
+  # services.emacs = {
+  #   enable = true;
+  #   install = true;
+  #   defaultEditor = true;
+  #   startWithGraphical = false;
+  # };
 }

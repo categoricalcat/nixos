@@ -1,3 +1,5 @@
 secrets/secrets.yaml
 secrets/key.txt
 result
+.sops.yaml
+.pre-commit-config.yaml
