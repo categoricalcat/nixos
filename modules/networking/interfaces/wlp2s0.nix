@@ -1,11 +1,6 @@
-{ ... }:
+_:
 
 {
-  imports = [
-    ./interfaces/bond0.nix
-    ./interfaces/wg0.nix
-  ];
-
   systemd.network = {
     networks = {
       "20-wlp2s0" = {
