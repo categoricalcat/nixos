@@ -11,6 +11,7 @@
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
+    ../../modules/services/battery.nix
     ../../users/users.nix
   ];
 
