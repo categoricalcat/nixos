@@ -4,6 +4,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -32,6 +33,7 @@
   outputs =
     {
       nixpkgs,
+      nixpkgs-stable,
       systems,
       home-manager,
       nixos-wsl,
@@ -76,7 +78,7 @@
 
           fuyidong = import ./nix/fuyidong.nix {
             inherit
-              nixpkgs
+              nixpkgs-stable
               sops-nix
               nixowos
               home-manager

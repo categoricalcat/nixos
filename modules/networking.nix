@@ -2,7 +2,9 @@
 {
   imports = [
     ./networking/firewall.nix
-    ./networking/interfaces.nix
+    ./networking/interfaces/bond0.nix
+    ./networking/interfaces/wg0.nix
+    ./networking/interfaces/wlp2s0.nix
     ./networking/tweaks.nix
   ];
 

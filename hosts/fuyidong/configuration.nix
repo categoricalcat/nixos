@@ -11,21 +11,22 @@
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
+    ../../modules/services/battery.nix
     ../../users/users.nix
   ];
 
-  system.stateVersion = "25.11";
+  system.stateVersion = "25.05";
 
   programs.nix-ld.enable = true;
+
+  nixpkgs.config = {
+    allowUnfree = true;
+  };
 
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
   ];
-
-  nixpkgs.config = {
-    allowUnfree = true;
-  };
 
   nixowos.enable = true;
 

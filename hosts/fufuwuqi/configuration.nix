@@ -78,7 +78,7 @@
 
     amdgpu = {
       opencl.enable = true;
-      amdvlk.enable = true;
+      # amdvlk.enable = true;
     };
   };
 
