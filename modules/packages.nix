@@ -69,7 +69,6 @@
     kubectl
 
     cockpit
-    pcp
     ethtool
     iperf3
     nethogs
