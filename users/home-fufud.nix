@@ -10,8 +10,15 @@
 
   home.stateVersion = "25.11";
 
-  programs.home-manager = {
-    enable = true;
+  programs = {
+    home-manager = {
+      enable = true;
+    };
+
+    alacritty = {
+      enable = true;
+      theme = "aura";
+    };
   };
 
   home.activation = {
@@ -37,10 +44,9 @@
     gnomeExtensions.dash-to-dock
     gnomeExtensions.blur-my-shell
     gnomeExtensions.appindicator
+    dconf2nix
   ];
 
-  # 2. Configure GTK
-  # This section applies the theme settings to GTK applications.
   gtk = {
     enable = true;
     theme = {
@@ -88,7 +94,7 @@
           "blur-my-shell@aunetx"
           "appindicatorsupport@rgcjonas.gmail.com"
         ];
-        # Customize your favorite apps on the dock.
+
         favorite-apps = [
           "firefox.desktop"
           "org.gnome.Nautilus.desktop"
@@ -114,4 +120,5 @@
       };
     };
   };
+
 }
