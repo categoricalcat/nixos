@@ -1,5 +1,3 @@
-# Main NixOS Configuration (host: fufuwuqi)
-
 { pkgs, ... }:
 
 {
@@ -30,7 +28,7 @@
     };
 
     fontDir.enable = true;
-    enableDefaultPackages = true;
+    enableDefaultPackages = false;
 
     packages = with pkgs; [
       maple-mono.NF-CN

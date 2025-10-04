@@ -87,14 +87,6 @@
 
         };
 
-      homeConfigurations = {
-        standaloneHomeManagerConfig = home-manager.lib.homeManagerConfiguration {
-          modules = [
-            nixowos.homeModules.default
-          ];
-        };
-      };
-
       # nix fmt uses this (treefmt wrapper)
       formatter = forEachSystem (
         system:

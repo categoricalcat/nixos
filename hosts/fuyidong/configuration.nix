@@ -28,7 +28,7 @@
       "nix-command"
       "flakes"
     ];
-    download-buffer-size = 1024 * 1024 * 1024; # 1GB
+    download-buffer-size = 1024 * 1024 * 1024 * 10;
   };
 
   nixowos.enable = true;
@@ -37,5 +37,11 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     users.fufud = import ../../users/home-fufud.nix;
+    backupFileExtension = "hm-backup";
+  };
+
+  services.openssh = {
+    enable = true;
+    listenAddresses = [ ];
   };
 }

@@ -4,21 +4,37 @@
   networking.hostName = "fuyidong";
   networking.networkmanager.enable = true;
 
-  programs.xwayland.enable = true;
-  # services.xserver.enable = true;
-
-  services.displayManager.gdm.enable = true;
-  services.desktopManager.gnome = {
-    enable = true;
-    extraGSettingsOverrides = ''
-      [org.gnome.mutter]
-      experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']
-    '';
+  programs = {
+    mtr.enable = true;
+    xwayland.enable = true;
   };
 
-  services.xserver.xkb = {
-    layout = "br";
-    variant = "thinkpad";
+  services = {
+    xserver.enable = false;
+
+    desktopManager = {
+      gnome = {
+        enable = true;
+        extraGSettingsOverrides = ''
+          [org.gnome.mutter]
+          experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']
+        '';
+      };
+    };
+
+    displayManager = {
+      gdm.enable = true;
+
+      sddm = {
+        enable = false;
+        wayland = {
+          enable = true;
+        };
+        settings = {
+          General.DisplayManager = "wayland";
+        };
+      };
+    };
   };
 
   console.keyMap = "br-abnt2";
@@ -27,6 +43,8 @@
 
   services.displayManager.autoLogin.enable = true;
   services.displayManager.autoLogin.user = "fufud";
+
+  environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   systemd.services."getty@tty1".enable = false;
   systemd.services."autovt@tty1".enable = false;
@@ -58,13 +76,10 @@
     git
     kitty
     cloudflared
-  ];
 
-  services.openssh = {
-    enable = true;
-    listenAddresses = [ ];
-  };
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
+    gnomeExtensions.user-themes # Essential for applying shell themes
+    gnomeExtensions.dash-to-dock
+    gnomeExtensions.blur-my-shell
+    gnomeExtensions.appindicator
+  ];
 }
