@@ -15,7 +15,7 @@
     ../../users/users.nix
   ];
 
-  system.stateVersion = "25.05";
+  system.stateVersion = "25.11";
 
   programs.nix-ld.enable = true;
 
@@ -23,10 +23,13 @@
     allowUnfree = true;
   };
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix.settings = {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+    download-buffer-size = 1073741824;
+  };
 
   nixowos.enable = true;
 

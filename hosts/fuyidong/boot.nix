@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
 
@@ -10,6 +10,8 @@
       };
       efi.canTouchEfiVariables = true;
     };
+
+    kernelModules = lib.mkAfter [ "coretemp" ];
 
     kernel.sysctl = {
       "kernel.panic" = 10;
