@@ -9,21 +9,21 @@
           "Maple Mono NF CN"
         ];
         sansSerif = [
-          "Maple Mono NF CN"
+          "Lexend"
         ];
         serif = [
-          "Maple Mono NF CN"
+          "Roboto Serif"
         ];
       };
 
       antialias = true;
       hinting = {
-        enable = true;
-        style = "slight";
+        enable = false;
+        style = "none";
       };
       subpixel = {
         rgba = "rgb";
-        lcdfilter = "default";
+        lcdfilter = "light";
       };
     };
 
@@ -31,7 +31,13 @@
     enableDefaultPackages = false;
 
     packages = with pkgs; [
-      maple-mono.NF-CN
+      maple-mono.NF-CN-unhinted
+      (google-fonts.override {
+        fonts = [
+          "Lexend"
+          "Roboto Serif"
+        ];
+      })
     ];
   };
 

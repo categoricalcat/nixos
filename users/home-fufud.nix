@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  config,
   ...
 }:
 
@@ -48,7 +49,7 @@
   ];
 
   gtk = {
-    enable = true;
+    enable = lib.hasAttr "desktopManager" config.services;
     theme = {
       name = "Catppuccin-Macchiato-Standard-Mauve-Dark";
       package = pkgs.catppuccin-gtk;
@@ -70,7 +71,7 @@
   # home.file.".local/share/wallpapers/nix-wallpaper.png".source = wallpaper;
 
   dconf = {
-    enable = true;
+    enable = lib.hasAttr "desktopManager" config.services;
     settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
