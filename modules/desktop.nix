@@ -51,6 +51,9 @@
       git
       kitty
       cloudflared
+      mako
+      waybar
+      fuzzel
     ];
   };
 }
