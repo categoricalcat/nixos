@@ -15,6 +15,8 @@
     ../../users/users.nix
   ];
 
+  desktop.environment = "gnome";
+
   system.stateVersion = "25.11";
 
   programs.nix-ld.enable = true;
