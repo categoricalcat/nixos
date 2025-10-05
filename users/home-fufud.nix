@@ -46,6 +46,8 @@
     gnomeExtensions.blur-my-shell
     gnomeExtensions.appindicator
     dconf2nix
+
+    sshfs
   ];
 
   gtk = {
@@ -121,5 +123,4 @@
       };
     };
   };
-
 }
