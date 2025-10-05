@@ -6,6 +6,8 @@
 }:
 
 {
+  imports = [ ./sshfs-the-files.nix ];
+
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";
 
@@ -49,6 +51,8 @@
 
     sshfs
   ];
+
+  theFilesSshfs.enable = lib.hasAttr "desktopManager" config.services;
 
   gtk = {
     enable = lib.hasAttr "desktopManager" config.services;
