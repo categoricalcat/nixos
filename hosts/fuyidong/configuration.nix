@@ -1,7 +1,8 @@
-{
-  ...
-}:
+_:
 
+let
+  desktopEnvironment = "gnome";
+in
 {
   imports = [
     ./boot.nix
@@ -15,7 +16,7 @@
     ../../users/users.nix
   ];
 
-  desktop.environment = "gnome";
+  desktop.environment = desktopEnvironment;
 
   system.stateVersion = "25.11";
 
@@ -38,6 +39,9 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    extraSpecialArgs = {
+      inherit desktopEnvironment;
+    };
     users.fufud = import ../../users/home-fufud.nix;
     backupFileExtension = "hm-backup";
   };
