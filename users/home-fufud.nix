@@ -6,6 +6,8 @@
 }:
 
 {
+  imports = [ ./sshfs-the-files.nix ];
+
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";
 
@@ -58,6 +60,8 @@
           gnomeExtensions.appindicator
           dconf2nix
         ];
+
+  theFilesSshfs.enable = lib.hasAttr "desktopManager" config.services;
 
   gtk =
     lib.mkIf
