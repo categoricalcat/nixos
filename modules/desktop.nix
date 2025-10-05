@@ -45,6 +45,7 @@
       emacs
       chromium
       vscode-fhs
+      code-cursor-fhs
       zsh
       bitwarden-desktop
       git
