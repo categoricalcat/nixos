@@ -60,20 +60,20 @@
   gtk = lib.mkIf (desktopEnvironment == "gnome") {
     enable = true;
     theme = {
-      name = "Catppuccin-Macchiato-Standard-Mauve-Dark";
-      package = pkgs.catppuccin-gtk;
+      name = lib.mkDefault "Catppuccin-Macchiato-Standard-Mauve-Dark";
+      package = lib.mkDefault pkgs.catppuccin-gtk;
     };
     iconTheme = {
-      name = "Papirus-Dark";
-      package = pkgs.papirus-icon-theme;
+      name = lib.mkDefault "Papirus-Dark";
+      package = lib.mkDefault pkgs.papirus-icon-theme;
     };
     cursorTheme = {
-      name = "Bibata-Modern-Classic";
-      package = pkgs.bibata-cursors;
+      name = lib.mkDefault "Bibata-Modern-Classic";
+      package = lib.mkDefault pkgs.bibata-cursors;
     };
     font = {
-      name = "Maple Mono NF CN";
-      size = 11;
+      name = lib.mkDefault "Maple Mono NF CN";
+      size = lib.mkDefault 11;
     };
   };
 
@@ -84,10 +84,10 @@
     settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
-        gtk-theme = "Catppuccin-Macchiato-Standard-Mauve-Dark";
-        icon-theme = "Papirus-Dark";
-        cursor-theme = "Bibata-Modern-Classic";
-        font-name = "Maple Mono NF CN 11";
+        gtk-theme = lib.mkDefault "Catppuccin-Macchiato-Standard-Mauve-Dark";
+        icon-theme = lib.mkDefault "Papirus-Dark";
+        cursor-theme = lib.mkDefault "Bibata-Modern-Classic";
+        font-name = lib.mkDefault "Maple Mono NF CN 11";
       };
 
       "org/gnome/desktop/wm/preferences" = {
@@ -114,7 +114,7 @@
       };
 
       "org/gnome/shell/extensions/user-theme" = {
-        name = "Catppuccin-Macchiato-Standard-Mauve-Dark";
+        name = lib.mkDefault "Catppuccin-Macchiato-Standard-Mauve-Dark";
       };
 
       "org/gnome/shell/extensions/dash-to-dock" = {

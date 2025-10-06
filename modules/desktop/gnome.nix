@@ -52,5 +52,7 @@
       gnomeExtensions.blur-my-shell
       gnomeExtensions.appindicator
     ];
+
+    # Qt platform theme is handled via Stylix (qtct). No explicit override here.
   };
 }

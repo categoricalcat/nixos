@@ -16,5 +16,7 @@
       alsa.support32Bit = true;
       pulse.enable = true;
     };
+
+    # stylix settings are provided by modules/desktop/stylix.nix
   };
 }

@@ -15,6 +15,7 @@
   imports = [
     ./desktop/gnome.nix
     ./desktop/niri.nix
+    ./desktop/stylix.nix
   ];
 
   config = {

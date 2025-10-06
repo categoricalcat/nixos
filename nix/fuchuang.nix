@@ -5,6 +5,7 @@
   nixowos,
   nixos-wsl,
   home-manager,
+  stylix,
   vscode-server,
   ...
 }:
@@ -15,6 +16,7 @@ nixpkgs.lib.nixosSystem {
     sops-nix.nixosModules.sops
     nixowos.nixosModules.default
     nixos-wsl.nixosModules.default
+    stylix.nixosModules.stylix
     home-manager.nixosModules.home-manager
     vscode-server.nixosModules.default
     ../hosts/fuchuang/configuration.nix
