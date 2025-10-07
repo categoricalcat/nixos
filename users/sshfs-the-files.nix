@@ -30,7 +30,7 @@ in
       };
       Service = {
         Type = "simple";
-        ExecStart = ''${pkgs.sshfs}/bin/sshfs -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,StrictHostKeyChecking=accept-new,port=24212 fufud.lan:/home/fufud/the.files %h/the-files'';
+        ExecStart = ''${pkgs.sshfs}/bin/sshfs -o idmap=user,allow_other,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,StrictHostKeyChecking=accept-new,port=24212 fufud.lan:/home/fufud/the.files %h/the-files'';
         ExecStop = ''${pkgs.fuse3}/bin/fusermount3 -u %h/the-files || ${pkgs.fuse}/bin/fusermount -u %h/the-files'';
         Restart = "on-failure";
         RemainAfterExit = true;

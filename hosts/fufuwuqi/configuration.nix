@@ -61,6 +61,9 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    extraSpecialArgs = {
+      desktopEnvironment = null; # server/headless
+    };
     users.fufud = import ../../users/home-fufud.nix;
     users.workd = import ../../users/home-workd.nix;
   };

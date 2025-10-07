@@ -41,6 +41,9 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    extraSpecialArgs = {
+      desktopEnvironment = null; # WSL/headless
+    };
     users.fufud = import ../../users/home-fufud.nix;
   };
 

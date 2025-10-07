@@ -3,6 +3,7 @@
   sops-nix,
   nixowos,
   home-manager,
+  stylix,
   vscode-server,
   inputs,
   ...
@@ -14,6 +15,7 @@ nixpkgs.lib.nixosSystem {
   modules = [
     sops-nix.nixosModules.sops
     nixowos.nixosModules.default
+    stylix.nixosModules.stylix
     home-manager.nixosModules.home-manager
     vscode-server.nixosModules.default
     ../hosts/fuyidong/configuration.nix

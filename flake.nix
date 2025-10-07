@@ -9,6 +9,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    stylix = {
+      url = "github:danth/stylix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixowos = {
       url = "github:yunfachi/nixowos";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -40,6 +44,7 @@
       git-hooks,
       sops-nix,
       vscode-server,
+      stylix,
       ...
     }@inputs:
     let
@@ -60,6 +65,8 @@
               nixos-wsl
               home-manager
               vscode-server
+              stylix
+              inputs
               ;
           };
 
@@ -70,6 +77,7 @@
               nixowos
               home-manager
               vscode-server
+              stylix
               inputs
               ;
           };
@@ -81,6 +89,7 @@
               nixowos
               home-manager
               vscode-server
+              stylix
               inputs
               ;
           };
