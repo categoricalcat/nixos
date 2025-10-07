@@ -55,21 +55,23 @@ in
     listenAddresses = [ ];
   };
 
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      vpl-gpu-rt
-      intel-media-driver
-    ];
-  };
+  hardware = {
+    enableRedistributableFirmware = true;
+    cpu.intel.updateMicrocode = true;
+    intel-gpu-tools.enable = true;
 
-  boot.kernel.sysctl = {
-    "vm.swappiness" = 80;
+    graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        vpl-gpu-rt
+        intel-media-driver
+      ];
+    };
   };
 
   zramSwap = {
     enable = false;
-    algorithm = "zstd"; # Offers a good balance of compression speed and ratio
-    memoryPercent = 50; # This will reserve 50% of your 15GB (about 7.5GB) for zram
+    algorithm = "zstd";
+    memoryPercent = 50;
   };
 }
