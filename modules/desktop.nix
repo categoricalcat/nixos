@@ -43,7 +43,6 @@
     environment.systemPackages = with pkgs; [
       discord
       discord-ptb
-      emacs
       chromium
       vscode-fhs
       code-cursor-fhs
