@@ -11,7 +11,11 @@
       efi.canTouchEfiVariables = true;
     };
 
-    kernelModules = lib.mkAfter [ "coretemp" ];
+    kernelModules = lib.mkAfter [
+      "fuse"
+      "kvm-intel"
+      "coretemp"
+    ];
 
     kernel.sysctl = {
       "kernel.panic" = 10;
