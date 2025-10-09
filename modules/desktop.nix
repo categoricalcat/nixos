@@ -34,8 +34,6 @@
     services.displayManager.autoLogin.enable = true;
     services.displayManager.autoLogin.user = "fufud";
 
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
-
     systemd.services."getty@tty1".enable = false;
     systemd.services."autovt@tty1".enable = false;
 
@@ -44,6 +42,7 @@
       discord
       discord-ptb
       chromium
+      firefox
       vscode-fhs
       code-cursor-fhs
       zsh
@@ -55,5 +54,17 @@
       waybar
       fuzzel
     ];
+
+    xdg.mime = {
+      enable = true;
+      defaultApplications = {
+        "x-scheme-handler/http" = [ "firefox.desktop" ];
+        "x-scheme-handler/https" = [ "firefox.desktop" ];
+        "text/html" = [ "firefox.desktop" ];
+        "application/pdf" = [
+          "firefox.desktop"
+        ];
+      };
+    };
   };
 }
