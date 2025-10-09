@@ -42,6 +42,7 @@
       discord
       discord-ptb
       chromium
+      firefox
       vscode-fhs
       code-cursor-fhs
       zsh
@@ -57,11 +58,11 @@
     xdg.mime = {
       enable = true;
       defaultApplications = {
-        "x-scheme-handler/http" = [ "chromium.desktop" ];
-        "x-scheme-handler/https" = [ "chromium.desktop" ];
-        "text/html" = [ "chromium.desktop" ];
+        "x-scheme-handler/http" = [ "firefox.desktop" ];
+        "x-scheme-handler/https" = [ "firefox.desktop" ];
+        "text/html" = [ "firefox.desktop" ];
         "application/pdf" = [
-          "chromium.desktop"
+          "firefox.desktop"
         ];
       };
     };

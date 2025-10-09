@@ -60,7 +60,7 @@
   gtk = lib.mkIf (desktopEnvironment == "gnome") {
     enable = true;
     theme = {
-      name = lib.mkDefault "Catppuccin-Macchiato-Standard-Mauve-Dark";
+      name = lib.mkDefault "Catppuccin-Mocha-Standard-Lavender-Dark";
       package = lib.mkDefault pkgs.catppuccin-gtk;
     };
     iconTheme = {
@@ -68,7 +68,7 @@
       package = lib.mkDefault pkgs.papirus-icon-theme;
     };
     cursorTheme = {
-      name = lib.mkDefault "Bibata-Modern-Classic";
+      name = lib.mkDefault "Bibata-Modern-Classic-Right";
       package = lib.mkDefault pkgs.bibata-cursors;
     };
     font = {
@@ -84,15 +84,12 @@
     settings = {
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
-        gtk-theme = lib.mkDefault "Catppuccin-Macchiato-Standard-Mauve-Dark";
-        icon-theme = lib.mkDefault "Papirus-Dark";
-        cursor-theme = lib.mkDefault "Bibata-Modern-Classic";
-        font-name = lib.mkDefault "Maple Mono NF CN 11";
       };
 
       "org/gnome/desktop/wm/preferences" = {
         button-layout = "appmenu:minimize,maximize,close";
       };
+
       "org/gnome/mutter" = {
         center-new-windows = true;
       };
@@ -106,21 +103,17 @@
         ];
 
         favorite-apps = [
+          "chromium.desktop"
           "firefox.desktop"
           "org.gnome.Nautilus.desktop"
           "org.gnome.Console.desktop"
-          "obsidian.desktop"
         ];
-      };
-
-      "org/gnome/shell/extensions/user-theme" = {
-        name = lib.mkDefault "Catppuccin-Macchiato-Standard-Mauve-Dark";
       };
 
       "org/gnome/shell/extensions/dash-to-dock" = {
         dock-position = "BOTTOM";
         dash-max-icon-size = 48;
-        intellihide = true; # Autohide the dock
+        intellihide = true;
         click-action = "minimize";
       };
 
