@@ -14,6 +14,7 @@ in
     ../../modules/desktop.nix
     ../../modules/services/battery.nix
     ../../users/users.nix
+    ../../modules/services/synergy.nix
   ];
 
   desktop.environment = desktopEnvironment;
