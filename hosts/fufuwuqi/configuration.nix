@@ -11,8 +11,8 @@
     ../../modules/fonts.nix
     ../../users/users.nix
     ../../modules/packages.nix
-    ../../modules/networking.nix
-    ../../modules/services/services.nix
+    ./networking.nix
+    ./services.nix
     # ../../modules/desktop.nix
     ../../modules/server-settings.nix
     ../../modules/server-mode.nix

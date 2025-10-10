@@ -3,7 +3,7 @@ _:
 {
   services.synergy.client = {
     enable = true;
-    serverAddress = "0.0.0.0";
+    serverAddress = "fufuwuqi.lan";
     screenName = "fuyidong";
   };
 }

@@ -58,21 +58,21 @@ _: {
           {
             publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
             allowedIPs = [
-              "10.100.0.2/32"
+              "10.100.0.2/32" # fuyidong
             ];
             keepalive = 25;
           }
           {
             publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
             allowedIPs = [
-              "10.100.0.3/32"
+              "10.100.0.3/32" # fuchuang
             ];
             keepalive = 25;
           }
           {
             publicKey = "azePQG6Sbg9O2jNDVMU99jPO96yfNGjd+FM0FdsI0Q8=";
             allowedIPs = [
-              "10.100.0.4/32"
+              "10.100.0.4/32" # *her*
             ];
             keepalive = 25;
           }

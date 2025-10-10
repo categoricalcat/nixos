@@ -8,12 +8,12 @@
 
 {
   imports = [
-    ./avahi.nix
-    ./openssh.nix
-    ./adguardhome.nix
-    ./cloudflared.nix
-    ./playit-agent.nix
-    ./github-runner.nix
+    ../../modules/services/avahi.nix
+    ../../modules/services/openssh.nix
+    ../../modules/services/adguardhome.nix
+    ../../modules/services/cloudflared.nix
+    ../../modules/services/playit-agent.nix
+    ../../modules/services/github-runner.nix
   ];
 
   services.openvscode-server = {

@@ -53,7 +53,10 @@ in
 
   services.openssh = {
     enable = true;
-    listenAddresses = [ ];
+    listenAddresses = [
+      { addr = "fuyidong.local"; }
+      { addr = "10.100.0.2"; }
+    ];
   };
 
   hardware = {

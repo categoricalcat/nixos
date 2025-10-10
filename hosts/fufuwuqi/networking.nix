@@ -1,11 +1,11 @@
 { addresses, ... }:
 {
   imports = [
-    ./networking/firewall.nix
-    ./networking/interfaces/bond0.nix
-    ./networking/interfaces/wg0.nix
-    ./networking/interfaces/wlp2s0.nix
-    ./networking/tweaks.nix
+    ../../modules/networking/firewall.nix
+    ../../modules/networking/interfaces/bond0.nix
+    ../../modules/networking/interfaces/wg0.nix
+    ../../modules/networking/interfaces/wlp2s0.nix
+    ../../modules/networking/tweaks.nix
   ];
 
   services.resolved = {
