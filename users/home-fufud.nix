@@ -22,6 +22,20 @@
     alacritty = {
       enable = true;
       theme = "aura";
+      settings = {
+        window = {
+          opacity = lib.mkDefault 0.85;
+          blur = true;
+        };
+      };
+    };
+
+    kitty = {
+      enable = true;
+      settings = {
+        background_opacity = lib.mkDefault "0.85";
+        dynamic_background_opacity = true;
+      };
     };
   };
 
@@ -47,12 +61,8 @@
       catppuccin-gtk
       papirus-icon-theme
       bibata-cursors
-
-      gnomeExtensions.user-themes
-      gnomeExtensions.dash-to-dock
-      gnomeExtensions.blur-my-shell
-      gnomeExtensions.appindicator
       dconf2nix
+      dconf-editor
     ];
 
   theFilesSshfs.enable = lib.hasAttr "desktopManager" config.services;
@@ -95,11 +105,12 @@
       };
 
       "org/gnome/shell" = {
-        enabled-extensions = [
-          "user-theme@gnome-shell-extensions.gcampax.github.com"
-          "dash-to-dock@micxgx.gmail.com"
-          "blur-my-shell@aunetx"
-          "appindicatorsupport@rgcjonas.gmail.com"
+        enabled-extensions = with pkgs.gnomeExtensions; [
+          blur-my-shell.extensionUuid
+          dash-to-dock.extensionUuid
+          blur-my-shell.extensionUuid
+          appindicator.extensionUuid
+          system-monitor.extensionUuid
         ];
 
         favorite-apps = [
@@ -120,6 +131,16 @@
       "org/gnome/shell/extensions/blur-my-shell" = {
         blur-overview = true;
         blur-top-panel = true;
+      };
+
+      "org/gnome/shell/extensions/blur-my-shell/applications" = {
+        blur = true;
+        opacity = 200;
+        enable-all = true;
+      };
+
+      "org/gnome/shell/extensions/user-theme" = {
+        name = lib.mkDefault "Catppuccin-Mocha-Standard-Lavender-Dark";
       };
     };
   };

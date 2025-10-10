@@ -45,14 +45,12 @@
       pulse.enable = true;
     };
 
-    # GNOME-specific packages
     environment.systemPackages = with pkgs; [
       gnomeExtensions.user-themes
       gnomeExtensions.dash-to-dock
       gnomeExtensions.blur-my-shell
       gnomeExtensions.appindicator
+      gnomeExtensions.system-monitor
     ];
-
-    # Qt platform theme is handled via Stylix (qtct). No explicit override here.
   };
 }
