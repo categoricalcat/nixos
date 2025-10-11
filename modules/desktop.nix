@@ -45,6 +45,7 @@
       firefox
       vscode-fhs
       code-cursor-fhs
+      spotifyd
       zsh
       bitwarden-desktop
       git

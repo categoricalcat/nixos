@@ -54,8 +54,8 @@ in
   services.openssh = {
     enable = true;
     listenAddresses = [
-      { addr = "fuyidong.local"; }
-      { addr = "10.100.0.2"; }
+      # { addr = "fuyidong.local"; }
+      # { addr = "10.100.0.2"; }
     ];
   };
 
