@@ -25,6 +25,8 @@ in
 
   nixpkgs.config = {
     allowUnfree = true;
+    cudaSupport = false;
+    rocmSupport = false;
   };
 
   nix.settings = {
