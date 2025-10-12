@@ -56,7 +56,7 @@ _: {
         };
         peers = [
           {
-            publicKey = "e234011QJdJtl67vFF8Dp3wGLixnkRFXtkcDamR1vh8=";
+            publicKey = "lGriY6UJK7M4O9oOq/JBHM6/HXTUx5pX/VH97Cs2njo=";
             allowedIPs = [
               "10.100.0.2/32" # fuyidong
             ];

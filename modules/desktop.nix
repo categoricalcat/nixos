@@ -19,9 +19,6 @@
   ];
 
   config = {
-    networking.hostName = "fuyidong";
-    networking.networkmanager.enable = true;
-
     programs = {
       mtr.enable = true;
       xwayland.enable = true;
