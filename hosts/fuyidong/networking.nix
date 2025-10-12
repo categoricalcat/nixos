@@ -15,7 +15,7 @@ _: {
 
     wireguard = {
       interfaces = {
-        wg0 = {
+        "fufuwuqi.vpn" = {
           listenPort = 51820;
           ips = [ "10.100.0.2/32" ];
 
