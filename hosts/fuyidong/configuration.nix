@@ -14,7 +14,7 @@ in
     ../../modules/desktop.nix
     ../../modules/services/battery.nix
     ../../users/users.nix
-    ../../modules/services/synergy.nix
+    #../../modules/services/synergy.nix
     ./networking.nix
   ];
 
@@ -31,12 +31,15 @@ in
   };
 
   nix = {
+    distributedBuilds = true;
+
     buildMachines = [
       {
-        hostName = "fufud";
+        hostName = "ssh.fufu.land";
         system = "x86_64-linux";
         maxJobs = 15;
         speedFactor = 3;
+        protocol = "ssh-ng";
         supportedFeatures = [
           "nixos-test"
           "benchmark"
@@ -49,6 +52,7 @@ in
     ];
 
     settings = {
+      builders-use-substitutes = true;
       experimental-features = [
         "nix-command"
         "flakes"

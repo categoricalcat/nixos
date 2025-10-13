@@ -22,6 +22,11 @@
   serverMode.headless = true;
 
   nix.settings = {
+    trusted-users = [
+      "root"
+      "fufud"
+    ];
+
     experimental-features = [
       "nix-command"
       "flakes"

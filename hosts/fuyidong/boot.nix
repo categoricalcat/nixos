@@ -23,6 +23,6 @@
       "vm.swappiness" = 80;
     };
 
-    kernelPackages = pkgs.linuxPackages;
+    kernelPackages = pkgs.linuxPackages_6_12;
   };
 }
