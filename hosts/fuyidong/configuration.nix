@@ -52,6 +52,11 @@ in
     ];
 
     settings = {
+      trusted-users = [
+        "root"
+        "fufud"
+      ];
+
       builders-use-substitutes = true;
       experimental-features = [
         "nix-command"
