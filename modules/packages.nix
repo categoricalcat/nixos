@@ -54,15 +54,6 @@
     python3
     systemd
 
-    # ROCm packages for GPU compute
-    rocmPackages.clr
-    rocmPackages.rocminfo
-    rocmPackages.rocm-smi
-    rocmPackages.rocmPath
-    rocmPackages.hipblas
-    rocmPackages.rocblas
-    rocmPackages.rocsolver
-
     podman-compose # open source bitchess
     podman-tui
     dive
