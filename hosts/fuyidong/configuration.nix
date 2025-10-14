@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 let
   desktopEnvironment = "gnome";
@@ -14,7 +14,7 @@ in
     ../../modules/desktop.nix
     ../../modules/services/battery.nix
     ../../users/users.nix
-    #../../modules/services/synergy.nix
+    # ../../modules/services/synergy.nix
     ./networking.nix
   ];
 
@@ -46,7 +46,7 @@ in
           "big-parallel"
           "kvm"
         ];
-        sshUser = "fufud";
+        sshUser = config.users.users.fufud.name;
         sshKey = "/home/fufud/.ssh/id_ed25519";
       }
     ];
@@ -54,7 +54,7 @@ in
     settings = {
       trusted-users = [
         "root"
-        "fufud"
+        config.users.users.fufud.name
       ];
 
       builders-use-substitutes = true;
