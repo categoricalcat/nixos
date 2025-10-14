@@ -1,6 +1,6 @@
 # Main NixOS Configuration (host: fufuwuqi)
 
-{ pkgs, ... }:
+{ ... }:
 
 {
   imports = [
@@ -67,10 +67,6 @@
   security.tpm2 = {
     enable = true;
   };
-
-  systemd.tmpfiles.rules = [
-    "L+    /opt/rocm   -    -    -     -    ${pkgs.rocmPackages.rocmPath}"
-  ];
 
   nixowos.enable = true;
 
