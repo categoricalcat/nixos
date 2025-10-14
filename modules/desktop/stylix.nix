@@ -32,7 +32,7 @@
     };
 
     # Catppuccin Mocha (Base16 mapping)
-    # stylix.base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-hard.yaml";
+    # stylix.base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
     stylix.base16Scheme = {
       base00 = "1e1e2e"; # base
       base01 = "181825"; # mantle

@@ -27,10 +27,9 @@
     };
   };
 
-  # Disable power management features
   powerManagement = {
-    enable = false;
-    cpuFreqGovernor = "performance"; # Keep CPU at maximum performance
+    enable = true;
+    cpuFreqGovernor = "performance";
   };
 
   # Automatic SSD maintenance
