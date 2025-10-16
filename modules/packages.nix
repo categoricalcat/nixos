@@ -5,6 +5,7 @@
 {
   environment.systemPackages = with pkgs; [
     emacs
+    killall
 
     gnumake
     gcc
@@ -70,5 +71,6 @@
     traceroute
     tcpdump
     wireguard-tools
+
   ];
 }

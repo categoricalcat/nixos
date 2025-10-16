@@ -7,7 +7,10 @@
 }:
 
 {
-  imports = [ ./sshfs-the-files.nix ];
+  imports = [
+    ./sshfs-the-files.nix
+    ./programs/wofi.nix
+  ];
 
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";

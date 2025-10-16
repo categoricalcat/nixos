@@ -5,6 +5,7 @@
     desktop.environment = lib.mkOption {
       type = lib.types.enum [
         "gnome"
+        "hyprland"
         "niri"
       ];
       default = "gnome";
@@ -14,6 +15,7 @@
 
   imports = [
     ./desktop/gnome.nix
+    ./desktop/hyprland.nix
     ./desktop/niri.nix
     ./desktop/stylix.nix
   ];
@@ -47,10 +49,16 @@
       bitwarden-desktop
       git
       kitty
+      ghostty
       cloudflared
       mako
       waybar
       fuzzel
+      xwayland
+      gnome-keyring
+      xdg-desktop-portal-gtk
+      xdg-desktop-portal-gnome
+      xwayland-satellite
     ];
 
     xdg.mime = {
