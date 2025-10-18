@@ -18,6 +18,8 @@ in
     ./networking.nix
   ];
 
+  environment.systemPackages = [ pkgs.mprisence ];
+
   desktop.environment = desktopEnvironment;
 
   system.stateVersion = "25.11";

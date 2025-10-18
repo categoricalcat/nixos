@@ -5,12 +5,12 @@
   ...
 }:
 let
-  accent = "#27391C";
-  background = "#232a2e";
-  background-alt = "#2d353b";
-  foreground = "#A0D683";
+  accent = "#b4befe";
+  background = "#1e1e2e";
+  background-alt = "#313244";
+  foreground = "#cdd6f4";
   font = "Maple Mono NF CN";
-  rounding = 10;
+  rounding = 6;
   font-size = 11;
 in
 {
