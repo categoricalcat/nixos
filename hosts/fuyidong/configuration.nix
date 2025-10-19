@@ -5,6 +5,7 @@ let
 in
 {
   imports = [
+    ../../modules/services/nfs/client.nix
     ./boot.nix
     ./hardware.nix
     ../../secrets/sops.nix

@@ -7,6 +7,7 @@
 
 {
   imports = [
+    ../../modules/services/nfs/client.nix
     ../../secrets/sops.nix
     ../../modules/packages.nix
     ../../modules/server-mode.nix
