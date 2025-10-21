@@ -34,11 +34,11 @@
     # Catppuccin Mocha (Base16 mapping)
     # stylix.base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
     stylix.base16Scheme = {
-      base00 = "1e1e2e"; # base
-      base01 = "181825"; # mantle
-      base02 = "313244"; # surface0
-      base03 = "45475a"; # surface1
-      base04 = "585b70"; # surface2
+      base00 = "0a0a10"; # base
+      base01 = "14141f"; # mantle
+      base02 = "20212c"; # surface0
+      base03 = "2c2e3a"; # surface1
+      base04 = "383a47"; # surface2
       base05 = "cdd6f4"; # text
       base06 = "f5e0dc"; # rosewater
       base07 = "b4befe"; # lavender

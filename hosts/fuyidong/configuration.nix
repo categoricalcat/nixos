@@ -1,7 +1,7 @@
 { pkgs, config, ... }:
 
 let
-  desktopEnvironment = "niri";
+  desktopEnvironment = "gnome";
 in
 {
   imports = [
