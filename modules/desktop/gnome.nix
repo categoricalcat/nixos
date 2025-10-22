@@ -21,7 +21,10 @@
       };
 
       displayManager = {
-        gdm.enable = true;
+        gdm = {
+          enable = true;
+          wayland = true;
+        };
       };
 
       gnome = {
@@ -50,7 +53,13 @@
       gnomeExtensions.dash-to-dock
       gnomeExtensions.blur-my-shell
       gnomeExtensions.appindicator
-      gnomeExtensions.system-monitor
+      gnomeExtensions.vitals
+      gnomeExtensions.gsconnect
+      gnomeExtensions.quick-settings-tweaker
+      gnomeExtensions.caffeine
+      gnomeExtensions.tiling-assistant
+      gnomeExtensions.pano
+      # gnomeExtensions.just-perfection
     ];
   };
 }

@@ -5,8 +5,6 @@ _:
 
   systemd.tmpfiles.rules = [
     "d /mnt/nfs 0755 root root -"
-    "d /mnt/nfs/share 0755 root root -"
-    "d /mnt/nfs/the.files 0755 root root -"
   ];
 
   fileSystems."/mnt/nfs/share" = {
@@ -18,12 +16,16 @@ _:
       "noauto"
       "nofail"
       "_netdev"
-      "timeo=600"
+      "timeo=50"
       "retrans=2"
       "rsize=1048576"
       "wsize=1048576"
+      "x-systemd.after=wireguard-fufuwuqi.vpn.service"
+      "x-systemd.requires=wireguard-fufuwuqi.vpn.service"
+      "x-systemd.after=NetworkManager.service"
     ];
   };
+
   fileSystems."/mnt/nfs/the.files" = {
     device = "fufuwuqi.vpn:/the.files";
     fsType = "nfs4";
@@ -33,10 +35,13 @@ _:
       "noauto"
       "nofail"
       "_netdev"
-      "timeo=600"
+      "timeo=50"
       "retrans=2"
       "rsize=1048576"
       "wsize=1048576"
+      "x-systemd.after=wireguard-fufuwuqi.vpn.service"
+      "x-systemd.requires=wireguard-fufuwuqi.vpn.service"
+      "x-systemd.after=NetworkManager.service"
     ];
   };
 }

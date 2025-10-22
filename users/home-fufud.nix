@@ -111,9 +111,14 @@
         enabled-extensions = with pkgs.gnomeExtensions; [
           blur-my-shell.extensionUuid
           dash-to-dock.extensionUuid
-          blur-my-shell.extensionUuid
           appindicator.extensionUuid
-          system-monitor.extensionUuid
+          vitals.extensionUuid
+          gsconnect.extensionUuid
+          quick-settings-tweaker.extensionUuid
+          caffeine.extensionUuid
+          tiling-assistant.extensionUuid
+          pano.extensionUuid
+          # just-perfection.extensionUuid
         ];
 
         favorite-apps = [
