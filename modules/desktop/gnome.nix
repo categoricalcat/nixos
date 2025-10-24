@@ -15,7 +15,7 @@
           enable = true;
           extraGSettingsOverrides = ''
             [org.gnome.mutter]
-            experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']
+            experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling', 'variable-refresh-rate']
           '';
         };
       };
@@ -53,13 +53,15 @@
       gnomeExtensions.dash-to-dock
       gnomeExtensions.blur-my-shell
       gnomeExtensions.appindicator
-      gnomeExtensions.vitals
-      gnomeExtensions.gsconnect
-      gnomeExtensions.quick-settings-tweaker
+      gnomeExtensions.system-monitor
       gnomeExtensions.caffeine
-      gnomeExtensions.tiling-assistant
       gnomeExtensions.pano
-      # gnomeExtensions.just-perfection
+      gnomeExtensions.pop-shell
+      gnomeExtensions.media-controls
+      gnomeExtensions.ddterm
+      gnomeExtensions.weather-oclock
+
+      gnome-tweaks
     ];
   };
 }

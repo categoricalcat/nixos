@@ -10,6 +10,7 @@
   imports = [
     ./sshfs-the-files.nix
     ./programs/wofi.nix
+    ./programs/gnome-dconf.nix
   ];
 
   home.username = "fufud";
@@ -92,64 +93,5 @@
 
   # home.file.".local/share/wallpapers/nix-wallpaper.png".source = wallpaper;
 
-  dconf = lib.mkIf (desktopEnvironment == "gnome") {
-    enable = true;
-    settings = {
-      "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark";
-      };
-
-      "org/gnome/desktop/wm/preferences" = {
-        button-layout = "appmenu:minimize,maximize,close";
-      };
-
-      "org/gnome/mutter" = {
-        center-new-windows = true;
-      };
-
-      "org/gnome/shell" = {
-        enabled-extensions = with pkgs.gnomeExtensions; [
-          blur-my-shell.extensionUuid
-          dash-to-dock.extensionUuid
-          appindicator.extensionUuid
-          vitals.extensionUuid
-          gsconnect.extensionUuid
-          quick-settings-tweaker.extensionUuid
-          caffeine.extensionUuid
-          tiling-assistant.extensionUuid
-          pano.extensionUuid
-          # just-perfection.extensionUuid
-        ];
-
-        favorite-apps = [
-          "chromium.desktop"
-          "firefox.desktop"
-          "org.gnome.Nautilus.desktop"
-          "org.gnome.Console.desktop"
-        ];
-      };
-
-      "org/gnome/shell/extensions/dash-to-dock" = {
-        dock-position = "BOTTOM";
-        dash-max-icon-size = 48;
-        intellihide = true;
-        click-action = "minimize";
-      };
-
-      "org/gnome/shell/extensions/blur-my-shell" = {
-        blur-overview = true;
-        blur-top-panel = true;
-      };
-
-      "org/gnome/shell/extensions/blur-my-shell/applications" = {
-        blur = true;
-        opacity = 200;
-        enable-all = true;
-      };
-
-      "org/gnome/shell/extensions/user-theme" = {
-        name = lib.mkDefault "Catppuccin-Mocha-Standard-Lavender-Dark";
-      };
-    };
-  };
+  # dconf moved to ./programs/gnome-dconf.nix
 }
