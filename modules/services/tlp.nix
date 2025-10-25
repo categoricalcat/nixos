@@ -1,7 +1,4 @@
 _: {
-  services.power-profiles-daemon.enable = false;
-  services.auto-cpufreq.enable = false;
-
   services.tlp = {
     enable = true;
     settings = {
@@ -45,6 +42,18 @@ _: {
       INTEL_GPU_BOOST_FREQ_ON_BAT = 0;
 
       NMI_WATCHDOG = 0;
+
+      # ThinkPad-specific settings for suspend/resume reliability
+      RESTORE_DEVICE_STATE_ON_STARTUP = 0; # Prevent restore conflicts on resume
+      DEVICES_TO_DISABLE_ON_STARTUP = ""; # Ensure clean resume
+
+      # USB autosuspend settings to prevent resume issues
+      USB_AUTOSUSPEND = 1;
+      USB_BLACKLIST_BTUSB = 1; # Bluetooth often causes issues
+      USB_BLACKLIST_PHONE = 1; # Phones can interfere with resume
+
+      # Runtime PM blacklist for problematic devices
+      RUNTIME_PM_BLACKLIST = ""; # Add device IDs if needed
     };
   };
 }

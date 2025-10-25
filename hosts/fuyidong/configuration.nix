@@ -8,12 +8,13 @@ in
     ../../modules/services/nfs/client.nix
     ./boot.nix
     ./hardware.nix
+    ./power.nix
     ../../secrets/sops.nix
     ../../modules/packages.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    ../../modules/services/battery.nix
+    ../../modules/services/tlp.nix
     ../../users/users.nix
     # ../../modules/services/synergy.nix
     ./networking.nix
