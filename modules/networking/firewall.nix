@@ -14,7 +14,7 @@ _:
         # 9000
         24212
         25565 # Minecraft server
-        # 9090 # Cockpit
+        9090 # Cockpit
       ];
       allowedUDPPorts = [
         53 # DNS

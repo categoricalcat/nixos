@@ -15,6 +15,7 @@
     ../../modules/services/cloudflared.nix
     ../../modules/services/playit-agent.nix
     ../../modules/services/github-runner.nix
+    ../../modules/services/cockpit.nix
   ];
 
   services.openvscode-server = {
@@ -151,23 +152,6 @@
     isSystemUser = true;
     group = "ddclient";
     description = "ddclient daemon user";
-  };
-
-  services.cockpit = {
-    enable = false;
-    port = 9090;
-    allowed-origins = [
-      "https://fufuwuqi.local:9090"
-      "http://fufuwuqi.local:9090"
-      "https://localhost:9090"
-      "http://localhost:9090"
-      "https://cockpit.fufu.land"
-    ];
-    settings = {
-      WebService = {
-        AllowUnencrypted = true;
-      };
-    };
   };
 
   services.nginx = {
