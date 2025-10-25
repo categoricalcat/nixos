@@ -6,7 +6,7 @@
 
 {
   users = {
-    mutableUsers = false;
+    mutableUsers = true;
     defaultUserShell = pkgs.zsh;
 
     groups = {
@@ -20,14 +20,14 @@
         isNormalUser = true;
         description = "temp";
         group = "wheel";
-        initialPassword = "temp";
+        initialHashedPassword = "$y$j9T$uEVCCoJ6X8FQi9DNxMICY1$8SnMAQ3bUuHnjG2icND.yEx1/RS0hxoXxzLh/VMxGVA";
       };
     };
 
     users = {
       fufud = {
         isNormalUser = true;
-        description = "lucky'";
+        description = "福福的";
         group = "fufud";
         # alway rember to change
         initialHashedPassword = "$y$j9T$TbPknJF9F.7RE1sww8obj/$3.hMSrDCFms5HsGJGsbr15Zde8GoB71uPRfBvlwLXa2";

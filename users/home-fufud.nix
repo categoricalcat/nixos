@@ -1,17 +1,15 @@
 {
   pkgs,
   lib,
-  config,
   desktopEnvironment ? null,
   ...
 }:
 
 {
   imports = [
-    ./sshfs-the-files.nix
     ./programs/wofi.nix
-    ./programs/gnome-dconf.nix
-  ];
+  ]
+  ++ lib.optional (desktopEnvironment != null) ./programs/gnome-dconf.nix;
 
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";
@@ -69,8 +67,6 @@
       dconf-editor
     ];
 
-  theFilesSshfs.enable = lib.hasAttr "desktopManager" config.services;
-
   gtk = lib.mkIf (desktopEnvironment == "gnome") {
     enable = true;
     theme = {
@@ -90,8 +86,4 @@
       size = lib.mkDefault 11;
     };
   };
-
-  # home.file.".local/share/wallpapers/nix-wallpaper.png".source = wallpaper;
-
-  # dconf moved to ./programs/gnome-dconf.nix
 }

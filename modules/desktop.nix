@@ -22,7 +22,6 @@
 
   config = {
     programs = {
-      mtr.enable = true;
       xwayland.enable = true;
     };
 
@@ -30,13 +29,6 @@
 
     services.libinput.enable = true;
 
-    services.displayManager.autoLogin.enable = true;
-    services.displayManager.autoLogin.user = "fufud";
-
-    systemd.services."getty@tty1".enable = false;
-    systemd.services."autovt@tty1".enable = false;
-
-    # Common packages for all desktop environments
     environment.systemPackages = with pkgs; [
       discord
       discord-ptb
