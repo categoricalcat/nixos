@@ -1,5 +1,7 @@
 ## 福福的 NixOS 配置 ✨
 
+[![lucky flake ci](https://github.com/categoricalcat/nixos/actions/workflows/flake-ci.yml/badge.svg?branch=main)](https://github.com/categoricalcat/nixos/actions/workflows/flake-ci.yml)
+
 ### Features
 
 - Flake-based NixOS with `home-manager` modules
