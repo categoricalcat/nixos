@@ -61,7 +61,6 @@
     skopeo
     screen # for serial console access
     kubectl
-
     cockpit
     ethtool
     iperf3
@@ -71,6 +70,7 @@
     traceroute
     tcpdump
     wireguard-tools
-
+    ncdu
+    bat
   ];
 }
