@@ -1,8 +1,7 @@
 ## NixOS Improvement Checklist (live)
 
-### Security
+### Security 
 
-- [ ] consider SSH: set `PasswordAuthentication = no` once keys+2FA are confirmed; optionally add `Match` blocks to restrict by `AddressFamily`/`From`.
 - [ ] Enable audit logs: `security.auditd.enable = true` and consider basic audit rules.
 
 ### Networking
@@ -25,12 +24,3 @@
 - [ ] Re-validate MTU 1492 end-to-end (bond0 ↔ WAN ↔ VPN/containers) and document rationale.
 - [ ] Enable `virtualisation.podman.autoUpdate.enable = true;` and add healthchecks in units/compose for critical containers.
 - [ ] Set `events_logger = "journald"` in `containers.conf` for complete journal integration.
-
-### Documentation
-
-- [ ] Add a short Architecture section (boot, networking, services, server-mode; how `serverMode.headless` gates features).
-
-### System-specific
-
-- [ ] Cockpit metrics: enable `services.pcp` and optionally `services.pmlogger`.
-- [ ] Document or implement Minecraft server setup (port 25565 is open).

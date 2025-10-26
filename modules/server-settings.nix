@@ -48,11 +48,15 @@
 
   # Journal size limits to prevent disk filling
   services.journald.extraConfig = ''
-    SystemMaxUse=2G
-    SystemKeepFree=5G
-    MaxRetentionSec=1month
+    Storage=persistent
+    SystemMaxUse=800M
+    SystemMaxFileSize=50M
+    SystemKeepFree=1G
+    MaxRetentionSec=7day
     RateLimitIntervalSec=30s
-    RateLimitBurst=1000
+    RateLimitBurst=500
+    Compress=yes
+    MaxLevelStore=notice
   '';
 
   # Garbage collection for Nix store
