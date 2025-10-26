@@ -5,72 +5,70 @@
 {
   environment.systemPackages = with pkgs; [
     emacs
-    killall
-
-    gnumake
     gcc
+    gnumake
+    killall
 
     # System utilities
     btop
     curl
-    wget
     fastfetch
-    tmux
     stow
+    tmux
+    wget
 
     # Development tools
-    rclone
-    git
-    gh
-    nil
-    statix
     deadnix
-    nixfmt-rfc-style
-    direnv
-    nix-direnv
-    vscode-fhs
-    tree
-    fd # Fast file finder, works well with fzf
-    k6
     dig
-    sops
+    direnv
+    fd
+    gh
+    git
+    k6
+    nil
+    nix-direnv
+    nixfmt-rfc-style
     nftables
+    rclone
+    sops
+    statix
+    tree
+    vscode-fhs
 
     # Container tools (Podman)
-    buildah # Container image builder (docker buildx alternative)
+    buildah
+    dive
+    podman-compose
+    podman-tui
+    skopeo
 
     # Security tools
     google-authenticator
 
     # Shell and related tools
+    fzf
+    starship
+    zoxide
     zsh
     zsh-autosuggestions
     zsh-history-substring-search
     zsh-syntax-highlighting
-    starship
-    fzf
-    zoxide
 
-    maple-mono.NF-CN
-    python3
-    systemd
-
-    podman-compose # open source bitchess
-    podman-tui
-    dive
-    skopeo
-    screen # for serial console access
-    kubectl
+    bat
     cockpit
     ethtool
-    iperf3
-    nethogs
     iftop
-    nmap
-    traceroute
-    tcpdump
-    wireguard-tools
+    iperf3
+    kubectl
+    maple-mono.NF-CN
     ncdu
-    bat
+    nethogs
+    nmap
+    python3
+    screen
+    systemd
+    tcpdump
+    traceroute
+    wireguard-tools
   ];
 }
