@@ -1,6 +1,6 @@
 # Main NixOS Configuration (host: fufuwuqi)
 
-{ ... }:
+{ inputs, ... }:
 
 {
   imports = [
@@ -78,6 +78,7 @@
     useUserPackages = true;
     extraSpecialArgs = {
       desktopEnvironment = null; # server/headless
+      inherit inputs;
     };
     users.fufud = import ../../users/home-fufud.nix;
     users.workd = import ../../users/home-workd.nix;

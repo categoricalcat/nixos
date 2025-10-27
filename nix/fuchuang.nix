@@ -7,11 +7,13 @@
   home-manager,
   stylix,
   vscode-server,
+  inputs,
   ...
 }:
 
 nixpkgs.lib.nixosSystem {
   system = "x86_64-linux";
+  specialArgs = { inherit inputs; };
   modules = [
     sops-nix.nixosModules.sops
     nixowos.nixosModules.default

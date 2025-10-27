@@ -2,6 +2,7 @@
 
 {
   pkgs,
+  inputs,
   ...
 }:
 
@@ -43,6 +44,7 @@
     useUserPackages = true;
     extraSpecialArgs = {
       desktopEnvironment = null; # WSL/headless
+      inherit inputs;
     };
     users.fufud = import ../../users/home-fufud.nix;
   };

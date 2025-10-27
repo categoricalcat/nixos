@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, inputs, ... }:
 
 let
   desktopEnvironment = "gnome";
@@ -86,7 +86,7 @@ in
     useGlobalPkgs = true;
     useUserPackages = true;
     extraSpecialArgs = {
-      inherit desktopEnvironment;
+      inherit desktopEnvironment inputs;
     };
     users.fufud = import ../../users/home-fufud.nix;
     backupFileExtension = "hm-backup";
