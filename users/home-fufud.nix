@@ -55,9 +55,15 @@
 
   home.packages =
     with pkgs;
+    with haskellPackages;
     [
       nodejs_latest
       sshfs
+      ghc
+      cabal-install
+      haskell-language-server
+      stack
+      ghcid
     ]
     ++ lib.optionals (desktopEnvironment == "gnome") [
       catppuccin-gtk
