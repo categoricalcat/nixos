@@ -18,7 +18,7 @@ _: {
         "fufuwuqi.vpn" = {
           listenPort = 51820;
           ips = [ "10.100.0.2/32" ];
-
+          mtu = 1380;
           privateKeyFile = "/etc/wireguard/private.key";
 
           peers = [
