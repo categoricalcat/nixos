@@ -1,4 +1,5 @@
-_: {
+{ wireguardPeers, ... }:
+{
   _module.args.addresses = {
     hostName = "fufuwuqi";
 
@@ -44,39 +45,17 @@ _: {
     network = {
       vpn = {
         interface = "wg0";
-        # ipv6 = rec {
-        #   host = "2804:41fc:8030:ace1::1";
-        #   prefixLength = 64;
-        #   address = "${host}/${builtins.toString prefixLength}";
-        # };
+        ipv6 = rec {
+          host = "fd00:100::1"; # Using ULA for VPN
+          prefixLength = 64;
+          address = "${host}/${builtins.toString prefixLength}";
+        };
         ipv4 = rec {
           host = "10.100.0.1";
           prefixLength = 24;
           address = "${host}/${builtins.toString prefixLength}";
         };
-        peers = [
-          {
-            publicKey = "lGriY6UJK7M4O9oOq/JBHM6/HXTUx5pX/VH97Cs2njo=";
-            allowedIPs = [
-              "10.100.0.2/32" # fuyidong
-            ];
-            keepalive = 25;
-          }
-          {
-            publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
-            allowedIPs = [
-              "10.100.0.3/32" # fuchuang
-            ];
-            keepalive = 25;
-          }
-          {
-            publicKey = "azePQG6Sbg9O2jNDVMU99jPO96yfNGjd+FM0FdsI0Q8=";
-            allowedIPs = [
-              "10.100.0.4/32" # *her*
-            ];
-            keepalive = 25;
-          }
-        ];
+        peers = wireguardPeers.peerConfigs;
       };
 
       lan = {

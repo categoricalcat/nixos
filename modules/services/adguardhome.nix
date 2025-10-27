@@ -75,6 +75,20 @@
 
       tls = {
         enabled = false;
+        server_name = "${addresses.hostName}.${addresses.dns.domain}";
+        port_https = 443;
+        port_dns_over_tls = 853;
+        port_dns_over_quic = 853;
+
+        # Self-signed certificate configuration
+        # AdGuard will auto-generate these if they don't exist
+        certificate_path = "/var/lib/private/adguardhome/certs/cert.pem";
+        private_key_path = "/var/lib/private/adguardhome/certs/key.pem";
+
+        # Enable all secure DNS protocols
+        serve_plain_dns = true;
+        allow_unencrypted_doh = false;
+        strict_sni_check = false;
       };
 
       querylog = {

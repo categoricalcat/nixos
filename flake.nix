@@ -1,4 +1,3 @@
-# /etc/nixos/flake.nix
 {
   description = "福福的flake~";
 
@@ -55,6 +54,7 @@
         let
           fuchuangConfig = import ./nix/fuchuang.nix;
           fufuwuqiConfig = import ./nix/fufuwuqi.nix;
+          fuyidongConfig = import ./nix/fuyidong.nix;
         in
         {
           fuchuang = fuchuangConfig {
@@ -82,7 +82,7 @@
               ;
           };
 
-          fuyidong = import ./nix/fuyidong.nix {
+          fuyidong = fuyidongConfig {
             inherit
               nixpkgs
               sops-nix
@@ -96,7 +96,6 @@
 
         };
 
-      # nix fmt uses this (treefmt wrapper)
       formatter = forEachSystem (
         system:
         import ./nix/formatter.nix {
@@ -104,7 +103,6 @@
         }
       );
 
-      # Development shell with pre-commit hooks
       devShells = forEachSystem (
         system:
         let

@@ -5,6 +5,7 @@
 {
   imports = [
     ./hardware.nix
+    ../../modules/networking/wireguard-peers.nix
     ./addresses.nix
     ./boot.nix
     ../../modules/locale.nix
