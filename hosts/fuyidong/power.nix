@@ -22,7 +22,6 @@ _:
     enable = true;
   };
 
-
   systemd.targets = {
     hibernate.enable = true;
     hybrid-sleep.enable = false;
