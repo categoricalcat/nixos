@@ -8,11 +8,15 @@ _:
   ];
 
   fileSystems."/mnt/nfs/share" = {
-    device = "fufuwuqi.vpn:/srv/nfs/share";
+    device = "fufuwuqi.vpn:/share";
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
       "x-systemd.automount"
+      "x-systemd.idle-timeout=1min"
+      "x-systemd.after=network-online.target"
+      "x-systemd.requires=network-online.target"
+      "x-systemd.mount-timeout=10s"
       "noauto"
       "nofail"
       "_netdev"
@@ -20,18 +24,19 @@ _:
       "retrans=2"
       "rsize=1048576"
       "wsize=1048576"
-      "x-systemd.after=wireguard-fufuwuqi.vpn.service"
-      "x-systemd.requires=wireguard-fufuwuqi.vpn.service"
-      "x-systemd.after=NetworkManager.service"
     ];
   };
 
   fileSystems."/mnt/nfs/the.files" = {
-    device = "fufuwuqi.vpn:/srv/nfs/the.files";
+    device = "fufuwuqi.vpn:/the.files";
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
       "x-systemd.automount"
+      "x-systemd.idle-timeout=1min"
+      "x-systemd.after=network-online.target"
+      "x-systemd.requires=network-online.target"
+      "x-systemd.mount-timeout=10s"
       "noauto"
       "nofail"
       "_netdev"
@@ -39,9 +44,6 @@ _:
       "retrans=2"
       "rsize=1048576"
       "wsize=1048576"
-      "x-systemd.after=wireguard-fufuwuqi.vpn.service"
-      "x-systemd.requires=wireguard-fufuwuqi.vpn.service"
-      "x-systemd.after=NetworkManager.service"
     ];
   };
 }

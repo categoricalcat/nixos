@@ -116,6 +116,7 @@ in
       extraPackages = with pkgs; [
         vpl-gpu-rt
         intel-media-driver
+        intel-gpu-tools
       ];
     };
   };

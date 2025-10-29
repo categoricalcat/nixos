@@ -1,4 +1,4 @@
-_:
+{ pkgs, ... }:
 
 {
 
@@ -26,4 +26,9 @@ _:
     hibernate.enable = true;
     hybrid-sleep.enable = false;
   };
+
+  environment.systemPackages = with pkgs; [
+    powertop
+    powerstat
+  ];
 }
