@@ -8,7 +8,7 @@ _:
   ];
 
   fileSystems."/mnt/nfs/share" = {
-    device = "fufuwuqi.vpn:/share";
+    device = "fufuwuqi.vpn:/srv/nfs/share";
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
@@ -27,7 +27,7 @@ _:
   };
 
   fileSystems."/mnt/nfs/the.files" = {
-    device = "fufuwuqi.vpn:/the.files";
+    device = "fufuwuqi.vpn:/srv/nfs/the.files";
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"

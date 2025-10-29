@@ -7,6 +7,7 @@ _: {
 
     networkmanager = {
       enable = true;
+      wifi.powersave = true;
     };
 
     firewall = {

@@ -34,26 +34,28 @@ _: {
       RUNTIME_PM_ON_AC = "on";
       RUNTIME_PM_ON_BAT = "auto";
 
-      INTEL_GPU_MIN_FREQ_ON_AC = 0;
-      INTEL_GPU_MIN_FREQ_ON_BAT = 0;
-      INTEL_GPU_MAX_FREQ_ON_AC = 0;
-      INTEL_GPU_MAX_FREQ_ON_BAT = 0;
-      INTEL_GPU_BOOST_FREQ_ON_AC = 0;
-      INTEL_GPU_BOOST_FREQ_ON_BAT = 0;
-
       NMI_WATCHDOG = 0;
 
       # ThinkPad-specific settings for suspend/resume reliability
       RESTORE_DEVICE_STATE_ON_STARTUP = 0; # Prevent restore conflicts on resume
       DEVICES_TO_DISABLE_ON_STARTUP = ""; # Ensure clean resume
 
-      # USB autosuspend settings to prevent resume issues
       USB_AUTOSUSPEND = 1;
-      USB_BLACKLIST_BTUSB = 1; # Bluetooth often causes issues
-      USB_BLACKLIST_PHONE = 1; # Phones can interfere with resume
+      USB_BLACKLIST_BTUSB = 1;
+      USB_BLACKLIST_PHONE = 1;
 
-      # Runtime PM blacklist for problematic devices
-      RUNTIME_PM_BLACKLIST = ""; # Add device IDs if needed
+      RUNTIME_PM_BLACKLIST = "";
+
+      SOUND_POWER_SAVE_ON_AC = 0;
+      SOUND_POWER_SAVE_ON_BAT = 1;
+      SOUND_POWER_SAVE_CONTROLLER = "Y";
+
+      SATA_LINKPWR_ON_BAT = "min_power";
+
+      CPU_HWP_DYN_BOOST_ON_AC = 1;
+      CPU_HWP_DYN_BOOST_ON_BAT = 0;
+
+      WOL_DISABLE = "Y";
     };
   };
 }

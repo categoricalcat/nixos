@@ -22,12 +22,6 @@ _:
     enable = true;
   };
 
-  boot.extraModprobeConfig = ''
-    # Intel graphics options for better suspend/resume
-    options i915 enable_guc=2
-    options i915 enable_fbc=0
-    options i915 fastboot=1
-  '';
 
   systemd.targets = {
     hibernate.enable = true;
