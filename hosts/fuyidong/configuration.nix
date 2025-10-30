@@ -44,7 +44,7 @@ in
 
     buildMachines = [
       {
-        hostName = "ssh.fufu.land";
+        hostName = "fufud.vpn";
         system = "x86_64-linux";
         maxJobs = 15;
         speedFactor = 3;

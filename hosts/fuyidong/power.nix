@@ -31,4 +31,14 @@
     powertop
     powerstat
   ];
+
+  systemd.services.powertop-autotune = {
+    description = "PowerTOP auto-tune";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.powertop}/bin/powertop --auto-tune";
+    };
+  };
 }

@@ -78,7 +78,6 @@
       "org/gnome/shell/extensions/blur-my-shell/applications" = {
         blur = true;
         opacity = lib.hm.gvariant.mkUint32 200;
-        enable-all = true;
       };
     };
   };
