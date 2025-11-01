@@ -71,11 +71,15 @@
       bibata-cursors
       dconf2nix
       dconf-editor
+    ]
+    ++ lib.optionals (desktopEnvironment == "kde") [
+      papirus-icon-theme
+      bibata-cursors
     ];
 
-  gtk = lib.mkIf (desktopEnvironment == "gnome") {
+  gtk = lib.mkIf (desktopEnvironment == "gnome" || desktopEnvironment == "kde") {
     enable = true;
-    theme = {
+    theme = lib.mkIf (desktopEnvironment == "gnome") {
       name = lib.mkDefault "Catppuccin-Mocha-Standard-Lavender-Dark";
       package = lib.mkDefault pkgs.catppuccin-gtk;
     };

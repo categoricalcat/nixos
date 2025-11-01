@@ -94,7 +94,7 @@ in
       inherit desktopEnvironment inputs;
     };
     users.fufud = import ../../users/home-fufud.nix;
-    backupFileExtension = "hm-backup";
+    backupFileExtension = ".bkp";
   };
 
   services.openssh = {

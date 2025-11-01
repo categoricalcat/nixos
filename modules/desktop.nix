@@ -7,6 +7,7 @@
         "gnome"
         "hyprland"
         "niri"
+        "kde"
       ];
       default = "gnome";
       description = "Desktop environment to use";
@@ -17,6 +18,7 @@
     ./desktop/gnome.nix
     ./desktop/hyprland.nix
     ./desktop/niri.nix
+    ./desktop/kde.nix
     ./desktop/stylix.nix
   ];
 
