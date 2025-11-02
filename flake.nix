@@ -4,22 +4,24 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
+    systems.url = "github:nix-systems/default";
+    git-hooks.url = "github:cachix/git-hooks.nix";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
     stylix = {
       url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
     nixowos = {
       url = "github:yunfachi/nixowos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-
-    systems.url = "github:nix-systems/default";
-    git-hooks.url = "github:cachix/git-hooks.nix";
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -37,64 +39,49 @@
       nixpkgs,
       systems,
       home-manager,
-      nixos-wsl,
       nixowos,
       treefmt-nix,
       git-hooks,
       sops-nix,
       vscode-server,
       stylix,
+      nixos-wsl,
       ...
     }@inputs:
     let
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      baseModules = [
+        home-manager.nixosModules.home-manager
+        vscode-server.nixosModules.default
+        nixowos.nixosModules.default
+        sops-nix.nixosModules.sops
+        stylix.nixosModules.stylix
+      ];
     in
     {
-      nixosConfigurations =
-        let
-          fuchuangConfig = import ./nix/fuchuang.nix;
-          fufuwuqiConfig = import ./nix/fufuwuqi.nix;
-          fuyidongConfig = import ./nix/fuyidong.nix;
-        in
-        {
-          fuchuang = fuchuangConfig {
-            inherit
-              nixpkgs
-              sops-nix
-              nixowos
-              nixos-wsl
-              home-manager
-              vscode-server
-              stylix
-              inputs
-              ;
-          };
-
-          fufuwuqi = fufuwuqiConfig {
-            inherit
-              nixpkgs
-              sops-nix
-              nixowos
-              home-manager
-              vscode-server
-              stylix
-              inputs
-              ;
-          };
-
-          fuyidong = fuyidongConfig {
-            inherit
-              nixpkgs
-              sops-nix
-              nixowos
-              home-manager
-              vscode-server
-              stylix
-              inputs
-              ;
-          };
-
+      nixosConfigurations = {
+        fuchuang = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = baseModules ++ [
+            nixos-wsl.nixosModules.default
+            ./hosts/fuchuang/configuration.nix
+          ];
         };
+
+        fufuwuqi = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = baseModules ++ [
+            ./hosts/fufuwuqi/configuration.nix
+          ];
+        };
+
+        fuyidong = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = baseModules ++ [
+            ./hosts/fuyidong/configuration.nix
+          ];
+        };
+      };
 
       formatter = forEachSystem (
         system:

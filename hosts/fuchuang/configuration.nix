@@ -22,6 +22,10 @@
   wsl.defaultUser = "fufud";
   wsl.enable = true;
 
+  networking = {
+    hostName = "fuchuang";
+  };
+
   programs.nix-ld.enable = true;
 
   nix.settings.experimental-features = [
@@ -53,4 +57,6 @@
     enable = true;
     listenAddresses = [ ];
   };
+
+  nixpkgs.hostPlatform = "x86_64-linux";
 }
