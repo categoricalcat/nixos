@@ -8,7 +8,7 @@
 {
   config = lib.mkIf (config.desktop.environment == "kde") {
     services = {
-      xserver.enable = false;
+      xserver.enable = true;
 
       desktopManager = {
         plasma6 = {
@@ -19,7 +19,7 @@
       displayManager = {
         sddm = {
           enable = true;
-          wayland.enable = true;
+          wayland.enable = false;
         };
       };
     };
