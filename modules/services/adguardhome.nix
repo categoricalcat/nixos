@@ -7,6 +7,7 @@
     port = 3333;
     mutableSettings = false;
     settings = {
+
       http = {
         address = "0.0.0.0:3333";
         session_ttl = "12h";
@@ -19,9 +20,19 @@
         ];
 
         upstream_dns =
-          addresses.dns.quad9 ++ addresses.dns.adguard ++ addresses.dns.google ++ addresses.dns.cloudflare;
+          addresses.dns.quad9
+          ++ addresses.dns.adguard
+          ++ addresses.dns.google
+          ++ addresses.dns.cloudflare
+          ++ addresses.dns.opendns
+          ++ addresses.dns.nextdns
+          ++ addresses.dns.freedns;
 
-        upstream_mode = "load_balance";
+        # opts: load_balance, parallel, fastest_addr
+        # load_balance: weighted random algorithm to select the best upstream server.
+        # parallel: Parallel queries to all configured upstream servers to speed up resolving.
+        # fastest_addr: It finds an IP address with the lowest latency and returns this IP address in DNS response.
+        upstream_mode = "fastest_addr";
 
         bootstrap_prefer_ipv6 = true;
         bootstrap_dns = [
@@ -37,10 +48,13 @@
         ratelimit = 0; # no per-client rate limit
         enable_dnssec = true;
         ipv6_disabled = false;
-        cache_size = 200000; # entries
         max_goroutines = 300;
         upstream_timeout = "4s";
         serve_http3 = true;
+
+        cache_enabled = true;
+        cache_size = 5000000;
+        cache_optimistic = true;
       };
 
       filtering = {

@@ -8,6 +8,27 @@
         "::1"
         "127.0.0.1"
       ];
+      opendns = [
+        "https://doh.opendns.com/dns-query"
+        "208.67.222.222"
+        "208.67.220.220"
+      ];
+      nextdns = [
+        "ecfc5e.dns.nextdns.io"
+        "https://dns.nextdns.io/ecfc5e"
+        "45.90.28.0"
+        "45.90.30.0"
+        "2a07:a8c0::ec:fc5e"
+        "2a07:a8c1::ec:fc5e"
+      ];
+      freedns = [
+        "p0.freedns.controld.com"
+        "https://freedns.controld.com/p0"
+        "2606:1a40:1::"
+        "2606:1a40::"
+        "76.76.10.0"
+        "76.76.2.0"
+      ];
       quad9 = [
         "dns.quad9.net"
         "https://dns.quad9.net/dns-query"
@@ -37,7 +58,6 @@
         "dns.adguard-dns.com"
         "https://dns.adguard-dns.com/dns-query"
         "94.140.14.14"
-
       ];
       domain = "vpn";
     };
