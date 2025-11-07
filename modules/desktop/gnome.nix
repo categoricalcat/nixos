@@ -49,19 +49,11 @@
     };
 
     environment.systemPackages = with pkgs; [
-      gnomeExtensions.user-themes
-      gnomeExtensions.dash-to-dock
-      gnomeExtensions.blur-my-shell
+      # gnomeExtensions.user-themes
       gnomeExtensions.appindicator
-      gnomeExtensions.system-monitor
-      gnomeExtensions.caffeine
-      gnomeExtensions.pano
-      gnomeExtensions.pop-shell
+      gnomeExtensions.gtile
       gnomeExtensions.media-controls
-      gnomeExtensions.ddterm
       gnomeExtensions.weather-oclock
-
-      gnome-tweaks
     ];
   };
 }

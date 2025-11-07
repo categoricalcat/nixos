@@ -7,16 +7,8 @@
       "org/gnome/shell" = {
         disable-user-extensions = false;
         enabled-extensions = with pkgs.gnomeExtensions; [
-          blur-my-shell.extensionUuid
-          dash-to-dock.extensionUuid
           appindicator.extensionUuid
-          system-monitor.extensionUuid
-          caffeine.extensionUuid
-          pano.extensionUuid
-          user-themes.extensionUuid
-          pop-shell.extensionUuid
-          media-controls.extensionUuid
-          ddterm.extensionUuid
+          gtile.extensionUuid
           weather-oclock.extensionUuid
         ];
 
@@ -67,17 +59,6 @@
         background-opacity = 0.3;
         trash-icon-visible = false;
         applications-icon-visible = false;
-      };
-
-      # Blur My Shell - keep conservative
-      "org/gnome/shell/extensions/blur-my-shell" = {
-        blur-overview = true;
-        blur-top-panel = true;
-      };
-
-      "org/gnome/shell/extensions/blur-my-shell/applications" = {
-        blur = true;
-        opacity = lib.hm.gvariant.mkUint32 200;
       };
     };
   };

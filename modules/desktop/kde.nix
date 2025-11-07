@@ -36,7 +36,5 @@
     environment.systemPackages = with pkgs; [
       kdePackages.xdg-desktop-portal-kde
     ];
-
-    # stylix settings are provided by modules/desktop/stylix.nix
   };
 }
