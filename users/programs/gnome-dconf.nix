@@ -25,6 +25,7 @@
         show-battery-percentage = true;
         clock-show-date = true;
         clock-show-weekday = true;
+        enable-animations = false;
       };
 
       "org/gnome/desktop/wm/preferences" = {
