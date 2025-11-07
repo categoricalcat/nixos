@@ -28,11 +28,10 @@
           ++ addresses.dns.nextdns
           ++ addresses.dns.freedns;
 
-        # opts: load_balance, parallel, fastest_addr
         # load_balance: weighted random algorithm to select the best upstream server.
         # parallel: Parallel queries to all configured upstream servers to speed up resolving.
         # fastest_addr: It finds an IP address with the lowest latency and returns this IP address in DNS response.
-        upstream_mode = "fastest_addr";
+        upstream_mode = "parallel";
 
         bootstrap_prefer_ipv6 = true;
         bootstrap_dns = [
