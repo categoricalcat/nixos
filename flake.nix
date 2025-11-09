@@ -46,6 +46,7 @@
       vscode-server,
       stylix,
       nixos-wsl,
+      self,
       ...
     }@inputs:
     let
@@ -90,18 +91,18 @@
         }
       );
 
-      devShells = forEachSystem (
-        system:
-        let
+      devShells = forEachSystem (system: {
+        default = import ./nix/devshell.nix {
+          inherit system nixpkgs;
+
           pre-commit-check = import ./nix/git-hooks.nix {
             inherit system nixpkgs git-hooks;
           };
-        in
-        {
-          default = import ./nix/devshell.nix {
-            inherit system nixpkgs pre-commit-check;
-          };
-        }
-      );
+        };
+      });
+
+      packages = forEachSystem (system: {
+        inherit (self.devShells.${system}) default;
+      });
     };
 }
