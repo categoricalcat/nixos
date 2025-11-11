@@ -80,8 +80,13 @@
           enabled = true;
         }
         {
-          url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt";
-          name = "Hagezi Multi PRO Adblock List";
+          url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt";
+          name = "Hagezi Multi PRO";
+          enabled = false;
+        }
+        {
+          url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.plus.txt";
+          name = "Hagezi Multi PRO++";
           enabled = true;
         }
       ];
