@@ -1,7 +1,13 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 
 {
   config = lib.mkIf (config.desktop.environment == "niri") {
+
     programs.niri.enable = true;
 
     services.displayManager = {
@@ -16,5 +22,10 @@
       alsa.support32Bit = true;
       pulse.enable = true;
     };
+
+    #packages
+    environment.systemPackages = with pkgs; [
+      gnome-screenshot
+    ];
   };
 }

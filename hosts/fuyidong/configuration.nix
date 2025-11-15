@@ -6,7 +6,7 @@
 }:
 
 let
-  desktopEnvironment = "gnome";
+  desktopEnvironment = "niri";
 in
 {
   imports = [
@@ -19,7 +19,7 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    ../../modules/services/tlp.nix
+    # ../../modules/services/tlp.nix
     ../../users/users.nix
     # ../../modules/services/synergy.nix
     ./networking.nix
@@ -109,6 +109,7 @@ in
     enableRedistributableFirmware = true;
     cpu.intel.updateMicrocode = true;
     intel-gpu-tools.enable = true;
+    bluetooth.enable = true;
 
     graphics = {
       enable = true;

@@ -1,15 +1,18 @@
 {
   pkgs,
   lib,
+  inputs,
   desktopEnvironment ? null,
   ...
 }:
-
 {
   imports = [
     ./programs/wofi.nix
   ]
-  ++ lib.optional (desktopEnvironment != null) ./programs/gnome-dconf.nix;
+  ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
+  ++ lib.optional (
+    desktopEnvironment == "niri"
+  ) inputs.dankMaterialShell.homeModules.dankMaterialShell.default;
 
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";
@@ -39,6 +42,9 @@
         dynamic_background_opacity = true;
       };
     };
+  }
+  // lib.optionalAttrs (desktopEnvironment == "niri") {
+    dankMaterialShell.enable = true;
   };
 
   home.activation = {
