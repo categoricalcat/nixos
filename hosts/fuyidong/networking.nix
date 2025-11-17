@@ -1,4 +1,28 @@
-_: {
+_:
+let
+  wgCommon = {
+    listenPort = 51820;
+    address = [ "10.100.0.2/32" ];
+    mtu = 1380;
+    privateKeyFile = "/etc/wireguard/private.key";
+    dns = [ "10.100.0.1" ];
+  };
+
+  mkPeer =
+    { endpoint }:
+    {
+      publicKey = "QA2qAna4n/CvD3xKXEgMaiwDWZpH3lC2Kn76oJ6rcRw=";
+      allowedIPs = [ "0.0.0.0/0" ];
+      inherit endpoint;
+      persistentKeepalive = 25;
+    };
+
+  endpoints = {
+    lan = "192.168.1.42:51820";
+    remote = "75.ip.sa.ply.gg:51820";
+  };
+in
+{
   networking = {
     hostName = "fuyidong";
 
@@ -12,29 +36,19 @@ _: {
 
     firewall = {
       allowedUDPPorts = [ 51820 ];
+      checkReversePath = "loose";
     };
 
-    wireguard = {
-      interfaces = {
-        "fufuwuqi.vpn" = {
-          listenPort = 51820;
-          ips = [ "10.100.0.2/32" ];
-          mtu = 1380;
-          privateKeyFile = "/etc/wireguard/private.key";
-
-          peers = [
-            {
-              name = "fufuwuqi.vpn";
-              publicKey = "QA2qAna4n/CvD3xKXEgMaiwDWZpH3lC2Kn76oJ6rcRw=";
-
-              allowedIPs = [ "0.0.0.0/0" ];
-
-              endpoint = "fufuwuqi.lan:51820";
-
-              persistentKeepalive = 25;
-            }
-          ];
-        };
+    wg-quick.interfaces = {
+      "fufuwuqi.vpn" = wgCommon // {
+        peers = [
+          (mkPeer {
+            endpoint = endpoints.lan;
+          })
+          (mkPeer {
+            endpoint = endpoints.remote;
+          })
+        ];
       };
     };
   };
