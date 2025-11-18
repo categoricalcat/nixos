@@ -5,7 +5,7 @@
   # services.auto-cpufreq.enable = true;
   services.system76-scheduler.settings.cfsProfiles.enable = true; # Better scheduling for CPU cycles - thanks System76!!!
   services.thermald.enable = true; # Enable thermald, the temperature management daemon. (only necessary if on Intel CPUs)
-  services.power-profiles-daemon.enable = true;
+  services.power-profiles-daemon.enable = false;
   services.upower.enable = true;
 
   services.logind = {
@@ -20,6 +20,7 @@
 
   powerManagement = {
     enable = true;
+    powertop.enable = true;
   };
 
   systemd.targets = {

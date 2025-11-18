@@ -31,7 +31,14 @@ in
 
     networkmanager = {
       enable = true;
-      wifi.powersave = true;
+      wifi = {
+        powersave = true;
+        backend = "iwd";
+      };
+    };
+
+    wireless = {
+      iwd.enable = true;
     };
 
     firewall = {

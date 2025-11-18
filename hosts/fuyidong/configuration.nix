@@ -19,7 +19,7 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    # ../../modules/services/tlp.nix
+    ../../modules/services/tlp.nix
     ../../users/users.nix
     # ../../modules/services/synergy.nix
     ./networking.nix
