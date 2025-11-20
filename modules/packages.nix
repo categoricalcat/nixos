@@ -5,6 +5,8 @@
 {
   environment.systemPackages = with pkgs; [
     emacs
+    ((emacsPackagesFor emacs-pgtk).emacsWithPackages (epkgs: [ epkgs.vterm ]))
+
     gcc
     gnumake
     killall
