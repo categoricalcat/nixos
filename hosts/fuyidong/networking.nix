@@ -66,6 +66,15 @@ in
     };
   };
 
+  systemd.services."wg-quick-fufuwuqi.vpn" = {
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "5s";
+    };
+  };
+
   environment.etc."gai.conf".text = ''
     # Prefer IPv6 over IPv4 for address selection
     # See gai.conf(5) for details
