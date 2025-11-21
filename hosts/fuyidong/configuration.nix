@@ -42,23 +42,32 @@ in
   nix = {
     distributedBuilds = true;
 
-    buildMachines = [
-      {
-        hostName = "fufud.vpn";
-        system = "x86_64-linux";
-        maxJobs = 15;
-        speedFactor = 3;
-        protocol = "ssh-ng";
-        supportedFeatures = [
-          "nixos-test"
-          "benchmark"
-          "big-parallel"
-          "kvm"
-        ];
-        sshUser = config.users.users.fufud.name;
-        sshKey = "/home/fufud/.ssh/id_ed25519";
-      }
-    ];
+    buildMachines =
+      let
+        mkBuildMachine = hostName: {
+          inherit hostName;
+          system = "x86_64-linux";
+          maxJobs = 15;
+          speedFactor = 3;
+          protocol = "ssh-ng";
+          supportedFeatures = [
+            "nixos-test"
+            "benchmark"
+            "big-parallel"
+            "kvm"
+          ];
+          sshUser = config.users.users.fufud.name;
+          sshKey = "/home/fufud/.ssh/id_ed25519";
+        };
+      in
+      [
+        (mkBuildMachine "fufud.vpn")
+        (mkBuildMachine "ssh.fufu.land")
+      ];
+
+    extraOptions = ''
+      connect-timeout = 5
+    '';
 
     settings = {
       trusted-users = [
