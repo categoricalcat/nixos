@@ -1,11 +1,13 @@
 # System packages configuration module
 
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
 {
   environment.systemPackages = with pkgs; [
     emacs
     ((emacsPackagesFor emacs-pgtk).emacsWithPackages (epkgs: [ epkgs.vterm ]))
+
+    inputs.antigravity-nix.packages.x86_64-linux.default
 
     gcc
     gnumake

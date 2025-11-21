@@ -48,6 +48,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.dgop.follows = "dgop";
     };
+
+    antigravity-nix = {
+      url = "github:jacopone/antigravity-nix";
+      # inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
