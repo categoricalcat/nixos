@@ -544,15 +544,15 @@
         "pre-commit-hooks": "pre-commit-hooks_2"
       },
       "locked": {
-        "lastModified": 1758181364,
-        "narHash": "sha256-dkLrJIQPdjGFt9uuJ30hCaw5WpNo3UTfa/JaNmyK9V8=",
-        "owner": "yunfachi",
+        "lastModified": 1763772263,
+        "narHash": "sha256-hvYFGiHUjsMXmkA9wDYRXDQr9TZE9hXPuvxM4Nfcjb4=",
+        "owner": "categoricalcat",
         "repo": "nixowos",
-        "rev": "84c24908667f45b069807644bed7b501955691bb",
+        "rev": "86aabde0afd0261d5f5d2d0d15b689eeac0638bb",
         "type": "github"
       },
       "original": {
-        "owner": "yunfachi",
+        "owner": "categoricalcat",
         "repo": "nixowos",
         "type": "github"
       }

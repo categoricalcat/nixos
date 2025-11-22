@@ -19,7 +19,7 @@
     };
 
     nixowos = {
-      url = "github:yunfachi/nixowos";
+      url = "github:categoricalcat/nixowos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
