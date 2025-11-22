@@ -9,10 +9,12 @@
           "Maple Mono NF CN"
         ];
         sansSerif = [
-          "Lexend"
+          # "Lexend"
+          "Maple Mono NF CN"
         ];
         serif = [
-          "Roboto Serif"
+          # "Roboto Serif"
+          "Maple Mono NF CN"
         ];
       };
 

@@ -4,12 +4,12 @@
 
 ### Features
 
-- **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules
+- **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `antigravity-nix`
 - **Hosts**: Three specialized machines - `fufuwuqi` (headless server), `fuyidong` (laptop), `fuchuang` (WSL)
 - **Networking**: systemd-networkd, WireGuard VPN mesh, network bonding (bond0), Avahi/mDNS discovery
 - **Storage**: NFS server/client with automounting, bind mounts for shared directories
-- **Desktop**: GNOME/Hyprland/Niri support with Stylix theming (Catppuccin Mocha)
-- **Services**: Comprehensive service stack including web, container, development, and AI/ML
+- **Desktop**: GNOME/Hyprland/Niri/Cosmic/KDE support with Stylix theming (Catppuccin Mocha) and `dankMaterialShell`
+- **Services**: Comprehensive service stack including web, container, development, AI/ML, and `dms-cli`
 - **Security**: `sops-nix` secrets management (AGE/SSH), fail2ban, 2FA SSH, nftables firewall
 - **Development**: Distributed Nix builds, GitHub Actions runner, pre-commit hooks
 - **Hardware**: AMD ROCm GPU acceleration, Intel GPU support, TPM2, battery optimization (TLP)
@@ -45,7 +45,9 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 - **Intrusion Prevention**: fail2ban with nginx jails
 - **Secrets**: sops-nix with AGE/SSH keys
 - **Firewall**: nftables with MSS clamping, NAT for VPN
-- **Monitoring**: Avahi/mDNS for service discovery, smartd for disk health
+- **Monitoring**: Avahi/mDNS for service discovery, smartd for disk health, Cockpit
+- **Media**: Spotifyd
+- **Input**: Synergy
 - **Ollama**: AI model server with AMD ROCm acceleration
 
 ### Hosts
@@ -53,7 +55,7 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 | Host | Role | Hardware | Network | Key Services |
 | --- | --- | --- | --- | --- |
 | `fufuwuqi` | Headless server | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS server, Ollama, Podman, all web services |
-| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt | WiFi, WireGuard client | GNOME desktop, distributed build client, TLP power management |
+| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt | WiFi, WireGuard client | GNOME/Cosmic/KDE desktop, distributed build client, TLP power management |
 | `fuchuang` | WSL instance | Virtual | WSL networking | Development environment, minimal services |
 
 ### Networking Architecture

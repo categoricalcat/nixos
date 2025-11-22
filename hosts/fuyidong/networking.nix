@@ -42,7 +42,6 @@ in
       settings = {
         General = {
           EnableNetworkConfiguration = false;
-          Country = "BR";
         };
       };
     };
