@@ -34,6 +34,11 @@ _: {
       owner = "github-runner";
       group = "github-runner";
     };
+    "joplin-env" = {
+      mode = "0600";
+      owner = "joplin";
+      group = "joplin";
+    };
   };
 
   environment.variables.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";

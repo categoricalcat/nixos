@@ -68,6 +68,7 @@
       haskell-language-server
       stack
       ghcid
+      joplin-desktop
     ]
     ++ lib.optionals (desktopEnvironment == "gnome") [
       catppuccin-gtk

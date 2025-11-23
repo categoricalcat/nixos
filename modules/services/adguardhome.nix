@@ -63,6 +63,10 @@
             answer = addresses.network.vpn.ipv4.host;
           }
           {
+            domain = "joplin.fufu.land";
+            answer = addresses.network.vpn.ipv4.host;
+          }
+          {
             domain = "${addresses.hostName}.lan";
             answer = addresses.network.lan.ipv4.host;
           }

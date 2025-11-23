@@ -14,6 +14,8 @@
     ../../modules/packages.nix
     ./networking.nix
     ./services.nix
+    ./joplin.nix
+    ./mariadb.nix
     # ../../modules/desktop.nix
     ../../modules/server-settings.nix
     ../../modules/server-mode.nix
