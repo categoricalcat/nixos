@@ -48,9 +48,14 @@ _: {
     cloudflared = { };
     playit = { };
     github-runner = { };
+    joplin = { };
   };
 
   users.users = {
+    joplin = {
+      isSystemUser = true;
+      group = "joplin";
+    };
     cloudflared = {
       isSystemUser = true;
       group = "cloudflared";
