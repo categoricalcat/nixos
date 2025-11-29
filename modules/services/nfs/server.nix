@@ -6,9 +6,9 @@
   services.nfs.server = {
     enable = true;
     exports = ''
-      /srv/nfs 10.100.0.0/24(rw,fsid=0,no_subtree_check,crossmnt,sec=sys) 192.168.1.0/24(rw,fsid=0,no_subtree_check,crossmnt,sec=sys)
-      /srv/nfs/share 10.100.0.0/24(rw,no_subtree_check,sec=sys) 192.168.1.0/24(rw,no_subtree_check,sec=sys)
-      /srv/nfs/the.files 10.100.0.0/24(rw,no_subtree_check,sec=sys) 192.168.1.0/24(rw,no_subtree_check,sec=sys)
+      /srv/nfs 10.100.0.0/24(rw,fsid=0,no_subtree_check,crossmnt,sec=sys) 192.168.0.0/24(rw,fsid=0,no_subtree_check,crossmnt,sec=sys)
+      /srv/nfs/share 10.100.0.0/24(rw,no_subtree_check,sec=sys) 192.168.0.0/24(rw,no_subtree_check,sec=sys)
+      /srv/nfs/the.files 10.100.0.0/24(rw,no_subtree_check,sec=sys) 192.168.0.0/24(rw,no_subtree_check,sec=sys)
     '';
   };
 
