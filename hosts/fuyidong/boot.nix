@@ -4,8 +4,11 @@
 
   boot = {
     loader = {
-      systemd-boot = {
+      systemd-boot.enable = false;
+      grub = {
         enable = true;
+        efiSupport = true;
+        device = "nodev";
         configurationLimit = 15;
       };
       efi.canTouchEfiVariables = true;
