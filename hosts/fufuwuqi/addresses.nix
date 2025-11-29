@@ -1,6 +1,6 @@
 { wireguardPeers, ... }:
 {
-  _module.args.addresses = {
+  _module.args.addresses = rec {
     hostName = "fufuwuqi";
 
     dns = {
@@ -87,10 +87,10 @@
         #   gateway = "fe80::1";
         # };
         ipv4 = rec {
-          host = "192.168.1.42";
+          host = "192.168.0.42";
           prefixLength = 24;
           address = "${host}/${builtins.toString prefixLength}";
-          gateway = "192.168.1.1";
+          gateway = "192.168.0.1";
         };
       };
     };
@@ -102,7 +102,7 @@
     ssh = {
       listenPort = 24212;
       listenAddresses = [
-        "192.168.1.42"
+        network.lan.ipv4.host
         "10.100.0.1"
       ];
       listenWildcardIPv6 = "[::]";
