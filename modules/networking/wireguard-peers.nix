@@ -8,21 +8,21 @@ let
       publicKey = "lGriY6UJK7M4O9oOq/JBHM6/HXTUx5pX/VH97Cs2njo=";
       ip = "10.100.0.2";
       description = "fuyidong mobile device";
-      allowedSubnets = [ ]; # No additional subnets
+      allowedSubnets = [ "10.100.0.0/24" ];
     };
 
     fuchuang = {
       publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
       ip = "10.100.0.3";
       description = "fuchuang laptop";
-      allowedSubnets = [ ]; # No additional subnets
+      allowedSubnets = [ "10.100.0.0/24" ];
     };
 
     reserved = {
-      publicKey = "azePQG6Sbg9O2jNDVMU99jPO96yfNGjd+FM0FdsI0Q8=";
+      publicKey = "t3grmFcOy3IaqAEKSJawBO2SnUPMeCTjeAg";
       ip = "10.100.0.4";
-      description = "Reserved for future use";
-      allowedSubnets = [ ];
+      description = "router";
+      allowedSubnets = [ "10.100.0.0/24" ];
     };
 
     # Template for adding new peers:
