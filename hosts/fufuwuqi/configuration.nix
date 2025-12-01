@@ -1,6 +1,11 @@
 # Main NixOS Configuration (host: fufuwuqi)
 
-{ inputs, ... }:
+{
+  inputs,
+  config,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -46,6 +51,12 @@
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
+
+  nix.extraOptions = lib.optionalString config.services.nix-access-tokens.enable ''
+    include ${config.sops.templates."nix-access-tokens".path}
+  '';
+
+  services.nix-access-tokens.enable = false;
 
   nixpkgs.config = {
     allowUnfree = true;
