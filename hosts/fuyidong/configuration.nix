@@ -62,7 +62,7 @@ in
       in
       [
         (mkBuildMachine "fufud.vpn")
-        (mkBuildMachine "ssh.fufu.land")
+        # (mkBuildMachine "ssh.fufu.land")
       ];
 
     extraOptions = ''
