@@ -61,18 +61,22 @@
           {
             domain = "${addresses.hostName}.${addresses.dns.domain}";
             answer = addresses.network.vpn.ipv4.host;
+            enabled = true;
           }
           {
             domain = "joplin.fufu.land";
             answer = addresses.network.vpn.ipv4.host;
+            enabled = true;
           }
           {
             domain = "${addresses.hostName}.lan";
             answer = addresses.network.lan.ipv4.host;
+            enabled = true;
           }
           {
             domain = "${addresses.hostName}";
             answer = addresses.network.lan.ipv4.host;
+            enabled = true;
           }
         ];
       };

@@ -94,6 +94,7 @@
       dns_enabled = true;
       ipv6_enabled = true;
       mtu = 1492;
+      dns_bind_port = "5353";
     };
 
     autoPrune = {
