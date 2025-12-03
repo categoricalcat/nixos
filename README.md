@@ -4,7 +4,7 @@
 
 ### Features
 
-- **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `antigravity-nix`
+- **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `dgop` and `antigravity-nix`
 - **Hosts**: Three specialized machines - `fufuwuqi` (headless server), `fuyidong` (laptop), `fuchuang` (WSL)
 - **Networking**: systemd-networkd, WireGuard VPN mesh, network bonding (bond0), Avahi/mDNS discovery
 - **Storage**: NFS server/client with automounting, bind mounts for shared directories
@@ -18,9 +18,7 @@
 ### Layout
 
 - `flake.nix`, `flake.lock`: inputs, outputs, hosts, devshell, formatter
-- `nix/`: host entrypoints that assemble modules for each machine
-  - `fufuwuqi.nix`, `fuyidong.nix`, `fuchuang.nix`
-- `hosts/<host>/`: host-specific modules (boot, hardware, networking, services)
+- `hosts/<host>/`: host-specific modules (boot, hardware, networking, services) and entrypoints (`configuration.nix`)
 - `modules/`: reusable modules (desktop, networking, services, server-mode, server-settings, fonts, locale, packages)
 - `users/`: Home Manager configs and user definitions
 - `secrets/`: sops-nix module and example secrets (real secrets live outside the repo)
@@ -41,7 +39,7 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 - **Web Server**: nginx with virtual hosts, reverse proxy ready
 - **Container Platform**: Podman with Docker compatibility, auto-pruning, custom subnet pools
 - **Tunnels**: Cloudflare tunnel (cloudflared), playit-agent for game server hosting
-- **Development**: OpenVSCode Server (port 4444), VS Code Server, NFS shares
+- **Development**: OpenVSCode Server (port 4444), VS Code Server, NFS shares, Antigravity-Nix
 - **Intrusion Prevention**: fail2ban with nginx jails
 - **Secrets**: sops-nix with AGE/SSH keys
 - **Firewall**: nftables with MSS clamping, NAT for VPN
@@ -49,13 +47,15 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 - **Media**: Spotifyd
 - **Input**: Synergy
 - **Ollama**: AI model server with AMD ROCm acceleration
+- **Database**: Mariadb
+- **Notes**: Joplin
 
 ### Hosts
 
 | Host | Role | Hardware | Network | Key Services |
 | --- | --- | --- | --- | --- |
-| `fufuwuqi` | Headless server | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS server, Ollama, Podman, all web services |
-| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt | WiFi, WireGuard client | GNOME/Cosmic/KDE desktop, distributed build client, TLP power management |
+| `fufuwuqi` | Headless server | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS server, Ollama, Podman, Mariadb, Joplin, all web services |
+| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt | WiFi, WireGuard client | Niri desktop, distributed build client, TLP power management |
 | `fuchuang` | WSL instance | Virtual | WSL networking | Development environment, minimal services |
 
 ### Networking Architecture
@@ -64,7 +64,7 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
   - `fufuwuqi` (10.100.0.1): VPN hub/gateway with NAT
   - `fuyidong` (10.100.0.2): Client via persistent keepalive
   - `fuchuang` (10.100.0.3): WSL client
-- **LAN**: Primary network (192.168.1.0/24) with static IPs
+- **LAN**: Primary network (192.168.0.0/24) with static IPs
 - **Bonding**: `bond0` interface combining `eno1` + `enp4s0` for redundancy
 - **systemd-networkd**: Declarative network configuration with MTU optimization (1492)
 - **Service Discovery**: Avahi/mDNS advertising SSH, HTTP/HTTPS, Minecraft, and custom services
