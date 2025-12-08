@@ -43,6 +43,10 @@
         owner = "joplin";
         group = "joplin";
       };
+      "samba/credentials/fufud" = {
+        mode = "0600";
+        path = "/etc/samba/credentials/fufud";
+      };
     }
     // lib.optionalAttrs config.services.nix-access-tokens.enable {
       "github-token" = {

@@ -9,6 +9,7 @@
 {
   imports = [
     ../../modules/services/nfs/server.nix
+    ../../modules/services/samba/server.nix
     ../../modules/services/avahi.nix
     ../../modules/services/openssh.nix
     ../../modules/services/adguardhome.nix
@@ -62,7 +63,7 @@
 
   services.ollama = {
     enable = true;
-    acceleration = "rocm";
+    package = pkgs.ollama-rocm;
   };
 
   # Let's Encrypt via ACME, using Cloudflare DNS-01 (optional)
