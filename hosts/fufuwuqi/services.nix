@@ -92,10 +92,9 @@
     dockerCompat = true;
     dockerSocket.enable = true;
     defaultNetwork.settings = {
-      dns_enabled = true;
+      dns_enabled = false;
       ipv6_enabled = true;
       mtu = 1492;
-      dns_bind_port = "5353";
     };
 
     autoPrune = {
