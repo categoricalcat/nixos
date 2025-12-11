@@ -7,6 +7,11 @@ _: {
       restartIfChanged = true; # Auto-restart dms.service when dankMaterialShell changes
     };
 
+    default.settings = {
+      theme = "dark";
+      dynamicTheming = true;
+    };
+
     # Core features
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableClipboard = true; # Clipboard history manager
