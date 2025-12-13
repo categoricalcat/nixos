@@ -1,4 +1,3 @@
-# Formatter configuration using treefmt-nix
 {
   system,
   nixpkgs,

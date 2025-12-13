@@ -3,10 +3,21 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
-    systems.url = "github:nix-systems/default";
-    git-hooks.url = "github:cachix/git-hooks.nix";
+
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -48,77 +59,75 @@
       url = "github:jacopone/antigravity-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
   outputs =
-    {
+    inputs@{
+      flake-parts,
       nixpkgs,
-      systems,
       home-manager,
-      nixowos,
-      treefmt-nix,
-      git-hooks,
-      sops-nix,
       vscode-server,
+      nixowos,
+      sops-nix,
       stylix,
       nixos-wsl,
-      self,
       ...
-    }@inputs:
-    let
-      forEachSystem = nixpkgs.lib.genAttrs (import systems);
-      baseModules = [
-        home-manager.nixosModules.home-manager
-        vscode-server.nixosModules.default
-        nixowos.nixosModules.default
-        sops-nix.nixosModules.sops
-        stylix.nixosModules.stylix
-      ];
-    in
-    {
-      nixosConfigurations = {
-        fuchuang = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = baseModules ++ [
-            nixos-wsl.nixosModules.default
-            ./hosts/fuchuang/configuration.nix
-          ];
+    }:
+    # https://flake.parts/module-arguments.html
+    flake-parts.lib.mkFlake { inherit inputs; } (
+      {
+        ...
+      }:
+      {
+        imports = [
+          inputs.treefmt-nix.flakeModule
+          inputs.git-hooks.flakeModule
+          ./nix/treefmt.nix
+          ./nix/git-hooks.nix
+          ./nix/devshell.nix
+        ];
+
+        flake = {
+          nixosConfigurations =
+            let
+              baseModules = [
+                home-manager.nixosModules.home-manager
+                vscode-server.nixosModules.default
+                nixowos.nixosModules.default
+                sops-nix.nixosModules.sops
+                stylix.nixosModules.stylix
+              ];
+            in
+            {
+              fuchuang = nixpkgs.lib.nixosSystem {
+                specialArgs = { inherit inputs; };
+                modules = baseModules ++ [
+                  nixos-wsl.nixosModules.default
+                  ./hosts/fuchuang/configuration.nix
+                ];
+              };
+
+              fufuwuqi = nixpkgs.lib.nixosSystem {
+                specialArgs = { inherit inputs; };
+                modules = baseModules ++ [
+                  ./hosts/fufuwuqi/configuration.nix
+                ];
+              };
+
+              fuyidong = nixpkgs.lib.nixosSystem {
+                specialArgs = { inherit inputs; };
+                modules = baseModules ++ [
+                  ./hosts/fuyidong/configuration.nix
+                ];
+              };
+            };
         };
 
-        fufuwuqi = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = baseModules ++ [
-            ./hosts/fufuwuqi/configuration.nix
-          ];
-        };
-
-        fuyidong = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = baseModules ++ [
-            ./hosts/fuyidong/configuration.nix
-          ];
-        };
-      };
-
-      formatter = forEachSystem (
-        system:
-        import ./nix/formatter.nix {
-          inherit system nixpkgs treefmt-nix;
-        }
-      );
-
-      devShells = forEachSystem (system: {
-        default = import ./nix/devshell.nix {
-          inherit system nixpkgs;
-
-          pre-commit-check = import ./nix/git-hooks.nix {
-            inherit system nixpkgs git-hooks;
-          };
-        };
-      });
-
-      packages = forEachSystem (system: {
-        inherit (self.devShells.${system}) default;
-      });
-    };
+        systems = [
+          "x86_64-linux"
+        ];
+      }
+    );
 }
