@@ -1,17 +1,11 @@
-# Development shell configuration
-{
-  system,
-  nixpkgs,
-  pre-commit-check,
-}:
-
-let
-  pkgs = import nixpkgs { inherit system; };
-in
-pkgs.mkShell {
-  inherit (pre-commit-check) shellHook;
-
-  packages = with pkgs; [
-    udev
-  ];
+_: {
+  perSystem =
+    { pkgs, config, ... }:
+    {
+      devShells.default = pkgs.mkShell {
+        inherit (config.pre-commit.devShell) shellHook;
+        packages = with pkgs; [ udev ];
+      };
+      packages.default = config.devShells.default;
+    };
 }
