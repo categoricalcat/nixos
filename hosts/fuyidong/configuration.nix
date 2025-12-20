@@ -2,6 +2,7 @@
   pkgs,
   config,
   inputs,
+  lib,
   ...
 }:
 
@@ -113,6 +114,11 @@ in
       { addr = "10.100.0.2"; }
     ];
   };
+
+  services.fprintd.enable = true;
+
+  security.pam.services.login.fprintAuth = lib.mkDefault true;
+  security.pam.services.gdm-fingerprint.fprintAuth = true;
 
   hardware = {
     enableRedistributableFirmware = true;

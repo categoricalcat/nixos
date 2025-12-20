@@ -32,6 +32,7 @@
     console.keyMap = "br-abnt2";
 
     services.libinput.enable = true;
+    services.gnome.gnome-keyring.enable = true;
 
     environment.systemPackages = with pkgs; [
       discord
@@ -51,7 +52,6 @@
       waybar
       fuzzel
       xwayland
-      gnome-keyring
       xdg-desktop-portal-gtk
       xdg-desktop-portal-gnome
       xwayland-satellite
