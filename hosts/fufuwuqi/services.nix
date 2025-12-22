@@ -64,6 +64,9 @@
   services.ollama = {
     enable = true;
     package = pkgs.ollama-rocm;
+    environmentVariables = {
+      HSA_OVERRIDE_GFX_VERSION = "10.3.0";
+    };
   };
 
   # Let's Encrypt via ACME, using Cloudflare DNS-01 (optional)

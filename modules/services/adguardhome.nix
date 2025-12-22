@@ -64,6 +64,11 @@
             enabled = true;
           }
           {
+            domain = "75.ip.sa.ply.gg";
+            answer = "192.168.0.42";
+            enabled = true;
+          }
+          {
             domain = "joplin.fufu.land";
             answer = addresses.network.vpn.ipv4.host;
             enabled = true;

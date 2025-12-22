@@ -55,9 +55,6 @@ in
       "fufuwuqi.vpn" = wgCommon // {
         peers = [
           (mkPeer {
-            endpoint = endpoints.lan;
-          })
-          (mkPeer {
             endpoint = endpoints.remote;
           })
         ];
