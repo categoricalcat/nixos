@@ -69,15 +69,16 @@
       stack
       ghcid
       joplin-desktop
-      papirus-icon-theme
-      bibata-cursors
+
     ]
     ++ lib.optionals (desktopEnvironment == "gnome") [
       catppuccin-gtk
-      papirus-icon-theme
-      bibata-cursors
       dconf2nix
       dconf-editor
+    ]
+    ++ lib.optionals (desktopEnvironment != null) [
+      papirus-icon-theme
+      bibata-cursors
     ];
 
   gtk =

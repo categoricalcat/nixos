@@ -33,7 +33,6 @@
             light = "Papirus-Light";
           };
 
-
           fonts = {
             serif = {
               package = pkgs.maple-mono.NF-CN-unhinted;
