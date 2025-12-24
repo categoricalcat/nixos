@@ -60,11 +60,11 @@
     xdg.mime = {
       enable = true;
       defaultApplications = {
-        "x-scheme-handler/http" = [ "firefox.desktop" ];
-        "x-scheme-handler/https" = [ "firefox.desktop" ];
-        "text/html" = [ "firefox.desktop" ];
+        "x-scheme-handler/http" = [ "chromium-browser.desktop" ];
+        "x-scheme-handler/https" = [ "chromium-browser.desktop" ];
+        "text/html" = [ "chromium-browser.desktop" ];
         "application/pdf" = [
-          "firefox.desktop"
+          "chromium-browser.desktop"
         ];
       };
     };

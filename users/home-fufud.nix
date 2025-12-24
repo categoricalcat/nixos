@@ -69,6 +69,8 @@
       stack
       ghcid
       joplin-desktop
+      papirus-icon-theme
+      bibata-cursors
     ]
     ++ lib.optionals (desktopEnvironment == "gnome") [
       catppuccin-gtk
@@ -76,29 +78,28 @@
       bibata-cursors
       dconf2nix
       dconf-editor
-    ]
-    ++ lib.optionals (desktopEnvironment == "kde") [
-      papirus-icon-theme
-      bibata-cursors
     ];
 
-  gtk = lib.mkIf (desktopEnvironment == "gnome" || desktopEnvironment == "kde") {
-    enable = true;
-    theme = lib.mkIf (desktopEnvironment == "gnome") {
-      name = lib.mkDefault "Catppuccin-Mocha-Standard-Lavender-Dark";
-      package = lib.mkDefault pkgs.catppuccin-gtk;
-    };
-    iconTheme = {
-      name = lib.mkDefault "Papirus-Dark";
-      package = lib.mkDefault pkgs.papirus-icon-theme;
-    };
-    cursorTheme = {
-      name = lib.mkDefault "Bibata-Modern-Classic-Right";
-      package = lib.mkDefault pkgs.bibata-cursors;
-    };
-    font = {
-      name = lib.mkDefault "Maple Mono NF CN";
-      size = lib.mkDefault 11;
-    };
-  };
+  gtk =
+    lib.mkIf
+      (desktopEnvironment == "gnome" || desktopEnvironment == "kde" || desktopEnvironment == "niri")
+      {
+        enable = true;
+        theme = lib.mkIf (desktopEnvironment == "gnome") {
+          name = lib.mkDefault "Catppuccin-Mocha-Standard-Lavender-Dark";
+          package = lib.mkDefault pkgs.catppuccin-gtk;
+        };
+        iconTheme = {
+          name = lib.mkDefault "Papirus-Dark";
+          package = lib.mkDefault pkgs.papirus-icon-theme;
+        };
+        cursorTheme = {
+          name = lib.mkDefault "Bibata-Modern-Classic-Right";
+          package = lib.mkDefault pkgs.bibata-cursors;
+        };
+        font = {
+          name = lib.mkDefault "Maple Mono NF CN";
+          size = lib.mkDefault 11;
+        };
+      };
 }
