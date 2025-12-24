@@ -21,6 +21,19 @@
           polarity = "dark";
           autoEnable = true;
 
+          cursor = {
+            package = pkgs.bibata-cursors;
+            name = "Bibata-Modern-Classic-Right";
+            size = 26;
+          };
+
+          iconTheme = {
+            package = pkgs.papirus-icon-theme;
+            dark = "Papirus-Dark";
+            light = "Papirus-Light";
+          };
+
+
           fonts = {
             serif = {
               package = pkgs.maple-mono.NF-CN-unhinted;
