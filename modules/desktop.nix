@@ -22,6 +22,7 @@
     ./desktop/kde.nix
     ./desktop/cosmic.nix
     ./desktop/stylix.nix
+    ./desktop/dms.nix
   ];
 
   config = {

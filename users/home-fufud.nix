@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  inputs,
   desktopEnvironment ? null,
   ...
 }:
@@ -10,11 +9,7 @@
     ./programs/wofi.nix
   ]
   ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
-  ++ lib.optionals (desktopEnvironment == "niri") [
-    inputs.dms.homeModules.dank-material-shell
-    # inputs.dms.homeModules.niri
-    ./programs/dms.nix
-  ];
+  ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";
