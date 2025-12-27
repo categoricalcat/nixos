@@ -54,6 +54,7 @@
       gnomeExtensions.gtile
       gnomeExtensions.media-controls
       gnomeExtensions.weather-oclock
+      xdg-desktop-portal-gnome
     ];
   };
 }

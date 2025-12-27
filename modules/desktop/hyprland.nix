@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 
 {
   config = lib.mkIf (config.desktop.environment == "hyprland") {
@@ -16,5 +21,11 @@
       alsa.support32Bit = true;
       pulse.enable = true;
     };
+
+    environment.systemPackages = with pkgs; [
+      waybar
+      mako
+      fuzzel
+    ];
   };
 }

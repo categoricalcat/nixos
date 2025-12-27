@@ -27,6 +27,7 @@
     environment.systemPackages = with pkgs; [
       gnome-screenshot
       niri
+      xwayland-satellite
     ];
   };
 }

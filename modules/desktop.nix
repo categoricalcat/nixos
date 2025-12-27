@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ lib, ... }:
 
 {
   options = {
@@ -23,6 +23,7 @@
     ./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
+    ./desktop/apps.nix
   ];
 
   config = {
@@ -34,29 +35,6 @@
 
     services.libinput.enable = true;
     services.gnome.gnome-keyring.enable = true;
-
-    environment.systemPackages = with pkgs; [
-      discord
-      discord-ptb
-      chromium
-      firefox
-      vscode-fhs
-      code-cursor-fhs
-      spotifyd
-      zsh
-      bitwarden-desktop
-      git
-      kitty
-      ghostty
-      cloudflared
-      mako
-      waybar
-      fuzzel
-      xwayland
-      xdg-desktop-portal-gtk
-      xdg-desktop-portal-gnome
-      xwayland-satellite
-    ];
 
     xdg.mime = {
       enable = true;
