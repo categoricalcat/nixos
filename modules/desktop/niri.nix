@@ -26,6 +26,7 @@
     #packages
     environment.systemPackages = with pkgs; [
       gnome-screenshot
+      niri
     ];
   };
 }

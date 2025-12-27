@@ -11,7 +11,8 @@
   ]
   ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
   ++ lib.optionals (desktopEnvironment == "niri") [
-    inputs.dankMaterialShell.homeModules.dank-material-shell
+    inputs.dms.homeModules.dank-material-shell
+    # inputs.dms.homeModules.niri
     ./programs/dms.nix
   ];
 
