@@ -58,7 +58,6 @@
     dms = {
       url = "github:AvengeMedia/DankMaterialShell";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.dgop.follows = "dgop";
       inputs.quickshell.follows = "quickshell";
     };
 
