@@ -12,7 +12,7 @@
 
   config = lib.mkIf (config.desktop.environment == "niri") {
     programs.dank-material-shell.greeter = {
-      enable = true;
+      enable = false;
       compositor.name = "niri";
     };
   };

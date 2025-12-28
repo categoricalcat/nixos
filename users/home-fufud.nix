@@ -5,11 +5,9 @@
   ...
 }:
 {
-  imports = [
-    ./programs/wofi.nix
-  ]
-  ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
-  ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
+  imports =
+    lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
+    ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
   home.username = "fufud";
   home.homeDirectory = "/home/fufud";
