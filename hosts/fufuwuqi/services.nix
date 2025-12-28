@@ -1,6 +1,7 @@
 # Services configuration module
 
 {
+  config,
   pkgs,
   addresses,
   ...
@@ -15,6 +16,7 @@
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/playit-agent.nix
+    ../../modules/services/localtonet.nix
     ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
   ];

@@ -100,10 +100,8 @@
             let
               baseModules = [
                 home-manager.nixosModules.home-manager
-                vscode-server.nixosModules.default
                 nixowos.nixosModules.default
                 sops-nix.nixosModules.sops
-                stylix.nixosModules.stylix
               ];
             in
             {
@@ -118,6 +116,7 @@
               fufuwuqi = nixpkgs.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModules ++ [
+                  vscode-server.nixosModules.default
                   ./hosts/fufuwuqi/configuration.nix
                 ];
               };
@@ -125,6 +124,7 @@
               fuyidong = nixpkgs.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModules ++ [
+                  stylix.nixosModules.stylix
                   ./hosts/fuyidong/configuration.nix
                 ];
               };

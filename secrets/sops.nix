@@ -38,6 +38,9 @@
         owner = "github-runner";
         group = "github-runner";
       };
+      "tokens/localtonet-authtoken" = {
+        mode = "0640"; # Read by the container
+      };
       "joplin-env" = {
         mode = "0600";
         owner = "joplin";
