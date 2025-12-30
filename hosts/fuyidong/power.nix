@@ -8,6 +8,9 @@
   services.power-profiles-daemon.enable = false;
   services.upower.enable = true;
 
+  services.thinkfan.enable = true;
+  boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1";
+
   services.logind = {
     settings = {
       Login = {
