@@ -8,29 +8,18 @@ in
   services.samba = {
     enable = true;
     nmbd.enable = true;
-    winbindd.enable = false;
-    openFirewall = false;
 
     settings = {
       global = {
-        "server role" = "standalone server";
-        "workgroup" = "WORKGROUP";
-        "security" = "user";
-        "map to guest" = "never";
         "hosts allow" = "${vpnCidr} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
-        "bind interfaces only" = "no";
-        "passdb backend" = "tdbsam";
-        "unix extensions" = "yes";
         "load printers" = "no";
         "printing" = "bsd";
       };
 
       share = {
         path = "/srv/nfs/share";
-        browseable = "yes";
         "read only" = "no";
-        "guest ok" = "no";
         "valid users" = "fufud root";
         "create mask" = "0664";
         "directory mask" = "0775";
@@ -38,9 +27,7 @@ in
 
       "the.files" = {
         path = "/srv/nfs/the.files";
-        browseable = "yes";
         "read only" = "no";
-        "guest ok" = "no";
         "valid users" = "fufud root";
         "create mask" = "0664";
         "directory mask" = "0775";
@@ -71,3 +58,4 @@ in
   };
 
 }
+

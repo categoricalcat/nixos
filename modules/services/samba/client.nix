@@ -21,13 +21,7 @@ let
   ];
 in
 {
-  systemd.tmpfiles.rules = [
-    "d /mnt/smb 0755 root root -"
-    "d /etc/samba 0755 root root -"
-    "d /etc/samba/credentials 0750 root root -"
-  ];
-
-  boot.supportedFilesystems = lib.mkAfter [ "cifs" ];
+  boot.supportedFilesystems = [ "cifs" ];
 
   fileSystems."/mnt/smb/share" = {
     device = "//fufuwuqi.vpn/share";
@@ -40,7 +34,5 @@ in
     fsType = "cifs";
     options = mountCommonOptions;
   };
-
-  warnings = [
-  ];
 }
+
