@@ -10,6 +10,7 @@
         efiSupport = true;
         device = "nodev";
         configurationLimit = 15;
+        gfxmodeEfi = "auto";
       };
       efi.canTouchEfiVariables = true;
     };

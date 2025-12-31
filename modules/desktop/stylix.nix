@@ -17,7 +17,7 @@
       {
         stylix = {
           enable = true;
-          image = null;
+          image = ./wallpaper.png;
           polarity = "dark";
           autoEnable = true;
 
@@ -85,7 +85,16 @@
               platform = lib.mkForce "qtct";
             };
 
-            grub.enable = true;
+            grub = {
+              enable = true;
+              useWallpaper = true;
+            };
+
+            plymouth = {
+              enable = true;
+              # logo = ./wallpaper.png;
+              logoAnimated = true;
+            };
           };
         };
 

@@ -17,5 +17,6 @@
     cloudflared
     xdg-desktop-portal-gtk
     gimp
+    librewolf
   ];
 }

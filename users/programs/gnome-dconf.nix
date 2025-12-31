@@ -14,7 +14,6 @@
 
         favorite-apps = [
           "chromium.desktop"
-          "firefox.desktop"
           "org.gnome.Nautilus.desktop"
           "org.gnome.Console.desktop"
         ];
