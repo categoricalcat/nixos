@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, ... }:
 
 let
   credentialsFile = "/etc/samba/credentials/fufud";
@@ -35,4 +35,3 @@ in
     options = mountCommonOptions;
   };
 }
-
