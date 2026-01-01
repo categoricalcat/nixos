@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -28,6 +29,7 @@
       gnome-screenshot
       niri
       xwayland-satellite
+      inputs.niri-float-sticky.packages.${pkgs.system}.default
     ];
   };
 }
