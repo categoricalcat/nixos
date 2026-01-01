@@ -20,27 +20,8 @@
     ../../modules/services/cockpit.nix
   ];
 
-  services.openvscode-server = {
-    enable = true;
-    inherit (addresses.network.vpn.ipv4) host;
-    port = 4444;
-    user = "fufud";
-    group = "fufud";
-    telemetryLevel = "off";
-    withoutConnectionToken = true;
-  };
-
   services.vscode-server.enable = true;
   programs.nix-ld.enable = true;
-
-  systemd.services."openvscode-server" = {
-    wants = [
-      "network-online.target"
-    ];
-    after = [
-      "network-online.target"
-    ];
-  };
 
   security.pam = {
     services.sshd.googleAuthenticator.enable = true;
@@ -150,14 +131,6 @@
 
   users.users.fufud.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
-
-  # Ensure ddclient user/group exist for sops secret ownership and service
-  users.groups.ddclient = { };
-  users.users.ddclient = {
-    isSystemUser = true;
-    group = "ddclient";
-    description = "ddclient daemon user";
-  };
 
   services.nginx = {
     enable = true;

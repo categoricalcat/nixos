@@ -117,7 +117,6 @@ in
   };
 
   services.fprintd.enable = true;
-
   security.pam.services.login.fprintAuth = lib.mkDefault true;
   security.pam.services.gdm-fingerprint.fprintAuth = true;
 
@@ -141,7 +140,7 @@ in
   zramSwap = {
     enable = true;
     algorithm = "zstd";
-    memoryPercent = 50;
+    memoryPercent = 75;
     priority = 100;
   };
 
