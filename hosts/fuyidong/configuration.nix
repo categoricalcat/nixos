@@ -119,6 +119,7 @@ in
   services.fprintd.enable = true;
   security.pam.services.login.fprintAuth = lib.mkDefault true;
   security.pam.services.gdm-fingerprint.fprintAuth = true;
+  security.pam.services.sudo.fprintAuth = true;
 
   hardware = {
     enableRedistributableFirmware = true;
