@@ -59,6 +59,10 @@
     zsh-syntax-highlighting
 
     bat
+    lynx
+    brotli
+    gzip
+    ncompress
     cockpit
     ethtool
     iftop

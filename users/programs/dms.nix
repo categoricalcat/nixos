@@ -16,7 +16,7 @@
       restartIfChanged = true; # Auto-restart dms.service when dankMaterialShell changes
     };
 
-    default.settings = {
+    settings = {
       theme = "dark";
       dynamicTheming = true;
     };
