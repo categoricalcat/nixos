@@ -15,6 +15,7 @@ in
     ./boot.nix
     ./hardware.nix
     ./power.nix
+    ./gaming.nix
     ../../secrets/sops.nix
     ../../modules/packages.nix
     ../../modules/locale.nix

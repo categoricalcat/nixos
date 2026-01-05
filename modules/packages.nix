@@ -1,7 +1,6 @@
 # System packages configuration module
 
 { pkgs, inputs, ... }:
-
 {
   environment.systemPackages = with pkgs; [
     emacs
@@ -59,7 +58,6 @@
     zsh-syntax-highlighting
 
     bat
-    lynx
     brotli
     gzip
     ncompress
