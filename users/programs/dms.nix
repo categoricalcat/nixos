@@ -16,10 +16,7 @@
       restartIfChanged = true; # Auto-restart dms.service when dankMaterialShell changes
     };
 
-    settings = {
-      theme = "dark";
-      dynamicTheming = true;
-    };
+    settings = builtins.fromJSON (builtins.readFile ./dms-theme.json);
 
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableVPN = true; # VPN management widget
