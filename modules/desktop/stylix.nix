@@ -102,6 +102,16 @@
         environment.sessionVariables = {
           NIXOS_OZONE_WL = "1";
           ELECTRON_OZONE_PLATFORM_HINT = "wayland";
+          QT_QPA_PLATFORM = "wayland";
+          # Remove QT_QPA_PLATFORMTHEME here to avoid conflicting env.variables
         };
+
+        environment.variables.QT_QPA_PLATFORMTHEME = lib.mkForce "qt6ct";
+
+        # qt6ct requires qt6ct-kde
+        environment.systemPackages = with pkgs; [
+          qt6Packages.qt6ct
+          kdePackages.qt6ct
+        ];
       };
 }
