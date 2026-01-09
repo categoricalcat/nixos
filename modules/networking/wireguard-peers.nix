@@ -2,7 +2,6 @@
 { lib, ... }:
 
 let
-  # Define peer configurations in a structured way
   peers = {
     fuyidong = {
       publicKey = "lGriY6UJK7M4O9oOq/JBHM6/HXTUx5pX/VH97Cs2njo=";
@@ -11,12 +10,12 @@ let
       allowedSubnets = [ "10.100.0.0/24" ];
     };
 
-    fuchuang = {
-      publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
-      ip = "10.100.0.3";
-      description = "fuchuang wsl";
-      allowedSubnets = [ "10.100.0.0/24" ];
-    };
+    #fuchuang = {
+    #  publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
+    #  ip = "10.100.0.3";
+    #  description = "fuchuang wsl";
+    #  allowedSubnets = [ "10.100.0.0/24" ];
+    #};
 
     reserved = {
       publicKey = "t3grmFcOy3IaqAEKSJawBO2SnUPMeCTjeAg";
