@@ -18,6 +18,7 @@
     ../../modules/services/localtonet.nix
     ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
+    ../../modules/services/terraria.nix
   ];
 
   services.vscode-server.enable = true;
