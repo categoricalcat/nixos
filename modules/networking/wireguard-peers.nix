@@ -14,7 +14,7 @@ let
     fuchuang = {
       publicKey = "aDcV7ZGtQTg/0twxpObeU1FM+nBFgD9wlYQ8Txygf3U=";
       ip = "10.100.0.3";
-      description = "fuchuang laptop";
+      description = "fuchuang wsl";
       allowedSubnets = [ "10.100.0.0/24" ];
     };
 

@@ -3,6 +3,12 @@
 {
   virtualisation.oci-containers.backend = "podman";
 
+  users.groups.playit = { };
+  users.users.playit = {
+    isSystemUser = true;
+    group = "playit";
+  };
+
   virtualisation.oci-containers.containers.playit-agent = {
     autoStart = true;
     image = "ghcr.io/playit-cloud/playit-agent:latest";
@@ -30,4 +36,10 @@
     ];
   };
 
+  sops.secrets."tokens/playit-agent" = {
+    mode = "0640";
+    owner = "playit";
+    group = "playit";
+    path = "/etc/playit/token";
+  };
 }

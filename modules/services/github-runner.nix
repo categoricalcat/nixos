@@ -21,6 +21,12 @@
     ];
   };
 
+  users.groups.github-runner = { };
+  users.users.github-runner = {
+    isSystemUser = true;
+    group = "github-runner";
+  };
+
   # Ensure runner starts after network and secrets are ready
   systemd.services."github-runner-nixos" = {
     wants = [
@@ -31,5 +37,11 @@
       "network-online.target"
       "sops-nix.service"
     ];
+  };
+
+  sops.secrets."tokens/github-runner-nixos" = {
+    mode = "0640";
+    owner = "github-runner";
+    group = "github-runner";
   };
 }

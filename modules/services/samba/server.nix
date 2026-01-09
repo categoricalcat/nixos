@@ -57,4 +57,8 @@ in
     ];
   };
 
+  sops.secrets."samba/credentials/fufud" = {
+    mode = "0600";
+    path = "/etc/samba/credentials/fufud";
+  };
 }

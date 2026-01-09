@@ -24,6 +24,7 @@
     # ../../modules/desktop.nix
     ../../modules/server-settings.nix
     ../../modules/server-mode.nix
+    ../../modules/nix-access-tokens.nix
     ../../secrets/sops.nix
   ];
 

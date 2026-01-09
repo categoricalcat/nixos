@@ -3,6 +3,12 @@
 {
   virtualisation.oci-containers.backend = "podman";
 
+  users.groups.cloudflared = { };
+  users.users.cloudflared = {
+    isSystemUser = true;
+    group = "cloudflared";
+  };
+
   virtualisation.oci-containers.containers.cloudflared = {
     autoStart = true;
     image = "cloudflare/cloudflared:latest";
@@ -41,4 +47,11 @@
   systemd.tmpfiles.rules = [
     "d /etc/cloudflared 0750 root root -"
   ];
+
+  sops.secrets."tokens/cloudflared" = {
+    mode = "0640";
+    owner = "cloudflared";
+    group = "cloudflared";
+    path = "/etc/cloudflared/token";
+  };
 }

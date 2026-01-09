@@ -50,6 +50,17 @@
     };
   };
 
+  sops.secrets."passwords/fufud" = {
+    mode = "0600";
+    owner = "fufud";
+    group = "fufud";
+  };
+  sops.secrets."passwords/workd" = {
+    mode = "0600";
+    owner = "workd";
+    group = "workd";
+  };
+
   programs.mtr.enable = true;
 
   programs.zsh = {
