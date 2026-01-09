@@ -30,7 +30,7 @@
     k6
     nil
     nix-direnv
-    nixfmt-rfc-style
+    nixfmt
     nftables
     rclone
     sops

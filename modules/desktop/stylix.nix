@@ -27,7 +27,7 @@
             size = 26;
           };
 
-          iconTheme = {
+          icons = {
             package = pkgs.papirus-icon-theme;
             dark = "Papirus-Dark";
             light = "Papirus-Light";

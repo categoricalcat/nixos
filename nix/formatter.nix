@@ -11,7 +11,7 @@ let
     programs = {
       nixfmt = {
         enable = true;
-        package = pkgs.nixfmt-rfc-style;
+        package = pkgs.nixfmt;
       };
       statix.enable = true;
       deadnix.enable = true;
