@@ -4,7 +4,7 @@
 
 ### Features
 
-- **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `dgop` and `antigravity-nix`
+- **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `dgop` and `antigravity`
 - **Hosts**: Three specialized machines - `fufuwuqi` (headless server), `fuyidong` (laptop), `fuchuang` (WSL)
 - **Networking**: systemd-networkd, WireGuard VPN mesh, network bonding (bond0), Avahi/mDNS discovery
 - **Storage**: NFS server/client with automounting, bind mounts for shared directories
@@ -39,7 +39,7 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 - **Web Server**: nginx with virtual hosts, reverse proxy ready
 - **Container Platform**: Podman with Docker compatibility, auto-pruning, custom subnet pools
 - **Tunnels**: Cloudflare tunnel (cloudflared), playit-agent for game server hosting
-- **Development**: OpenVSCode Server (port 4444), VS Code Server, NFS shares, Antigravity-Nix
+- **Development**: OpenVSCode Server (port 4444), VS Code Server, NFS shares, Antigravity
 - **Intrusion Prevention**: fail2ban with nginx jails
 - **Secrets**: sops-nix with AGE/SSH keys
 - **Firewall**: nftables with MSS clamping, NAT for VPN

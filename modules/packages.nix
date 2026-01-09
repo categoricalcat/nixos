@@ -1,12 +1,10 @@
 # System packages configuration module
 
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
     emacs
     ((emacsPackagesFor emacs-pgtk).emacsWithPackages (epkgs: [ epkgs.vterm ]))
-
-    inputs.antigravity-nix.packages.x86_64-linux.default
 
     gcc
     gnumake
@@ -36,7 +34,6 @@
     sops
     statix
     tree
-    vscode-fhs
 
     # Container tools (Podman)
     buildah
@@ -66,7 +63,6 @@
     iftop
     iperf3
     kubectl
-    maple-mono.NF-CN
     ncdu
     nethogs
     nmap
