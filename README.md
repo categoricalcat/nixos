@@ -7,12 +7,13 @@
 - **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `dgop` and `antigravity`
 - **Hosts**: Three specialized machines - `fufuwuqi` (headless server), `fuyidong` (laptop), `fuchuang` (WSL)
 - **Networking**: systemd-networkd, WireGuard VPN mesh, network bonding (bond0), Avahi/mDNS discovery
-- **Storage**: NFS server/client with automounting, bind mounts for shared directories
+- **Storage**: NFS server/client with automounting, Samba (SMB) shares, bind mounts
 - **Desktop**: GNOME/Hyprland/Niri/Cosmic/KDE support with Stylix theming (Catppuccin Mocha) and `dankMaterialShell`
+- **Compatibility**: `nix-ld` integration for running unpatched dynamic binaries
 - **Services**: Comprehensive service stack including web, container, development, AI/ML, and `dms-cli`
-- **Security**: `sops-nix` secrets management (AGE/SSH), fail2ban, 2FA SSH, nftables firewall
+- **Security**: `sops-nix` secrets management (AGE/SSH), fail2ban, 2FA SSH, nftables firewall, fingerprint auth
 - **Development**: Distributed Nix builds, GitHub Actions runner, pre-commit hooks
-- **Hardware**: AMD ROCm GPU acceleration, Intel GPU support, TPM2, battery optimization (TLP)
+- **Hardware**: AMD ROCm GPU acceleration, Intel GPU support, TPM2, battery optimization (TLP), ZRAM swap
 - **CI/CD**: Automated formatting, linting, flake checks, and host evaluation
 
 ### Layout
@@ -38,8 +39,8 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 - **DNS**: AdGuard Home with load-balanced upstream providers, custom rewrites
 - **Web Server**: nginx with virtual hosts, reverse proxy ready
 - **Container Platform**: Podman with Docker compatibility, auto-pruning, custom subnet pools
-- **Tunnels**: Cloudflare tunnel (cloudflared), playit-agent for game server hosting
-- **Development**: OpenVSCode Server (port 4444), VS Code Server, NFS shares, Antigravity
+- **Tunnels**: Cloudflare tunnel (`cloudflared`), `playit-agent`, `localtonet`
+- **Development**: OpenVSCode Server (port 4444), VS Code Server, NFS/Samba shares, Antigravity, GitHub Runner
 - **Intrusion Prevention**: fail2ban with nginx jails
 - **Secrets**: sops-nix with AGE/SSH keys
 - **Firewall**: nftables with MSS clamping, NAT for VPN
@@ -54,9 +55,9 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 
 | Host | Role | Hardware | Network | Key Services |
 | --- | --- | --- | --- | --- |
-| `fufuwuqi` | Headless server | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS server, Ollama, Podman, Mariadb, Joplin, all web services |
-| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt | WiFi, WireGuard client | Niri desktop, distributed build client, TLP power management |
-| `fuchuang` | WSL instance | Virtual | WSL networking | Development environment, minimal services |
+| `fufuwuqi` | Headless server | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS/Samba, Ollama, Podman, Mariadb, Joplin, GitHub Runner, Tunnels |
+| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt, Fingerprint | WiFi, WireGuard client | Niri desktop, distributed build client, TLP, ZRAM Swap |
+| `fuchuang` | WSL instance | Virtual | WSL networking | Development environment, `nix-ld`, minimal services |
 
 ### Networking Architecture
 
@@ -67,7 +68,7 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 - **LAN**: Primary network (192.168.0.0/24) with static IPs
 - **Bonding**: `bond0` interface combining `eno1` + `enp4s0` for redundancy
 - **systemd-networkd**: Declarative network configuration with MTU optimization (1492)
-- **Service Discovery**: Avahi/mDNS advertising SSH, HTTP/HTTPS, Minecraft, and custom services
+- **Service Discovery**: Avahi/mDNS advertising SSH, HTTP/HTTPS, and custom services
 
 #### Theming (Stylix)
 - **Theme**: Catppuccin Mocha (custom Base16 scheme)
