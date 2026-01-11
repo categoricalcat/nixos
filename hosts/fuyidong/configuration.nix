@@ -25,6 +25,8 @@ in
     ../../users/users.nix
     # ../../modules/services/synergy.nix
     ./networking.nix
+    ./addresses.nix
+    ../../modules/services/openssh.nix
   ];
 
   environment.systemPackages = [ pkgs.mprisence ];
@@ -109,13 +111,7 @@ in
     overwriteBackup = true;
   };
 
-  services.openssh = {
-    enable = true;
-    listenAddresses = [
-      # { addr = "fuyidong.local"; }
-      { addr = "10.100.0.2"; }
-    ];
-  };
+  # services.openssh configuration moved to modules/services/openssh.nix
 
   services.fprintd.enable = true;
   security.pam.services.login.fprintAuth = lib.mkDefault true;
@@ -126,7 +122,11 @@ in
     enableRedistributableFirmware = true;
     cpu.intel.updateMicrocode = true;
     intel-gpu-tools.enable = true;
-    bluetooth.enable = true;
+
+    bluetooth = {
+      enable = true;
+      powerOnBoot = false;
+    };
 
     graphics = {
       enable = true;

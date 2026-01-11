@@ -1,4 +1,4 @@
-_:
+{ lib, ... }:
 let
   wgCommon = {
     listenPort = 51820;
@@ -62,10 +62,11 @@ in
     };
   };
 
+  systemd.services.NetworkManager-wait-online.enable = false;
+
   systemd.services."wg-quick-fufuwuqi.vpn" = {
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
     serviceConfig = {
+      Type = lib.mkForce "simple";
       Restart = "on-failure";
       RestartSec = "5s";
     };

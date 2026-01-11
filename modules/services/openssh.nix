@@ -5,8 +5,8 @@
     wants = [ "network-online.target" ];
     after = [
       "network-online.target"
-      "avahi-daemon.service"
-      "systemd-resolved.service"
+      "multi-user.target"
+      "time-sync.target"
     ];
   };
 
@@ -18,12 +18,17 @@
         inherit addr;
         port = addresses.ssh.listenPort;
       }) addresses.ssh.listenAddresses)
-      ++ [
-        {
-          addr = addresses.ssh.listenWildcardIPv6;
-          port = addresses.ssh.listenPort;
-        }
-      ];
+      ++ (
+        if addresses.ssh.listenWildcardIPv6 != null then
+          [
+            {
+              addr = addresses.ssh.listenWildcardIPv6;
+              port = addresses.ssh.listenPort;
+            }
+          ]
+        else
+          [ ]
+      );
 
     settings = {
       AllowUsers = [
@@ -38,7 +43,7 @@
       MaxAuthTries = 3;
       LoginGraceTime = 30;
 
-      GSSAPIAuthentication = false;
+      # GSSAPIAuthentication = false;
       AllowTcpForwarding = "yes"; # Enable TCP port forwarding
       AllowAgentForwarding = true; # Allow SSH agent forwarding
       AllowStreamLocalForwarding = "yes"; # Allow Unix domain socket forwarding
