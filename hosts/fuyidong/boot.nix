@@ -4,9 +4,10 @@
 
   boot = {
     loader = {
+      timeout = 2;
       systemd-boot = {
         enable = true;
-        configurationLimit = 15;
+        configurationLimit = 10;
       };
       grub.enable = false;
       efi.canTouchEfiVariables = true;
