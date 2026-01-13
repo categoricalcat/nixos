@@ -1,6 +1,6 @@
 {
-  "currentThemeName": "dynamic",
-  "currentThemeCategory": "dynamic",
+  "currentThemeName": "purple",
+  "currentThemeCategory": "generic",
   "customThemeFile": "",
   "registryThemeVariants": {},
   "matugenScheme": "scheme-vibrant",
@@ -132,8 +132,35 @@
   "keyboardLayoutNameCompactMode": false,
   "runningAppsCurrentWorkspace": false,
   "runningAppsGroupByApp": false,
+  "appIdSubstitutions": [
+    {
+      "pattern": "Spotify",
+      "replacement": "spotify",
+      "type": "exact"
+    },
+    {
+      "pattern": "beepertexts",
+      "replacement": "beeper",
+      "type": "exact"
+    },
+    {
+      "pattern": "home assistant desktop",
+      "replacement": "homeassistant-desktop",
+      "type": "exact"
+    },
+    {
+      "pattern": "com.transmissionbt.transmission",
+      "replacement": "transmission-gtk",
+      "type": "contains"
+    },
+    {
+      "pattern": "^steam_app_(\\d+)$",
+      "replacement": "steam_icon_$1",
+      "type": "regex"
+    }
+  ],
   "centeringMode": "index",
-  "clockDateFormat": "dddd, MMMM d",
+  "clockDateFormat": "dddd, d MMMM",
   "lockDateFormat": "",
   "mediaSize": 1,
   "appLauncherViewMode": "list",
@@ -145,23 +172,23 @@
   "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "auto",
-  "vpnLastConnected": "7507bbff-e5f9-4eaf-a411-2dcea30647cd",
+  "vpnLastConnected": "e7beb284-2f1e-43d8-a642-d6ce80465eb6",
   "iconTheme": "Bibata-Modern-Classic",
   "cursorSettings": {
-    "theme": "System Default",
-    "size": 24,
-    "niri": {
-      "hideWhenTyping": false,
-      "hideAfterInactiveMs": 0
+    "dwl": {
+      "cursorHideTimeout": 0
     },
     "hyprland": {
       "hideOnKeyPress": false,
       "hideOnTouch": false,
       "inactiveTimeout": 0
     },
-    "dwl": {
-      "cursorHideTimeout": 0
-    }
+    "niri": {
+      "hideAfterInactiveMs": 0,
+      "hideWhenTyping": false
+    },
+    "size": 24,
+    "theme": "System Default"
   },
   "launcherLogoMode": "apps",
   "launcherLogoCustomPath": "",
@@ -265,6 +292,7 @@
   "notificationTimeoutLow": 5000,
   "notificationTimeoutNormal": 5000,
   "notificationTimeoutCritical": 0,
+  "notificationCompactMode": false,
   "notificationPopupPosition": 0,
   "notificationHistoryEnabled": true,
   "notificationHistoryMaxCount": 50,
@@ -470,6 +498,7 @@
   "desktopWidgetPositions": {},
   "desktopWidgetGridSettings": {},
   "desktopWidgetInstances": [],
+  "desktopWidgetGroups": [],
   "builtInPluginSettings": {},
   "configVersion": 5
 }

@@ -37,6 +37,8 @@ in
 
   programs.nix-ld.enable = true;
 
+  security.polkit.enable = true;
+
   nixpkgs.config = {
     allowUnfree = true;
     cudaSupport = false;
