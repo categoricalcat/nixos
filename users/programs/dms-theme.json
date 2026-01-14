@@ -1,6 +1,6 @@
 {
-  "currentThemeName": "purple",
-  "currentThemeCategory": "generic",
+  "currentThemeName": "dynamic",
+  "currentThemeCategory": "dynamic",
   "customThemeFile": "",
   "registryThemeVariants": {},
   "matugenScheme": "scheme-vibrant",
@@ -172,8 +172,8 @@
   "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "auto",
-  "vpnLastConnected": "e7beb284-2f1e-43d8-a642-d6ce80465eb6",
-  "iconTheme": "Bibata-Modern-Classic",
+  "vpnLastConnected": "2650b2f1-33aa-4666-af3a-a969d5233346",
+  "iconTheme": "Papirus-Dark",
   "cursorSettings": {
     "dwl": {
       "cursorHideTimeout": 0
@@ -187,8 +187,8 @@
       "hideAfterInactiveMs": 0,
       "hideWhenTyping": false
     },
-    "size": 24,
-    "theme": "System Default"
+    "size": 32,
+    "theme": "Bibata-Modern-Amber-Right"
   },
   "launcherLogoMode": "apps",
   "launcherLogoCustomPath": "",
