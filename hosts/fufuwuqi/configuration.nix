@@ -95,7 +95,10 @@
       desktopEnvironment = null; # server/headless
       inherit inputs;
     };
-    users.fufud = import ../../users/home-fufud.nix;
+    users.fufud = {
+      imports = [ ../../users/home-fufud.nix ];
+      home.stateVersion = "25.11";
+    };
     users.workd = import ../../users/home-workd.nix;
   };
 }

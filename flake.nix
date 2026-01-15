@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     nixos-wsl = {
@@ -25,6 +26,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
+
     stylix = {
       url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,11 +43,6 @@
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    vscode-server = {
-      url = "github:nix-community/nixos-vscode-server";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -65,8 +66,9 @@
     inputs@{
       flake-parts,
       nixpkgs,
+      nixpkgs-stable,
       home-manager,
-      vscode-server,
+      home-manager-stable,
       nixowos,
       sops-nix,
       stylix,
@@ -95,6 +97,12 @@
                 nixowos.nixosModules.default
                 sops-nix.nixosModules.sops
               ];
+
+              baseModulesStable = [
+                home-manager-stable.nixosModules.home-manager
+                nixowos.nixosModules.default
+                sops-nix.nixosModules.sops
+              ];
             in
             {
               fuchuang = nixpkgs.lib.nixosSystem {
@@ -105,10 +113,9 @@
                 ];
               };
 
-              fufuwuqi = nixpkgs.lib.nixosSystem {
+              fufuwuqi = nixpkgs-stable.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
-                modules = baseModules ++ [
-                  vscode-server.nixosModules.default
+                modules = baseModulesStable ++ [
                   ./hosts/fufuwuqi/configuration.nix
                 ];
               };
