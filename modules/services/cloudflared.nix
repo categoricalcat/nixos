@@ -9,6 +9,10 @@
     group = "cloudflared";
   };
 
+  sops.templates."cloudflared.env".content = ''
+    TUNNEL_TOKEN=${config.sops.placeholder."tokens/cloudflared"}
+  '';
+
   virtualisation.oci-containers.containers.cloudflared = {
     autoStart = true;
     image = "cloudflare/cloudflared:latest";
@@ -18,15 +22,13 @@
       "--network=host"
       "--pull=newer"
     ];
-    volumes = [
-      "${config.sops.secrets."tokens/cloudflared".path}:/token:ro,U"
+    environmentFiles = [
+      config.sops.templates."cloudflared.env".path
     ];
     cmd = [
       "tunnel"
       "--no-autoupdate"
       "run"
-      "--token-file"
-      "/token"
     ];
     environment = {
       NO_AUTOUPDATE = "true";
@@ -48,10 +50,5 @@
     "d /etc/cloudflared 0750 root root -"
   ];
 
-  sops.secrets."tokens/cloudflared" = {
-    mode = "0640";
-    owner = "cloudflared";
-    group = "cloudflared";
-    path = "/etc/cloudflared/token";
-  };
+  sops.secrets."tokens/cloudflared" = { };
 }

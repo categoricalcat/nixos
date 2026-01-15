@@ -18,12 +18,14 @@
       "--pull=newer"
     ];
     environmentFiles = [
-      "${config.sops.secrets."tokens/playit-agent".path}"
+      config.sops.templates."playit-agent.env".path
     ];
     environment = {
       NO_AUTOUPDATE = "true";
     };
   };
+
+  sops.templates."playit-agent.env".content = config.sops.placeholder."tokens/playit-agent";
 
   systemd.services."podman-playit-agent" = {
     wants = [
@@ -36,10 +38,5 @@
     ];
   };
 
-  sops.secrets."tokens/playit-agent" = {
-    mode = "0640";
-    owner = "playit";
-    group = "playit";
-    path = "/etc/playit/token";
-  };
+  sops.secrets."tokens/playit-agent" = { };
 }
