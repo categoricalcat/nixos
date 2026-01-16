@@ -36,11 +36,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixowos = {
-      url = "github:categoricalcat/nixowos";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -69,7 +64,6 @@
       nixpkgs-stable,
       home-manager,
       home-manager-stable,
-      nixowos,
       sops-nix,
       stylix,
       nixos-wsl,
@@ -94,13 +88,11 @@
             let
               baseModules = [
                 home-manager.nixosModules.home-manager
-                nixowos.nixosModules.default
                 sops-nix.nixosModules.sops
               ];
 
               baseModulesStable = [
                 home-manager-stable.nixosModules.home-manager
-                nixowos.nixosModules.default
                 sops-nix.nixosModules.sops
               ];
             in

@@ -86,8 +86,6 @@
     enable = true;
   };
 
-  nixowos.enable = true;
-
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
