@@ -15,36 +15,56 @@ permissions:
 
 jobs:
   check:
-    runs-on: 
+    timeout-minutes: 30
+    runs-on:
       - self-hosted
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@main
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-
-      - name: Check flake outputs
-        run: nix flake check --print-build-logs
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
 
       - name: Check formatting and linting
         run: nix fmt -- --ci
 
+  generate-matrix:
+    timeout-minutes: 10
+    runs-on: self-hosted
+    outputs:
+      hosts: ${{ steps.set-matrix.outputs.hosts }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+  
+
+      - id: set-matrix
+        name: Generate NixOS Configurations Matrix
+        run: |
+          HOSTS="$(nix eval --json .#nixosConfigurations --apply 'cfgs: builtins.attrNames cfgs')"
+          echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
+
   eval:
-    needs: check
-    runs-on: 
+    needs: [check, generate-matrix]
+    timeout-minutes: 60
+    runs-on:
       - self-hosted
     strategy:
       matrix:
-        host: [fufuwuqi, fuchuang, fuyidong]
+        host: ${{ fromJson(needs.generate-matrix.outputs.hosts) }}
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@main
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
 
       - name: Evaluate NixOS configuration (${{ matrix.host }})
         run: nix eval --raw .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.drvPath
-
