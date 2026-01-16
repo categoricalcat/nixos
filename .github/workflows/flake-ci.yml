@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Install Nix
-        uses: cachix/install-nix-action@main
+        uses: cachix/install-nix-action@master
 
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@main
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Install Nix
-        uses: cachix/install-nix-action@main
+        uses: cachix/install-nix-action@master
 
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@main
@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Install Nix
-        uses: cachix/install-nix-action@main
+        uses: cachix/install-nix-action@master
 
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@main
