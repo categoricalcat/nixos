@@ -66,7 +66,7 @@
     rocmTargets = [ "gfx1035" ];
   };
 
-  system.stateVersion = "26.05";
+  system.stateVersion = "25.11";
 
   hardware = {
     enableRedistributableFirmware = true;
