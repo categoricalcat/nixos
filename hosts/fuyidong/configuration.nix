@@ -100,15 +100,16 @@ in
     };
   };
 
-  nixowos.enable = true;
-
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
     extraSpecialArgs = {
       inherit desktopEnvironment inputs;
     };
-    users.fufud = import ../../users/home-fufud.nix;
+    users.fufud = {
+      imports = [ ../../users/home-fufud.nix ];
+      home.stateVersion = "26.05";
+    };
     backupFileExtension = "bkp";
     overwriteBackup = true;
   };

@@ -66,7 +66,7 @@
     rocmTargets = [ "gfx1035" ];
   };
 
-  system.stateVersion = "26.05";
+  system.stateVersion = "25.11";
 
   hardware = {
     enableRedistributableFirmware = true;
@@ -86,8 +86,6 @@
     enable = true;
   };
 
-  nixowos.enable = true;
-
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
@@ -95,7 +93,10 @@
       desktopEnvironment = null; # server/headless
       inherit inputs;
     };
-    users.fufud = import ../../users/home-fufud.nix;
+    users.fufud = {
+      imports = [ ../../users/home-fufud.nix ];
+      home.stateVersion = "25.11";
+    };
     users.workd = import ../../users/home-workd.nix;
   };
 }

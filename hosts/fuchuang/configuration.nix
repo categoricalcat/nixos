@@ -41,8 +41,6 @@
     rocmSupport = true;
   };
 
-  nixowos.enable = true;
-
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
@@ -50,7 +48,10 @@
       desktopEnvironment = null; # WSL/headless
       inherit inputs;
     };
-    users.fufud = import ../../users/home-fufud.nix;
+    users.fufud = {
+      imports = [ ../../users/home-fufud.nix ];
+      home.stateVersion = "26.05";
+    };
   };
 
   services.openssh = {
