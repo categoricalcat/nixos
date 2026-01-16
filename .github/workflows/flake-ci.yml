@@ -20,11 +20,18 @@ jobs:
       - self-hosted
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
+
+      - name: Check flake outputs
+        run: nix flake check --print-build-logs
 
       - name: Check formatting and linting
         run: nix fmt -- --ci
@@ -36,12 +43,15 @@ jobs:
       hosts: ${{ steps.set-matrix.outputs.hosts }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
-  
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
       - id: set-matrix
         name: Generate NixOS Configurations Matrix
@@ -64,7 +74,6 @@ jobs:
 
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
 
       - name: Evaluate NixOS configuration (${{ matrix.host }})
         run: nix eval --raw .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.drvPath
