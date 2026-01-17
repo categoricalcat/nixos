@@ -2,8 +2,7 @@
 
 {
   environment.systemPackages = with pkgs; [
-    discord
-    discord-canary
+    discord-ptb
     chromium
     # firefox
     vscode-fhs

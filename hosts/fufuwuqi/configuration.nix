@@ -7,6 +7,9 @@
   ...
 }:
 
+let
+  mkHome = import ../../modules/home-manager.nix;
+in
 {
   imports = [
     ./hardware.nix
@@ -86,17 +89,12 @@
     enable = true;
   };
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    extraSpecialArgs = {
-      desktopEnvironment = null; # server/headless
+  home-manager =
+    mkHome {
       inherit inputs;
+      stateVersion = "25.11";
+    }
+    // {
+      users.workd = import ../../users/home-workd.nix;
     };
-    users.fufud = {
-      imports = [ ../../users/home-fufud.nix ];
-      home.stateVersion = "25.11";
-    };
-    users.workd = import ../../users/home-workd.nix;
-  };
 }

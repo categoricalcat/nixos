@@ -6,6 +6,9 @@
   ...
 }:
 
+let
+  mkHome = import ../../modules/home-manager.nix;
+in
 {
   imports = [
     ../../modules/services/nfs/client.nix
@@ -41,17 +44,9 @@
     rocmSupport = true;
   };
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    extraSpecialArgs = {
-      desktopEnvironment = null; # WSL/headless
-      inherit inputs;
-    };
-    users.fufud = {
-      imports = [ ../../users/home-fufud.nix ];
-      home.stateVersion = "26.05";
-    };
+  home-manager = mkHome {
+    inherit inputs;
+    stateVersion = "26.05";
   };
 
   services.openssh = {

@@ -8,6 +8,7 @@
 
 let
   desktopEnvironment = "niri";
+  mkHome = import ../../modules/home-manager.nix;
 in
 {
   imports = [
@@ -28,6 +29,11 @@ in
     ./addresses.nix
     ../../modules/services/openssh.nix
   ];
+
+  home-manager = mkHome {
+    inherit desktopEnvironment inputs;
+    stateVersion = "26.05";
+  };
 
   environment.systemPackages = [ pkgs.mprisence ];
 
@@ -98,20 +104,6 @@ in
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
     };
-  };
-
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    extraSpecialArgs = {
-      inherit desktopEnvironment inputs;
-    };
-    users.fufud = {
-      imports = [ ../../users/home-fufud.nix ];
-      home.stateVersion = "26.05";
-    };
-    backupFileExtension = "bkp";
-    overwriteBackup = true;
   };
 
   # services.openssh configuration moved to modules/services/openssh.nix
