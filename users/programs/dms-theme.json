@@ -58,6 +58,7 @@
   "controlCenterShowMicPercent": false,
   "controlCenterShowBatteryIcon": false,
   "controlCenterShowPrinterIcon": false,
+  "controlCenterShowScreenSharingIcon": true,
   "showPrivacyButton": true,
   "privacyShowMicIcon": false,
   "privacyShowCameraIcon": false,
@@ -116,6 +117,7 @@
   "reverseScrolling": false,
   "dwlShowAllTags": false,
   "workspaceColorMode": "default",
+  "workspaceOccupiedColorMode": "none",
   "workspaceUnfocusedColorMode": "default",
   "workspaceUrgentColorMode": "default",
   "workspaceFocusedBorderEnabled": false,
@@ -172,7 +174,7 @@
   "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "auto",
-  "vpnLastConnected": "2650b2f1-33aa-4666-af3a-a969d5233346",
+  "vpnLastConnected": "0a3ae590-6d9b-4be8-b36d-89ce8084e4ca",
   "iconTheme": "Papirus-Dark",
   "cursorSettings": {
     "dwl": {
@@ -262,6 +264,7 @@
   "matugenTemplateVscode": true,
   "showDock": false,
   "dockAutoHide": false,
+  "dockSmartAutoHide": false,
   "dockGroupByApp": false,
   "dockOpenOnOverview": false,
   "dockPosition": 1,
@@ -283,6 +286,7 @@
   "lockScreenShowDate": true,
   "lockScreenShowProfileImage": true,
   "lockScreenShowPasswordField": true,
+  "lockScreenPowerOffMonitorsOnLock": false,
   "enableFprint": false,
   "maxFprintTries": 15,
   "lockScreenActiveMonitor": "all",
@@ -345,7 +349,7 @@
       "borderEnabled": false,
       "borderOpacity": 1,
       "borderThickness": 1,
-      "bottomGap": -2,
+      "bottomGap": -4,
       "centerWidgets": [
         {
           "enabled": true,
@@ -365,7 +369,7 @@
       "gothCornerRadiusValue": 12,
       "gothCornersEnabled": false,
       "id": "default",
-      "innerPadding": -2,
+      "innerPadding": -4,
       "leftWidgets": [
         "launcherButton",
         "workspaceSwitcher",
@@ -382,8 +386,28 @@
       "popupGapsManual": 4,
       "position": 0,
       "rightWidgets": [
-        "systemTray",
-        "clipboard",
+        {
+          "enabled": true,
+          "id": "keyboard_layout_name",
+          "keyboardLayoutNameCompactMode": true
+        },
+        {
+          "enabled": true,
+          "id": "clipboard"
+        },
+        {
+          "enabled": true,
+          "id": "systemTray"
+        },
+        {
+          "enabled": true,
+          "id": "separator"
+        },
+        {
+          "enabled": true,
+          "id": "cpuTemp",
+          "minimumWidth": true
+        },
         {
           "enabled": true,
           "id": "cpuUsage",
@@ -395,10 +419,17 @@
           "minimumWidth": true,
           "showSwap": false
         },
-        "notificationButton",
         {
           "enabled": true,
           "id": "battery"
+        },
+        {
+          "enabled": true,
+          "id": "separator"
+        },
+        {
+          "enabled": true,
+          "id": "notificationButton"
         },
         {
           "enabled": true,
@@ -419,13 +450,15 @@
       "screenPreferences": [
         "all"
       ],
+      "shadowIntensity": 0,
       "shadowOpacity": 10,
       "showOnLastDisplay": true,
       "spacing": 0,
       "squareCorners": false,
       "transparency": 0,
       "visible": true,
-      "widgetTransparency": 0.5
+      "widgetOutlineEnabled": false,
+      "widgetTransparency": 0.48
     }
   ],
   "desktopClockEnabled": false,
@@ -499,6 +532,10 @@
   "desktopWidgetGridSettings": {},
   "desktopWidgetInstances": [],
   "desktopWidgetGroups": [],
-  "builtInPluginSettings": {},
+  "builtInPluginSettings": {
+    "dms_settings_search": {
+      "trigger": "?"
+    }
+  },
   "configVersion": 5
 }
