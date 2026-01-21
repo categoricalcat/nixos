@@ -19,19 +19,14 @@ jobs:
     runs-on:
       - self-hosted
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@main
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@master
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@main
+      - uses: actions/checkout@main
+      - uses: cachix/install-nix-action@master
+      - uses: nix-community/cache-nix-action@main
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
       - name: Check flake outputs
-        run: nix flake check --print-build-logs
+        run: nix flake check --print-build-logs --show-trace
 
       - name: Check formatting and linting
         run: nix fmt -- --ci
@@ -42,14 +37,9 @@ jobs:
     outputs:
       hosts: ${{ steps.set-matrix.outputs.hosts }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@main
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@master
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@main
+      - uses: actions/checkout@main
+      - uses: cachix/install-nix-action@master
+      - uses: nix-community/cache-nix-action@main
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
@@ -60,7 +50,7 @@ jobs:
           echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
 
   eval:
-    needs: [check, generate-matrix]
+    needs: generate-matrix
     timeout-minutes: 60
     runs-on:
       - self-hosted
@@ -69,18 +59,11 @@ jobs:
         host: ${{ fromJson(needs.generate-matrix.outputs.hosts) }}
       fail-fast: false
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@main
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@master
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@main
+      - uses: actions/checkout@main
+      - uses: cachix/install-nix-action@master
+      - uses: nix-community/cache-nix-action@main
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-
-      - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Evaluate NixOS configuration (${{ matrix.host }})
         run: nix eval --raw .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.drvPath

@@ -1,0 +1,4 @@
+# ~/.actrc
+-P self-hosted=ghcr.io/catthehacker/ubuntu:act-latest
+-W .github/workflows/flake-ci.yml
+--container-daemon-socket /run/user/$(id -u)/podman/podman.sock
