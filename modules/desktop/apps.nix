@@ -16,7 +16,8 @@
     cloudflared
     xdg-desktop-portal-gtk
     gimp
-    librewolf
+    vivaldi
     antigravity
+    wl-clipboard
   ];
 }

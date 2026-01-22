@@ -106,8 +106,6 @@ in
     };
   };
 
-  # services.openssh configuration moved to modules/services/openssh.nix
-
   services.fprintd.enable = true;
   security.pam.services.login.fprintAuth = lib.mkDefault true;
   security.pam.services.gdm-fingerprint.fprintAuth = true;

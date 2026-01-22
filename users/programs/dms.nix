@@ -23,5 +23,6 @@
     enableDynamicTheming = true; # Wallpaper-based theming (matugen)
     enableAudioWavelength = true; # Audio visualizer (cava)
     enableCalendarEvents = true; # Calendar integration (khal)
+    enableClipboardPaste = true; # Clipboard paste wtype
   };
 }

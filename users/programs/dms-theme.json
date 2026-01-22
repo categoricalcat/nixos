@@ -23,6 +23,7 @@
   "use24HourClock": true,
   "showSeconds": false,
   "useFahrenheit": false,
+  "windSpeedUnit": "kmh",
   "nightModeEnabled": false,
   "animationSpeed": 0,
   "customAnimationDuration": 500,
@@ -170,11 +171,18 @@
   "sortAppsAlphabetically": false,
   "appLauncherGridColumns": 4,
   "spotlightCloseNiriOverview": true,
+  "spotlightSectionViewModes": {},
+  "appDrawerSectionViewModes": {},
   "niriOverviewOverlayEnabled": true,
+  "dankLauncherV2Size": "compact",
+  "dankLauncherV2BorderEnabled": false,
+  "dankLauncherV2BorderThickness": 2,
+  "dankLauncherV2BorderColor": "primary",
+  "dankLauncherV2ShowFooter": true,
   "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "auto",
-  "vpnLastConnected": "0a3ae590-6d9b-4be8-b36d-89ce8084e4ca",
+  "vpnLastConnected": "40538ff6-4d6b-4b93-b91d-161437b71184",
   "iconTheme": "Papirus-Dark",
   "cursorSettings": {
     "dwl": {
@@ -262,6 +270,7 @@
   "matugenTemplateDgop": true,
   "matugenTemplateKcolorscheme": true,
   "matugenTemplateVscode": true,
+  "matugenTemplateEmacs": true,
   "showDock": false,
   "dockAutoHide": false,
   "dockSmartAutoHide": false,
@@ -537,5 +546,7 @@
       "trigger": "?"
     }
   },
+  "launcherPluginVisibility": {},
+  "launcherPluginOrder": [],
   "configVersion": 5
 }
