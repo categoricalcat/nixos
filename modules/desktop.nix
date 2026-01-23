@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 {
   options = {
@@ -32,6 +32,21 @@
     };
 
     console.keyMap = "br-abnt2";
+
+    i18n.inputMethod = {
+      enable = true;
+      type = "fcitx5";
+
+      fcitx5.waylandFrontend = true;
+      fcitx5.addons = with pkgs; [
+        qt6Packages.fcitx5-chinese-addons
+        fcitx5-gtk
+        kdePackages.fcitx5-qt
+      ];
+    };
+
+    # Critical for window managers to autostart Fcitx5
+    services.xserver.desktopManager.runXdgAutostartIfNone = true;
 
     services.libinput.enable = true;
     services.gnome.gnome-keyring.enable = true;
