@@ -22,6 +22,7 @@
   "mangoLayoutBorderSize": -1,
   "use24HourClock": true,
   "showSeconds": false,
+  "padHours12Hour": false,
   "useFahrenheit": false,
   "windSpeedUnit": "kmh",
   "nightModeEnabled": false,
@@ -106,20 +107,20 @@
       "width": 50
     }
   ],
-  "showWorkspaceIndex": false,
-  "showWorkspaceName": false,
-  "showWorkspacePadding": false,
+  "showWorkspaceIndex": true,
+  "showWorkspaceName": true,
+  "showWorkspacePadding": true,
   "workspaceScrolling": false,
-  "showWorkspaceApps": false,
-  "maxWorkspaceIcons": 3,
+  "showWorkspaceApps": true,
+  "maxWorkspaceIcons": 10,
   "groupWorkspaceApps": true,
-  "workspaceFollowFocus": false,
-  "showOccupiedWorkspacesOnly": false,
+  "workspaceFollowFocus": true,
+  "showOccupiedWorkspacesOnly": true,
   "reverseScrolling": false,
   "dwlShowAllTags": false,
   "workspaceColorMode": "default",
-  "workspaceOccupiedColorMode": "none",
-  "workspaceUnfocusedColorMode": "default",
+  "workspaceOccupiedColorMode": "sec",
+  "workspaceUnfocusedColorMode": "s",
   "workspaceUrgentColorMode": "default",
   "workspaceFocusedBorderEnabled": false,
   "workspaceFocusedBorderColor": "primary",
@@ -182,7 +183,7 @@
   "useAutoLocation": true,
   "weatherEnabled": true,
   "networkPreference": "auto",
-  "vpnLastConnected": "40538ff6-4d6b-4b93-b91d-161437b71184",
+  "vpnLastConnected": "ae0660a8-59da-45fe-b03b-2edca5ef5d0a",
   "iconTheme": "Papirus-Dark",
   "cursorSettings": {
     "dwl": {
@@ -287,6 +288,13 @@
   "dockBorderOpacity": 1,
   "dockBorderThickness": 1,
   "dockIsolateDisplays": false,
+  "dockLauncherEnabled": false,
+  "dockLauncherLogoMode": "apps",
+  "dockLauncherLogoCustomPath": "",
+  "dockLauncherLogoColorOverride": "",
+  "dockLauncherLogoSizeOffset": 0,
+  "dockLauncherLogoBrightness": 0.5,
+  "dockLauncherLogoContrast": 1,
   "notificationOverlayEnabled": false,
   "modalDarkenBackground": true,
   "lockScreenShowPowerActions": true,
@@ -295,6 +303,7 @@
   "lockScreenShowDate": true,
   "lockScreenShowProfileImage": true,
   "lockScreenShowPasswordField": true,
+  "lockScreenShowMediaPlayer": true,
   "lockScreenPowerOffMonitorsOnLock": false,
   "enableFprint": false,
   "maxFprintTries": 15,
@@ -397,23 +406,6 @@
       "rightWidgets": [
         {
           "enabled": true,
-          "id": "keyboard_layout_name",
-          "keyboardLayoutNameCompactMode": true
-        },
-        {
-          "enabled": true,
-          "id": "clipboard"
-        },
-        {
-          "enabled": true,
-          "id": "systemTray"
-        },
-        {
-          "enabled": true,
-          "id": "separator"
-        },
-        {
-          "enabled": true,
           "id": "cpuTemp",
           "minimumWidth": true
         },
@@ -434,11 +426,20 @@
         },
         {
           "enabled": true,
-          "id": "separator"
+          "id": "spacer",
+          "size": 20
+        },
+        {
+          "enabled": true,
+          "id": "systemTray"
         },
         {
           "enabled": true,
           "id": "notificationButton"
+        },
+        {
+          "enabled": true,
+          "id": "clipboard"
         },
         {
           "enabled": true,

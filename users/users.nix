@@ -27,7 +27,7 @@
     users = {
       fufud = {
         isNormalUser = true;
-        description = "福福的";
+        description = "fufud";
         group = "fufud";
         # alway rember to change
         initialHashedPassword = "$y$j9T$TbPknJF9F.7RE1sww8obj/$3.hMSrDCFms5HsGJGsbr15Zde8GoB71uPRfBvlwLXa2";
@@ -43,7 +43,7 @@
 
       workd = {
         isNormalUser = true;
-        description = "lucky work";
+        description = "workd";
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
       };
