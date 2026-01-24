@@ -271,7 +271,7 @@
   "matugenTemplateDgop": true,
   "matugenTemplateKcolorscheme": true,
   "matugenTemplateVscode": true,
-  "matugenTemplateEmacs": true,
+  "matugenTemplateEmacs": false,
   "showDock": false,
   "dockAutoHide": false,
   "dockSmartAutoHide": false,

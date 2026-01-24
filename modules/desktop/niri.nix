@@ -8,6 +8,14 @@
 
 {
   config = lib.mkIf (config.desktop.environment == "niri") {
+    environment.systemPackages = with pkgs; [
+      gnome-screenshot
+      swww
+      xwayland-satellite
+      tuigreet
+      inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
+      # inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell
+    ];
 
     programs.niri.enable = true;
 
@@ -23,7 +31,7 @@
               --user-menu \
               --greeting "turmoil accompanies every great change" \
               --theme "border=magenta;text=magenta;prompt=magenta;time=magenta;action=magenta;button=magenta;container=black;input=white" \
-              --cmd niri-session \
+              --cmd "niri --session" \
               --remember \
               --remember-session
           '';
@@ -40,15 +48,5 @@
       alsa.support32Bit = true;
       pulse.enable = true;
     };
-
-    #packages
-    environment.systemPackages = with pkgs; [
-      gnome-screenshot
-      niri
-      swww
-      xwayland-satellite
-      tuigreet
-      inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
-    ];
   };
 }

@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  lib,
   ...
 }:
 {
@@ -30,12 +31,9 @@
   programs.dank-material-shell = {
     enable = true;
 
-    systemd = {
-      enable = true; # Systemd service for auto-start
-      restartIfChanged = true; # Auto-restart dms.service when dankMaterialShell changes
-    };
+    systemd.enable = false;
 
-    settings = builtins.fromJSON (builtins.readFile ./dms-theme.json);
+    # settings = builtins.fromJSON (builtins.readFile ./dms-theme.json);
 
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableVPN = true; # VPN management widget
@@ -44,4 +42,34 @@
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
   };
+
+  home.packages = [
+    inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell
+    pkgs.qt6.qtwayland
+  ];
+
+  home.activation.initDmsSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "$HOME/.config/DankMaterialShell"
+    if [ ! -f "$HOME/.config/DankMaterialShell/settings.json" ]; then
+      cp "${pkgs.writeText "dms-default-settings.json" (builtins.readFile ./dms-theme.json)}" "$HOME/.config/DankMaterialShell/settings.json"
+      chmod +w "$HOME/.config/DankMaterialShell/settings.json"
+    fi
+  '';
 }
+
+# systemd.user.services.dms = {
+#  Unit = {
+#  Description = "DankMaterialShell";
+#    PartOf = [ "graphical-session.target" ];
+#    After = [ "graphical-session.target" ];
+#  };
+
+#  Service = {
+#    ExecStart = "${lib.getExe inputs.dms.packages.${pkgs.system}.dms-shell} run --session";
+#    Restart = "on-failure";
+#    Environment = "PATH=${
+#      lib.makeBinPath [ inputs.dms.packages.${pkgs.system}.quickshell ]
+#    }:/run/current-system/sw/bin:${config.home.profileDirectory}/bin";
+#  };
+#  Install.WantedBy = [ "graphical-session.target" ];
+# };
