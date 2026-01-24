@@ -4,7 +4,7 @@
   environment.systemPackages = with pkgs; [
     discord-ptb
     chromium
-    # firefox
+    floorp-bin-unwrapped
     vscode-fhs
     code-cursor-fhs
     spotifyd
@@ -16,7 +16,6 @@
     cloudflared
     xdg-desktop-portal-gtk
     gimp
-    vivaldi
     antigravity
     wl-clipboard
   ];
