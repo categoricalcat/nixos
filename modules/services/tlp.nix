@@ -8,10 +8,10 @@ _: {
       CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
       CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
 
-      CPU_MIN_PERF_ON_AC = 50;
+      CPU_MIN_PERF_ON_AC = 1;
       CPU_MAX_PERF_ON_AC = 100;
       CPU_MIN_PERF_ON_BAT = 0;
-      CPU_MAX_PERF_ON_BAT = 33;
+      CPU_MAX_PERF_ON_BAT = 40;
 
       CPU_BOOST_ON_AC = 1;
       CPU_BOOST_ON_BAT = 0;

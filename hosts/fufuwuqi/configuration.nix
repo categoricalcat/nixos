@@ -62,6 +62,8 @@ in
 
   services.nix-access-tokens.enable = false;
 
+  environment.defaultPackages = lib.mkForce [ ];
+
   nixpkgs.config = {
     allowUnfree = true;
     cudaSupport = false;

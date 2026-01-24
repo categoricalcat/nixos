@@ -45,6 +45,8 @@ in
 
   security.polkit.enable = true;
 
+  environment.defaultPackages = lib.mkForce [ ];
+
   nixpkgs.config = {
     allowUnfree = true;
     cudaSupport = false;
@@ -84,7 +86,6 @@ in
     settings = {
       trusted-users = [
         "root"
-        config.users.users.fufud.name
       ];
 
       builders-use-substitutes = true;

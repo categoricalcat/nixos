@@ -188,4 +188,15 @@
   };
 
   services.fwupd.enable = true;
+
+  environment.systemPackages = with pkgs; [
+    # Container tools
+    buildah
+    dive
+    podman-compose
+    podman-tui
+    skopeo
+    # Security tools
+    google-authenticator
+  ];
 }

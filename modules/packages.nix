@@ -3,7 +3,6 @@
 { pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
-    emacs
     ((emacsPackagesFor emacs-pgtk).emacsWithPackages (epkgs: [ epkgs.vterm ]))
 
     gcc
@@ -35,30 +34,13 @@
     statix
     tree
 
-    # Container tools (Podman)
-    buildah
-    dive
-    podman-compose
-    podman-tui
-    skopeo
-
-    # Security tools
-    google-authenticator
-
     # Shell and related tools
     fzf
     starship
     zoxide
-    zsh
-    zsh-autosuggestions
-    zsh-history-substring-search
-    zsh-syntax-highlighting
 
     bat
     brotli
-    gzip
-    ncompress
-    cockpit
     ethtool
     iftop
     iperf3

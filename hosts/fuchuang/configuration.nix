@@ -3,6 +3,7 @@
 {
   pkgs,
   inputs,
+  lib,
   ...
 }:
 
@@ -24,6 +25,8 @@ in
   system.stateVersion = "26.05";
   wsl.defaultUser = "fufud";
   wsl.enable = true;
+
+  environment.defaultPackages = lib.mkForce [ ];
 
   networking = {
     hostName = "fuchuang";
