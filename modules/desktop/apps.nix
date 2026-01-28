@@ -14,7 +14,6 @@
     kitty
     ghostty
     cloudflared
-    xdg-desktop-portal-gtk
     gimp
     antigravity
     wl-clipboard

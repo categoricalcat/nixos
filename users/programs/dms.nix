@@ -31,7 +31,7 @@
   programs.dank-material-shell = {
     enable = true;
 
-    systemd.enable = false;
+    systemd.enable = true;
 
     # settings = builtins.fromJSON (builtins.readFile ./dms-theme.json);
 
@@ -58,18 +58,29 @@
 }
 
 # systemd.user.services.dms = {
-#  Unit = {
-#  Description = "DankMaterialShell";
-#    PartOf = [ "graphical-session.target" ];
-#    After = [ "graphical-session.target" ];
-#  };
-
-#  Service = {
-#    ExecStart = "${lib.getExe inputs.dms.packages.${pkgs.system}.dms-shell} run --session";
-#    Restart = "on-failure";
-#    Environment = "PATH=${
-#      lib.makeBinPath [ inputs.dms.packages.${pkgs.system}.quickshell ]
-#    }:/run/current-system/sw/bin:${config.home.profileDirectory}/bin";
-#  };
-#  Install.WantedBy = [ "graphical-session.target" ];
+#   Unit = {
+#     After = [ "graphical-session.target" ];
+#     PartOf = [ "graphical-session.target" ];
+#   };
+#
+#   Service = {
+#     ExecStart = "${
+#       lib.getExe inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell
+#     } run --session";
+#     Restart = "on-failure";
+#     RestartSec = 5;
+#     Environment = lib.mkForce (
+#       lib.concatStringsSep " " [
+#         "PATH=${
+#           lib.makeBinPath [ inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell ]
+#         }:/run/current-system/sw/bin:${config.home.profileDirectory}/bin"
+#         "QT_QPA_PLATFORM=wayland"
+#         "QT_WAYLAND_DISABLE_WINDOWDECORATION=1"
+#       ]
+#     );
+#   };
+#
+#   Install = {
+#     WantedBy = [ "graphical-session.target" ];
+#   };
 # };

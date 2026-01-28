@@ -55,9 +55,9 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 
 | Host | Role | Hardware | Network | Key Services |
 | --- | --- | --- | --- | --- |
-| `fufuwuqi` | Headless server | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS/Samba, Ollama, Podman, Mariadb, Joplin, GitHub Runner, Tunnels |
-| `fuyidong` | Laptop/desktop | Intel CPU/GPU, Thunderbolt, Fingerprint | WiFi, WireGuard client | Niri desktop, distributed build client, TLP, ZRAM Swap |
-| `fuchuang` | WSL instance | Virtual | WSL networking | Development environment, `nix-ld`, minimal services |
+| `fufuwuqi` | Headless server (Stable 25.11) | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS/Samba, Ollama, Podman, Mariadb, Joplin, GitHub Runner, Tunnels |
+| `fuyidong` | Laptop/desktop (Unstable 26.05) | Intel CPU/GPU, Thunderbolt, Fingerprint | WiFi, WireGuard client | Niri desktop, distributed build client, TLP, ZRAM Swap |
+| `fuchuang` | WSL instance (Unstable 26.05) | Virtual | WSL networking | Development environment, `nix-ld`, minimal services |
 
 ### Networking Architecture
 

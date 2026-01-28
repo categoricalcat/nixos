@@ -31,7 +31,7 @@
               --user-menu \
               --greeting "turmoil accompanies every great change" \
               --theme "border=magenta;text=magenta;prompt=magenta;time=magenta;action=magenta;button=magenta;container=black;input=white" \
-              --cmd "niri --session" \
+              --cmd "niri-session" \
               --remember \
               --remember-session
           '';
@@ -47,6 +47,19 @@
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+    };
+
+    xdg.portal = {
+      enable = true;
+      extraPortals = [
+        pkgs.xdg-desktop-portal-gtk
+        pkgs.xdg-desktop-portal-gnome
+      ];
+      config = {
+        common = {
+          default = [ "gtk" ];
+        };
+      };
     };
   };
 }
