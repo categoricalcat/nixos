@@ -3,7 +3,7 @@
 { pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
-    ((emacsPackagesFor emacs-pgtk).emacsWithPackages (epkgs: [ epkgs.vterm ]))
+    emacs-gtk
 
     gcc
     gnumake

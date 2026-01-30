@@ -16,7 +16,7 @@
       "kernel.panic_on_oops" = 1;
     };
 
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = pkgs.linuxPackages_hardened;
 
     initrd.availableKernelModules = lib.mkAfter [
       "sd_mod"
