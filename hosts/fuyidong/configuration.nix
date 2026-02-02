@@ -12,21 +12,20 @@ let
 in
 {
   imports = [
-    ../../modules/services/nfs/client.nix
     ./boot.nix
     ./hardware.nix
     ./power.nix
     ./gaming.nix
+    ./networking.nix
+    ./addresses.nix
     ../../secrets/sops.nix
+    ../../users/users.nix
+    ../../modules/services/nfs/client.nix
     ../../modules/packages.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    ../../modules/services/tlp.nix
-    ../../users/users.nix
-    # ../../modules/services/synergy.nix
-    ./networking.nix
-    ./addresses.nix
+    ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/openssh.nix
   ];
 
@@ -126,9 +125,10 @@ in
       enable = true;
       enable32Bit = true;
       extraPackages = with pkgs; [
+        intel-media-driver
+        intel-compute-runtime
         vpl-gpu-rt
         intel-media-driver
-        intel-gpu-tools
       ];
     };
   };
@@ -136,7 +136,7 @@ in
   zramSwap = {
     enable = true;
     algorithm = "zstd";
-    memoryPercent = 75;
+    memoryPercent = 100;
     priority = 100;
   };
 

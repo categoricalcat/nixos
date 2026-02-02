@@ -13,18 +13,17 @@ in
 {
   imports = [
     ./hardware.nix
-    ../../modules/networking/wireguard-peers.nix
     ./addresses.nix
     ./boot.nix
-    ../../modules/locale.nix
-    ../../modules/fonts.nix
-    ../../users/users.nix
-    ../../modules/packages.nix
     ./networking.nix
     ./services.nix
     ./joplin.nix
-    ./mariadb.nix
-    # ../../modules/desktop.nix
+    ../../users/users.nix
+    ../../modules/networking/wireguard-peers.nix
+    ../../modules/locale.nix
+    ../../modules/fonts.nix
+    ../../modules/packages.nix
+    ../../modules/services/mariadb.nix
     ../../modules/server-settings.nix
     ../../modules/server-mode.nix
     ../../modules/nix-access-tokens.nix
