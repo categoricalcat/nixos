@@ -2,6 +2,7 @@
   config,
   lib,
   inputs,
+  pkgs,
   ...
 }:
 
@@ -11,6 +12,9 @@
   ];
 
   config = lib.mkIf (config.desktop.environment == "niri") {
+    environment.systemPackages = with pkgs; [
+      polkit_gnome
+    ];
     programs.dank-material-shell.greeter = {
       enable = false;
       compositor.name = "niri";

@@ -33,7 +33,11 @@
 
     systemd.enable = true;
 
-    # settings = builtins.fromJSON (builtins.readFile ./dms-theme.json);
+    settings = builtins.fromJSON (builtins.readFile ./dms-theme.json) // {
+      currentThemeName = lib.mkForce "dynamic";
+      currentThemeCategory = lib.mkForce "dynamic";
+      customThemeFile = lib.mkForce "";
+    };
 
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableVPN = true; # VPN management widget
@@ -48,13 +52,13 @@
     pkgs.qt6.qtwayland
   ];
 
-  home.activation.initDmsSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p "$HOME/.config/DankMaterialShell"
-    if [ ! -f "$HOME/.config/DankMaterialShell/settings.json" ]; then
-      cp "${pkgs.writeText "dms-default-settings.json" (builtins.readFile ./dms-theme.json)}" "$HOME/.config/DankMaterialShell/settings.json"
-      chmod +w "$HOME/.config/DankMaterialShell/settings.json"
-    fi
-  '';
+  #home.activation.initDmsSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  #  mkdir -p "$HOME/.config/DankMaterialShell"
+  #  if [ ! -f "$HOME/.config/DankMaterialShell/settings.json" ]; then
+  #    cp "${pkgs.writeText "dms-default-settings.json" (builtins.readFile ./dms-theme.json)}" "$HOME/.config/DankMaterialShell/settings.json"
+  #    chmod +w "$HOME/.config/DankMaterialShell/settings.json"
+  #  fi
+  #'';
 }
 
 # systemd.user.services.dms = {
