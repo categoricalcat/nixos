@@ -18,8 +18,13 @@
     ../../modules/services/localtonet.nix
     ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
-    ../../modules/services/terraria.nix
+    # ../../modules/services/terraria.nix
   ];
+
+  services.logrotate = {
+    enable = true;
+    checkConfig = false;
+  };
 
   programs.nix-ld.enable = true;
 
