@@ -4,7 +4,7 @@
   environment.systemPackages = with pkgs; [
     discord-ptb
     chromium
-    floorp-bin-unwrapped
+    floorp-bin
     vscode-fhs
     code-cursor-fhs
     spotifyd
