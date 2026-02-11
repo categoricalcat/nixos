@@ -64,7 +64,7 @@
             enabled = true;
           }
           {
-            domain = "75.ip.sa.ply.gg";
+            domain = "wg.localto.net";
             answer = "192.168.0.42";
             enabled = true;
           }
