@@ -19,7 +19,7 @@ let
 
   endpoints = {
     lan = "192.168.0.42:51820";
-    remote = "75.ip.sa.ply.gg:51820";
+    remote = "wg.localto.net:51820";
   };
 in
 {
