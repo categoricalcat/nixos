@@ -25,7 +25,8 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    ../../modules/services/power-profiles-daemon.nix
+    # ../../modules/services/power-profiles-daemon.nix
+    ../../modules/services/tlp.nix
     ../../modules/services/openssh.nix
   ];
 
