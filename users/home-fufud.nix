@@ -65,6 +65,11 @@
     with haskellPackages;
     [
       nodejs_latest
+      nodePackages.pnpm
+      nodePackages.eslint
+      nodePackages.typescript
+      nodePackages.npm-check-updates
+
       sshfs
       ghc
       cabal-install

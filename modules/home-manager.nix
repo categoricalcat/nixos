@@ -7,7 +7,7 @@
   useGlobalPkgs = true;
   useUserPackages = true;
   extraSpecialArgs = {
-    inherit desktopEnvironment inputs;
+    inherit desktopEnvironment inputs stateVersion;
   };
   users.fufud = {
     imports = [ ../users/home-fufud.nix ];

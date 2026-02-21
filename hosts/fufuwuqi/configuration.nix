@@ -91,11 +91,15 @@ in
   };
 
   home-manager =
-    mkHome {
-      inherit inputs;
-      stateVersion = "25.11";
-    }
-    // {
-      users.workd = import ../../users/home-workd.nix;
-    };
+    lib.recursiveUpdate
+      (mkHome {
+        inherit inputs;
+        inherit (config.system) stateVersion;
+      })
+      {
+        users.workd = {
+          imports = [ ../../users/home-workd.nix ];
+          home.stateVersion = config.system.stateVersion;
+        };
+      };
 }
