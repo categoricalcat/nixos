@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-stable-small.url = "github:NixOS/nixpkgs/nixos-25.11-small";
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     nixos-wsl = {
@@ -28,7 +28,7 @@
 
     home-manager-stable = {
       url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
+      inputs.nixpkgs.follows = "nixpkgs-stable-small";
     };
 
     stylix = {
@@ -61,7 +61,7 @@
     inputs@{
       flake-parts,
       nixpkgs,
-      nixpkgs-stable,
+      nixpkgs-stable-small,
       home-manager,
       home-manager-stable,
       sops-nix,
