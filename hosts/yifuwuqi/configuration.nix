@@ -1,4 +1,4 @@
-# Main NixOS Configuration (host: fufuwuqi)
+# Main NixOS Configuration (host: yifuwuqi)
 
 {
   inputs,

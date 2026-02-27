@@ -29,7 +29,7 @@ in
   environment.defaultPackages = lib.mkForce [ ];
 
   networking = {
-    hostName = "fuchuang";
+    hostName = "yichuang";
   };
 
   programs.nix-ld.enable = true;

@@ -1,5 +1,5 @@
 {
-  description = "福福的flake~";
+  description = "伊的flake~";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -97,26 +97,26 @@
               ];
             in
             {
-              fuchuang = nixpkgs.lib.nixosSystem {
+              yichuang = nixpkgs.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModules ++ [
                   nixos-wsl.nixosModules.default
-                  ./hosts/fuchuang/configuration.nix
+                  ./hosts/yichuang/configuration.nix
                 ];
               };
 
-              fufuwuqi = nixpkgs-stable.lib.nixosSystem {
+              yifuwuqi = nixpkgs-stable-small.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModulesStable ++ [
-                  ./hosts/fufuwuqi/configuration.nix
+                  ./hosts/yifuwuqi/configuration.nix
                 ];
               };
 
-              fuyidong = nixpkgs.lib.nixosSystem {
+              yixiaoqing = nixpkgs.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModules ++ [
                   stylix.nixosModules.stylix
-                  ./hosts/fuyidong/configuration.nix
+                  ./hosts/yixiaoqing/configuration.nix
                 ];
               };
             };

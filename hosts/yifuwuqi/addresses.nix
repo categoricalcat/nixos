@@ -1,7 +1,7 @@
 { wireguardPeers, ... }:
 {
   _module.args.addresses = rec {
-    hostName = "fufuwuqi";
+    hostName = "yifuwuqi";
 
     dns = {
       systemNameservers = [

@@ -24,13 +24,13 @@ in
   boot.supportedFilesystems = [ "cifs" ];
 
   fileSystems."/mnt/smb/share" = {
-    device = "//fufuwuqi.vpn/share";
+    device = "//yifuwuqi.vpn/share";
     fsType = "cifs";
     options = mountCommonOptions;
   };
 
   fileSystems."/mnt/smb/the.files" = {
-    device = "//fufuwuqi.vpn/the.files";
+    device = "//yifuwuqi.vpn/the.files";
     fsType = "cifs";
     options = mountCommonOptions;
   };
