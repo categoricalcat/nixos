@@ -17,5 +17,6 @@
     gimp
     antigravity
     wl-clipboard
+    prismlauncher
   ];
 }

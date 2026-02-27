@@ -64,6 +64,7 @@
     with pkgs;
     with haskellPackages;
     [
+      bun
       nodejs_latest
       nodePackages.pnpm
       nodePackages.eslint
