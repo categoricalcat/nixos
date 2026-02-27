@@ -22,7 +22,7 @@
 
       displayManager = {
         gdm = {
-          enable = true;
+          enable = config.desktop.greeter == "gdm";
           wayland = true;
         };
       };

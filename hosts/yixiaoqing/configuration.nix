@@ -8,6 +8,7 @@
 
 let
   desktopEnvironment = "niri";
+  greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -38,6 +39,7 @@ in
   environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
+  desktop.greeter = greeter;
 
   system.stateVersion = "26.05";
 
