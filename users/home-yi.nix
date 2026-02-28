@@ -9,8 +9,8 @@
     lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
     ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
-  home.username = "fufud";
-  home.homeDirectory = "/home/fufud";
+  home.username = "yi";
+  home.homeDirectory = "/home/yi";
 
   programs = {
     home-manager = {

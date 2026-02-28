@@ -23,7 +23,7 @@ in
   ];
 
   system.stateVersion = "26.05";
-  wsl.defaultUser = "fufud";
+  wsl.defaultUser = "yi";
   wsl.enable = true;
 
   environment.defaultPackages = lib.mkForce [ ];

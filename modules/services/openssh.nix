@@ -32,7 +32,7 @@
 
     settings = {
       AllowUsers = [
-        "fufud"
+        "yi"
         "workd"
       ];
       PermitRootLogin = "no";

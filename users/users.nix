@@ -10,7 +10,7 @@
     defaultUserShell = pkgs.zsh;
 
     groups = {
-      fufud = { };
+      yi = { };
       workd = { };
     };
 
@@ -25,11 +25,10 @@
     };
 
     users = {
-      fufud = {
+      yi = {
         isNormalUser = true;
-        description = "fufud";
-        group = "fufud";
-        # alway rember to change
+        description = "yi";
+        group = "yi";
         initialHashedPassword = "$y$j9T$TbPknJF9F.7RE1sww8obj/$3.hMSrDCFms5HsGJGsbr15Zde8GoB71uPRfBvlwLXa2";
         extraGroups = [
           "wheel"
@@ -38,7 +37,6 @@
           "dialout"
           "networkmanager"
         ];
-
       };
 
       workd = {
@@ -50,10 +48,10 @@
     };
   };
 
-  sops.secrets."passwords/fufud" = {
+  sops.secrets."passwords/yi" = {
     mode = "0600";
-    owner = "fufud";
-    group = "fufud";
+    owner = "yi";
+    group = "yi";
   };
   sops.secrets."passwords/workd" = {
     mode = "0600";

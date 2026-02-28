@@ -9,8 +9,8 @@
   extraSpecialArgs = {
     inherit desktopEnvironment inputs stateVersion;
   };
-  users.fufud = {
-    imports = [ ../users/home-fufud.nix ];
+  users.yi = {
+    imports = [ ../users/home-yi.nix ];
     home.stateVersion = stateVersion;
   };
   backupFileExtension = "bkp";

@@ -72,13 +72,13 @@ in
             "big-parallel"
             "kvm"
           ];
-          sshUser = config.users.users.fufud.name;
-          sshKey = "/home/fufud/.ssh/id_ed25519";
+          sshUser = config.users.users.yi.name;
+          sshKey = "/home/yi/.ssh/id_ed25519";
         };
       in
       [
-        (mkBuildMachine "fufud.vpn")
-        # (mkBuildMachine "ssh.fufu.land")
+        (mkBuildMachine "yi.vpn")
+        # (mkBuildMachine "yi.vpn")
       ];
 
     extraOptions = ''

@@ -35,7 +35,6 @@ in
   nix.settings = {
     trusted-users = [
       "root"
-      "fufud"
     ];
 
     experimental-features = [
