@@ -16,7 +16,7 @@
     ../../modules/services/cloudflared.nix
     # ../../modules/services/playit-agent.nix
     ../../modules/services/localtonet.nix
-    ../../modules/services/github-runner.nix
+    # ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
   ];
