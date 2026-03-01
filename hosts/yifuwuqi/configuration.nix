@@ -1,4 +1,4 @@
-# Main NixOS Configuration (host: fufuwuqi)
+# Main NixOS Configuration (host: yifuwuqi)
 
 {
   inputs,
@@ -35,7 +35,6 @@ in
   nix.settings = {
     trusted-users = [
       "root"
-      "fufud"
     ];
 
     experimental-features = [

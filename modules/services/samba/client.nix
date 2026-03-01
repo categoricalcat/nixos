@@ -1,12 +1,12 @@
 { config, ... }:
 
 let
-  credentialsFile = "/etc/samba/credentials/fufud";
+  credentialsFile = "/etc/samba/credentials/yi";
   mountCommonOptions = [
     "credentials=${credentialsFile}"
     "vers=3.11"
-    "uid=${toString config.users.users.fufud.uid}"
-    "gid=${toString config.users.users.fufud.uid}"
+    "uid=${toString config.users.users.yi.uid}"
+    "gid=${toString config.users.users.yi.uid}"
     "file_mode=0664"
     "dir_mode=0775"
     "x-systemd.automount"
@@ -24,13 +24,13 @@ in
   boot.supportedFilesystems = [ "cifs" ];
 
   fileSystems."/mnt/smb/share" = {
-    device = "//fufuwuqi.vpn/share";
+    device = "//yifuwuqi.vpn/share";
     fsType = "cifs";
     options = mountCommonOptions;
   };
 
   fileSystems."/mnt/smb/the.files" = {
-    device = "//fufuwuqi.vpn/the.files";
+    device = "//yifuwuqi.vpn/the.files";
     fsType = "cifs";
     options = mountCommonOptions;
   };

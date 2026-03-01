@@ -56,26 +56,6 @@
     };
   };
 
-  # Let's Encrypt via ACME, using Cloudflare DNS-01 (optional)
-  # security.acme = {
-  #   acceptTerms = true;
-  #   defaults = {
-  #     email = "catufuzgu@gmail.com";
-  #     dnsProvider = "cloudflare";
-  #     credentialsFile = config.sops.secrets."tokens/cloudflare-acme".path;
-  #     dnsPropagationCheck = true;
-  #     listenHTTP = null; # not needed for DNS-01; set to ":80" only if using HTTP-01
-  #   };
-  #   certs = {
-  #     "fufu.land" = {
-  #       domain = "fufu.land";
-  #       # extraDomainNames = [ "cockpit.fufu.land" ];
-  #     };
-  #     # Alternatively, separate certs per host:
-  #     # "cockpit.fufu.land" = { domain = "cockpit.fufu.land"; };
-  #   };
-  # };
-
   # Podman configuration (Docker replacement)
   virtualisation.podman = {
     enable = true;
@@ -134,7 +114,7 @@
     };
   };
 
-  users.users.fufud.extraGroups = [ "podman" ];
+  users.users.yi.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
 
   services.nginx = {
@@ -146,49 +126,35 @@
 
     virtualHosts = {
       # Local test vhost
-      "fufuwuqi.local" = {
-        serverName = "fufuwuqi.local";
+      "yifuwuqi.local" = {
+        serverName = "yifuwuqi.local";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "fufuwuqi.local ok";
+            return 200 "yifuwuqi.local ok";
           '';
         };
       };
 
-      "fufuwuqi.vpn" = {
-        serverName = "fufuwuqi.vpn";
+      "yifuwuqi.vpn" = {
+        serverName = "yifuwuqi.vpn";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "fufuwuqi.vpn ok";
+            return 200 "yifuwuqi.vpn ok";
           '';
         };
       };
 
       "fufu.land" = {
         forceSSL = false;
-        # useACMEHost = "fufu.land";
         extraConfig = ''
           add_header Content-Type text/markdown;
           return 200 "fufu.land is ok";
         '';
       };
-
-      # "cockpit.fufu.land" = {
-      #   forceSSL = true;
-      #   useACMEHost = "fufu.land";
-      #   locations."/" = {
-      #     proxyPass = "http://127.0.0.1:9090";
-      #     extraConfig = ''
-      #       proxy_http_version 1.1;
-      #       proxy_set_header Upgrade $http_upgrade;
-      #       proxy_set_header Connection $connection_upgrade;
-      #     '';
-      #   };
-      # };
     };
   };
 

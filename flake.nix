@@ -1,9 +1,9 @@
 {
-  description = "福福的flake~";
+  description = "伊的flake~";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-stable-small.url = "github:NixOS/nixpkgs/nixos-25.11-small";
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     nixos-wsl = {
@@ -28,7 +28,7 @@
 
     home-manager-stable = {
       url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
+      inputs.nixpkgs.follows = "nixpkgs-stable-small";
     };
 
     stylix = {
@@ -61,7 +61,7 @@
     inputs@{
       flake-parts,
       nixpkgs,
-      nixpkgs-stable,
+      nixpkgs-stable-small,
       home-manager,
       home-manager-stable,
       sops-nix,
@@ -97,26 +97,26 @@
               ];
             in
             {
-              fuchuang = nixpkgs.lib.nixosSystem {
+              yichuang = nixpkgs.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModules ++ [
                   nixos-wsl.nixosModules.default
-                  ./hosts/fuchuang/configuration.nix
+                  ./hosts/yichuang/configuration.nix
                 ];
               };
 
-              fufuwuqi = nixpkgs-stable.lib.nixosSystem {
+              yifuwuqi = nixpkgs-stable-small.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModulesStable ++ [
-                  ./hosts/fufuwuqi/configuration.nix
+                  ./hosts/yifuwuqi/configuration.nix
                 ];
               };
 
-              fuyidong = nixpkgs.lib.nixosSystem {
+              yixiaoqing = nixpkgs.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
                 modules = baseModules ++ [
                   stylix.nixosModules.stylix
-                  ./hosts/fuyidong/configuration.nix
+                  ./hosts/yixiaoqing/configuration.nix
                 ];
               };
             };

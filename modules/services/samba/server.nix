@@ -20,7 +20,7 @@ in
       share = {
         path = "/srv/nfs/share";
         "read only" = "no";
-        "valid users" = "fufud root";
+        "valid users" = "yi root";
         "create mask" = "0664";
         "directory mask" = "0775";
       };
@@ -28,7 +28,7 @@ in
       "the.files" = {
         path = "/srv/nfs/the.files";
         "read only" = "no";
-        "valid users" = "fufud root";
+        "valid users" = "yi root";
         "create mask" = "0664";
         "directory mask" = "0775";
       };
@@ -40,9 +40,9 @@ in
     openFirewall = false; # We open ports on VPN interface only below
   };
 
-  warnings =
-    lib.optional (!config.sops.secrets ? "samba/credentials/fufud")
-      "Run `sudo smbpasswd -a fufud` on the server to activate Samba passwords for existing Unix users.";
+  warnings = lib.optional (
+    !config.sops.secrets ? "samba/credentials/yi"
+  ) "Run `sudo smbpasswd -a yi` on the server to activate Samba passwords for existing Unix users.";
 
   networking.firewall.interfaces.${vpnInterface} = {
     allowedTCPPorts = lib.mkAfter [
@@ -57,8 +57,8 @@ in
     ];
   };
 
-  sops.secrets."samba/credentials/fufud" = {
+  sops.secrets."samba/credentials/yi" = {
     mode = "0600";
-    path = "/etc/samba/credentials/fufud";
+    path = "/etc/samba/credentials/yi";
   };
 }

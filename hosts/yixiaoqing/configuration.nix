@@ -8,6 +8,7 @@
 
 let
   desktopEnvironment = "niri";
+  greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -38,6 +39,7 @@ in
   environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
+  desktop.greeter = greeter;
 
   system.stateVersion = "26.05";
 
@@ -70,13 +72,13 @@ in
             "big-parallel"
             "kvm"
           ];
-          sshUser = config.users.users.fufud.name;
-          sshKey = "/home/fufud/.ssh/id_ed25519";
+          sshUser = config.users.users.yi.name;
+          sshKey = "/home/yi/.ssh/id_ed25519";
         };
       in
       [
-        (mkBuildMachine "fufud.vpn")
-        # (mkBuildMachine "ssh.fufu.land")
+        (mkBuildMachine "yi.vpn")
+        # (mkBuildMachine "yi.vpn")
       ];
 
     extraOptions = ''

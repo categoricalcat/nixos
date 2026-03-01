@@ -23,13 +23,13 @@ in
   ];
 
   system.stateVersion = "26.05";
-  wsl.defaultUser = "fufud";
+  wsl.defaultUser = "yi";
   wsl.enable = true;
 
   environment.defaultPackages = lib.mkForce [ ];
 
   networking = {
-    hostName = "fuchuang";
+    hostName = "yichuang";
   };
 
   programs.nix-ld.enable = true;

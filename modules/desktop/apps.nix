@@ -18,5 +18,6 @@
     antigravity
     wl-clipboard
     prismlauncher
+    tidal-hifi
   ];
 }

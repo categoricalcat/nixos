@@ -7,10 +7,10 @@
     allowed-origins = [
       "http://localhost:9090"
       "https://localhost:9090"
-      "http://fufuwuqi.local:9090"
-      "https://fufuwuqi.local:9090"
-      "http://fufuwuqi.vpn:9090"
-      "https://fufuwuqi.vpn:9090"
+      "http://yifuwuqi.local:9090"
+      "https://yifuwuqi.local:9090"
+      "http://yifuwuqi.vpn:9090"
+      "https://yifuwuqi.vpn:9090"
     ];
     settings = {
       WebService = {

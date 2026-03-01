@@ -1,11 +1,11 @@
-## 福福的 NixOS 配置 ✨
+## 伊的 NixOS 配置 ✨
 
 [![lucky flake ci](https://github.com/categoricalcat/nixos/actions/workflows/flake-ci.yml/badge.svg?branch=main)](https://github.com/categoricalcat/nixos/actions/workflows/flake-ci.yml)
 
 ### Features
 
 - **Core**: Flake-based NixOS with `home-manager` integration, `nixowos` modules, `dgop` and `antigravity`
-- **Hosts**: Three specialized machines - `fufuwuqi` (headless server), `fuyidong` (laptop), `fuchuang` (WSL)
+- **Hosts**: Three specialized machines - `yifuwuqi` (headless server), `yixiaoqing` (laptop), `yichuang` (WSL)
 - **Networking**: systemd-networkd, WireGuard VPN mesh, network bonding (bond0), Avahi/mDNS discovery
 - **Storage**: NFS server/client with automounting, Samba (SMB) shares, bind mounts
 - **Desktop**: GNOME/Hyprland/Niri/Cosmic/KDE support with Stylix theming (Catppuccin Mocha) and `dankMaterialShell`
@@ -55,16 +55,16 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 
 | Host | Role | Hardware | Network | Key Services |
 | --- | --- | --- | --- | --- |
-| `fufuwuqi` | Headless server (Stable 25.11) | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS/Samba, Ollama, Podman, Mariadb, Joplin, GitHub Runner, Tunnels |
-| `fuyidong` | Laptop/desktop (Unstable 26.05) | Intel CPU/GPU, Thunderbolt, Fingerprint | WiFi, WireGuard client | Niri desktop, distributed build client, TLP, ZRAM Swap |
-| `fuchuang` | WSL instance (Unstable 26.05) | Virtual | WSL networking | Development environment, `nix-ld`, minimal services |
+| `yifuwuqi` | Headless server (Stable 25.11) | AMD CPU, ROCm GPU (gfx1035), NVMe | Bonded NICs (bond0), WireGuard hub | NFS/Samba, Ollama, Podman, Mariadb, Joplin, GitHub Runner, Tunnels |
+| `yixiaoqing` | Laptop/desktop (Unstable 26.05) | Intel CPU/GPU, Thunderbolt, Fingerprint | WiFi, WireGuard client | Niri desktop, distributed build client, TLP, ZRAM Swap |
+| `yichuang` | WSL instance (Unstable 26.05) | Virtual | WSL networking | Development environment, `nix-ld`, minimal services |
 
 ### Networking Architecture
 
 - **VPN Mesh**: WireGuard network (10.100.0.0/24) connecting all hosts
-  - `fufuwuqi` (10.100.0.1): VPN hub/gateway with NAT
-  - `fuyidong` (10.100.0.2): Client via persistent keepalive
-  - `fuchuang` (10.100.0.3): WSL client
+  - `yifuwuqi` (10.100.0.1): VPN hub/gateway with NAT
+  - `yixiaoqing` (10.100.0.2): Client via persistent keepalive
+  - `yichuang` (10.100.0.3): WSL client
 - **LAN**: Primary network (192.168.0.0/24) with static IPs
 - **Bonding**: `bond0` interface combining `eno1` + `enp4s0` for redundancy
 - **systemd-networkd**: Declarative network configuration with MTU optimization (1492)
@@ -80,7 +80,7 @@ Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` o
 
 GitHub Actions (`.github/workflows/flake-ci.yml`):
 
-- **Self-hosted Runner**: Configured on `fufuwuqi` for faster builds
+- **Self-hosted Runner**: Configured on `yifuwuqi` for faster builds
 - **Checks**: Format validation (`nix fmt -- --ci`), flake checks
 - **Matrix Builds**: Parallel evaluation of all host configurations
 - **Concurrency**: Smart cancellation of outdated workflow runs

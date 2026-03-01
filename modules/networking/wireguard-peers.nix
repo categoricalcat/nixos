@@ -3,10 +3,10 @@
 
 let
   peers = {
-    fuyidong = {
+    yixiaoqing = {
       publicKey = "lGriY6UJK7M4O9oOq/JBHM6/HXTUx5pX/VH97Cs2njo=";
       ip = "10.100.0.2";
-      description = "fuyidong mobile device";
+      description = "yixiaoqing mobile device";
       allowedSubnets = [ "10.100.0.0/24" ];
     };
 

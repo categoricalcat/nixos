@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 
 {
   options = {
@@ -13,6 +18,23 @@
       default = "gnome";
       description = "Desktop environment to use";
     };
+
+    desktop.greeter = lib.mkOption {
+      type = lib.types.enum [
+        "tuigreet"
+        "dms"
+        "gdm"
+        "none"
+      ];
+      default =
+        if config.desktop.environment == "gnome" then
+          "gdm"
+        else if config.desktop.environment == "niri" then
+          "tuigreet"
+        else
+          "none";
+      description = "Greeter to use";
+    };
   };
 
   imports = [
@@ -24,6 +46,7 @@
     ./desktop/stylix.nix
     ./desktop/dms.nix
     ./desktop/apps.nix
+    ./desktop/greetd.nix
   ];
 
   config = {

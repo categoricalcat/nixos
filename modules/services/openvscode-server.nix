@@ -5,8 +5,8 @@
     enable = true;
     inherit (addresses.network.vpn.ipv4) host;
     port = 4444;
-    user = "fufud";
-    group = "fufud";
+    user = "yi";
+    group = "yi";
     telemetryLevel = "off";
     withoutConnectionToken = true;
   };

@@ -5,7 +5,7 @@ _:
     enable = true;
     settings = {
       global = {
-        username = "fufud";
+        username = "yi";
       };
     };
   };

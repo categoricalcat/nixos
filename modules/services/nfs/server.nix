@@ -18,7 +18,7 @@
   ];
 
   fileSystems."/srv/nfs/the.files" = {
-    device = "/home/fufud/the.files";
+    device = "/home/yi/the.files";
     options = [ "bind" ];
   };
 

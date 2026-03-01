@@ -24,7 +24,7 @@ let
 in
 {
   networking = {
-    hostName = "fuyidong";
+    hostName = "yixiaoqing";
 
     enableIPv6 = true;
     tempAddresses = "disabled";
@@ -52,7 +52,7 @@ in
     };
 
     wg-quick.interfaces = {
-      "fufuwuqi.vpn" = wgCommon // {
+      "yifuwuqi.vpn" = wgCommon // {
         peers = [
           (mkPeer {
             endpoint = endpoints.remote;
@@ -64,7 +64,7 @@ in
 
   systemd.services.NetworkManager-wait-online.enable = false;
 
-  systemd.services."wg-quick-fufuwuqi.vpn" = {
+  systemd.services."wg-quick-yifuwuqi.vpn" = {
     serviceConfig = {
       Type = lib.mkForce "simple";
       Restart = "on-failure";
