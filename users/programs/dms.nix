@@ -43,7 +43,7 @@
     enableVPN = true; # VPN management widget
     enableDynamicTheming = true; # Wallpaper-based theming (matugen)
     enableAudioWavelength = true; # Audio visualizer (cava)
-    enableCalendarEvents = false; # Calendar integration (khal)
+    enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
   };
 

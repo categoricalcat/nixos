@@ -12,16 +12,7 @@
     groups = {
       yi = { };
       workd = { };
-    };
-
-    extraUsers = {
-      tempd = {
-        enable = false;
-        isNormalUser = true;
-        description = "temp";
-        group = "wheel";
-        initialHashedPassword = "$y$j9T$uEVCCoJ6X8FQi9DNxMICY1$8SnMAQ3bUuHnjG2icND.yEx1/RS0hxoXxzLh/VMxGVA";
-      };
+      none = { };
     };
 
     users = {
@@ -29,7 +20,7 @@
         isNormalUser = true;
         description = "yi";
         group = "yi";
-        initialHashedPassword = "$y$j9T$TbPknJF9F.7RE1sww8obj/$3.hMSrDCFms5HsGJGsbr15Zde8GoB71uPRfBvlwLXa2";
+        hashedPasswordFile = config.sops.secrets."passwords/yi".path;
         extraGroups = [
           "wheel"
           "render"
@@ -44,6 +35,16 @@
         description = "workd";
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
+      };
+    };
+
+    extraUsers = {
+      none = {
+        enable = true;
+        isNormalUser = true;
+        description = "none";
+        group = "none";
+        hashedPasswordFile = config.sops.secrets."passwords/yi".path;
       };
     };
   };
