@@ -27,14 +27,6 @@
         };
       };
     };
-
-    kitty = {
-      enable = true;
-      settings = {
-        background_opacity = lib.mkDefault "0.85";
-        dynamic_background_opacity = true;
-      };
-    };
   };
 
   home.activation = {

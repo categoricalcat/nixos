@@ -2,22 +2,23 @@
 
 {
   environment.systemPackages = with pkgs; [
-    discord-ptb
-    chromium
-    floorp-bin
+    floorp-bin # the good
+    google-chrome # the bad
+
     vscode-fhs
     code-cursor-fhs
-    spotifyd
-    zsh
-    bitwarden-desktop
-    git
-    kitty
-    ghostty
-    cloudflared
-    gimp
     antigravity
+
+    zsh
+    git
     wl-clipboard
+
+    bitwarden-desktop
     prismlauncher
+    discord-ptb
+    cloudflared
     tidal-hifi
+    gimp
+    nemo
   ];
 }

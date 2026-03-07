@@ -22,6 +22,8 @@ _:
       "retrans=2"
       "rsize=1048576"
       "wsize=1048576"
+      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
     ];
   };
 
@@ -40,6 +42,8 @@ _:
       "retrans=2"
       "rsize=1048576"
       "wsize=1048576"
+      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
     ];
   };
 }

@@ -34,11 +34,6 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
               ];
-
-              baseModulesStable = [
-                home-manager-stable.nixosModules.home-manager
-                sops-nix.nixosModules.sops
-              ];
             in
             {
               yichuang = nixpkgs.lib.nixosSystem {
@@ -51,7 +46,9 @@
 
               yifuwuqi = nixpkgs-stable-small.lib.nixosSystem {
                 specialArgs = { inherit inputs; };
-                modules = baseModulesStable ++ [
+                modules = [
+                  sops-nix.nixosModules.sops
+                  home-manager-stable.nixosModules.home-manager
                   ./hosts/yifuwuqi/configuration.nix
                 ];
               };

@@ -22,6 +22,7 @@ in
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/services/nfs/client.nix
+    # ../../modules/services/samba/client.nix
     ../../modules/packages.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix

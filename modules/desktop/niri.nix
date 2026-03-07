@@ -25,6 +25,16 @@
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+      extraConfig.pipewire."10-rates" = {
+        "context.properties" = {
+          "default.clock.rate" = 192000;
+          "default.clock.allowed-rates" = [
+            48000
+            96000
+            192000
+          ];
+        };
+      };
     };
 
     xdg.portal = {
