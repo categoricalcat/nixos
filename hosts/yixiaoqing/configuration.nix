@@ -21,8 +21,8 @@ in
     ./addresses.nix
     ../../secrets/sops.nix
     ../../users/users.nix
-    ../../modules/services/nfs/client.nix
-    # ../../modules/services/samba/client.nix
+    # ../../modules/services/nfs/client.nix
+    ../../modules/services/samba/client.nix
     ../../modules/packages.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
@@ -59,6 +59,12 @@ in
   nix = {
     distributedBuilds = true;
 
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 9d";
+    };
+
     buildMachines =
       let
         mkBuildMachine = hostName: {
@@ -91,6 +97,7 @@ in
         "root"
       ];
 
+      auto-optimise-store = true;
       builders-use-substitutes = true;
       experimental-features = [
         "nix-command"

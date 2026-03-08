@@ -13,7 +13,7 @@
         ];
 
         favorite-apps = [
-          "chromium.desktop"
+          "floorp.desktop"
           "org.gnome.Nautilus.desktop"
           "org.gnome.Console.desktop"
         ];
