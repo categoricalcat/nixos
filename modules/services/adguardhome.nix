@@ -78,6 +78,11 @@
             answer = addresses.network.lan.ipv4.host;
             enabled = true;
           }
+          {
+            domain = "${addresses.hostName}.zero";
+            answer = addresses.network.zerotier.ipv4.host;
+            enabled = true;
+          }
         ];
       };
 

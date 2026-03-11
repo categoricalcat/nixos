@@ -78,6 +78,20 @@
         peers = wireguardPeers.peerConfigs;
       };
 
+      zerotier = {
+        interface = "zt0";
+        ipv6 = rec {
+          host = "fd00::1"; # Using ULA for VPN
+          prefixLength = 64;
+          address = "${host}/${builtins.toString prefixLength}";
+        };
+        ipv4 = rec {
+          host = "10.0.0.1";
+          prefixLength = 24;
+          address = "${host}/${builtins.toString prefixLength}";
+        };
+      };
+
       lan = {
         interface = "bond0";
         # ipv6 = rec {

@@ -8,5 +8,7 @@
     joinNetworks = [ config.sops.placeholder."zerotier/network_id" ];
   };
 
+  sops.templates."zerotier.env".content = config.sops.placeholder."zerotier/network_id";
+
   networking.firewall.trustedInterfaces = [ "zt+" ];
 }
