@@ -4,6 +4,7 @@
   lib,
   ...
 }:
+
 {
 
   systemd.user.services.swww = {
@@ -33,27 +34,45 @@
 
     systemd.enable = true;
 
-    settings = builtins.fromJSON (builtins.readFile ./dms-theme.json) // {
-      currentThemeName = lib.mkForce "dynamic";
-      currentThemeCategory = lib.mkForce "dynamic";
-      customThemeFile = lib.mkForce "";
-    };
-
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableVPN = true; # VPN management widget
     enableDynamicTheming = true; # Wallpaper-based theming (matugen)
     enableAudioWavelength = true; # Audio visualizer (cava)
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
+
+    settings = builtins.fromJSON (builtins.readFile ./dms/settings.json) // {
+      currentThemeName = lib.mkForce "dynamic";
+      currentThemeCategory = lib.mkForce "dynamic";
+      customThemeFile = lib.mkForce "";
+    };
+
+    session = builtins.fromJSON (builtins.readFile ./dms/session.json) // {
+      wallpaperPath = lib.mkForce "${../../modules/desktop/wallpaper.jpg}";
+      wallpaperPathLight = lib.mkForce "${../../modules/desktop/wallpaper.jpg}";
+      wallpaperPathDark = lib.mkForce "${../../modules/desktop/wallpaper.jpg}";
+    };
   };
 
-  #home.activation.initDmsSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-  #  mkdir -p "$HOME/.config/DankMaterialShell"
-  #  if [ ! -f "$HOME/.config/DankMaterialShell/settings.json" ]; then
-  #    cp "${pkgs.writeText "dms-default-settings.json" (builtins.readFile ./dms-theme.json)}" "$HOME/.config/DankMaterialShell/settings.json"
-  #    chmod +w "$HOME/.config/DankMaterialShell/settings.json"
-  #  fi
-  #'';
+  home.activation.makeDmsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    # settings.json
+    target_settings="$HOME/.config/DankMaterialShell/settings.json"
+    if [ -L "$target_settings" ]; then
+      store_path=$(readlink -f "$target_settings")
+      rm -f "$target_settings"
+      cp "$store_path" "$target_settings"
+      chmod u+w "$target_settings"
+    fi
+
+    # session.json
+    target_session="$HOME/.local/state/DankMaterialShell/session.json"
+    if [ -L "$target_session" ]; then
+      store_path=$(readlink -f "$target_session")
+      rm -f "$target_session"
+      cp "$store_path" "$target_session"
+      chmod u+w "$target_session"
+    fi
+  '';
 }
 
 # systemd.user.services.dms = {

@@ -12,9 +12,9 @@
   services.logind = {
     settings = {
       Login = {
-        HandleLidSwitch = "suspend";
-        HandleLidSwitchDocked = "suspend";
-        HandleLidSwitchExternalPower = "suspend";
+        HandleLidSwitch = "suspend-then-hibernate";
+        HandleLidSwitchDocked = "suspend-then-hibernate";
+        HandleLidSwitchExternalPower = "suspend-then-hibernate";
       };
     };
   };
@@ -22,6 +22,12 @@
   powerManagement = {
     enable = true;
     powertop.enable = false;
+  };
+
+  systemd.sleep.settings = {
+    Sleep = {
+      HibernateDelaySec = "3600";
+    };
   };
 
   systemd.targets = {

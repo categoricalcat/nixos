@@ -4,7 +4,7 @@
 
   boot = {
     loader = {
-      timeout = 2;
+      timeout = 1;
       systemd-boot = {
         enable = true;
         configurationLimit = 10;
