@@ -20,5 +20,6 @@
     tidal-hifi
     gimp
     nemo
+    zerotierone
   ];
 }
