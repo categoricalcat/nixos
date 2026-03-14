@@ -75,6 +75,8 @@
 
   environment.pathsToLink = [ "/share/zsh" ];
 
+  environment.etc."nixos".source = "${config.users.users.yi.home}/the.files/nixos";
+
   # services.emacs = {
   #   enable = true;
   #   install = true;

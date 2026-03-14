@@ -124,5 +124,10 @@
       url = "github:probeldev/niri-float-sticky";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    thefiles = {
+      url = "git+https://github.com/categoricalcat/the.files.git?submodules=1";
+      flake = false;
+    };
   };
 }

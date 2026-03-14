@@ -1,16 +1,20 @@
 {
   pkgs,
   lib,
+  inputs,
   desktopEnvironment ? null,
   ...
 }:
+let
+  homeDirectory = "/home/yi";
+in
 {
   imports =
     lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
     ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
   home.username = "yi";
-  home.homeDirectory = "/home/yi";
+  home.homeDirectory = homeDirectory;
 
   programs = {
     home-manager = {
@@ -31,10 +35,10 @@
 
   home.activation = {
     cloneDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "$HOME/the.files" ]; then
-        echo "Cloning the.files repository..."
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/categoricalcat/the.files.git $HOME/the.files || \
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone git@github.com:categoricalcat/the.files.git $HOME/the.files
+      if [ ! -d "$HOME/the.files/.git" ]; then
+        echo "Copying the.files repository from flake input..."
+        $DRY_RUN_CMD cp -r --no-preserve=mode,ownership ${inputs.thefiles} $HOME/the.files
+        $DRY_RUN_CMD chmod -R u+w $HOME/the.files
       else
         echo "the.files repository already exists"
       fi
