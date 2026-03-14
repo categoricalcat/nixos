@@ -61,7 +61,7 @@ in
     with haskellPackages;
     [
       bun
-      nodejs_latest
+      nodejs
       nodePackages.pnpm
       nodePackages.eslint
       nodePackages.typescript
