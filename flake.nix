@@ -60,6 +60,14 @@
                   ./hosts/yixiaoqing/configuration.nix
                 ];
               };
+
+              yitaishi = nixpkgs.lib.nixosSystem {
+                specialArgs = { inherit inputs; };
+                modules = baseModules ++ [
+                  stylix.nixosModules.stylix
+                  ./hosts/yitaishi/configuration.nix
+                ];
+              };
             };
         };
 
