@@ -83,7 +83,6 @@ in
 
       gnomeExtensions.appindicator
       gnomeExtensions.dash-to-panel
-      gnomeExtensions.arcmenu
       gnomeExtensions.gtile
       gnomeExtensions.media-controls
       gnomeExtensions.weather-oclock

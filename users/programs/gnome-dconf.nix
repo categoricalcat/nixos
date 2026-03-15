@@ -9,7 +9,6 @@
         enabled-extensions = with pkgs.gnomeExtensions; [
           appindicator.extensionUuid
           dash-to-panel.extensionUuid
-          arcmenu.extensionUuid
           gtile.extensionUuid
           weather-oclock.extensionUuid
         ];
@@ -57,16 +56,47 @@
       };
 
       "org/gnome/shell/extensions/dash-to-panel" = {
-        panel-positions = ''{"0":"TOP"}'';
-        panel-sizes = ''{"0":32}'';
+        animate-appicon-hover = true;
+        animate-appicon-hover-animation-extent = [
+          (lib.hm.gvariant.mkDictionaryEntry [
+            "RIPPLE"
+            4
+          ])
+          (lib.hm.gvariant.mkDictionaryEntry [
+            "PLANK"
+            4
+          ])
+          (lib.hm.gvariant.mkDictionaryEntry [
+            "SIMPLE"
+            1
+          ])
+        ];
         appicon-margin = lib.hm.gvariant.mkUint32 4;
+        appicon-padding = lib.hm.gvariant.mkUint32 4;
+        appicon-style = "NORMAL";
+        dot-position = "BOTTOM";
         dot-style-focused = "DASHES";
         dot-style-unfocused = "DOTS";
-      };
-
-      "org/gnome/shell/extensions/arcmenu" = {
-        menu-button-appearance = "Icon";
-        menu-layout = "Default";
+        extension-version = 72;
+        global-border-radius = 0;
+        hotkeys-overlay-combo = "TEMPORARILY";
+        intellihide = false;
+        multi-monitors = false;
+        panel-anchors = ''{"AUS-S2LMQS085997":"MIDDLE","GSM-0x000083cb":"MIDDLE"}'';
+        panel-element-positions = "{}";
+        panel-lengths = ''{"AUS-S2LMQS085997":100,"GSM-0x000083cb":100}'';
+        panel-positions = ''{"AUS-S2LMQS085997":"TOP","GSM-0x000083cb":"TOP"}'';
+        panel-side-margins = 0;
+        panel-sizes = ''{"AUS-S2LMQS085997":28,"GSM-0x000083cb":28}'';
+        prefs-opened = false;
+        trans-gradient-bottom-color = "#ffffff";
+        trans-panel-opacity = 0.29;
+        trans-use-border = false;
+        trans-use-custom-bg = false;
+        trans-use-custom-gradient = false;
+        trans-use-custom-opacity = true;
+        trans-use-dynamic-opacity = false;
+        window-preview-title-position = "TOP";
       };
     };
   };
