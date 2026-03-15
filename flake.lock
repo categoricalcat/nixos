@@ -575,11 +575,11 @@
     "thefiles": {
       "flake": false,
       "locked": {
-        "lastModified": 1773427362,
-        "narHash": "sha256-aOr2N70lf47TlBPHvhg5gt2tcJ1/GXGXINiZVhLOjKY=",
+        "lastModified": 1773587380,
+        "narHash": "sha256-ufH/wJSIRp3lDbqO5mN7OzAxV3X9dgg1LFLk6dfRVCk=",
         "ref": "refs/heads/main",
-        "rev": "8832072a5ef680f3328973ad655ecb8da56d200c",
-        "revCount": 104,
+        "rev": "25ddf3052bbf3c6de6a779c46fb7eeb391b146b5",
+        "revCount": 105,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/categoricalcat/the.files.git"
