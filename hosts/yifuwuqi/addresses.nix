@@ -117,7 +117,8 @@
       listenPort = 24212;
       listenAddresses = [
         network.lan.ipv4.host
-        "10.100.0.1"
+        network.vpn.ipv4.host
+        network.zerotier.ipv4.host
       ];
       listenWildcardIPv6 = "[::]";
     };

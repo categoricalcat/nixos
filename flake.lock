@@ -299,11 +299,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1773422513,
-        "narHash": "sha256-MPjR48roW7CUMU6lu0+qQGqj92Kuh3paIulMWFZy+NQ=",
+        "lastModified": 1773597207,
+        "narHash": "sha256-ZHoQqj+prlvfMItkQ/xTZbPguEcRlNPyRzh2j/51z8E=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "ef12a9a2b0f77c8fa3dda1e7e494fca668909056",
+        "rev": "585a161ea6d1ec78e0daee9f1b40f8539d53d4a3",
         "type": "github"
       },
       "original": {
@@ -575,11 +575,11 @@
     "thefiles": {
       "flake": false,
       "locked": {
-        "lastModified": 1773594660,
-        "narHash": "sha256-INf/umKR6IdG+UCvT5cPK4kbLux+p9eU7/rdU0iI1nU=",
+        "lastModified": 1773597643,
+        "narHash": "sha256-o8Xa7hHQN8Nj+ik/5p+dC92fmgp1AOGSuYrUc3Zk77M=",
         "ref": "refs/heads/main",
-        "rev": "13673ef0ed70ccb0bf356fd2a2fd5ed8666a43e9",
-        "revCount": 106,
+        "rev": "2b9ce1e2fe97cbc7a887657c841e4350bc23476e",
+        "revCount": 107,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/categoricalcat/the.files.git"
