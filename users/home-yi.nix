@@ -9,28 +9,17 @@ let
   homeDirectory = "/home/yi";
 in
 {
-  imports =
-    lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
-    ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
+  imports = [
+    ./programs/alacritty.nix
+  ]
+  ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
+  ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
   home.username = "yi";
   home.homeDirectory = homeDirectory;
 
-  programs = {
-    home-manager = {
-      enable = true;
-    };
-
-    alacritty = {
-      enable = true;
-      theme = "aura";
-      settings = {
-        window = {
-          opacity = lib.mkDefault 0.85;
-          blur = true;
-        };
-      };
-    };
+  programs.home-manager = {
+    enable = true;
   };
 
   home.activation = {
