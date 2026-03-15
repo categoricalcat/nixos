@@ -95,7 +95,7 @@ in
           package = lib.mkDefault pkgs.papirus-icon-theme;
         };
         cursorTheme = {
-          name = lib.mkDefault "Bibata-Modern-Classic-Right";
+          name = lib.mkDefault "Bibata-Modern-Amber-Right";
           package = lib.mkDefault pkgs.bibata-cursors;
         };
         font = {
