@@ -16,6 +16,7 @@ in
     ./gaming.nix
     ./networking.nix
     ./addresses.nix
+    ./services.nix
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/common.nix
