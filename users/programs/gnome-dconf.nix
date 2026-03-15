@@ -8,6 +8,8 @@
         disable-user-extensions = false;
         enabled-extensions = with pkgs.gnomeExtensions; [
           appindicator.extensionUuid
+          dash-to-panel.extensionUuid
+          arcmenu.extensionUuid
           gtile.extensionUuid
           weather-oclock.extensionUuid
         ];
@@ -54,16 +56,17 @@
         night-light-temperature = lib.hm.gvariant.mkUint32 3700;
       };
 
-      # Dash to Dock configuration
-      "org/gnome/shell/extensions/dash-to-dock" = {
-        dock-position = "LEFT";
-        dash-max-icon-size = lib.hm.gvariant.mkUint32 32;
-        intellihide = true;
-        click-action = "minimize";
-        transparency-mode = "FIXED";
-        background-opacity = 0.3;
-        trash-icon-visible = false;
-        applications-icon-visible = false;
+      "org/gnome/shell/extensions/dash-to-panel" = {
+        panel-positions = ''{"0":"TOP"}'';
+        panel-sizes = ''{"0":32}'';
+        appicon-margin = lib.hm.gvariant.mkUint32 4;
+        dot-style-focused = "DASHES";
+        dot-style-unfocused = "DOTS";
+      };
+
+      "org/gnome/shell/extensions/arcmenu" = {
+        menu-button-appearance = "Icon";
+        menu-layout = "Default";
       };
     };
   };

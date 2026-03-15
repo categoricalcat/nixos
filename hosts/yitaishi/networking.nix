@@ -1,28 +1,26 @@
-{ lib, ... }:
-let
-  wgCommon = {
-    listenPort = 51820;
-    address = [ "10.100.0.3/32" ];
-    mtu = 1380;
-    privateKeyFile = "/etc/wireguard/private.key";
-    dns = [ "10.100.0.1" ];
-  };
+_: {
+  # wgCommon = {
+  #   listenPort = 51820;
+  #   address = [ "10.100.0.3/32" ];
+  #   mtu = 1380;
+  #   privateKeyFile = "/etc/wireguard/private.key";
+  #   dns = [ "10.100.0.1" ];
+  # };
 
-  mkPeer =
-    { endpoint }:
-    {
-      publicKey = "QA2qAna4n/CvD3xKXEgMaiwDWZpH3lC2Kn76oJ6rcRw=";
-      allowedIPs = [ "0.0.0.0/0" ];
-      inherit endpoint;
-      persistentKeepalive = 25;
-    };
+  # mkPeer =
+  #   { endpoint }:
+  #   {
+  #     publicKey = "QA2qAna4n/CvD3xKXEgMaiwDWZpH3lC2Kn76oJ6rcRw=";
+  #     allowedIPs = [ "0.0.0.0/0" ];
+  #     inherit endpoint;
+  #     persistentKeepalive = 25;
+  #   };
 
-  endpoints = {
-    lan = "192.168.0.42:51820";
-    remote = "wg.localto.net:51820";
-  };
-in
-{
+  # endpoints = {
+  #   lan = "192.168.0.42:51820";
+  #   remote = "wg.localto.net:51820";
+  # };
+
   networking = {
     hostName = "yitaishi";
 

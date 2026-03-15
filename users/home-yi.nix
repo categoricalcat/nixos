@@ -80,6 +80,13 @@ in
       catppuccin-gtk
       dconf2nix
       dconf-editor
+
+      gnomeExtensions.appindicator
+      gnomeExtensions.dash-to-panel
+      gnomeExtensions.arcmenu
+      gnomeExtensions.gtile
+      gnomeExtensions.media-controls
+      gnomeExtensions.weather-oclock
     ]
     ++ lib.optionals (desktopEnvironment != null) [
       papirus-icon-theme

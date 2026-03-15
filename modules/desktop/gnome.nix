@@ -13,10 +13,6 @@
       desktopManager = {
         gnome = {
           enable = true;
-          extraGSettingsOverrides = ''
-            [org.gnome.mutter]
-            experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']
-          '';
         };
       };
 
@@ -77,12 +73,6 @@
       };
     };
 
-    environment.systemPackages = with pkgs; [
-      # gnomeExtensions.user-themes
-      gnomeExtensions.appindicator
-      gnomeExtensions.gtile
-      gnomeExtensions.media-controls
-      gnomeExtensions.weather-oclock
-    ];
+    environment.systemPackages = [ ];
   };
 }
