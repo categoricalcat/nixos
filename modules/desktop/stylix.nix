@@ -23,7 +23,7 @@
 
           cursor = {
             package = pkgs.bibata-cursors;
-            name = "Bibata-Modern-Classic-Right";
+            name = "Bibata-Modern-Amber-Right";
             size = 26;
           };
 

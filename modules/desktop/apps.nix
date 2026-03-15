@@ -21,5 +21,7 @@
     gimp
     nemo
     zerotierone
+    vial
+    opencode
   ];
 }

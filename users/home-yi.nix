@@ -1,40 +1,33 @@
 {
   pkgs,
   lib,
+  inputs,
   desktopEnvironment ? null,
   ...
 }:
+let
+  homeDirectory = "/home/yi";
+in
 {
-  imports =
-    lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
-    ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
+  imports = [
+    ./programs/alacritty.nix
+  ]
+  ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
+  ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
   home.username = "yi";
-  home.homeDirectory = "/home/yi";
+  home.homeDirectory = homeDirectory;
 
-  programs = {
-    home-manager = {
-      enable = true;
-    };
-
-    alacritty = {
-      enable = true;
-      theme = "aura";
-      settings = {
-        window = {
-          opacity = lib.mkDefault 0.85;
-          blur = true;
-        };
-      };
-    };
+  programs.home-manager = {
+    enable = true;
   };
 
   home.activation = {
     cloneDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "$HOME/the.files" ]; then
-        echo "Cloning the.files repository..."
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/categoricalcat/the.files.git $HOME/the.files || \
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone git@github.com:categoricalcat/the.files.git $HOME/the.files
+      if [ ! -d "$HOME/the.files/.git" ]; then
+        echo "Copying the.files repository from flake input..."
+        $DRY_RUN_CMD cp -r --no-preserve=mode,ownership ${inputs.thefiles} $HOME/the.files
+        $DRY_RUN_CMD chmod -R u+w $HOME/the.files
       else
         echo "the.files repository already exists"
       fi
@@ -57,7 +50,7 @@
     with haskellPackages;
     [
       bun
-      nodejs_latest
+      nodejs
       nodePackages.pnpm
       nodePackages.eslint
       nodePackages.typescript
@@ -76,6 +69,12 @@
       catppuccin-gtk
       dconf2nix
       dconf-editor
+
+      gnomeExtensions.appindicator
+      gnomeExtensions.dash-to-panel
+      gnomeExtensions.gtile
+      gnomeExtensions.media-controls
+      gnomeExtensions.weather-oclock
     ]
     ++ lib.optionals (desktopEnvironment != null) [
       papirus-icon-theme
@@ -96,7 +95,7 @@
           package = lib.mkDefault pkgs.papirus-icon-theme;
         };
         cursorTheme = {
-          name = lib.mkDefault "Bibata-Modern-Classic-Right";
+          name = lib.mkDefault "Bibata-Modern-Amber-Right";
           package = lib.mkDefault pkgs.bibata-cursors;
         };
         font = {

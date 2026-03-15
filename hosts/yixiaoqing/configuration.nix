@@ -21,6 +21,10 @@ in
     ./addresses.nix
     ../../secrets/sops.nix
     ../../users/users.nix
+    ../../modules/common.nix
+    ../../modules/nix-settings.nix
+    ../../modules/boot-common.nix
+    ../../modules/networking/ipv6.nix
     # ../../modules/services/nfs/client.nix
     ../../modules/services/samba/client.nix
     ../../modules/packages.nix
@@ -45,26 +49,15 @@ in
 
   system.stateVersion = "26.05";
 
-  programs.nix-ld.enable = true;
-
   security.polkit.enable = true;
 
-  environment.defaultPackages = lib.mkForce [ ];
-
   nixpkgs.config = {
-    allowUnfree = true;
     cudaSupport = false;
     rocmSupport = false;
   };
 
   nix = {
     distributedBuilds = true;
-
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 9d";
-    };
 
     buildMachines =
       let
@@ -97,24 +90,7 @@ in
       trusted-users = [
         "root"
       ];
-
-      auto-optimise-store = true;
       builders-use-substitutes = true;
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      download-buffer-size = 1024 * 1024 * 1024 * 10;
-
-      substituters = [
-        "https://nix-community.cachix.org"
-        "https://nixos-rocm.cachix.org"
-        "https://cache.nixos.org/"
-      ];
-      trusted-public-keys = [
-        "nixos-rocm.cachix.org-1:VEpsf7pRIijjd8csKjFNBGzkBqOmw8H9PRmgAq14LnE"
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      ];
     };
   };
 

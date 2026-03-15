@@ -8,15 +8,11 @@
 {
   config = lib.mkIf (config.desktop.environment == "gnome") {
     services = {
-      xserver.enable = false;
+      xserver.enable = true;
 
       desktopManager = {
         gnome = {
           enable = true;
-          extraGSettingsOverrides = ''
-            [org.gnome.mutter]
-            experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']
-          '';
         };
       };
 
@@ -34,6 +30,25 @@
       };
     };
 
+    xdg.portal = {
+      enable = true;
+      extraPortals = [
+        pkgs.xdg-desktop-portal-gnome
+        pkgs.xdg-desktop-portal-gtk
+      ];
+      config = {
+        common = {
+          default = [
+            "gnome"
+            "gtk"
+          ];
+          "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+        };
+      };
+    };
+
     environment.gnome.excludePackages = with pkgs; [
       gnome-tour
       gnome-user-docs
@@ -46,15 +61,16 @@
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+      extraConfig.pipewire."10-rates" = {
+        "context.properties" = {
+          "default.clock.rate" = 96000;
+          "default.clock.allowed-rates" = [
+            96000
+          ];
+        };
+      };
     };
 
-    environment.systemPackages = with pkgs; [
-      # gnomeExtensions.user-themes
-      gnomeExtensions.appindicator
-      gnomeExtensions.gtile
-      gnomeExtensions.media-controls
-      gnomeExtensions.weather-oclock
-      xdg-desktop-portal-gnome
-    ];
+    environment.systemPackages = [ ];
   };
 }

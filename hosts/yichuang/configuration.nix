@@ -3,7 +3,6 @@
 {
   pkgs,
   inputs,
-  lib,
   ...
 }:
 
@@ -14,6 +13,8 @@ in
   imports = [
     ../../modules/services/nfs/client.nix
     ../../secrets/sops.nix
+    ../../modules/common.nix
+    ../../modules/nix-settings.nix
     ../../modules/packages.nix
     ../../modules/server-mode.nix
     ../../modules/locale.nix
@@ -26,23 +27,13 @@ in
   wsl.defaultUser = "yi";
   wsl.enable = true;
 
-  environment.defaultPackages = lib.mkForce [ ];
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking = {
     hostName = "yichuang";
   };
 
-  programs.nix-ld.enable = true;
-
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
   nixpkgs.config = {
-    allowUnfree = true;
     cudaSupport = false;
     rocmSupport = true;
   };

@@ -1,7 +1,7 @@
 # Minimal server-specific settings for home server
 # Focuses on preventing sleep/suspend and essential server optimizations
 
-{ config, ... }:
+{ config, lib, ... }:
 
 {
   # Disable sleep, hibernation, suspend, and other power management features
@@ -59,15 +59,8 @@
     MaxLevelStore=notice
   '';
 
-  # Garbage collection for Nix store
-  nix = {
-    settings.auto-optimise-store = true;
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 30d";
-    };
-  };
+  # Override gc retention for servers (longer than default 9d)
+  nix.gc.options = lib.mkForce "--delete-older-than 30d";
 
   # Time synchronization
   services.chrony = {

@@ -60,6 +60,14 @@
                   ./hosts/yixiaoqing/configuration.nix
                 ];
               };
+
+              yitaishi = nixpkgs.lib.nixosSystem {
+                specialArgs = { inherit inputs; };
+                modules = baseModules ++ [
+                  stylix.nixosModules.stylix
+                  ./hosts/yitaishi/configuration.nix
+                ];
+              };
             };
         };
 
@@ -123,6 +131,11 @@
     niri-float-sticky = {
       url = "github:probeldev/niri-float-sticky";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    thefiles = {
+      url = "git+https://github.com/categoricalcat/the.files.git?submodules=1";
+      flake = false;
     };
   };
 }
