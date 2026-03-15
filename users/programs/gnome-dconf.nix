@@ -14,6 +14,7 @@
 
         favorite-apps = [
           "floorp.desktop"
+          "google-chrome.desktop"
           "org.gnome.Nautilus.desktop"
           "org.gnome.Console.desktop"
         ];
@@ -33,6 +34,10 @@
 
       "org/gnome/mutter" = {
         center-new-windows = true;
+        experimental-features = [
+          "scale-monitor-framebuffer"
+          "xwayland-native-scaling"
+        ];
       };
 
       # Input and touchpad

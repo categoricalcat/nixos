@@ -8,7 +8,7 @@
 {
   config = lib.mkIf (config.desktop.environment == "gnome") {
     services = {
-      xserver.enable = false;
+      xserver.enable = true;
 
       desktopManager = {
         gnome = {
@@ -34,6 +34,25 @@
       };
     };
 
+    xdg.portal = {
+      enable = true;
+      extraPortals = [
+        pkgs.xdg-desktop-portal-gnome
+        pkgs.xdg-desktop-portal-gtk
+      ];
+      config = {
+        common = {
+          default = [
+            "gnome"
+            "gtk"
+          ];
+          "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+        };
+      };
+    };
+
     environment.gnome.excludePackages = with pkgs; [
       gnome-tour
       gnome-user-docs
@@ -46,6 +65,16 @@
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
+      extraConfig.pipewire."10-rates" = {
+        "context.properties" = {
+          "default.clock.rate" = 192000;
+          "default.clock.allowed-rates" = [
+            48000
+            96000
+            192000
+          ];
+        };
+      };
     };
 
     environment.systemPackages = with pkgs; [
@@ -54,7 +83,6 @@
       gnomeExtensions.gtile
       gnomeExtensions.media-controls
       gnomeExtensions.weather-oclock
-      xdg-desktop-portal-gnome
     ];
   };
 }

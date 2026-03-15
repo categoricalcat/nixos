@@ -21,5 +21,6 @@
     gimp
     nemo
     zerotierone
+    vial
   ];
 }

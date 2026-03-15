@@ -26,11 +26,30 @@
 - `.github/workflows/flake-ci.yml`: CI for checks and evaluation
 
 ### Secrets (sops-nix)
-
 Secrets are not committed. The module expects secrets at `/etc/nixos/secrets/` on each host. The config supports both an AGE key and the host SSH key:
 
 - `sops.age.keyFile = "/etc/nixos/secrets/key.txt"`
 - `sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ]`
+
+#### Generating Keys
+
+**Host SSH Key**
+If a host lacks an ed25519 key:
+```bash
+sudo ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""
+```
+
+**AGE Key**
+To generate the primary age key used in `key.txt`:
+```bash
+nix-shell -p age --run "age-keygen -o /etc/nixos/secrets/key.txt"
+```
+
+**Getting AGE public key from SSH**
+To convert an existing SSH public key for use in `.sops.yaml` recipients:
+```bash
+nix-shell -p ssh-to-age --run "ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub"
+```
 
 ### Services
 

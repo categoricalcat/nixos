@@ -6,8 +6,8 @@
 }:
 
 let
-  desktopEnvironment = "niri";
-  greeter = "tuigreet";
+  desktopEnvironment = "gnome";
+  greeter = "gdm";
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -36,10 +36,27 @@ in
     stateVersion = "26.05";
   };
 
-  environment.systemPackages = [ pkgs.mprisence ];
+  # environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
+
+  environment.systemPackages = [ pkgs.xclip ];
+
+  # services.xserver.resolutions = [
+  #   {
+  #     x = 3840;
+  #     y = 2160;
+  #   }
+  #   {
+  #     x = 2560;
+  #     y = 1440;
+  #   }
+  #   {
+  #     x = 1920;
+  #     y = 1080;
+  #   }
+  # ];
 
   system.stateVersion = "26.05";
 
@@ -47,44 +64,7 @@ in
 
   nixpkgs.config = {
     cudaSupport = false;
-    rocmSupport = false;
-  };
-
-  nix = {
-    distributedBuilds = true;
-
-    buildMachines =
-      let
-        mkBuildMachine = hostName: {
-          inherit hostName;
-          system = "x86_64-linux";
-          maxJobs = 15;
-          speedFactor = 3;
-          protocol = "ssh-ng";
-          supportedFeatures = [
-            "nixos-test"
-            "benchmark"
-            "big-parallel"
-            "kvm"
-          ];
-          sshUser = config.users.users.yi.name;
-          sshKey = "/home/yi/.ssh/id_ed25519";
-        };
-      in
-      [
-        (mkBuildMachine "yi.vpn")
-      ];
-
-    extraOptions = ''
-      connect-timeout = 5
-    '';
-
-    settings = {
-      trusted-users = [
-        "root"
-      ];
-      builders-use-substitutes = true;
-    };
+    rocmSupport = true;
   };
 
   hardware = {
@@ -92,20 +72,13 @@ in
 
     bluetooth = {
       enable = true;
-      powerOnBoot = false;
+      powerOnBoot = true;
     };
 
     graphics = {
       enable = true;
       enable32Bit = true;
     };
-  };
-
-  zramSwap = {
-    enable = true;
-    algorithm = "zstd";
-    memoryPercent = 100;
-    priority = 100;
   };
 
   boot.kernel.sysctl = {
