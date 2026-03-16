@@ -50,24 +50,13 @@ in
 
   services.nix-access-tokens.enable = false;
 
-  nixpkgs.config = {
-    cudaSupport = false;
-    rocmSupport = true;
-    rocmTargets = [ "gfx1035" ];
-  };
-
   system.stateVersion = "25.11";
 
   hardware = {
     enableRedistributableFirmware = true;
     cpu.amd.updateMicrocode = true;
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-    };
 
     amdgpu = {
-      opencl.enable = true;
       # amdvlk.enable = true;
     };
   };

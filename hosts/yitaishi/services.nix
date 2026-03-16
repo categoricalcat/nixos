@@ -1,17 +1,15 @@
 {
-  pkgs,
   ...
 }:
 {
   imports = [
     ../../modules/services/zerotier.nix
+    ../../modules/services/ollama-amdgpu.nix
   ];
 
-  services.ollama = {
+  services.ollama-amdgpu = {
     enable = true;
-    package = pkgs.ollama-rocm;
-    environmentVariables = {
-      HSA_OVERRIDE_GFX_VERSION = "11.0.0";
-    };
+    rocmTargets = [ "gfx1100" ];
+    rocmOverrideGfx = "11.0.0";
   };
 }

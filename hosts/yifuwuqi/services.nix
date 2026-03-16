@@ -15,6 +15,7 @@
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/zerotier.nix
+    ../../modules/services/ollama-amdgpu.nix
     # ../../modules/services/playit-agent.nix
     ../../modules/services/localtonet.nix
     # ../../modules/services/github-runner.nix
@@ -49,12 +50,10 @@
     };
   };
 
-  services.ollama = {
+  services.ollama-amdgpu = {
     enable = true;
-    package = pkgs.ollama-rocm;
-    environmentVariables = {
-      HSA_OVERRIDE_GFX_VERSION = "10.3.0";
-    };
+    rocmTargets = [ "gfx1035" ];
+    rocmOverrideGfx = "10.3.0";
   };
 
   # Podman configuration (Docker replacement)

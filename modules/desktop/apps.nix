@@ -22,6 +22,5 @@
     nemo
     zerotierone
     vial
-    opencode
   ];
 }

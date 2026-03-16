@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   inputs,
   ...
@@ -36,6 +37,12 @@ in
     stateVersion = "26.05";
   };
 
+  sops.secrets."tokens/deepseek" = {
+    owner = config.users.users.yi.name;
+    inherit (config.users.users.yi) group;
+    mode = "0400";
+  };
+
   # environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
@@ -62,23 +69,13 @@ in
 
   security.polkit.enable = true;
 
-  nixpkgs.config = {
-    cudaSupport = false;
-    rocmSupport = true;
-    rocmTargets = [ "gfx1100" ];
-  };
-
   hardware = {
     enableRedistributableFirmware = true;
+    cpu.amd.updateMicrocode = true;
 
     bluetooth = {
       enable = true;
       powerOnBoot = true;
-    };
-
-    graphics = {
-      enable = true;
-      enable32Bit = true;
     };
   };
 
