@@ -65,6 +65,7 @@ in
   nixpkgs.config = {
     cudaSupport = false;
     rocmSupport = true;
+    rocmTargets = [ "gfx1100" ];
   };
 
   hardware = {

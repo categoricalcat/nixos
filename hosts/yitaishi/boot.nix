@@ -14,6 +14,8 @@
       "coretemp"
     ];
 
+    kernelParams = [ "amdgpu.ppfeaturemask=0xffffffff" ];
+
     kernelPackages = pkgs.linuxPackages_latest;
   };
 }
