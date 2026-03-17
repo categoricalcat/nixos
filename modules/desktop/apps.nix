@@ -17,9 +17,8 @@
     prismlauncher
     discord-ptb
     cloudflared
-    tidal-hifi
     gimp
-    nemo
+    nautilus
     zerotierone
     vial
   ];
