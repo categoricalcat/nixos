@@ -24,11 +24,9 @@ jobs:
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
-      - name: Check flake outputs
-        run: nix flake check --print-build-logs --show-trace
+      - run: nix fmt -- --ci
 
-      - name: Check formatting and linting
-        run: nix fmt -- --ci
+      - run: nix flake check --print-build-logs --show-trace
 
   generate-matrix:
     timeout-minutes: 10
@@ -43,7 +41,6 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
       - id: set-matrix
-        name: Generate NixOS Configurations Matrix
         run: |
           HOSTS="$(nix eval --json .#nixosConfigurations --apply 'cfgs: builtins.attrNames cfgs')"
           echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
@@ -63,5 +60,4 @@ jobs:
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
-      - name: Evaluate NixOS configuration (${{ matrix.host }})
-        run: nix eval --raw .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.drvPath
+      - run: nix eval --raw .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.drvPath

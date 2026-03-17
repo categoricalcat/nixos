@@ -2,7 +2,7 @@
 
 let
   vpnCidr = "10.100.0.0/24";
-  vpnInterface = "wg0";
+  zeroCidr = "10.0.0.0/24";
 in
 {
   services.samba = {
@@ -11,7 +11,7 @@ in
 
     settings = {
       global = {
-        "hosts allow" = "${vpnCidr} 127.0.0.1 localhost ::1";
+        "hosts allow" = "${vpnCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
         "load printers" = "no";
         "printing" = "bsd";
@@ -20,7 +20,7 @@ in
       share = {
         path = "/srv/nfs/share";
         "read only" = "no";
-        "valid users" = "yi root";
+        "valid users" = "yi";
         "create mask" = "0664";
         "directory mask" = "0775";
       };
@@ -28,7 +28,7 @@ in
       "the.files" = {
         path = "/srv/nfs/the.files";
         "read only" = "no";
-        "valid users" = "yi root";
+        "valid users" = "yi";
         "create mask" = "0664";
         "directory mask" = "0775";
       };
@@ -43,19 +43,6 @@ in
   warnings = lib.optional (
     !config.sops.secrets ? "samba/credentials/yi"
   ) "Run `sudo smbpasswd -a yi` on the server to activate Samba passwords for existing Unix users.";
-
-  networking.firewall.interfaces.${vpnInterface} = {
-    allowedTCPPorts = lib.mkAfter [
-      139
-      445
-      5357 # wsdd
-    ];
-    allowedUDPPorts = lib.mkAfter [
-      137
-      138
-      3702 # wsdd
-    ];
-  };
 
   sops.secrets."samba/credentials/yi" = {
     mode = "0600";
