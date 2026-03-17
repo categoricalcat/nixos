@@ -23,7 +23,7 @@ in
     ../../users/users.nix
   ];
 
-  system.stateVersion = "26.05";
+  system.stateVersion = "25.11";
   wsl.defaultUser = "yi";
   wsl.enable = true;
 
@@ -40,7 +40,7 @@ in
 
   home-manager = mkHome {
     inherit inputs;
-    stateVersion = "26.05";
+    stateVersion = "25.11";
   };
 
   services.openssh = {

@@ -32,9 +32,11 @@ in
     ../../modules/services/openssh.nix
   ];
 
+  system.stateVersion = "25.11";
+
   home-manager = mkHome {
     inherit desktopEnvironment inputs;
-    stateVersion = "26.05";
+    stateVersion = "25.11";
   };
 
   sops.secrets."tokens/deepseek" = {
@@ -64,8 +66,6 @@ in
   #     y = 1080;
   #   }
   # ];
-
-  system.stateVersion = "26.05";
 
   security.polkit.enable = true;
 

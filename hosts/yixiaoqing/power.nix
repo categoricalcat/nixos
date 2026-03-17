@@ -24,11 +24,10 @@
     powertop.enable = false;
   };
 
-  systemd.sleep.settings = {
-    Sleep = {
-      HibernateDelaySec = "3600";
-    };
-  };
+  environment.etc."systemd/sleep.conf".text = ''
+    [Sleep]
+    HibernateDelaySec=3600
+  '';
 
   systemd.targets = {
     hibernate.enable = true;

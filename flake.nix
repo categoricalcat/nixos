@@ -3,14 +3,14 @@
 
   outputs =
     inputs@{
-      flake-parts,
-      nixpkgs,
-      nixpkgs-stable-small,
-      home-manager,
-      home-manager-stable,
-      sops-nix,
       stylix,
+      nixpkgs,
+      sops-nix,
       nixos-wsl,
+      flake-parts,
+      home-manager,
+      nixpkgs-small,
+      home-manager-small,
       ...
     }:
     # https://flake.parts/module-arguments.html
@@ -28,47 +28,49 @@
         ];
 
         flake = {
-          nixosConfigurations =
-            let
-              baseModules = [
+          nixosConfigurations = {
+            yichuang = nixpkgs-small.lib.nixosSystem {
+              specialArgs = { inherit inputs; };
+              modules = [
+                home-manager-small.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                nixos-wsl.nixosModules.default
+                ./hosts/yichuang/configuration.nix
+              ];
+            };
+
+            yifuwuqi = nixpkgs-small.lib.nixosSystem {
+              specialArgs = { inherit inputs; };
+              modules = [
+                sops-nix.nixosModules.sops
+                home-manager-small.nixosModules.home-manager
+                ./hosts/yifuwuqi/configuration.nix
+              ];
+            };
+
+            yixiaoqing = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs; };
+              modules = [
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
+                stylix.nixosModules.stylix
+                (_: {
+                  nixpkgs.overlays = [ (_final: prev: { dgop = inputs.dgop.packages.${prev.system}.default; }) ];
+                })
+                ./hosts/yixiaoqing/configuration.nix
               ];
-            in
-            {
-              yichuang = nixpkgs.lib.nixosSystem {
-                specialArgs = { inherit inputs; };
-                modules = baseModules ++ [
-                  nixos-wsl.nixosModules.default
-                  ./hosts/yichuang/configuration.nix
-                ];
-              };
-
-              yifuwuqi = nixpkgs-stable-small.lib.nixosSystem {
-                specialArgs = { inherit inputs; };
-                modules = [
-                  sops-nix.nixosModules.sops
-                  home-manager-stable.nixosModules.home-manager
-                  ./hosts/yifuwuqi/configuration.nix
-                ];
-              };
-
-              yixiaoqing = nixpkgs.lib.nixosSystem {
-                specialArgs = { inherit inputs; };
-                modules = baseModules ++ [
-                  stylix.nixosModules.stylix
-                  ./hosts/yixiaoqing/configuration.nix
-                ];
-              };
-
-              yitaishi = nixpkgs.lib.nixosSystem {
-                specialArgs = { inherit inputs; };
-                modules = baseModules ++ [
-                  stylix.nixosModules.stylix
-                  ./hosts/yitaishi/configuration.nix
-                ];
-              };
             };
+
+            yitaishi = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs; };
+              modules = [
+                home-manager.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                stylix.nixosModules.stylix
+                ./hosts/yitaishi/configuration.nix
+              ];
+            };
+          };
         };
 
         systems = [
@@ -79,8 +81,8 @@
     );
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable-small.url = "github:NixOS/nixpkgs/nixos-25.11-small";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-small.url = "github:NixOS/nixpkgs/nixos-25.11-small";
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     nixos-wsl = {
@@ -99,17 +101,17 @@
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    home-manager-stable = {
+    home-manager-small = {
       url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs-stable-small";
+      inputs.nixpkgs.follows = "nixpkgs-small";
     };
 
     stylix = {
-      url = "github:danth/stylix";
+      url = "github:nix-community/stylix/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

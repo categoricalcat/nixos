@@ -39,7 +39,7 @@ in
 
   home-manager = mkHome {
     inherit desktopEnvironment inputs;
-    stateVersion = "26.05";
+    stateVersion = "25.11";
   };
 
   environment.systemPackages = [ pkgs.mprisence ];
@@ -47,7 +47,7 @@ in
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
 
-  system.stateVersion = "26.05";
+  system.stateVersion = "25.11";
 
   security.polkit.enable = true;
 
@@ -78,6 +78,7 @@ in
         };
       in
       [
+        (mkBuildMachine "yi.zero")
         (mkBuildMachine "yi.vpn")
         # (mkBuildMachine "yi.vpn")
       ];
