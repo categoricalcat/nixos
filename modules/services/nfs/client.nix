@@ -5,6 +5,7 @@ _:
 
   systemd.tmpfiles.rules = [
     "d /mnt/nfs 0755 root root -"
+    "d /mnt/nfs/zero 0755 root root -"
   ];
 
   fileSystems."/mnt/nfs/share" = {
@@ -44,6 +45,46 @@ _:
       "wsize=1048576"
       "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
       "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+    ];
+  };
+
+  fileSystems."/mnt/nfs/zero/share" = {
+    device = "10.0.0.1:/share";
+    fsType = "nfs4";
+    options = [
+      "nfsvers=4.2"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=1min"
+      "x-systemd.mount-timeout=10s"
+      "noauto"
+      "nofail"
+      "_netdev"
+      "timeo=50"
+      "retrans=2"
+      "rsize=1048576"
+      "wsize=1048576"
+      "x-systemd.after=zerotierone.service"
+      "x-systemd.requires=zerotierone.service"
+    ];
+  };
+
+  fileSystems."/mnt/nfs/zero/the.files" = {
+    device = "10.0.0.1:/the.files";
+    fsType = "nfs4";
+    options = [
+      "nfsvers=4.2"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=1min"
+      "x-systemd.mount-timeout=10s"
+      "noauto"
+      "nofail"
+      "_netdev"
+      "timeo=50"
+      "retrans=2"
+      "rsize=1048576"
+      "wsize=1048576"
+      "x-systemd.after=zerotierone.service"
+      "x-systemd.requires=zerotierone.service"
     ];
   };
 }
