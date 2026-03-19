@@ -8,7 +8,6 @@
 
     vscode-fhs
     code-cursor-fhs
-    cursor-cli
     antigravity
 
     wl-clipboard
