@@ -3,11 +3,14 @@
 { pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
-    emacs-gtk
+    emacs-nox
 
     gcc
     gnumake
     killall
+    zsh
+    cloudflared
+    zerotierone
 
     # System utilities
     btop
