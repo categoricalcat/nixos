@@ -13,7 +13,7 @@ let
     }:
     {
       inherit name icon categories;
-      exec = "${pkgs.floorp}/bin/floorp --class ${name} ${url}";
+      exec = "${pkgs.floorp-bin}/bin/floorp --class ${name} ${url}";
       terminal = false;
     };
 in
