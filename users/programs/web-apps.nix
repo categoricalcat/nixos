@@ -1,11 +1,15 @@
 { pkgs, ... }:
 
 let
+  # Import string manipulation library
+  inherit (pkgs.lib.strings) toLower;
+
   mkWebApp =
     {
       name,
       url,
-      icon ? "floorp",
+      # Automatically convert "YouTube" -> "youtube", which matches the icon theme file
+      icon ? toLower name,
       categories ? [
         "Network"
         "WebBrowser"
@@ -13,7 +17,7 @@ let
     }:
     {
       inherit name icon categories;
-      exec = "${pkgs.floorp-bin}/bin/floorp --class ${name} ${url}";
+      exec = "${pkgs.google-chrome}/bin/google-chrome-stable --app=${url} --class=${name}";
       terminal = false;
     };
 in
@@ -24,6 +28,11 @@ in
       url = "https://youtube.com";
     };
 
+    youtube-music = mkWebApp {
+      name = "YouTube Music";
+      url = "https://music.youtube.com";
+    };
+
     whatsapp = mkWebApp {
       name = "WhatsApp";
       url = "https://web.whatsapp.com";
@@ -32,6 +41,31 @@ in
     tidal = mkWebApp {
       name = "Tidal";
       url = "https://tidal.com";
+    };
+
+    nix-search = mkWebApp {
+      name = "Nix Search";
+      url = "https://search.nixos.org/packages";
+    };
+
+    deepseek = mkWebApp {
+      name = "DeepSeek";
+      url = "https://chat.deepseek.com/";
+    };
+
+    gemini = mkWebApp {
+      name = "Gemini";
+      url = "https://gemini.google.com/";
+    };
+
+    my-nixos = mkWebApp {
+      name = "My NixOS";
+      url = "https://mynixos.com/";
+    };
+
+    github = mkWebApp {
+      name = "GitHub";
+      url = "https://github.com";
     };
   };
 }
