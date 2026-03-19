@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ lib, ... }:
 
 let
   vpnCidr = "10.100.0.0/24";
@@ -40,12 +40,4 @@ in
     openFirewall = false; # We open ports on VPN interface only below
   };
 
-  warnings = lib.optional (
-    !config.sops.secrets ? "samba/credentials/yi"
-  ) "Run `sudo smbpasswd -a yi` on the server to activate Samba passwords for existing Unix users.";
-
-  sops.secrets."samba/credentials/yi" = {
-    mode = "0600";
-    path = "/etc/samba/credentials/yi";
-  };
 }

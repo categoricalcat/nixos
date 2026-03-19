@@ -14,7 +14,7 @@
 
   systemd.tmpfiles.rules = [
     "d /srv/nfs 0755 root root -"
-    "d /srv/nfs/share 0775 root root -"
+    "d /srv/nfs/share 0775 yi yi -"
   ];
 
   fileSystems."/srv/nfs/the.files" = {
