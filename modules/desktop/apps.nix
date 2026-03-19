@@ -7,6 +7,7 @@
 
     vscode-fhs
     code-cursor-fhs
+    cursor-cli
     antigravity
 
     zsh
