@@ -25,7 +25,7 @@ in
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
-    # ../../modules/services/nfs/client.nix
+    ../../modules/services/nfs/client.nix
     ../../modules/services/samba/client.nix
     ../../modules/packages.nix
     ../../modules/locale.nix

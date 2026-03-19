@@ -22,9 +22,6 @@ let
     "noauto"
     "nofail"
     "_netdev"
-    "soft"
-    "timeo=50"
-    "retrans=2"
   ];
 in
 {
