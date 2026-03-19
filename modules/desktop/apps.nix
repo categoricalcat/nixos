@@ -1,13 +1,16 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
+let
+  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
+in
 {
   environment.systemPackages = with pkgs; [
     floorp-bin # the good
     google-chrome
     emacs-gtk
 
-    vscode-fhs
-    code-cursor-fhs
+    unstable.vscode-fhs
+    unstable.code-cursor-fhs
     antigravity
 
     wl-clipboard
