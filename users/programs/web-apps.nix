@@ -5,7 +5,7 @@ let
     {
       name,
       url,
-      icon ? "google-chrome",
+      icon ? "floorp",
       categories ? [
         "Network"
         "WebBrowser"
@@ -13,13 +13,11 @@ let
     }:
     {
       inherit name icon categories;
-      exec = "google-chrome-stable --app=${url} --class=${name}";
+      exec = "${pkgs.floorp}/bin/floorp --class ${name} ${url}";
       terminal = false;
     };
 in
 {
-  home.packages = [ pkgs.google-chrome ];
-
   xdg.desktopEntries = {
     youtube = mkWebApp {
       name = "YouTube";

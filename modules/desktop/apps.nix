@@ -3,6 +3,7 @@
 {
   environment.systemPackages = with pkgs; [
     floorp-bin # the good
+    google-chrome
 
     vscode-fhs
     code-cursor-fhs
