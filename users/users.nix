@@ -10,13 +10,20 @@
     defaultUserShell = pkgs.zsh;
 
     groups = {
-      yi = { };
-      workd = { };
-      none = { };
+      yi = {
+        gid = 1000;
+      };
+      workd = {
+        gid = 1001;
+      };
+      none = {
+        gid = 1002;
+      };
     };
 
     users = {
       yi = {
+        uid = 1000;
         isNormalUser = true;
         description = "yi";
         group = "yi";
@@ -31,6 +38,7 @@
       };
 
       workd = {
+        uid = 1001;
         isNormalUser = true;
         description = "workd";
         group = "workd";
@@ -40,6 +48,7 @@
 
     extraUsers = {
       none = {
+        uid = 1002;
         enable = true;
         isNormalUser = true;
         description = "none";
@@ -68,16 +77,8 @@
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
 
-    interactiveShellInit = ''
-      nix-sanity() {
-        set -e
-        nix fmt
-        git add .
-        nix flake check -v
-        sudo nixos-rebuild --flake ".#$HOST" --upgrade --print-build-logs --show-trace dry-build
-        set +e
-      }
-    '';
+    interactiveShellInit =
+      builtins.readFile ./scripts/nix-sanity.sh + builtins.readFile ./scripts/nix-fix-uids.sh;
   };
 
   environment.variables = {

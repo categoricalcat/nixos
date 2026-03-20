@@ -11,7 +11,7 @@ in
 
     unstable.vscode-fhs
     unstable.code-cursor-fhs
-    antigravity
+    unstable.antigravity
 
     wl-clipboard
 

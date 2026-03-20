@@ -22,8 +22,6 @@ in
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=1min"
       "x-systemd.mount-timeout=10s"
       "noauto"
       "nofail"
@@ -42,8 +40,6 @@ in
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=1min"
       "x-systemd.mount-timeout=10s"
       "noauto"
       "nofail"
@@ -63,8 +59,6 @@ in
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=1min"
       "x-systemd.mount-timeout=10s"
       "noauto"
       "nofail"
@@ -83,8 +77,6 @@ in
     fsType = "nfs4";
     options = [
       "nfsvers=4.2"
-      "x-systemd.automount"
-      "x-systemd.idle-timeout=1min"
       "x-systemd.mount-timeout=10s"
       "noauto"
       "nofail"

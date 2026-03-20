@@ -1,4 +1,4 @@
-{ lib, ... }:
+_:
 
 let
   vpnCidr = "10.100.0.0/24";
@@ -37,7 +37,13 @@ in
 
   services.samba-wsdd = {
     enable = true;
-    openFirewall = false; # We open ports on VPN interface only below
+    openFirewall = false;
   };
 
+  # SMB ports on ZeroTier — zt+ wildcard doesn't translate to nftables zt*,
+  # so trustedInterfaces alone won't open these ports on ZeroTier interfaces.
+  networking.firewall.extraInputRules = ''
+    iifname "zt*" tcp dport { 139, 445 } accept
+    iifname "zt*" udp dport { 137, 138 } accept
+  '';
 }
