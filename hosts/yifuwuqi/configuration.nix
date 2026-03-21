@@ -9,6 +9,7 @@
 
 let
   mkHome = import ../../modules/home-manager.nix;
+  version = "25.11";
 in
 {
   imports = [
@@ -34,6 +35,21 @@ in
     ../../secrets/sops.nix
   ];
 
+  system.stateVersion = version;
+
+  home-manager =
+    lib.recursiveUpdate
+      (mkHome {
+        inherit inputs;
+        inherit (config.system) stateVersion;
+      })
+      {
+        users.workd = {
+          imports = [ ../../users/home-workd.nix ];
+          home.stateVersion = config.system.stateVersion;
+        };
+      };
+
   serverMode.headless = true;
 
   nix.settings = {
@@ -50,8 +66,6 @@ in
 
   services.nix-access-tokens.enable = false;
 
-  system.stateVersion = "25.11";
-
   hardware = {
     enableRedistributableFirmware = true;
     cpu.amd.updateMicrocode = true;
@@ -65,16 +79,10 @@ in
     enable = true;
   };
 
-  home-manager =
-    lib.recursiveUpdate
-      (mkHome {
-        inherit inputs;
-        inherit (config.system) stateVersion;
-      })
-      {
-        users.workd = {
-          imports = [ ../../users/home-workd.nix ];
-          home.stateVersion = config.system.stateVersion;
-        };
-      };
+  zramSwap = {
+    enable = true;
+    priority = 100;
+    memoryPercent = 100;
+    algorithm = "zstd";
+  };
 }

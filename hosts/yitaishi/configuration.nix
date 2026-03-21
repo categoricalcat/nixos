@@ -2,6 +2,7 @@
   config,
   pkgs,
   inputs,
+  lib,
   ...
 }:
 
@@ -9,6 +10,7 @@ let
   desktopEnvironment = "gnome";
   greeter = "gdm";
   mkHome = import ../../modules/home-manager.nix;
+  version = "25.11";
 in
 {
   imports = [
@@ -24,7 +26,6 @@ in
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
-    ../../modules/services/nfs/client.nix
     ../../modules/services/samba/client.nix
     ../../modules/packages.nix
     ../../modules/locale.nix
@@ -33,12 +34,20 @@ in
     ../../modules/services/openssh.nix
   ];
 
-  system.stateVersion = "25.11";
+  system.stateVersion = version;
 
-  home-manager = mkHome {
-    inherit desktopEnvironment inputs;
-    stateVersion = "25.11";
-  };
+  home-manager =
+    lib.recursiveUpdate
+      (mkHome {
+        inherit inputs desktopEnvironment;
+        inherit (config.system) stateVersion;
+      })
+      {
+        users.workd = {
+          imports = [ ../../users/home-workd.nix ];
+          home.stateVersion = config.system.stateVersion;
+        };
+      };
 
   sops.secrets."tokens/deepseek" = {
     owner = config.users.users.yi.name;

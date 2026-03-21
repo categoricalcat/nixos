@@ -1,12 +1,19 @@
-{ config, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 
 let
+  hasWg = config.networking.wg-quick.interfaces ? "yifuwuqi.vpn";
+  hasZerotier = config.services.zerotierone.enable;
+
   credentialsFile = "/etc/samba/credentials/yi";
   mountCommonOptions = [
     "credentials=${credentialsFile}"
     "vers=3.11"
-    "uid=${toString config.users.users.yi.uid}"
-    "gid=${toString config.users.users.yi.uid}"
+    "uid=yi"
+    "gid=yi"
     "file_mode=0664"
     "dir_mode=0775"
     "x-systemd.automount"
@@ -15,9 +22,6 @@ let
     "noauto"
     "nofail"
     "_netdev"
-    "soft"
-    "timeo=50"
-    "retrans=2"
   ];
 in
 {
@@ -28,27 +32,41 @@ in
 
   boot.supportedFilesystems = [ "cifs" ];
 
-  fileSystems."/mnt/smb/share" = {
+  # WireGuard Samba mounts — only on hosts with wg-quick yifuwuqi.vpn
+  fileSystems."/mnt/smb/share" = lib.mkIf hasWg {
     device = "//yifuwuqi.vpn/share";
     fsType = "cifs";
-    options = mountCommonOptions;
+    options = mountCommonOptions ++ [
+      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+    ];
   };
 
-  fileSystems."/mnt/smb/the.files" = {
+  fileSystems."/mnt/smb/the.files" = lib.mkIf hasWg {
     device = "//yifuwuqi.vpn/the.files";
     fsType = "cifs";
-    options = mountCommonOptions;
+    options = mountCommonOptions ++ [
+      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+    ];
   };
 
-  fileSystems."/mnt/smb/zero/share" = {
+  # ZeroTier Samba mounts — only on hosts with ZeroTier enabled
+  fileSystems."/mnt/smb/zero/share" = lib.mkIf hasZerotier {
     device = "//yifuwuqi.zero/share";
     fsType = "cifs";
-    options = mountCommonOptions;
+    options = mountCommonOptions ++ [
+      "x-systemd.after=zerotierone.service"
+      "x-systemd.requires=zerotierone.service"
+    ];
   };
 
-  fileSystems."/mnt/smb/zero/the.files" = {
+  fileSystems."/mnt/smb/zero/the.files" = lib.mkIf hasZerotier {
     device = "//yifuwuqi.zero/the.files";
     fsType = "cifs";
-    options = mountCommonOptions;
+    options = mountCommonOptions ++ [
+      "x-systemd.after=zerotierone.service"
+      "x-systemd.requires=zerotierone.service"
+    ];
   };
 }

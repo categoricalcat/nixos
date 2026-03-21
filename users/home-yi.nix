@@ -11,8 +11,10 @@ in
 {
   imports = [
     ./programs/alacritty.nix
+    ./programs/fastfetch.nix
     ./programs/opencode.nix
   ]
+  ++ lib.optional (desktopEnvironment != null) ../modules/desktop/web-apps.nix
   ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
   ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
 
@@ -63,7 +65,6 @@ in
       haskell-language-server
       stack
       ghcid
-      joplin-desktop
 
     ]
     ++ lib.optionals (desktopEnvironment == "gnome") [
@@ -80,6 +81,7 @@ in
     ++ lib.optionals (desktopEnvironment != null) [
       papirus-icon-theme
       bibata-cursors
+      joplin-desktop
     ];
 
   gtk =

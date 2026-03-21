@@ -10,6 +10,7 @@ let
   desktopEnvironment = "niri";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
+  version = "25.11";
 in
 {
   imports = [
@@ -25,7 +26,6 @@ in
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
-    # ../../modules/services/nfs/client.nix
     ../../modules/services/samba/client.nix
     ../../modules/packages.nix
     ../../modules/locale.nix
@@ -37,17 +37,25 @@ in
     ../../modules/services/openssh.nix
   ];
 
-  home-manager = mkHome {
-    inherit desktopEnvironment inputs;
-    stateVersion = "25.11";
-  };
+  system.stateVersion = version;
+
+  home-manager =
+    lib.recursiveUpdate
+      (mkHome {
+        inherit inputs desktopEnvironment;
+        inherit (config.system) stateVersion;
+      })
+      {
+        users.workd = {
+          imports = [ ../../users/home-workd.nix ];
+          home.stateVersion = config.system.stateVersion;
+        };
+      };
 
   environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
-
-  system.stateVersion = "25.11";
 
   security.polkit.enable = true;
 

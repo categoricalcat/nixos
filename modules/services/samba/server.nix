@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+_:
 
 let
   vpnCidr = "10.100.0.0/24";
@@ -18,7 +18,7 @@ in
       };
 
       share = {
-        path = "/srv/nfs/share";
+        path = "/srv/shares/share";
         "read only" = "no";
         "valid users" = "yi";
         "create mask" = "0664";
@@ -26,7 +26,7 @@ in
       };
 
       "the.files" = {
-        path = "/srv/nfs/the.files";
+        path = "/srv/shares/the.files";
         "read only" = "no";
         "valid users" = "yi";
         "create mask" = "0664";
@@ -37,15 +37,23 @@ in
 
   services.samba-wsdd = {
     enable = true;
-    openFirewall = false; # We open ports on VPN interface only below
+    openFirewall = false;
   };
 
-  warnings = lib.optional (
-    !config.sops.secrets ? "samba/credentials/yi"
-  ) "Run `sudo smbpasswd -a yi` on the server to activate Samba passwords for existing Unix users.";
+  systemd.tmpfiles.rules = [
+    "d /srv/shares 0755 root root -"
+    "d /srv/shares/share 0775 yi yi -"
+  ];
 
-  sops.secrets."samba/credentials/yi" = {
-    mode = "0600";
-    path = "/etc/samba/credentials/yi";
+  fileSystems."/srv/shares/the.files" = {
+    device = "/home/yi/the.files";
+    options = [ "bind" ];
   };
+
+  # SMB ports on ZeroTier — zt+ wildcard doesn't translate to nftables zt*,
+  # so trustedInterfaces alone won't open these ports on ZeroTier interfaces.
+  networking.firewall.extraInputRules = ''
+    iifname "zt*" tcp dport { 139, 445 } accept
+    iifname "zt*" udp dport { 137, 138 } accept
+  '';
 }

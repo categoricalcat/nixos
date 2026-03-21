@@ -3,16 +3,19 @@
 { pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
-    emacs-gtk
+    emacs-nox
+    cursor-cli
 
     gcc
     gnumake
     killall
+    zsh
+    cloudflared
+    zerotierone
 
     # System utilities
     btop
     curl
-    fastfetch
     stow
     tmux
     wget

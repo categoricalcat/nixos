@@ -52,6 +52,7 @@
   config = {
     programs = {
       xwayland.enable = true;
+      dconf.enable = true;
     };
 
     console.keyMap = "br-abnt2";
