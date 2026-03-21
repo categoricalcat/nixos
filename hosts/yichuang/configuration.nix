@@ -12,7 +12,7 @@ let
 in
 {
   imports = [
-    ../../modules/services/nfs/client.nix
+    ../../modules/services/samba/client.nix
     ../../secrets/sops.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix

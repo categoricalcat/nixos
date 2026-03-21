@@ -8,7 +8,6 @@
 
 {
   imports = [
-    ../../modules/services/nfs/server.nix
     ../../modules/services/samba/server.nix
     ../../modules/services/avahi.nix
     ../../modules/services/openssh.nix

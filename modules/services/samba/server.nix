@@ -18,7 +18,7 @@ in
       };
 
       share = {
-        path = "/srv/nfs/share";
+        path = "/srv/shares/share";
         "read only" = "no";
         "valid users" = "yi";
         "create mask" = "0664";
@@ -26,7 +26,7 @@ in
       };
 
       "the.files" = {
-        path = "/srv/nfs/the.files";
+        path = "/srv/shares/the.files";
         "read only" = "no";
         "valid users" = "yi";
         "create mask" = "0664";
@@ -38,6 +38,16 @@ in
   services.samba-wsdd = {
     enable = true;
     openFirewall = false;
+  };
+
+  systemd.tmpfiles.rules = [
+    "d /srv/shares 0755 root root -"
+    "d /srv/shares/share 0775 yi yi -"
+  ];
+
+  fileSystems."/srv/shares/the.files" = {
+    device = "/home/yi/the.files";
+    options = [ "bind" ];
   };
 
   # SMB ports on ZeroTier — zt+ wildcard doesn't translate to nftables zt*,

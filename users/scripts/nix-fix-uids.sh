@@ -23,13 +23,13 @@ nix-fix-uids() {
     fi
   done
 
-  if [ -d /srv/nfs/share ]; then
-    current_uid=$(stat -c "%u" /srv/nfs/share)
+  if [ -d /srv/shares/share ]; then
+    current_uid=$(stat -c "%u" /srv/shares/share)
     if [ "$current_uid" != "1000" ]; then
-      echo "Fixing /srv/nfs/share: UID $current_uid -> 1000"
-      chown -R 1000:1000 /srv/nfs/share
+      echo "Fixing /srv/shares/share: UID $current_uid -> 1000"
+      chown -R 1000:1000 /srv/shares/share
     else
-      echo "/srv/nfs/share: already UID 1000, skipping"
+      echo "/srv/shares/share: already UID 1000, skipping"
     fi
   fi
 }
