@@ -12,6 +12,7 @@
       gnome-screenshot
       swww
       xwayland-satellite
+      polkit_gnome
       inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
       # inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell
     ];
@@ -37,6 +38,8 @@
       };
     };
 
+    services.accounts-daemon.enable = true;
+
     xdg.portal = {
       enable = true;
       extraPortals = [
@@ -46,6 +49,14 @@
       config = {
         common = {
           default = [ "gtk" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+        };
+        niri = {
+          default = [
+            "gnome"
+            "gtk"
+          ];
         };
       };
     };
