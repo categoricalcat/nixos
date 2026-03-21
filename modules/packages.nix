@@ -16,7 +16,6 @@
     # System utilities
     btop
     curl
-    fastfetch
     stow
     tmux
     wget

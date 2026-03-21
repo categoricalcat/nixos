@@ -11,6 +11,7 @@ in
 {
   imports = [
     ./programs/alacritty.nix
+    ./programs/fastfetch.nix
     ./programs/opencode.nix
   ]
   ++ lib.optional (desktopEnvironment != null) ../modules/desktop/web-apps.nix
