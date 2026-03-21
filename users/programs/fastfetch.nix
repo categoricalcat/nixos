@@ -131,6 +131,16 @@ in
           key = "Local IP";
           keyColor = "38;2;180;190;254"; # Lavender (base07)
         }
+        {
+          type = "battery";
+          key = "Battery";
+          keyColor = "38;2;180;190;254"; # Lavender (base07)
+        }
+        {
+          type = "locale";
+          key = "Locale";
+          keyColor = "38;2;180;190;254"; # Lavender (base07)
+        }
         "break"
         "colors"
       ];
