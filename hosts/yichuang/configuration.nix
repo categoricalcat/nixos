@@ -3,6 +3,7 @@
 {
   pkgs,
   inputs,
+  config,
   ...
 }:
 
@@ -40,7 +41,7 @@ in
 
   home-manager = mkHome {
     inherit inputs;
-    stateVersion = "25.11";
+    inherit (config.system) stateVersion;
   };
 
   services.openssh = {

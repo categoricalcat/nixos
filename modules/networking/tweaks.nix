@@ -67,13 +67,4 @@
   ];
 
   services.fstrim.enable = true;
-
-  # ZRAM swap configuration (more efficient than disk swap)
-  zramSwap = {
-    enable = true;
-    priority = 100;
-    memoryPercent = 75;
-    algorithm = "zstd";
-  };
-
 }
