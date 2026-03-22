@@ -20,6 +20,8 @@
     networkmanager.enable = false;
     useNetworkd = true;
     useDHCP = false;
+
+    firewall.interfaces."wg0".allowedTCPPorts = [ 9090 ]; # Allow Cockpit via VPN
   };
 
   systemd.network = {

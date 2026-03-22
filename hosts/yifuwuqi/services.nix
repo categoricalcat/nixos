@@ -14,6 +14,7 @@
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/zerotier.nix
+    ../../modules/services/tailscale.nix
     ../../modules/services/ollama-amdgpu.nix
     # ../../modules/services/playit-agent.nix
     ../../modules/services/localtonet.nix
@@ -43,6 +44,12 @@
   services.fail2ban = {
     enable = true;
     jails = {
+      "sshd" = {
+        settings = {
+          mode = "aggressive";
+        };
+        enabled = true;
+      };
       "nginx-http-auth".enabled = true;
       "nginx-botsearch".enabled = true;
       "nginx-badbots".enabled = true;
@@ -113,7 +120,6 @@
     };
   };
 
-  users.users.yi.extraGroups = [ "podman" ];
   users.users.workd.extraGroups = [ "podman" ];
 
   services.nginx = {

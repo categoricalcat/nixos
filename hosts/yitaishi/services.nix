@@ -4,6 +4,7 @@
 {
   imports = [
     ../../modules/services/zerotier.nix
+    ../../modules/services/tailscale.nix
     ../../modules/services/ollama-amdgpu.nix
   ];
 

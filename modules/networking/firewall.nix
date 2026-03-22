@@ -5,6 +5,8 @@ _:
     firewall = {
       enable = true;
       allowPing = true;
+      logReversePathDrops = true;
+      logRefusedPackets = true;
       allowedTCPPorts = [
         53 # DNS
         80 # HTTP
@@ -15,7 +17,6 @@ _:
         # 9000
         24212 # SSH
         25565 # Minecraft server
-        9090 # Cockpit
       ];
       allowedUDPPorts = [
         53 # DNS
@@ -67,6 +68,26 @@ _:
           '';
         };
 
+        # Smarter Container Isolation
+        # Allows tunnel containers to talk to the host (e.g., database)
+        # but blocks access to the rest of the internal LAN/VPN network.
+        container-isolation = {
+          family = "inet";
+          content = ''
+            chain forward {
+              type filter hook forward priority 0;
+              
+              # Match traffic from the Podman subnets (10.88.x.x default or the 172.x subnets in addresses.nix)
+              # targeting private IP ranges.
+              
+              # 1. Allow containers to talk to the host's LAN/VPN/ZT IPs directly for services (like MariaDB)
+              ip saddr { 10.88.0.0/16, 172.17.0.0/16, 172.18.0.0/16 } ip daddr { 10.100.0.1, 10.0.0.1, 192.168.0.42 } accept
+
+              # 2. Block containers from reaching any other internal IP range
+              ip saddr { 10.88.0.0/16, 172.17.0.0/16, 172.18.0.0/16 } ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } drop
+            }
+          '';
+        };
       };
     };
 
