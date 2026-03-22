@@ -87,7 +87,6 @@ in
       in
       [
         (mkBuildMachine "yi.zero")
-        (mkBuildMachine "yi.vpn")
         # (mkBuildMachine "yi.vpn")
       ];
 

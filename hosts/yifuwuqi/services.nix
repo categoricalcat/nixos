@@ -2,7 +2,6 @@
 
 {
   pkgs,
-  addresses,
   ...
 }:
 
@@ -61,65 +60,6 @@
     rocmOverrideGfx = "10.3.0";
   };
 
-  # Podman configuration (Docker replacement)
-  virtualisation.podman = {
-    enable = true;
-    dockerCompat = true;
-    dockerSocket.enable = true;
-    defaultNetwork.settings = {
-      dns_enabled = false;
-      ipv6_enabled = true;
-      mtu = 1492;
-    };
-
-    autoPrune = {
-      enable = true;
-      dates = "weekly";
-      flags = [ "--all" ];
-    };
-  };
-
-  # Enable container networking
-  virtualisation.containers = {
-    enable = true;
-
-    storage.settings = {
-      storage = {
-        driver = "overlay";
-        runroot = "/run/containers/storage";
-        graphroot = "/var/lib/containers/storage";
-        options.overlay.mount_program = "${pkgs.fuse-overlayfs}/bin/fuse-overlayfs";
-      };
-    };
-
-    registries = {
-      search = [
-        "docker.io"
-        "quay.io"
-        "ghcr.io"
-      ];
-    };
-
-    containersConf.settings = {
-      containers = {
-        dns_servers = [
-          addresses.network.lan.ipv4.host
-        ];
-        log_driver = "journald";
-        log_size_max = 10485760; # 10MB in bytes (10 * 1024 * 1024)
-        default_ulimits = [
-          "nofile=65536:65536"
-        ];
-      };
-
-      network = {
-        default_subnet_pools = addresses.containers.subnetPools;
-      };
-    };
-  };
-
-  users.users.workd.extraGroups = [ "podman" ];
-
   services.nginx = {
     enable = true;
     recommendedGzipSettings = true;
@@ -164,13 +104,6 @@
   services.fwupd.enable = true;
 
   environment.systemPackages = with pkgs; [
-    # Container tools
-    buildah
-    dive
-    podman-compose
-    podman-tui
-    skopeo
-    # Security tools
     google-authenticator
   ];
 }

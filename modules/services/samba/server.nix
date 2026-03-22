@@ -49,11 +49,4 @@ in
     device = "/home/yi/the.files";
     options = [ "bind" ];
   };
-
-  # SMB ports on ZeroTier — zt+ wildcard doesn't translate to nftables zt*,
-  # so trustedInterfaces alone won't open these ports on ZeroTier interfaces.
-  networking.firewall.extraInputRules = ''
-    iifname "zt*" tcp dport { 139, 445 } accept
-    iifname "zt*" udp dport { 137, 138 } accept
-  '';
 }

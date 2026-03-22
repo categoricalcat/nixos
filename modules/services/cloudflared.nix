@@ -1,7 +1,6 @@
 { config, ... }:
 
 {
-  virtualisation.oci-containers.backend = "podman";
 
   users.groups.cloudflared = { };
   users.users.cloudflared = {

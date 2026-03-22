@@ -1,7 +1,6 @@
 { config, ... }:
 
 {
-  virtualisation.oci-containers.backend = "podman";
 
   users.groups.playit = { };
   users.users.playit = {

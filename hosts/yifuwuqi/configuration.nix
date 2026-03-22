@@ -32,6 +32,7 @@ in
     ../../modules/server-settings.nix
     ../../modules/server-mode.nix
     ../../modules/nix-access-tokens.nix
+    ../../modules/virtualisation/podman.nix
     ../../secrets/sops.nix
   ];
 
