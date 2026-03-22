@@ -9,12 +9,18 @@
       grub.enable = false;
     };
 
+    initrd.kernelModules = [ "amdgpu" ];
+
     kernelModules = lib.mkAfter [
       "fuse"
-      "coretemp"
+      "k10temp"
+      "nct6775"
     ];
 
-    kernelParams = [ "amdgpu.ppfeaturemask=0xffffffff" ];
+    kernelParams = [
+      "amdgpu.ppfeaturemask=0xffffffff"
+      "amd_pstate=active"
+    ];
 
     kernelPackages = pkgs.linuxPackages_latest;
   };
