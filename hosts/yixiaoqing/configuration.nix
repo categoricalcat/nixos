@@ -34,7 +34,6 @@ in
     # ../../modules/services/zerotier.nix
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
-    ../../modules/services/tailscale.nix
     ../../modules/services/openssh.nix
   ];
 

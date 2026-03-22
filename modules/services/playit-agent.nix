@@ -14,7 +14,6 @@
     image = "ghcr.io/playit-cloud/playit-agent:latest";
     user = "${toString config.users.users.playit.uid}:${toString config.users.groups.playit.gid}";
     extraOptions = [
-      "--network=host"
       "--pull=newer"
     ];
     environmentFiles = [

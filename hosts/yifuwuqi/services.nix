@@ -14,7 +14,6 @@
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/zerotier.nix
-    ../../modules/services/tailscale.nix
     ../../modules/services/ollama-amdgpu.nix
     # ../../modules/services/playit-agent.nix
     ../../modules/services/localtonet.nix
@@ -103,10 +102,9 @@
 
     containersConf.settings = {
       containers = {
-        # dns_servers = [
-        #   "8.8.8.8"
-        #   "1.1.1.1"
-        # ];
+        dns_servers = [
+          addresses.network.lan.ipv4.host
+        ];
         log_driver = "journald";
         log_size_max = 10485760; # 10MB in bytes (10 * 1024 * 1024)
         default_ulimits = [

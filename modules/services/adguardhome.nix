@@ -15,8 +15,10 @@
 
       dns = {
         bind_hosts = [
-          "0.0.0.0"
-          "::"
+          "127.0.0.1"
+          addresses.network.lan.ipv4.host
+          addresses.network.vpn.ipv4.host
+          addresses.network.zerotier.ipv4.host
         ];
 
         upstream_dns =

@@ -10,6 +10,7 @@
 
   services.resolved = {
     enable = false;
+    extraConfig = "DNSStubListener=no";
   };
 
   networking = {

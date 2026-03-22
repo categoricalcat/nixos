@@ -13,7 +13,6 @@ in
 {
   imports = [
     ../../modules/services/samba/client.nix
-    ../../modules/services/tailscale.nix
     ../../secrets/sops.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
