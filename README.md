@@ -21,3 +21,14 @@ nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-ag
 ```
 
 see `.sops.example.yaml` and `secrets/.secrets.example.yaml` for the expected formats.
+
+## samba
+
+### server
+
+```bash
+nix-shell -p samba --run "sudo smbpasswd -a yi"
+```
+
+### client
+Add your credentials to `secrets/secrets.yaml` using `sops`:
