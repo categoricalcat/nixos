@@ -17,7 +17,7 @@
     # ../../modules/services/playit-agent.nix
     ../../modules/services/localtonet.nix
     ../../modules/services/tailscale.nix
-    ../../modules/services/omada-controller.nix
+    # ../../modules/services/omada-controller.nix
     # ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix

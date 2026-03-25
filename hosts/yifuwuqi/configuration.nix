@@ -24,7 +24,6 @@ in
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
-    ../../modules/networking/wireguard-peers.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/packages.nix

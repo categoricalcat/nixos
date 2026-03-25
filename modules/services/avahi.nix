@@ -17,9 +17,8 @@ _: {
 
     allowInterfaces = [
       "wg0"
-      "bond0"
+      "tailscale0"
       "eno1"
-      "enp4s0"
     ];
 
     extraServiceFiles = {

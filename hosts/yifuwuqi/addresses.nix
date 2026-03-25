@@ -93,7 +93,7 @@
       };
 
       lan = {
-        interface = "bond0";
+        interface = "eno1";
         # ipv6 = rec {
         #   host = "2804:41fc:8030:ace0::40";
         #   prefixLength = 64;
@@ -106,6 +106,10 @@
           address = "${host}/${builtins.toString prefixLength}";
           gateway = "192.168.0.1";
         };
+      };
+
+      secondary = {
+        interface = "enp4s0";
       };
 
       tailscale = {
