@@ -107,6 +107,20 @@
           gateway = "192.168.0.1";
         };
       };
+
+      tailscale = {
+        interface = "tailscale0";
+        ipv6 = rec {
+          host = "fd7a:115c:a1e0::8501:3aa9";
+          prefixLength = 128;
+          address = "${host}/${builtins.toString prefixLength}";
+        };
+        ipv4 = rec {
+          host = "100.69.0.1";
+          prefixLength = 32;
+          address = "${host}/${builtins.toString prefixLength}";
+        };
+      };
     };
 
     wireguard = {
@@ -119,6 +133,7 @@
         network.lan.ipv4.host
         network.vpn.ipv4.host
         network.zerotier.ipv4.host
+        network.tailscale.ipv4.host
       ];
       listenWildcardIPv6 = "[::]";
     };

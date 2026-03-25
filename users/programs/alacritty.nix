@@ -6,6 +6,7 @@
 
     settings = {
       window = {
+        startup_mode = "Fullscreen";
         decorations = "Full";
         padding = {
           x = 10;
@@ -14,6 +15,10 @@
         dynamic_title = true;
         opacity = lib.mkDefault 0.85;
         blur = true;
+      };
+
+      font = {
+        size = lib.mkForce 14.0;
       };
 
       scrolling = {

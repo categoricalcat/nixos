@@ -32,6 +32,7 @@ in
     ../../modules/fonts.nix
     ../../modules/desktop.nix
     ../../modules/services/zerotier.nix
+    ../../modules/services/tailscale.nix
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
     ../../modules/services/openssh.nix
