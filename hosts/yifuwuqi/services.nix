@@ -16,6 +16,8 @@
     ../../modules/services/ollama-amdgpu.nix
     # ../../modules/services/playit-agent.nix
     ../../modules/services/localtonet.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/services/omada-controller.nix
     # ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
@@ -24,6 +26,15 @@
   services.logrotate = {
     enable = true;
     checkConfig = false;
+  };
+
+  services.tailscale = {
+    useRoutingFeatures = "server";
+    extraUpFlags = [
+      "--advertise-routes=192.168.0.0/24"
+      "--advertise-exit-node"
+      "--accept-dns=true"
+    ];
   };
 
   programs.nix-ld.enable = true;

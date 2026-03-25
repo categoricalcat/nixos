@@ -3,12 +3,13 @@
 my allegedly pure configs
 
 ## the stuff
+
 - **yitaishi**: main desktop
 - **yixiaoqing**: laptop
 - **yifuwuqi**: monolith server
 - **yichuang**: wsl
 
-## secrets (sops-nix)
+## secrets
 
 generate the age key from the host's ssh key:
 
@@ -19,5 +20,13 @@ nix-shell -p ssh-to-age --run \
 # public key (for .sops.yaml):
 nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
 ```
+
+### samba server
+
+```bash
+nix-shell -p samba --run "sudo smbpasswd -a yi"
+```
+
+---
 
 see `.sops.example.yaml` and `secrets/.secrets.example.yaml` for the expected formats.
