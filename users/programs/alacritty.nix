@@ -6,7 +6,7 @@
 
     settings = {
       window = {
-        startup_mode = "Fullscreen";
+        startup_mode = "Maximized";
         decorations = "Full";
         padding = {
           x = 10;
@@ -18,7 +18,7 @@
       };
 
       font = {
-        size = lib.mkForce 14.0;
+        size = lib.mkForce 12.0;
       };
 
       scrolling = {

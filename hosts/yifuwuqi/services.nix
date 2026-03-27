@@ -30,11 +30,6 @@
 
   services.tailscale = {
     useRoutingFeatures = "server";
-    extraUpFlags = [
-      "--advertise-routes=192.168.0.0/24"
-      "--advertise-exit-node"
-      "--accept-dns=true"
-    ];
   };
 
   programs.nix-ld.enable = true;

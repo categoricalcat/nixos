@@ -82,7 +82,7 @@ in
           PublicKey = peer.publicKey;
           AllowedIPs = peer.allowedIPs;
           PersistentKeepalive = peer.keepalive;
-        }) addresses.network.vpn.peers;
+        }) peerConfigs;
       };
     };
 

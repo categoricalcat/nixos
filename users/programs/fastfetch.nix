@@ -1,8 +1,8 @@
 # Fastfetch with Catppuccin Mocha theme (from shared theme.nix)
 _:
 let
-  # Hatsune Miku Teal (#39C5BB -> 57, 197, 187)
-  mikuColor = "#86cecb";
+  # Hatsune Miku Teal (#33BBAD)
+  mikuColor = "#33BBAD";
 in
 {
   programs.fastfetch = {
@@ -97,9 +97,39 @@ in
           keyColor = "38;2;250;179;135"; # Peach (base09)
         }
         {
+          type = "de";
+          key = "DE";
+          keyColor = "38;2;137;180;250"; # Blue (base0D)
+        }
+        {
+          type = "wm";
+          key = "WM";
+          keyColor = "38;2;137;180;250";
+        }
+        {
+          type = "lm";
+          key = "LM";
+          keyColor = "38;2;137;180;250";
+        }
+        {
           type = "terminal";
           key = "Terminal";
           keyColor = "38;2;250;179;135";
+        }
+        {
+          type = "display";
+          key = "Display";
+          keyColor = "38;2;148;226;213"; # Teal (base0C)
+        }
+        {
+          type = "font";
+          key = "Font";
+          keyColor = "38;2;242;205;205"; # Flamingo (base0F)
+        }
+        {
+          type = "icons";
+          key = "Icons";
+          keyColor = "38;2;242;205;205";
         }
         {
           type = "cpu";
@@ -134,12 +164,12 @@ in
         {
           type = "battery";
           key = "Battery";
-          keyColor = "38;2;180;190;254"; # Lavender (base07)
+          keyColor = "38;2;180;190;254";
         }
         {
           type = "locale";
           key = "Locale";
-          keyColor = "38;2;180;190;254"; # Lavender (base07)
+          keyColor = "38;2;180;190;254";
         }
         "break"
         "colors"
