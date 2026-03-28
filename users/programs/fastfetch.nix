@@ -1,8 +1,8 @@
-# Fastfetch with Catppuccin Mocha theme (from shared theme.nix)
+# Fastfetch with rainbow gradient key colors
 _:
 let
-  # Hatsune Miku Teal (#33BBAD)
-  mikuColor = "#33BBAD";
+  # Hatsune Miku Teal (#86cecb)
+  mikuColor = "#86cecb";
 in
 {
   programs.fastfetch = {
@@ -69,107 +69,107 @@ in
         {
           type = "os";
           key = "OS";
-          keyColor = mikuColor;
+          keyColor = "38;2;241;127;127"; # H=0°
         }
         {
           type = "host";
           key = "Host";
-          keyColor = mikuColor;
+          keyColor = "38;2;241;155;127"; # H=15°
         }
         {
           type = "kernel";
           key = "Kernel";
-          keyColor = mikuColor;
+          keyColor = "38;2;241;184;127"; # H=30°
         }
         {
           type = "uptime";
           key = "Uptime";
-          keyColor = "38;2;166;227;161"; # Green (base0B)
+          keyColor = "38;2;241;212;127"; # H=45°
         }
         {
           type = "packages";
           key = "Packages";
-          keyColor = "38;2;166;227;161";
+          keyColor = "38;2;241;241;127"; # H=60°
         }
         {
           type = "shell";
           key = "Shell";
-          keyColor = "38;2;250;179;135"; # Peach (base09)
+          keyColor = "38;2;212;241;127"; # H=75°
         }
         {
           type = "de";
           key = "DE";
-          keyColor = "38;2;137;180;250"; # Blue (base0D)
+          keyColor = "38;2;184;241;127"; # H=90°
         }
         {
           type = "wm";
           key = "WM";
-          keyColor = "38;2;137;180;250";
+          keyColor = "38;2;155;241;127"; # H=105°
         }
         {
           type = "lm";
           key = "LM";
-          keyColor = "38;2;137;180;250";
+          keyColor = "38;2;127;241;127"; # H=120°
         }
         {
           type = "terminal";
           key = "Terminal";
-          keyColor = "38;2;250;179;135";
+          keyColor = "38;2;127;241;155"; # H=135°
         }
         {
           type = "display";
           key = "Display";
-          keyColor = "38;2;148;226;213"; # Teal (base0C)
+          keyColor = "38;2;127;241;184"; # H=150°
         }
         {
           type = "font";
           key = "Font";
-          keyColor = "38;2;242;205;205"; # Flamingo (base0F)
+          keyColor = "38;2;127;241;212"; # H=165°
         }
         {
           type = "icons";
           key = "Icons";
-          keyColor = "38;2;242;205;205";
+          keyColor = "38;2;127;241;241"; # H=180°
         }
         {
           type = "cpu";
           key = "CPU";
-          keyColor = "38;2;249;226;175"; # Yellow (base0A)
+          keyColor = "38;2;127;212;241"; # H=195°
         }
         {
           type = "gpu";
           key = "GPU";
-          keyColor = "38;2;249;226;175";
+          keyColor = "38;2;127;184;241"; # H=210°
         }
         {
           type = "memory";
           key = "Memory";
-          keyColor = "38;2;243;139;168"; # Red (base08)
+          keyColor = "38;2;127;155;241"; # H=225°
         }
         {
           type = "swap";
           key = "Swap";
-          keyColor = "38;2;243;139;168";
+          keyColor = "38;2;127;127;241"; # H=240°
         }
         {
           type = "disk";
           key = "Disk";
-          keyColor = "38;2;243;139;168";
+          keyColor = "38;2;155;127;241"; # H=255°
         }
         {
           type = "localip";
           key = "Local IP";
-          keyColor = "38;2;180;190;254"; # Lavender (base07)
+          keyColor = "38;2;184;127;241"; # H=270°
         }
         {
           type = "battery";
           key = "Battery";
-          keyColor = "38;2;180;190;254";
+          keyColor = "38;2;212;127;241"; # H=285°
         }
         {
           type = "locale";
           key = "Locale";
-          keyColor = "38;2;180;190;254";
+          keyColor = "38;2;241;127;241"; # H=300°
         }
         "break"
         "colors"
