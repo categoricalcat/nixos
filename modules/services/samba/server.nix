@@ -1,7 +1,7 @@
 _:
 
 let
-  vpnCidr = "10.100.0.0/24";
+  tailscaleCidr = "100.64.0.0/10";
   zeroCidr = "10.0.0.0/24";
 in
 {
@@ -11,7 +11,7 @@ in
 
     settings = {
       global = {
-        "hosts allow" = "${vpnCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
+        "hosts allow" = "${tailscaleCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
         "load printers" = "no";
         "printing" = "bsd";

@@ -5,7 +5,7 @@
 }:
 
 let
-  hasWg = config.networking.wg-quick.interfaces ? "yifuwuqi.vpn";
+  hasTailscale = config.services.tailscale.enable;
   hasZerotier = config.services.zerotierone.enable;
 
   credentialsFile = "/etc/samba/credentials/yi";
@@ -32,22 +32,22 @@ in
 
   boot.supportedFilesystems = [ "cifs" ];
 
-  # WireGuard Samba mounts — only on hosts with wg-quick yifuwuqi.vpn
-  fileSystems."/mnt/smb/share" = lib.mkIf hasWg {
-    device = "//yifuwuqi.vpn/share";
+  # Tailscale Samba mounts — only on hosts with Tailscale enabled
+  fileSystems."/mnt/smb/share" = lib.mkIf hasTailscale {
+    device = "//yifuwuqi.ts/share";
     fsType = "cifs";
     options = mountCommonOptions ++ [
-      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
-      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.after=tailscaled.service"
+      "x-systemd.requires=tailscaled.service"
     ];
   };
 
-  fileSystems."/mnt/smb/the.files" = lib.mkIf hasWg {
-    device = "//yifuwuqi.vpn/the.files";
+  fileSystems."/mnt/smb/the.files" = lib.mkIf hasTailscale {
+    device = "//yifuwuqi.ts/the.files";
     fsType = "cifs";
     options = mountCommonOptions ++ [
-      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
-      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.after=tailscaled.service"
+      "x-systemd.requires=tailscaled.service"
     ];
   };
 
