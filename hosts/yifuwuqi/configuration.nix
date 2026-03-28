@@ -33,7 +33,10 @@ in
     ../../modules/nix-access-tokens.nix
     ../../modules/virtualisation/podman.nix
     ../../secrets/sops.nix
+    ../../modules/fido2.nix
   ];
+
+  security.fido2.enable = true;
 
   system.stateVersion = version;
 

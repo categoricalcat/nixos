@@ -32,7 +32,11 @@ in
     ../../modules/fonts.nix
     ../../modules/desktop.nix
     ../../modules/services/openssh.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/fido2.nix
   ];
+
+  security.fido2.enable = true;
 
   system.stateVersion = version;
 

@@ -36,7 +36,10 @@ in
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
     ../../modules/services/openssh.nix
+    ../../modules/fido2.nix
   ];
+
+  security.fido2.enable = true;
 
   system.stateVersion = version;
 
