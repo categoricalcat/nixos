@@ -125,12 +125,8 @@
 
       ssh = {
         listenPort = 24212;
-        listenAddresses = [
-          network.lan.ipv4.host
-          network.vpn.ipv4.host
-          network.zerotier.ipv4.host
-          network.tailscale.ipv4.host
-        ];
+        listenAddresses = [ ];
+        listenWildcardIPv4 = "0.0.0.0";
         listenWildcardIPv6 = "[::]";
       };
 
@@ -175,10 +171,21 @@
     yitaishi = rec {
       hostName = "yitaishi";
 
+      network = {
+        tailscale = {
+          interface = "tailscale0";
+          ipv4 = rec {
+            host = "100.69.0.2";
+            prefixLength = 32;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+        };
+      };
+
       ssh = {
         listenPort = 22;
         listenAddresses = [
-          #"10.100.0.3"
+          network.tailscale.ipv4.host
         ];
         listenWildcardIPv6 = null;
       };

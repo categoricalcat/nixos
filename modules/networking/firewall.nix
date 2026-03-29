@@ -15,7 +15,6 @@ _:
         # 3333 removed - restricted via nftables rules below
         # 3001
         # 9000
-        24212 # SSH
         25565 # Minecraft server
       ];
       allowedUDPPorts = [

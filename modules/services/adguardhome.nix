@@ -62,7 +62,7 @@
         rewrites = [
           {
             domain = "${addresses.hostName}.${addresses.dns.domain}";
-            answer = addresses.network.vpn.ipv4.host;
+            answer = addresses.network.tailscale.ipv4.host;
             enabled = true;
           }
           {

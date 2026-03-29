@@ -1,12 +1,11 @@
 _: {
   perSystem =
-    { config, pkgs, ... }:
+    { pkgs, ... }:
     {
       pre-commit = {
         check.enable = false;
         settings.hooks = {
           treefmt.enable = true;
-          treefmt.package = config.treefmt.build.wrapper;
 
           flake-check = {
             enable = true;

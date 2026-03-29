@@ -29,12 +29,11 @@ nix-shell -p samba --run "sudo smbpasswd -a yi"
 
 > *see `.sops.example.yaml` and `secrets/.secrets.example.yaml` for the expected formats.*
 
-
-
 ### FIDO2 Authentication
 
 ```bash
 mkdir -p ~/.config/Yubico
 nix-shell -p pam_u2f --run "pamu2fcfg > ~/.config/Yubico/u2f_keys"
 ```
+
 > *Note, multiple keys: `pamu2fcfg -n >> ~/.config/Yubico/u2f_keys`.*

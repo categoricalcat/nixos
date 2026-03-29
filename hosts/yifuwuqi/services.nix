@@ -2,6 +2,7 @@
 
 {
   pkgs,
+  addresses,
   ...
 }:
 
@@ -86,13 +87,13 @@
         };
       };
 
-      "yifuwuqi.vpn" = {
-        serverName = "yifuwuqi.vpn";
+      "${addresses.network.tailscale.ipv4.host}" = {
+        serverName = "${addresses.network.tailscale.ipv4.host}";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "yifuwuqi.vpn ok";
+            return 200 "${addresses.network.tailscale.ipv4.host} ok";
           '';
         };
       };
