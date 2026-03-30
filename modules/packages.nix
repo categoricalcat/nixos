@@ -57,6 +57,7 @@
     systemd
     tcpdump
     traceroute
+    bitwarden-cli
     wireguard-tools
   ];
 }
