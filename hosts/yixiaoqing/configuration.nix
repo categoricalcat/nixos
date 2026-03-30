@@ -110,6 +110,7 @@ in
   security.pam.services.login.fprintAuth = lib.mkDefault true;
   security.pam.services.gdm-fingerprint.fprintAuth = true;
   security.pam.services.sudo.fprintAuth = true;
+  security.pam.services.polkit-1.u2fAuth = true;
 
   hardware = {
     enableRedistributableFirmware = true;

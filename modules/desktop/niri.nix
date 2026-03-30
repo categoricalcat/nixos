@@ -12,7 +12,6 @@
       gnome-screenshot
       swww
       xwayland-satellite
-      polkit_gnome
       inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
       # inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell
     ];

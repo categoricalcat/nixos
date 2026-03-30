@@ -37,3 +37,18 @@ nix-shell -p pam_u2f --run "pamu2fcfg > ~/.config/Yubico/u2f_keys"
 ```
 
 > *Note, multiple keys: `pamu2fcfg -n >> ~/.config/Yubico/u2f_keys`.*
+
+### Bitwarden System Auth + Keyring
+
+**Verify prerequisites after `nixos-rebuild switch`:**
+
+```bash
+# polkit policy is registered
+pkaction --action-id com.bitwarden.Bitwarden.unlock
+
+# gnome-keyring exposes Secret Service on D-Bus
+busctl --user list | grep -i secret
+
+# polkit agent is running (niri only; GNOME uses gnome-shell's built-in agent)
+pgrep -a polkit
+```
