@@ -6,20 +6,20 @@ in
 {
   environment.systemPackages = with pkgs; [
     floorp-bin # the good
-    google-chrome
+    google-chrome # the bad
     emacs-gtk
 
     unstable.vscode-fhs
     unstable.code-cursor-fhs
     unstable.antigravity
+    unstable.discord-ptb
 
     wl-clipboard
 
     bitwarden-desktop
     prismlauncher
-    discord-ptb
     gimp
     nautilus
-    vial
+    unstable.vial
   ];
 }

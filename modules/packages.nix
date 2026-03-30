@@ -38,6 +38,7 @@
     tree
 
     # Shell and related tools
+    shellcheck
     fzf
     starship
     zoxide
