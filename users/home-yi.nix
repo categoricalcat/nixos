@@ -10,14 +10,18 @@ let
 in
 {
   imports = [
-    ./programs/alacritty.nix
     ./programs/fastfetch.nix
-    ./programs/mprisence.nix
-    ./programs/opencode.nix
   ]
-  ++ lib.optional (desktopEnvironment != null) ../modules/desktop/web-apps.nix
+  ++ lib.optionals (desktopEnvironment != null) [
+    ./programs/opencode.nix
+    ./programs/alacritty.nix
+    ./programs/mprisence.nix
+    ../modules/desktop/web-apps.nix
+  ]
   ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
-  ++ lib.optional (desktopEnvironment == "niri") ./programs/dms.nix;
+  ++ lib.optionals (desktopEnvironment == "niri") [
+    ./programs/dms.nix
+  ];
 
   home.username = "yi";
   home.homeDirectory = homeDirectory;

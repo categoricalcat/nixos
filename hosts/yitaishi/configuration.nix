@@ -59,8 +59,6 @@ in
     mode = "0400";
   };
 
-  # environment.systemPackages = [ pkgs.mprisence ];
-
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
 

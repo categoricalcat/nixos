@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -11,17 +16,24 @@ in
   };
 
   config = mkIf cfg.enable {
-    security.pam.u2f = {
-      enable = true;
-      settings = {
-        cue = true;
-        interactive = true;
+    security = {
+      pam = {
+        u2f = {
+          enable = true;
+          settings = {
+            cue = true;
+            interactive = true;
+          };
+        };
+
+        services = {
+          login.u2fAuth = true;
+          sudo.u2fAuth = true;
+        };
       };
     };
 
-    security.pam.services = {
-      login.u2fAuth = true;
-      sudo.u2fAuth = true;
-    };
+    services.udev.packages = [ pkgs.libfido2 ];
+    environment.systemPackages = [ pkgs.libfido2 ];
   };
 }

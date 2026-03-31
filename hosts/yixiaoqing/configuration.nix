@@ -56,8 +56,6 @@ in
         };
       };
 
-  environment.systemPackages = [ pkgs.mprisence ];
-
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
 
