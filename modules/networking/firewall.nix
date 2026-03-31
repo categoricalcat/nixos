@@ -26,7 +26,7 @@ _:
       ];
 
       trustedInterfaces = [
-        "wg0"
+        # "wg0"
         "tailscale0"
         "eno1"
       ];
@@ -35,43 +35,6 @@ _:
     nftables = {
       enable = true;
       tables = {
-        mssclamp = {
-          family = "inet";
-          content = ''
-            chain forward {
-              type filter hook forward priority mangle;
-
-              # MSS clamping for eno1 (MTU 1492 - 40 = 1452)
-              tcp flags syn tcp option maxseg size set 1452 oifname "eno1"
-              tcp flags syn tcp option maxseg size set 1452 iifname "eno1"
-
-              # MSS clamping for enp4s0 (MTU 1500 - 40 = 1460)
-              tcp flags syn tcp option maxseg size set 1460 oifname "enp4s0"
-              tcp flags syn tcp option maxseg size set 1460 iifname "enp4s0"
-
-              # MSS clamping for wg0 (MTU 1380 - 40 = 1340)
-              tcp flags syn tcp option maxseg size set 1340 oifname "wg0"
-              tcp flags syn tcp option maxseg size set 1340 iifname "wg0"
-            }
-          '';
-        };
-
-        # Restrict AdGuard UI access to LAN/VPN only
-        adguard-restrict = {
-          family = "inet";
-          content = ''
-            chain input {
-              type filter hook input priority 0;
-
-              # Allow AdGuard UI (port 3333) only from LAN and VPN interfaces
-              iifname { "eno1", "enp4s0", "wg0" } tcp dport 3333 accept
-
-              # Drop all other attempts to access port 3333
-              tcp dport 3333 drop
-            }
-          '';
-        };
-
         # Smarter Container Isolation
         # Allows tunnel containers to talk to the host (e.g., database)
         # but blocks access to the rest of the internal LAN/VPN network.
