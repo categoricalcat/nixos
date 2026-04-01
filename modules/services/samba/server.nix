@@ -1,8 +1,9 @@
 _:
 
 let
-  tailscaleCidr = "100.64.0.0/10";
-  zeroCidr = "10.0.0.0/24";
+  addresses = import ../../addresses.nix;
+  tailscaleCidr = addresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr;
+  zeroCidr = addresses.hosts.yifuwuqi.network.zerotier.ipv4.cidr;
 in
 {
   services.samba = {

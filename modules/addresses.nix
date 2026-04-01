@@ -1,4 +1,5 @@
 {
+
   hosts = {
     yifuwuqi = rec {
       hostName = "yifuwuqi";
@@ -62,6 +63,7 @@
       };
 
       network = {
+
         vpn = {
           interface = "wg0";
           ipv6 = rec {
@@ -84,6 +86,7 @@
             address = "${host}/${builtins.toString prefixLength}";
           };
           ipv4 = rec {
+            cidr = "10.0.0.0/24";
             host = "10.0.0.1";
             prefixLength = 24;
             address = "${host}/${builtins.toString prefixLength}";
@@ -112,6 +115,7 @@
             address = "${host}/${builtins.toString prefixLength}";
           };
           ipv4 = rec {
+            cidr = "100.64.0.0/10";
             host = "100.69.0.1";
             prefixLength = 32;
             address = "${host}/${builtins.toString prefixLength}";

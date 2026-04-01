@@ -5,6 +5,8 @@
 }:
 
 let
+  addresses = import ../../addresses.nix;
+
   hasTailscale = config.services.tailscale.enable;
   hasZerotier = config.services.zerotierone.enable;
 
@@ -34,7 +36,7 @@ in
 
   # Tailscale Samba mounts — only on hosts with Tailscale enabled
   fileSystems."/mnt/smb/share" = lib.mkIf hasTailscale {
-    device = "//yifuwuqi.ts/share";
+    device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/share";
     fsType = "cifs";
     options = mountCommonOptions ++ [
       "x-systemd.after=tailscaled.service"
@@ -43,7 +45,7 @@ in
   };
 
   fileSystems."/mnt/smb/the.files" = lib.mkIf hasTailscale {
-    device = "//yifuwuqi.ts/the.files";
+    device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/the.files";
     fsType = "cifs";
     options = mountCommonOptions ++ [
       "x-systemd.after=tailscaled.service"
@@ -53,7 +55,7 @@ in
 
   # ZeroTier Samba mounts — only on hosts with ZeroTier enabled
   fileSystems."/mnt/smb/zero/share" = lib.mkIf hasZerotier {
-    device = "//yifuwuqi.zero/share";
+    device = "//${addresses.hosts.yifuwuqi.network.zerotier.ipv4.host}/share";
     fsType = "cifs";
     options = mountCommonOptions ++ [
       "x-systemd.after=zerotierone.service"
@@ -62,7 +64,7 @@ in
   };
 
   fileSystems."/mnt/smb/zero/the.files" = lib.mkIf hasZerotier {
-    device = "//yifuwuqi.zero/the.files";
+    device = "//${addresses.hosts.yifuwuqi.network.zerotier.ipv4.host}/the.files";
     fsType = "cifs";
     options = mountCommonOptions ++ [
       "x-systemd.after=zerotierone.service"

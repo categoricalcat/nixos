@@ -10,6 +10,7 @@ let
   ];
   pingCount = 1;
   pingTimeout = 2;
+  pingDeadline = 5;
   metric = 100;
   sleepInterval = 2;
 
@@ -37,6 +38,7 @@ in
       CHECK_IPS = builtins.concatStringsSep " " pingTargets;
       PING_COUNT = toString pingCount;
       PING_TIMEOUT = toString pingTimeout;
+      DEADLINE = toString pingDeadline;
       METRIC = toString metric;
       INTERVAL = toString sleepInterval;
     };
@@ -46,6 +48,7 @@ in
       RestartSec = "3s";
       StandardOutput = "journal";
       StandardError = "journal";
+      StartLimitBurst = 5;
       ExecStart = "${script}/bin/gateway-failover";
     };
   };

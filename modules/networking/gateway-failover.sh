@@ -2,13 +2,12 @@
 # Gateway Failover Monitor
 # Enforces declarative routing states and includes lifecycle management.
 
-set -euo pipefail
-
 : "${INTERFACE:?Missing INTERFACE}"
 : "${GATEWAY:?Missing GATEWAY}"
 : "${CHECK_IPS:?Missing CHECK_IPS}"
 : "${PING_COUNT:?Missing PING_COUNT}"
 : "${PING_TIMEOUT:?Missing PING_TIMEOUT}"
+: "${DEADLINE:?Missing DEADLINE}"
 : "${METRIC:?Missing METRIC}"
 : "${INTERVAL:?Missing INTERVAL}"
 
@@ -25,16 +24,15 @@ logger -t gateway-failover "[STARTUP] Configured check IPs: ${check_ips[*]}"
 
 # Declarative cleanup on daemon termination
 cleanup() {
+  trap - EXIT
   logger -t gateway-failover "Shutting down, removing managed routes for $INTERFACE"
   for ip in "${check_ips[@]}"; do
     ip route del "$ip" via "$GATEWAY" dev "$INTERFACE" 2>/dev/null || true
   done
   ip route del default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" 2>/dev/null || true
-  exit 0
 }
 
-# Bind cleanup to termination signals
-trap cleanup SIGINT SIGTERM
+trap cleanup EXIT
 
 # Enforces the absent state of the default route
 ensure_route_absent() {
@@ -43,6 +41,7 @@ ensure_route_absent() {
     ip route del default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" 2>/dev/null || true
     logger -t gateway-failover "Gateway/Link unreachable via $INTERFACE, removed default route"
   fi
+  return 0
 }
 
 # Enforces the present state of the default route
@@ -50,9 +49,14 @@ ensure_route_present() {
   if [[ "$current_state" != "up" ]]; then
     # 'replace' is declarative: it creates or updates the route without duplicating it,
     # avoiding the need to iteratively parse 'ip route show'.
-    ip route replace default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" onlink
-    logger -t gateway-failover "Gateway reachable via $INTERFACE, restored default route (metric $METRIC)"
+    if ip route replace default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" onlink 2>/dev/null; then
+      logger -t gateway-failover "Gateway reachable via $INTERFACE, restored default route (metric $METRIC)"
+    else
+      logger -t gateway-failover "Failed to add default route via $INTERFACE"
+      return 1
+    fi
   fi
+  return 0
 }
 
 # main
@@ -82,10 +86,13 @@ while true; do
 
   # Execute health check
   logger -t gateway-failover "[CHECK] Pinging $CHECK_IP via $INTERFACE..."
-  if ping -I "$INTERFACE" -c "$PING_COUNT" -W "$PING_TIMEOUT" "$CHECK_IP" > /dev/null 2>&1; then
-    [[ "$current_state" != "up" ]] && logger -t gateway-failover "[UP] Ping to $CHECK_IP successful."
-    ensure_route_present
-    current_state="up"
+  if ping -I "$INTERFACE" -c "$PING_COUNT" -W "$PING_TIMEOUT" -w "$DEADLINE" "$CHECK_IP" > /dev/null 2>&1; then
+    if [[ "$current_state" != "up" ]]; then
+      logger -t gateway-failover "[UP] Ping to $CHECK_IP successful."
+    fi
+    if ensure_route_present; then
+      current_state="up"
+    fi
   else
     logger -t gateway-failover "[DOWN] Ping to $CHECK_IP failed!"
     ensure_route_absent
