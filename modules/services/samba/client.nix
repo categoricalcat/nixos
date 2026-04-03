@@ -18,6 +18,8 @@ let
     "gid=yi"
     "file_mode=0664"
     "dir_mode=0775"
+    "x-systemd.after=sops-install-secrets.service"
+    "x-systemd.requires=sops-install-secrets.service"
     "x-systemd.automount"
     "x-systemd.idle-timeout=1min"
     "x-systemd.mount-timeout=10s"
