@@ -38,6 +38,7 @@
     tree
 
     # Shell and related tools
+    shellcheck
     fzf
     starship
     zoxide
@@ -56,6 +57,7 @@
     systemd
     tcpdump
     traceroute
+    bitwarden-cli
     wireguard-tools
   ];
 }

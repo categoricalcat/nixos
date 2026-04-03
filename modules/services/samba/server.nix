@@ -1,8 +1,9 @@
 _:
 
 let
-  vpnCidr = "10.100.0.0/24";
-  zeroCidr = "10.0.0.0/24";
+  addresses = import ../../addresses.nix;
+  tailscaleCidr = addresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr;
+  zeroCidr = addresses.hosts.yifuwuqi.network.zerotier.ipv4.cidr;
 in
 {
   services.samba = {
@@ -11,7 +12,7 @@ in
 
     settings = {
       global = {
-        "hosts allow" = "${vpnCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
+        "hosts allow" = "${tailscaleCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
         "load printers" = "no";
         "printing" = "bsd";
@@ -50,10 +51,4 @@ in
     options = [ "bind" ];
   };
 
-  # SMB ports on ZeroTier — zt+ wildcard doesn't translate to nftables zt*,
-  # so trustedInterfaces alone won't open these ports on ZeroTier interfaces.
-  networking.firewall.extraInputRules = ''
-    iifname "zt*" tcp dport { 139, 445 } accept
-    iifname "zt*" udp dport { 137, 138 } accept
-  '';
 }

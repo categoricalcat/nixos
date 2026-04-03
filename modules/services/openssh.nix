@@ -1,4 +1,8 @@
 { addresses, ... }:
+let
+  listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
+  listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
+in
 {
 
   systemd.services.sshd = {
@@ -19,10 +23,21 @@
         port = addresses.ssh.listenPort;
       }) addresses.ssh.listenAddresses)
       ++ (
-        if addresses.ssh.listenWildcardIPv6 != null then
+        if listenWildcardIPv4 != null then
           [
             {
-              addr = addresses.ssh.listenWildcardIPv6;
+              addr = listenWildcardIPv4;
+              port = addresses.ssh.listenPort;
+            }
+          ]
+        else
+          [ ]
+      )
+      ++ (
+        if listenWildcardIPv6 != null then
+          [
+            {
+              addr = listenWildcardIPv6;
               port = addresses.ssh.listenPort;
             }
           ]

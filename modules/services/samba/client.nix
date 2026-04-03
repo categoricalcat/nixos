@@ -5,7 +5,9 @@
 }:
 
 let
-  hasWg = config.networking.wg-quick.interfaces ? "yifuwuqi.vpn";
+  addresses = import ../../addresses.nix;
+
+  hasTailscale = config.services.tailscale.enable;
   hasZerotier = config.services.zerotierone.enable;
 
   credentialsFile = "/etc/samba/credentials/yi";
@@ -16,6 +18,8 @@ let
     "gid=yi"
     "file_mode=0664"
     "dir_mode=0775"
+    "x-systemd.after=sops-install-secrets.service"
+    "x-systemd.requires=sops-install-secrets.service"
     "x-systemd.automount"
     "x-systemd.idle-timeout=1min"
     "x-systemd.mount-timeout=10s"
@@ -32,28 +36,28 @@ in
 
   boot.supportedFilesystems = [ "cifs" ];
 
-  # WireGuard Samba mounts — only on hosts with wg-quick yifuwuqi.vpn
-  fileSystems."/mnt/smb/share" = lib.mkIf hasWg {
-    device = "//yifuwuqi.vpn/share";
+  # Tailscale Samba mounts — only on hosts with Tailscale enabled
+  fileSystems."/mnt/smb/share" = lib.mkIf hasTailscale {
+    device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/share";
     fsType = "cifs";
     options = mountCommonOptions ++ [
-      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
-      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.after=tailscaled.service"
+      "x-systemd.requires=tailscaled.service"
     ];
   };
 
-  fileSystems."/mnt/smb/the.files" = lib.mkIf hasWg {
-    device = "//yifuwuqi.vpn/the.files";
+  fileSystems."/mnt/smb/the.files" = lib.mkIf hasTailscale {
+    device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/the.files";
     fsType = "cifs";
     options = mountCommonOptions ++ [
-      "x-systemd.after=wg-quick-yifuwuqi.vpn.service"
-      "x-systemd.requires=wg-quick-yifuwuqi.vpn.service"
+      "x-systemd.after=tailscaled.service"
+      "x-systemd.requires=tailscaled.service"
     ];
   };
 
   # ZeroTier Samba mounts — only on hosts with ZeroTier enabled
   fileSystems."/mnt/smb/zero/share" = lib.mkIf hasZerotier {
-    device = "//yifuwuqi.zero/share";
+    device = "//${addresses.hosts.yifuwuqi.network.zerotier.ipv4.host}/share";
     fsType = "cifs";
     options = mountCommonOptions ++ [
       "x-systemd.after=zerotierone.service"
@@ -62,7 +66,7 @@ in
   };
 
   fileSystems."/mnt/smb/zero/the.files" = lib.mkIf hasZerotier {
-    device = "//yifuwuqi.zero/the.files";
+    device = "//${addresses.hosts.yifuwuqi.network.zerotier.ipv4.host}/the.files";
     fsType = "cifs";
     options = mountCommonOptions ++ [
       "x-systemd.after=zerotierone.service"

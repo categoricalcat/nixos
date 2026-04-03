@@ -1,0 +1,3 @@
+# disable file mode
+[core]
+    filemode = false

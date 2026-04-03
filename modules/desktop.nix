@@ -86,5 +86,22 @@
         ];
       };
     };
+
+    environment.systemPackages = lib.optionals (config.desktop.environment != "gnome") [
+      pkgs.polkit_gnome
+    ];
+
+    systemd.user.services.polkit-gnome-agent = lib.mkIf (config.desktop.environment != "gnome") {
+      description = "polkit-gnome-authentication-agent-1";
+      wantedBy = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+        Restart = "on-failure";
+        RestartSec = 1;
+        TimeoutStopSec = 10;
+      };
+    };
   };
 }

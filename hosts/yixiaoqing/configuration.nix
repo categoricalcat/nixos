@@ -31,11 +31,15 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    # ../../modules/services/zerotier.nix
+    ../../modules/services/zerotier.nix
+    ../../modules/services/tailscale.nix
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
     ../../modules/services/openssh.nix
+    ../../modules/fido2.nix
   ];
+
+  security.fido2.enable = true;
 
   system.stateVersion = version;
 
@@ -51,8 +55,6 @@ in
           home.stateVersion = config.system.stateVersion;
         };
       };
-
-  environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
@@ -87,7 +89,6 @@ in
       in
       [
         (mkBuildMachine "yi.zero")
-        (mkBuildMachine "yi.vpn")
         # (mkBuildMachine "yi.vpn")
       ];
 
@@ -107,6 +108,7 @@ in
   security.pam.services.login.fprintAuth = lib.mkDefault true;
   security.pam.services.gdm-fingerprint.fprintAuth = true;
   security.pam.services.sudo.fprintAuth = true;
+  security.pam.services.polkit-1.u2fAuth = true;
 
   hardware = {
     enableRedistributableFirmware = true;

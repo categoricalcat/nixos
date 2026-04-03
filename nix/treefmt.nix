@@ -1,15 +1,12 @@
 _: {
-  perSystem =
-    { pkgs, ... }:
-    {
-      treefmt = {
-        projectRootFile = "flake.nix";
-        programs = {
-          nixfmt.enable = true;
-          nixfmt.package = pkgs.nixfmt;
-          statix.enable = true;
-          deadnix.enable = true;
-        };
+  perSystem = _: {
+    treefmt = {
+      projectRootFile = "flake.nix";
+      programs = {
+        nixfmt.enable = true;
+        statix.enable = true;
+        deadnix.enable = true;
       };
     };
+  };
 }

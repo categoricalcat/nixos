@@ -67,5 +67,10 @@ in
       name = "GitHub";
       url = "https://github.com";
     };
+
+    bitwarden = mkWebApp {
+      name = "Bitwarden";
+      url = "https://vault.bitwarden.com";
+    };
   };
 }

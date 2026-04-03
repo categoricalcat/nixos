@@ -1,7 +1,6 @@
 { config, ... }:
 
 {
-  virtualisation.oci-containers.backend = "podman";
 
   users.groups.cloudflared = { };
   users.users.cloudflared = {
@@ -19,7 +18,6 @@
     # Run as non-root; map container UID to host user `cloudflared` group
     user = "${toString config.users.users.cloudflared.uid}:${toString config.users.groups.cloudflared.gid}";
     extraOptions = [
-      "--network=host"
       "--pull=newer"
     ];
     environmentFiles = [

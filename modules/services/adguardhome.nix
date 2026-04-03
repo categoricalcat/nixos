@@ -15,8 +15,10 @@
 
       dns = {
         bind_hosts = [
-          "0.0.0.0"
-          "::"
+          "127.0.0.1"
+          addresses.network.lan.ipv4.host
+          addresses.network.zerotier.ipv4.host
+          addresses.network.tailscale.ipv4.host
         ];
 
         upstream_dns =
@@ -60,7 +62,7 @@
         rewrites = [
           {
             domain = "${addresses.hostName}.${addresses.dns.domain}";
-            answer = addresses.network.vpn.ipv4.host;
+            answer = addresses.network.tailscale.ipv4.host;
             enabled = true;
           }
           {
@@ -81,6 +83,11 @@
           {
             domain = "${addresses.hostName}.zero";
             answer = addresses.network.zerotier.ipv4.host;
+            enabled = true;
+          }
+          {
+            domain = "${addresses.hostName}.ts";
+            answer = addresses.network.tailscale.ipv4.host;
             enabled = true;
           }
         ];

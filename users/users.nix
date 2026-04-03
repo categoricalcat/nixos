@@ -34,6 +34,7 @@
           "video"
           "dialout"
           "networkmanager"
+          "systemd-journal"
         ];
       };
 

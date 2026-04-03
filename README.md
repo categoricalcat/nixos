@@ -3,14 +3,15 @@
 my allegedly pure configs
 
 ## the stuff
+
 - **yitaishi**: main desktop
 - **yixiaoqing**: laptop
 - **yifuwuqi**: monolith server
 - **yichuang**: wsl
 
-## secrets (sops-nix)
+## the imperatives
 
-generate the age key from the host's ssh key:
+### sops
 
 ```bash
 nix-shell -p ssh-to-age --run \
@@ -20,4 +21,34 @@ nix-shell -p ssh-to-age --run \
 nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
 ```
 
-see `.sops.example.yaml` and `secrets/.secrets.example.yaml` for the expected formats.
+### samba server
+
+```bash
+nix-shell -p samba --run "sudo smbpasswd -a yi"
+```
+
+> *see `.sops.example.yaml` and `secrets/.secrets.example.yaml` for the expected formats.*
+
+### FIDO2 Authentication
+
+```bash
+mkdir -p ~/.config/Yubico
+nix-shell -p pam_u2f --run "pamu2fcfg > ~/.config/Yubico/u2f_keys"
+```
+
+> *Note, multiple keys: `pamu2fcfg -n >> ~/.config/Yubico/u2f_keys`.*
+
+### Bitwarden System Auth + Keyring
+
+**Verify prerequisites after `nixos-rebuild switch`:**
+
+```bash
+# polkit policy is registered
+pkaction --action-id com.bitwarden.Bitwarden.unlock
+
+# gnome-keyring exposes Secret Service on D-Bus
+busctl --user list | grep -i secret
+
+# polkit agent is running (niri only; GNOME uses gnome-shell's built-in agent)
+pgrep -a polkit
+```

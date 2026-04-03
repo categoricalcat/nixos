@@ -54,6 +54,19 @@
     # Security-hardened TCP settings
     "net.ipv4.tcp_rfc1337" = 1; # Protect against TIME-WAIT attacks
     "net.ipv4.tcp_syncookies" = 1; # Enable SYN flood protection
+
+    # Source validation and spoofing protection
+    "net.ipv4.conf.all.rp_filter" = 1;
+    "net.ipv4.conf.default.rp_filter" = 1;
+
+    # Ignore ICMP redirects
+    "net.ipv4.conf.all.accept_redirects" = 0;
+    "net.ipv6.conf.all.accept_redirects" = 0;
+    "net.ipv4.conf.all.send_redirects" = 0;
+
+    # Ignore ICMP broadcasts (Smurf attacks)
+    "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
+
     # Required by wg-easy / WireGuard in containers to properly mark packets
     "net.ipv4.conf.all.src_valid_mark" = 1;
     # Enable only if routing IPv6 via WireGuard

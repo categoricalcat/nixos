@@ -32,7 +32,11 @@ in
     ../../modules/fonts.nix
     ../../modules/desktop.nix
     ../../modules/services/openssh.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/fido2.nix
   ];
+
+  security.fido2.enable = true;
 
   system.stateVersion = version;
 
@@ -54,8 +58,6 @@ in
     inherit (config.users.users.yi) group;
     mode = "0400";
   };
-
-  # environment.systemPackages = [ pkgs.mprisence ];
 
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;

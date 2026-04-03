@@ -24,7 +24,6 @@ in
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
-    ../../modules/networking/wireguard-peers.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/packages.nix
@@ -32,8 +31,12 @@ in
     ../../modules/server-settings.nix
     ../../modules/server-mode.nix
     ../../modules/nix-access-tokens.nix
+    ../../modules/virtualisation/podman.nix
     ../../secrets/sops.nix
+    ../../modules/fido2.nix
   ];
+
+  security.fido2.enable = true;
 
   system.stateVersion = version;
 
@@ -84,5 +87,17 @@ in
     priority = 100;
     memoryPercent = 100;
     algorithm = "zstd";
+  };
+
+  system.autoUpgrade = {
+    enable = true;
+    flake = inputs.self.outPath;
+    flags = [
+      "--update-input"
+      "nixpkgs"
+      "-L" # print build logs
+    ];
+    dates = "02:00";
+    randomizedDelaySec = "45min";
   };
 }
