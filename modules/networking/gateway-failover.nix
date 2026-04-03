@@ -13,15 +13,15 @@ let
   pingDeadline = 5;
   metric = 100;
   sleepInterval = 2;
+  failureThreshold = 2;
+  recoveryThreshold = 2;
 
   script = pkgs.writeShellApplication {
     name = "gateway-failover";
     runtimeInputs = with pkgs; [
       iproute2
       iputils
-      gnugrep
       coreutils
-      util-linux
     ];
     text = builtins.readFile ./gateway-failover.sh;
   };
@@ -41,6 +41,8 @@ in
       DEADLINE = toString pingDeadline;
       METRIC = toString metric;
       INTERVAL = toString sleepInterval;
+      FAILURE_THRESHOLD = toString failureThreshold;
+      RECOVERY_THRESHOLD = toString recoveryThreshold;
     };
     serviceConfig = {
       Type = "simple";

@@ -22,19 +22,8 @@
           MTUBytes = 1492;
           RequiredForOnline = "carrier";
         };
-
-        routes = [
-          # {
-          #   Gateway = addresses.network.lan.ipv6.gateway;
-          #   GatewayOnLink = true;
-          #   Metric = 5;
-          # }
-          {
-            Gateway = addresses.network.lan.ipv4.gateway;
-            GatewayOnLink = true;
-            Metric = 100;
-          }
-        ];
+        # The health-checked default route is owned by gateway-failover so it
+        # can be withdrawn cleanly when upstream connectivity fails.
       };
     };
   };

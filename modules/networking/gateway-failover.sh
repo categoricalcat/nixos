@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Gateway Failover Monitor
-# Enforces declarative routing states and includes lifecycle management.
+# Keeps the preferred uplink route installed only while it passes health checks.
 
 : "${INTERFACE:?Missing INTERFACE}"
 : "${GATEWAY:?Missing GATEWAY}"
@@ -10,93 +10,199 @@
 : "${DEADLINE:?Missing DEADLINE}"
 : "${METRIC:?Missing METRIC}"
 : "${INTERVAL:?Missing INTERVAL}"
+: "${FAILURE_THRESHOLD:?Missing FAILURE_THRESHOLD}"
+: "${RECOVERY_THRESHOLD:?Missing RECOVERY_THRESHOLD}"
+: "${OPERSTATE_FILE:=/sys/class/net/$INTERFACE/operstate}"
 
-# State tracker to prevent log spam and redundant operations
 current_state="unknown"
+consecutive_failures=0
+consecutive_successes=0
 
-# Convert space-separated string to array
 read -r -a check_ips <<< "$CHECK_IPS"
 num_ips=${#check_ips[@]}
 current_ip_index=0
 
-logger -t gateway-failover "[STARTUP] Gateway failover monitor initializing. Interface: $INTERFACE, Gateway: $GATEWAY"
-logger -t gateway-failover "[STARTUP] Configured check IPs: ${check_ips[*]}"
+log() {
+  local level="$1"
+  shift
 
-# Declarative cleanup on daemon termination
-cleanup() {
-  trap - EXIT
-  logger -t gateway-failover "Shutting down, removing managed routes for $INTERFACE"
+  if [[ "$level" == "WARN" || "$level" == "ERROR" ]]; then
+    printf '[%s] %s\n' "$level" "$*" >&2
+    return
+  fi
+
+  printf '[%s] %s\n' "$level" "$*"
+}
+
+default_route_present() {
+  local routes
+
+  routes=$(ip -4 route show default dev "$INTERFACE" 2>/dev/null || true)
+  [[ -n "$routes" ]] &&
+    [[ "$routes" == *"via $GATEWAY"* ]] &&
+    [[ "$routes" == *"metric $METRIC"* ]]
+}
+
+log_default_routes() {
+  local routes
+
+  routes=$(ip -4 route show default 2>/dev/null || true)
+  if [[ -z "$routes" ]]; then
+    log WARN "No IPv4 default routes are currently installed"
+    return
+  fi
+
+  while IFS= read -r line; do
+    log INFO "Default route: $line"
+  done <<< "$routes"
+}
+
+remove_probe_routes() {
+  local ip
+
   for ip in "${check_ips[@]}"; do
     ip route del "$ip" via "$GATEWAY" dev "$INTERFACE" 2>/dev/null || true
   done
-  ip route del default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" 2>/dev/null || true
+}
+
+remove_default_route() {
+  ip route del default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" onlink 2>/dev/null && return 0
+  ip route del default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" 2>/dev/null && return 0
+  ip route del default via "$GATEWAY" dev "$INTERFACE" 2>/dev/null && return 0
+  ip route del default dev "$INTERFACE" metric "$METRIC" 2>/dev/null && return 0
+  return 1
+}
+
+cleanup() {
+  trap - EXIT
+  log INFO "Shutting down, removing managed routes for $INTERFACE"
+
+  remove_probe_routes
+  remove_default_route || true
 }
 
 trap cleanup EXIT
 
-# Enforces the absent state of the default route
 ensure_route_absent() {
-  if [[ "$current_state" != "down" && "$current_state" != "link-down" ]]; then
-    # Idempotent deletion ignores errors if the route is already gone
-    ip route del default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" 2>/dev/null || true
-    logger -t gateway-failover "Gateway/Link unreachable via $INTERFACE, removed default route"
+  local reason="$1"
+  local route_was_present=0
+
+  if default_route_present; then
+    route_was_present=1
+    remove_default_route || true
   fi
+
+  remove_probe_routes
+
+  if default_route_present; then
+    log ERROR "$reason, but the default route via $INTERFACE is still present"
+    log_default_routes
+    return 1
+  fi
+
+  if (( route_was_present )); then
+    log WARN "$reason, removed default route via $INTERFACE"
+    log_default_routes
+  elif [[ "$current_state" != "down" && "$current_state" != "link-down" ]]; then
+    log INFO "$reason, primary default route via $INTERFACE was already absent"
+    log_default_routes
+  fi
+
   return 0
 }
 
-# Enforces the present state of the default route
 ensure_route_present() {
-  if [[ "$current_state" != "up" ]]; then
-    # 'replace' is declarative: it creates or updates the route without duplicating it,
-    # avoiding the need to iteratively parse 'ip route show'.
-    if ip route replace default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" onlink 2>/dev/null; then
-      logger -t gateway-failover "Gateway reachable via $INTERFACE, restored default route (metric $METRIC)"
-    else
-      logger -t gateway-failover "Failed to add default route via $INTERFACE"
-      return 1
-    fi
+  if ! ip route replace default via "$GATEWAY" dev "$INTERFACE" metric "$METRIC" onlink 2>/dev/null; then
+    log ERROR "Failed to install default route via $INTERFACE"
+    log_default_routes
+    return 1
   fi
+
+  if ! default_route_present; then
+    log ERROR "Tried to install default route via $INTERFACE, but it is still missing"
+    log_default_routes
+    return 1
+  fi
+
+  if [[ "$current_state" != "up" ]]; then
+    log INFO "Gateway reachable via $INTERFACE, restored default route (metric $METRIC)"
+    log_default_routes
+  fi
+
   return 0
 }
 
-# main
+if (( num_ips == 0 )); then
+  log ERROR "No health-check IPs configured"
+  exit 1
+fi
+
+if ! [[ "$FAILURE_THRESHOLD" =~ ^[1-9][0-9]*$ && "$RECOVERY_THRESHOLD" =~ ^[1-9][0-9]*$ ]]; then
+  log ERROR "FAILURE_THRESHOLD and RECOVERY_THRESHOLD must be positive integers"
+  exit 1
+fi
+
+log INFO "Gateway failover monitor initializing. Interface: $INTERFACE, Gateway: $GATEWAY"
+log INFO "Configured check IPs: ${check_ips[*]}"
+log INFO "Using failure threshold $FAILURE_THRESHOLD and recovery threshold $RECOVERY_THRESHOLD"
+
 while true; do
-  operstate=$(cat "/sys/class/net/$INTERFACE/operstate" 2>/dev/null || echo "down")
+  if ! read -r operstate < "$OPERSTATE_FILE"; then
+    operstate="down"
+  fi
 
   if [[ "$operstate" != "up" ]]; then
-    ensure_route_absent
-    if [[ "$current_state" != "link-down" ]]; then
-      logger -t gateway-failover "Interface $INTERFACE is $operstate, skipping health checks"
+    consecutive_failures=0
+    consecutive_successes=0
+    if ensure_route_absent "Interface $INTERFACE is $operstate"; then
+      if [[ "$current_state" != "link-down" ]]; then
+        log WARN "Interface $INTERFACE is $operstate, skipping health checks"
+      fi
       current_state="link-down"
     fi
     sleep "$INTERVAL"
     continue
   fi
 
-  # Get the next check IP and advance the index
-  CHECK_IP="${check_ips[$current_ip_index]}"
+  check_ip="${check_ips[$current_ip_index]}"
   current_ip_index=$(( (current_ip_index + 1) % num_ips ))
 
-  # Declaratively ensure the host route exists for the L3 health check
-  if ! ip route replace "$CHECK_IP" via "$GATEWAY" dev "$INTERFACE" onlink 2>/dev/null; then
-    logger -t gateway-failover "Failed to set host route for $CHECK_IP via $INTERFACE"
+  if ! ip route replace "$check_ip" via "$GATEWAY" dev "$INTERFACE" onlink 2>/dev/null; then
+    log ERROR "Failed to set host route for $check_ip via $INTERFACE"
     sleep "$INTERVAL"
     continue
   fi
 
-  # Execute health check
-  logger -t gateway-failover "[CHECK] Pinging $CHECK_IP via $INTERFACE..."
-  if ping -I "$INTERFACE" -c "$PING_COUNT" -W "$PING_TIMEOUT" -w "$DEADLINE" "$CHECK_IP" > /dev/null 2>&1; then
-    if [[ "$current_state" != "up" ]]; then
-      logger -t gateway-failover "[UP] Ping to $CHECK_IP successful."
+  if ping -I "$INTERFACE" -c "$PING_COUNT" -W "$PING_TIMEOUT" -w "$DEADLINE" "$check_ip" > /dev/null 2>&1; then
+    consecutive_failures=0
+    if (( consecutive_successes < RECOVERY_THRESHOLD )); then
+      consecutive_successes=$((consecutive_successes + 1))
     fi
-    if ensure_route_present; then
-      current_state="up"
+
+    if [[ "$current_state" != "up" && "$consecutive_successes" -eq 1 ]]; then
+      log INFO "Primary path reachable again via $check_ip (${consecutive_successes}/${RECOVERY_THRESHOLD})"
+    fi
+
+    if [[ "$current_state" != "up" && "$consecutive_successes" -ge "$RECOVERY_THRESHOLD" ]]; then
+      if ensure_route_present; then
+        current_state="up"
+      fi
     fi
   else
-    logger -t gateway-failover "[DOWN] Ping to $CHECK_IP failed!"
-    ensure_route_absent
-    current_state="down"
+    consecutive_successes=0
+    if (( consecutive_failures < FAILURE_THRESHOLD )); then
+      consecutive_failures=$((consecutive_failures + 1))
+    fi
+
+    if [[ "$current_state" == "up" && "$consecutive_failures" -lt "$FAILURE_THRESHOLD" ]]; then
+      log WARN "Primary health check failed for $check_ip (${consecutive_failures}/${FAILURE_THRESHOLD})"
+    fi
+
+    if [[ "$consecutive_failures" -ge "$FAILURE_THRESHOLD" ]]; then
+      if ensure_route_absent "Primary health checks failed via $INTERFACE (last target: $check_ip)" ; then
+        current_state="down"
+      fi
+    fi
   fi
 
   sleep "$INTERVAL"
