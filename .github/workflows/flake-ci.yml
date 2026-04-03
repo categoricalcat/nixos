@@ -36,14 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - uses: cachix/install-nix-action@master
-      - uses: nix-community/cache-nix-action@main
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-
       - id: set-matrix
         run: |
           HOSTS="$(nix eval --json .#nixosConfigurations --apply 'cfgs: builtins.attrNames cfgs')"
           echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
+
+      - uses: nix-community/cache-nix-action@main
+        with:
+          primary-key: nix-${{ runner.os }}-${{ join(fromJson(steps.set-matrix.outputs.hosts), '') }}
 
   eval:
     needs: generate-matrix
