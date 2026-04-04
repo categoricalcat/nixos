@@ -38,6 +38,23 @@ nix-shell -p pam_u2f --run "pamu2fcfg > ~/.config/Yubico/u2f_keys"
 
 > *Note, multiple keys: `pamu2fcfg -n >> ~/.config/Yubico/u2f_keys`.*
 
+### yitaishi Lanzaboote / Windows
+
+```bash
+# if Windows uses BitLocker, save the recovery key first
+sudo sbctl create-keys
+sudo nixos-rebuild switch --flake .#yitaishi
+
+# put firmware into Secure Boot Setup Mode, then:
+sudo sbctl enroll-keys --microsoft
+
+# verify
+bootctl status
+sudo sbctl verify
+```
+
+> *Use `--microsoft` to keep the usual Windows and firmware signing chain available.*
+
 ### Bitwarden System Auth + Keyring
 
 **Verify prerequisites after `nixos-rebuild switch`:**

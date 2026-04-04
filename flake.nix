@@ -68,6 +68,7 @@
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 ./hosts/yitaishi/configuration.nix
+                inputs.lanzaboote.nixosModules.lanzaboote
               ];
             };
           };
@@ -113,6 +114,11 @@
 
     stylix = {
       url = "github:nix-community/stylix/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.0.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

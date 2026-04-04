@@ -24,6 +24,7 @@ in
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
+    ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/services/samba/client.nix
@@ -66,41 +67,16 @@ in
     rocmSupport = false;
   };
 
+  distributedBuilds = {
+    enable = true;
+    role = "client";
+  };
+
   nix = {
-    distributedBuilds = true;
-
-    buildMachines =
-      let
-        mkBuildMachine = hostName: {
-          inherit hostName;
-          system = "x86_64-linux";
-          maxJobs = 15;
-          speedFactor = 3;
-          protocol = "ssh-ng";
-          supportedFeatures = [
-            "nixos-test"
-            "benchmark"
-            "big-parallel"
-            "kvm"
-          ];
-          sshUser = config.users.users.yi.name;
-          sshKey = "/home/yi/.ssh/id_ed25519";
-        };
-      in
-      [
-        (mkBuildMachine "yi.zero")
-        # (mkBuildMachine "yi.vpn")
-      ];
-
-    extraOptions = ''
-      connect-timeout = 5
-    '';
-
     settings = {
       trusted-users = [
         "root"
       ];
-      builders-use-substitutes = true;
     };
   };
 
