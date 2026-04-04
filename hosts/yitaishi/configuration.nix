@@ -23,6 +23,7 @@ in
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/common.nix
+    ../../modules/hardware/fanatec
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix

@@ -1,8 +1,7 @@
+{ pkgs, ... }:
 {
-  pkgs,
-  ...
-}:
-{
+  hardware.fanatec.enable = true;
+
   # https://wiki.nixos.org/wiki/Category:Gaming
   programs.gamemode.enable = true; # for performance mode
 
