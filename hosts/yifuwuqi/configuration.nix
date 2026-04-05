@@ -19,6 +19,7 @@ in
     ./networking.nix
     ./services.nix
     ./joplin.nix
+    ./portainer.nix
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
