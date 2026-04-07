@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  inputs,
   desktopEnvironment ? null,
   ...
 }:
@@ -10,48 +9,22 @@ let
 in
 {
   imports = [
-    ./programs/fastfetch.nix
+    ./common.nix
+    ../programs/fastfetch.nix
   ]
   ++ lib.optionals (desktopEnvironment != null) [
-    ./programs/opencode.nix
-    ./programs/alacritty.nix
-    ./programs/mprisence.nix
-    ../modules/desktop/web-apps.nix
+    ../programs/opencode.nix
+    ../programs/alacritty.nix
+    ../programs/mprisence.nix
+    ../../modules/desktop/web-apps.nix
   ]
-  ++ lib.optional (desktopEnvironment == "gnome") ./programs/gnome-dconf.nix
+  ++ lib.optional (desktopEnvironment == "gnome") ../programs/gnome-dconf.nix
   ++ lib.optionals (desktopEnvironment == "niri") [
-    ./programs/dms.nix
+    ../programs/dms.nix
   ];
 
   home.username = "yi";
   home.homeDirectory = homeDirectory;
-
-  programs.home-manager = {
-    enable = true;
-  };
-
-  home.activation = {
-    cloneDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "$HOME/the.files/.git" ]; then
-        echo "Copying the.files repository from flake input..."
-        $DRY_RUN_CMD cp -r --no-preserve=mode,ownership ${inputs.thefiles} $HOME/the.files
-        $DRY_RUN_CMD chmod -R u+w $HOME/the.files
-      else
-        echo "the.files repository already exists"
-      fi
-    '';
-
-    #removeConflictingFiles = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
-    #  mkdir -p $HOME/old_configs
-    #  for f in .Xresources .config/qt5ct/qt5ct.conf .config/qt6ct/qt6ct.conf .config/gtk-4.0/gtk.css .config/gtk-3.0/gtk.css; do
-    #    if [ -e "$HOME/$f" ] && [ ! -L "$HOME/$f" ]; then
-    #      echo "Moving conflicting file $f to $HOME/old_configs/"
-    #      mkdir -p "$HOME/old_configs/$(dirname "$f")"
-    #      mv "$HOME/$f" "$HOME/old_configs/$f"
-    #    fi
-    #  done
-    #'';
-  };
 
   home.packages =
     with pkgs;
@@ -59,10 +32,6 @@ in
     [
       bun
       nodejs
-      nodePackages.pnpm
-      nodePackages.eslint
-      nodePackages.typescript
-      nodePackages.npm-check-updates
 
       sshfs
       ghc

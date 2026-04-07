@@ -17,7 +17,7 @@
         bind_hosts = [
           "127.0.0.1"
           addresses.network.lan.ipv4.host
-          addresses.network.zerotier.ipv4.host
+          # addresses.network.zerotier.ipv4.host
           addresses.network.tailscale.ipv4.host
         ];
 

@@ -49,7 +49,7 @@ in
       })
       {
         users.workd = {
-          imports = [ ../../users/home-workd.nix ];
+          imports = [ ../../users/home/workd.nix ];
           home.stateVersion = config.system.stateVersion;
         };
       };

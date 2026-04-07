@@ -13,6 +13,9 @@
     joinNetworks = [ config.sops.placeholder."zerotier/network_id" ];
   };
 
+  # Do not start automatically on boot. Can be started manually with `systemctl start zerotierone`
+  systemd.services.zerotierone.wantedBy = lib.mkForce [ ];
+
   sops.templates."zerotier.env".content = config.sops.placeholder."zerotier/network_id";
 
   networking.firewall.trustedInterfaces = [ "zt+" ];

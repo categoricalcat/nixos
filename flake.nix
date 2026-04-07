@@ -55,7 +55,9 @@
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 (_: {
-                  nixpkgs.overlays = [ (_final: prev: { dgop = inputs.dgop.packages.${prev.system}.default; }) ];
+                  nixpkgs.overlays = [
+                    (_final: prev: { dgop = inputs.dgop.packages.${prev.stdenv.hostPlatform.system}.default; })
+                  ];
                 })
                 ./hosts/yixiaoqing/configuration.nix
               ];
