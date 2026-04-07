@@ -23,7 +23,7 @@ in
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
-    ../../modules/distributed-builds.nix
+    # ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix
@@ -57,15 +57,14 @@ in
 
   serverMode.headless = true;
 
-  distributedBuilds = {
-    enable = true;
-    role = "server";
-  };
+  # distributedBuilds = {
+  #   enable = true;
+  #   role = "server";
+  # };
 
   nix.settings = {
     trusted-users = [
-      "root"
-      "yi"
+      "@wheel"
     ];
     download-buffer-size = 1073741824;
   };

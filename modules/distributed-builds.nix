@@ -40,8 +40,13 @@ in
             message = "distributedBuilds server mode requires services.openssh.enable.";
           }
           {
-            assertion = cfg.role != "server" || lib.elem "yi" config.nix.settings.trusted-users;
-            message = "distributedBuilds server mode requires nix.settings.trusted-users to include `yi`.";
+            assertion =
+              cfg.role != "server"
+              || lib.any (entry: lib.elem entry config.nix.settings.trusted-users) [
+                "yi"
+                "@wheel"
+              ];
+            message = "distributedBuilds server mode requires nix.settings.trusted-users to include `yi` or `@wheel`.";
           }
         ];
       }
