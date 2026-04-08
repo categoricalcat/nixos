@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   inputs,
@@ -19,10 +20,7 @@ in
     };
 
     settings = {
-      allowed-users = [
-        "root"
-        "@wheel"
-      ];
+      allowed-users = [ "root" ] ++ builtins.attrNames config.users.users;
       auto-optimise-store = true;
       experimental-features = [
         "nix-command"

@@ -1,4 +1,9 @@
-{ addresses, ... }:
+{
+  addresses,
+  config,
+  lib,
+  ...
+}:
 let
   listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
   listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
@@ -11,7 +16,8 @@ in
       "network-online.target"
       "multi-user.target"
       "time-sync.target"
-    ];
+    ]
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
   };
 
   services.openssh = {

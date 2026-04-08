@@ -1,4 +1,9 @@
-{ addresses, ... }:
+{
+  addresses,
+  config,
+  lib,
+  ...
+}:
 {
   # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file
   services.adguardhome = {
@@ -17,9 +22,9 @@
         bind_hosts = [
           "127.0.0.1"
           addresses.network.lan.ipv4.host
-          # addresses.network.zerotier.ipv4.host
-          addresses.network.tailscale.ipv4.host
-        ];
+        ]
+        ++ (lib.optional config.services.tailscale.enable addresses.network.tailscale.ipv4.host);
+        #        ++ (lib.optional config.services.zerotierone.enable addresses.network.zerotier.ipv4.host);
 
         upstream_dns =
           addresses.dns.quad9
@@ -129,6 +134,11 @@
         strict_sni_check = false;
       };
 
+      log = {
+        enabled = true;
+        file = "syslog";
+      };
+
       querylog = {
         enabled = true;
         file_enabled = true;
@@ -149,6 +159,8 @@
     ];
     after = [
       "network-online.target"
-    ];
+    ]
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
+    #++ (lib.optional config.services.zerotierone.enable "zerotierone.service");
   };
 }
