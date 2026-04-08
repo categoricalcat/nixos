@@ -1,7 +1,17 @@
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
+let
+  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
+in
 {
   nix = {
+    package = unstable.nix;
+
     gc = {
       automatic = true;
       dates = "weekly";
