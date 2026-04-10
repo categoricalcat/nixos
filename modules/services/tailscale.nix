@@ -27,6 +27,7 @@ in
       else
         [
           "--accept-dns=true"
+          "--accept-routes"
           "--exit-node=${allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.host}"
         ];
   };

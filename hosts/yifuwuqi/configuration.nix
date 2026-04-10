@@ -66,7 +66,6 @@ in
     trusted-users = [
       "@wheel"
     ];
-    download-buffer-size = 1073741824;
   };
 
   nix.extraOptions = lib.optionalString config.services.nix-access-tokens.enable ''

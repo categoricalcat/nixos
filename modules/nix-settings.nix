@@ -26,7 +26,7 @@ in
         "nix-command"
         "flakes"
       ];
-      download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
+      # download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
 
       substituters = [
         "https://nix-community.cachix.org"
