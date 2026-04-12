@@ -6,6 +6,7 @@
     ../../modules/services/tailscale.nix
     ../../modules/services/zerotier.nix
     ../../modules/services/ollama-amdgpu.nix
+    ../../modules/services/syncthing
   ];
 
   services.ollama-amdgpu = {

@@ -4,15 +4,8 @@
   services.mysql = {
     enable = true;
     package = pkgs.mariadb;
-    ensureDatabases = [ "joplin" ];
-    ensureUsers = [
-      {
-        name = "joplin";
-        ensurePermissions = {
-          "joplin.*" = "ALL PRIVILEGES";
-        };
-      }
-    ];
+    ensureDatabases = [ ];
+    ensureUsers = [ ];
 
     settings = {
       mysqld = {

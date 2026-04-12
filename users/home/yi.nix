@@ -55,7 +55,6 @@ in
     ++ lib.optionals (desktopEnvironment != null) [
       papirus-icon-theme
       bibata-cursors
-      joplin-desktop
     ];
 
   gtk =

@@ -21,5 +21,6 @@ in
     gimp
     nautilus
     unstable.vial
+    unstable.obsidian
   ];
 }

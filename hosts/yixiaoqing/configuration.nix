@@ -37,6 +37,7 @@ in
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
     ../../modules/services/openssh.nix
+    ../../modules/services/syncthing
     ../../modules/fido2.nix
   ];
 
