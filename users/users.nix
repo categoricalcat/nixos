@@ -83,7 +83,7 @@
   environment.systemPackages = [
     (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
     (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
-    (pkgs.writeShellScriptBin "syncthing-gen-keys" (builtins.readFile ./scripts/syncthing-gen-keys.sh))
+
   ];
 
   environment.variables = {

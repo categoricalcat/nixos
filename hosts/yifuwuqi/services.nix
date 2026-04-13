@@ -22,7 +22,7 @@
     # ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
-    ../../modules/services/syncthing
+    ../../modules/services/nextcloud
   ];
 
   services.logrotate = {

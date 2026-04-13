@@ -95,6 +95,11 @@
             answer = addresses.network.tailscale.ipv4.host;
             enabled = true;
           }
+          {
+            domain = "${addresses.hostName}.yun";
+            answer = addresses.network.lan.ipv4.host;
+            enabled = true;
+          }
         ];
       };
 
