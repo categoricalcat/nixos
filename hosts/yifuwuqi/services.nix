@@ -2,7 +2,6 @@
 
 {
   pkgs,
-  addresses,
   ...
 }:
 
@@ -22,7 +21,8 @@
     # ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
-    ../../modules/services/nextcloud
+    #../../modules/services/nextcloud
+    ../../modules/services/nginx-proxy.nix
   ];
 
   services.logrotate = {
@@ -66,47 +66,6 @@
     enable = true;
     rocmTargets = [ "gfx1035" ];
     rocmOverrideGfx = "10.3.0";
-  };
-
-  services.nginx = {
-    enable = true;
-    recommendedGzipSettings = true;
-    recommendedProxySettings = true;
-    recommendedTlsSettings = true;
-    serverTokens = false;
-
-    virtualHosts = {
-      # Local test vhost
-      "yifuwuqi.local" = {
-        serverName = "yifuwuqi.local";
-        forceSSL = false;
-        locations."/" = {
-          extraConfig = ''
-            add_header Content-Type text/plain;
-            return 200 "yifuwuqi.local ok";
-          '';
-        };
-      };
-
-      "${addresses.network.tailscale.ipv4.host}" = {
-        serverName = "${addresses.network.tailscale.ipv4.host}";
-        forceSSL = false;
-        locations."/" = {
-          extraConfig = ''
-            add_header Content-Type text/plain;
-            return 200 "${addresses.network.tailscale.ipv4.host} ok";
-          '';
-        };
-      };
-
-      "fufu.land" = {
-        forceSSL = false;
-        extraConfig = ''
-          add_header Content-Type text/markdown;
-          return 200 "fufu.land is ok";
-        '';
-      };
-    };
   };
 
   services.fwupd.enable = true;

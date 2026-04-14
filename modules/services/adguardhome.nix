@@ -66,6 +66,16 @@
       filtering = {
         rewrites = [
           {
+            domain = "*.fufu.land";
+            answer = addresses.network.lan.ipv4.host;
+            enabled = true;
+          }
+          {
+            domain = "fufu.land";
+            answer = addresses.network.lan.ipv4.host;
+            enabled = true;
+          }
+          {
             domain = "${addresses.hostName}.${addresses.dns.domain}";
             answer = addresses.network.tailscale.ipv4.host;
             enabled = true;
@@ -122,20 +132,19 @@
       ];
 
       tls = {
-        enabled = false;
-        server_name = "${addresses.hostName}.${addresses.dns.domain}";
-        port_https = 443;
+        enabled = true;
+        server_name = "dns.fufu.land";
+        port_https = 3443;
         port_dns_over_tls = 853;
         port_dns_over_quic = 853;
 
-        # Self-signed certificate configuration
-        # AdGuard will auto-generate these if they don't exist
-        certificate_path = "/var/lib/private/adguardhome/certs/cert.pem";
-        private_key_path = "/var/lib/private/adguardhome/certs/key.pem";
+        # Use the centralized ACME wildcard certificates
+        certificate_path = "/var/lib/acme/fufu.land/fullchain.pem";
+        private_key_path = "/var/lib/acme/fufu.land/key.pem";
 
         # Enable all secure DNS protocols
         serve_plain_dns = true;
-        allow_unencrypted_doh = false;
+        allow_unencrypted_doh = true;
         strict_sni_check = false;
       };
 
