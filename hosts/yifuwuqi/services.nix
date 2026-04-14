@@ -23,6 +23,7 @@
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
     ../../modules/services/nginx-proxy.nix
+    ../../modules/services/webdav.nix
   ];
 
   services.logrotate = {
