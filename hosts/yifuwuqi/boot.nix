@@ -1,4 +1,8 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  ...
+}:
 
 {
 
@@ -7,7 +11,7 @@
       systemd-boot.configurationLimit = 15;
     };
 
-    kernelPackages = pkgs.linuxPackages_hardened;
+    kernelPackages = lib.mkForce pkgs.linuxPackages_hardened;
 
     initrd.availableKernelModules = lib.mkAfter [
       "sd_mod"

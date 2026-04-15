@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ lib, ... }:
 
 {
 
@@ -14,8 +14,6 @@
       "kvm-intel"
       "coretemp"
     ];
-
-    kernelPackages = pkgs.linuxPackages_latest;
 
     # ThinkPad-specific kernel parameters to fix lid/resume freeze
     kernelParams = [

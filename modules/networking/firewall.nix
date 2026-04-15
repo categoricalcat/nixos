@@ -55,6 +55,48 @@ _:
             }
           '';
         };
+
+        # for adguardhome
+        sinkhole = {
+          family = "inet";
+          content = ''
+            chain input {
+              type filter hook input priority filter; policy accept;
+
+              # IPv4 Rejections
+              ip daddr 198.51.100.1 counter reject with tcp reset
+              ip daddr 198.51.100.1 counter reject with icmp type host-unreachable
+
+              # IPv6 Rejections
+              ip6 daddr 2001:db8::1 counter reject with tcp reset
+              ip6 daddr 2001:db8::1 counter reject with icmpv6 type addr-unreachable
+            }
+
+            chain forward {
+              type filter hook forward priority filter; policy accept;
+
+              # IPv4 Rejections
+              ip daddr 198.51.100.1 counter reject with tcp reset
+              ip daddr 198.51.100.1 counter reject with icmp type host-unreachable
+
+              # IPv6 Rejections
+              ip6 daddr 2001:db8::1 counter reject with tcp reset
+              ip6 daddr 2001:db8::1 counter reject with icmpv6 type addr-unreachable
+            }
+
+            chain output {
+              type filter hook output priority filter; policy accept;
+
+              # IPv4 Rejections
+              ip daddr 198.51.100.1 counter reject with tcp reset
+              ip daddr 198.51.100.1 counter reject with icmp type host-unreachable
+
+              # IPv6 Rejections
+              ip6 daddr 2001:db8::1 counter reject with tcp reset
+              ip6 daddr 2001:db8::1 counter reject with icmpv6 type addr-unreachable
+            }
+          '';
+        };
       };
     };
 

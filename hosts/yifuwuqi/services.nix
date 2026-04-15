@@ -12,10 +12,10 @@
     ../../modules/services/openssh.nix
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
-    ../../modules/services/zerotier.nix
+    # ../../modules/services/zerotier.nix
     ../../modules/services/ollama-amdgpu.nix
     # ../../modules/services/playit-agent.nix
-    ../../modules/services/localtonet.nix
+    # ../../modules/services/localtonet.nix
     ../../modules/services/tailscale.nix
     # ../../modules/services/omada-controller.nix
     # ../../modules/services/github-runner.nix

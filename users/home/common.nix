@@ -8,10 +8,10 @@
   programs.home-manager.enable = true;
 
   home.packages = with pkgs; [
-    nodePackages.pnpm
-    nodePackages.eslint
-    nodePackages.typescript
-    nodePackages.npm-check-updates
+    pnpm
+    eslint
+    typescript
+    npm-check-updates
   ];
 
   home.activation.cloneDotfiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

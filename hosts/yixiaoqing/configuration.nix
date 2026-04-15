@@ -1,8 +1,8 @@
 {
   pkgs,
-  config,
   inputs,
   lib,
+  global,
   ...
 }:
 
@@ -10,7 +10,6 @@ let
   desktopEnvironment = "niri";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
-  version = "25.11";
 in
 {
   imports = [
@@ -32,7 +31,7 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    ../../modules/services/zerotier.nix
+    # ../../modules/services/zerotier.nix
     ../../modules/services/tailscale.nix
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
@@ -43,18 +42,18 @@ in
 
   security.fido2.enable = true;
 
-  system.stateVersion = version;
+  system.stateVersion = global.version;
 
   home-manager =
     lib.recursiveUpdate
       (mkHome {
         inherit inputs desktopEnvironment;
-        inherit (config.system) stateVersion;
+        stateVersion = global.homeVersion;
       })
       {
         users.workd = {
           imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = config.system.stateVersion;
+          home.stateVersion = global.homeVersion;
         };
       };
 

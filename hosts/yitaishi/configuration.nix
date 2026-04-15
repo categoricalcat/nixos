@@ -3,6 +3,7 @@
   pkgs,
   inputs,
   lib,
+  global,
   ...
 }:
 
@@ -10,7 +11,7 @@ let
   desktopEnvironment = "gnome";
   greeter = "gdm";
   mkHome = import ../../modules/home-manager.nix;
-  version = "25.11";
+  inherit (global) version;
 in
 {
   imports = [
@@ -45,12 +46,12 @@ in
     lib.recursiveUpdate
       (mkHome {
         inherit inputs desktopEnvironment;
-        inherit (config.system) stateVersion;
+        stateVersion = global.homeVersion;
       })
       {
         users.workd = {
           imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = config.system.stateVersion;
+          home.stateVersion = global.homeVersion;
         };
       };
 

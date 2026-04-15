@@ -30,6 +30,25 @@
   systemd.network = {
     enable = true;
     wait-online.enable = true;
+
+    netdevs."20-sinkhole0" = {
+      netdevConfig = {
+        Kind = "dummy";
+        Name = "sinkhole0";
+      };
+    };
+
+    networks."20-sinkhole0" = {
+      matchConfig.Name = "sinkhole0";
+      address = [
+        "198.51.100.1/32"
+        "2001:db8::1/128"
+      ];
+      networkConfig = {
+        ConfigureWithoutCarrier = true;
+      };
+      linkConfig.RequiredForOnline = "no";
+    };
   };
 
 }

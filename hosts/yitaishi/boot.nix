@@ -26,8 +26,6 @@
       "amdgpu.ppfeaturemask=0xffffffff"
       "amd_pstate=active"
     ];
-
-    kernelPackages = pkgs.linuxPackages_latest;
   };
 
   boot.loader.systemd-boot.enable = lib.mkForce false;

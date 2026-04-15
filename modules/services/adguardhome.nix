@@ -61,11 +61,14 @@
         cache_enabled = true;
         cache_size = 5000000;
         cache_optimistic = true;
-        # Uncomment to make every blocked domain fail with NXDOMAIN globally.
-        # blocking_mode = "nxdomain";
       };
 
       filtering = {
+        blocking_mode = "custom_ip";
+        blocking_ipv4 = "198.51.100.1";
+        blocking_ipv6 = "2001:db8::1";
+        blocked_response_ttl = 60;
+
         rewrites = [
           {
             domain = "*.fufu.land";
@@ -138,13 +141,7 @@
         }
       ];
 
-      # Use targeted NXDOMAIN rules by default so blocked Microsoft telemetry hosts
-      # fail at DNS instead of reaching local HTTPS and seeing the wrong cert.
-      # Remove these rules if you switch to the global NXDOMAIN option above.
-      user_rules = [
-        "||mobile.events.data.microsoft.com^$dnsrewrite=NXDOMAIN"
-        "||eu-mobile.events.data.microsoft.com^$dnsrewrite=NXDOMAIN"
-      ];
+      user_rules = [ ];
 
       tls = {
         enabled = true;

@@ -13,6 +13,12 @@
       home-manager-small,
       ...
     }:
+    let
+      global = {
+        version = "25.11";
+        homeVersion = "25.11";
+      };
+    in
     # https://flake.parts/module-arguments.html
     flake-parts.lib.mkFlake { inherit inputs; } (
       {
@@ -30,7 +36,7 @@
         flake = {
           nixosConfigurations = {
             yichuang = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 home-manager-small.nixosModules.home-manager
                 sops-nix.nixosModules.sops
@@ -40,7 +46,7 @@
             };
 
             yifuwuqi = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 sops-nix.nixosModules.sops
                 home-manager-small.nixosModules.home-manager
@@ -49,7 +55,7 @@
             };
 
             yixiaoqing = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
@@ -64,7 +70,7 @@
             };
 
             yitaishi = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops

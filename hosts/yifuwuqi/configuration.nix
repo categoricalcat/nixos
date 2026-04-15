@@ -4,12 +4,12 @@
   inputs,
   config,
   lib,
+  global,
   ...
 }:
 
 let
   mkHome = import ../../modules/home-manager.nix;
-  version = "25.11";
 in
 {
   imports = [
@@ -39,18 +39,18 @@ in
 
   security.fido2.enable = true;
 
-  system.stateVersion = version;
+  system.stateVersion = global.version;
 
   home-manager =
     lib.recursiveUpdate
       (mkHome {
         inherit inputs;
-        inherit (config.system) stateVersion;
+        stateVersion = global.homeVersion;
       })
       {
         users.workd = {
           imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = config.system.stateVersion;
+          home.stateVersion = global.homeVersion;
         };
       };
 

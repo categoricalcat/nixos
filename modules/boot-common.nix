@@ -1,5 +1,8 @@
-_:
+{ inputs, pkgs, ... }:
 
+let
+  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
+in
 {
   boot = {
     loader = {
@@ -12,4 +15,6 @@ _:
       "kernel.panic_on_oops" = 1;
     };
   };
+
+  boot.kernelPackages = unstable.linuxPackages_latest;
 }
