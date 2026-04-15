@@ -61,6 +61,8 @@
         cache_enabled = true;
         cache_size = 5000000;
         cache_optimistic = true;
+        # Uncomment to make every blocked domain fail with NXDOMAIN globally.
+        # blocking_mode = "nxdomain";
       };
 
       filtering = {
@@ -125,10 +127,23 @@
           enabled = false;
         }
         {
-          url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.plus.txt";
+          url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt";
           name = "Hagezi Multi PRO++";
           enabled = true;
         }
+        {
+          url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt";
+          name = "Hagezi TIF";
+          enabled = true;
+        }
+      ];
+
+      # Use targeted NXDOMAIN rules by default so blocked Microsoft telemetry hosts
+      # fail at DNS instead of reaching local HTTPS and seeing the wrong cert.
+      # Remove these rules if you switch to the global NXDOMAIN option above.
+      user_rules = [
+        "||mobile.events.data.microsoft.com^$dnsrewrite=NXDOMAIN"
+        "||eu-mobile.events.data.microsoft.com^$dnsrewrite=NXDOMAIN"
       ];
 
       tls = {
