@@ -65,8 +65,8 @@
 
       filtering = {
         blocking_mode = "custom_ip";
-        blocking_ipv4 = "198.51.100.1";
-        blocking_ipv6 = "2001:db8::1";
+        blocking_ipv4 = addresses.network.sinkhole.ipv4.host;
+        blocking_ipv6 = addresses.network.sinkhole.ipv6.host;
         blocked_response_ttl = 60;
 
         rewrites = [

@@ -15,6 +15,7 @@
           Address = [
             # addresses.network.lan.ipv6.address
             addresses.network.lan.ipv4.address
+            "${addresses.network.sinkhole.ipv4.host}/24"
           ];
         };
 

@@ -104,6 +104,11 @@
           };
         };
 
+        sinkhole = {
+          ipv4.host = "192.168.0.24";
+          ipv6.host = "2001:db8::1";
+        };
+
         secondary = {
           interface = "enp4s0";
         };

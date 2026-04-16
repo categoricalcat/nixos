@@ -21,7 +21,7 @@ in
       if isServer then
         [
           "--advertise-exit-node"
-          "--advertise-routes=192.168.0.0/24,198.51.100.1/32,2001:db8::1/128"
+          "--advertise-routes=192.168.0.0/24,2001:db8::1/128"
           "--accept-dns=true"
         ]
       else
