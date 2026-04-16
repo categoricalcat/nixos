@@ -54,8 +54,8 @@
         ratelimit = 0; # no per-client rate limit
         enable_dnssec = true;
         ipv6_disabled = false;
-        max_goroutines = 300;
-        upstream_timeout = "4s";
+        max_goroutines = 1000;
+        upstream_timeout = "2s";
         serve_http3 = true;
 
         cache_enabled = true;
@@ -110,11 +110,6 @@
             answer = addresses.network.tailscale.ipv4.host;
             enabled = true;
           }
-          {
-            domain = "${addresses.hostName}.yun";
-            answer = addresses.network.lan.ipv4.host;
-            enabled = true;
-          }
         ];
       };
 
@@ -141,7 +136,7 @@
         }
       ];
 
-      user_rules = [ ];
+      user_rules = [ "||api.miwifi.com^" ];
 
       tls = {
         enabled = true;
@@ -174,7 +169,7 @@
 
       statistics = {
         enabled = true;
-        interval = "744h";
+        interval = "336h";
       };
     };
   };
