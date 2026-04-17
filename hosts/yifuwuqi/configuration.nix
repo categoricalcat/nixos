@@ -4,12 +4,12 @@
   inputs,
   config,
   lib,
+  global,
   ...
 }:
 
 let
   mkHome = import ../../modules/home-manager.nix;
-  version = "25.11";
 in
 {
   imports = [
@@ -18,10 +18,11 @@ in
     ./boot.nix
     ./networking.nix
     ./services.nix
-    ./joplin.nix
+    ./portainer.nix
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
+    # ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix
@@ -38,29 +39,32 @@ in
 
   security.fido2.enable = true;
 
-  system.stateVersion = version;
+  system.stateVersion = global.version;
 
   home-manager =
     lib.recursiveUpdate
       (mkHome {
         inherit inputs;
-        inherit (config.system) stateVersion;
+        stateVersion = global.homeVersion;
       })
       {
         users.workd = {
-          imports = [ ../../users/home-workd.nix ];
-          home.stateVersion = config.system.stateVersion;
+          imports = [ ../../users/home/workd.nix ];
+          home.stateVersion = global.homeVersion;
         };
       };
 
   serverMode.headless = true;
 
+  # distributedBuilds = {
+  #   enable = true;
+  #   role = "server";
+  # };
+
   nix.settings = {
     trusted-users = [
-      "root"
-      "yi"
+      "@wheel"
     ];
-    download-buffer-size = 1073741824;
   };
 
   nix.extraOptions = lib.optionalString config.services.nix-access-tokens.enable ''

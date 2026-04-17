@@ -32,6 +32,7 @@
           "wheel"
           "render"
           "video"
+          "audio"
           "dialout"
           "networkmanager"
           "systemd-journal"
@@ -78,9 +79,13 @@
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
 
-    interactiveShellInit =
-      builtins.readFile ./scripts/nix-sanity.sh + builtins.readFile ./scripts/nix-fix-uids.sh;
   };
+
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
+    (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
+
+  ];
 
   environment.variables = {
     ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";

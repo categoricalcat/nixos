@@ -24,22 +24,25 @@ _: {
           pkgs.zsh
           pkgs.unzip
           pkgs.git
-          pkgs.sudo
         ];
         shellHook = ''
           echo "Entering ephemeral sandbox as 'none'..."
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
 
-          # Use bubblewrap to map to none and create a tmpfs home
           exec bwrap \
             --unshare-user --uid 65534 --gid 65534 \
-            `# 1. Minimal system dependencies (strictly read-only)` \
+            --unshare-pid \
+            --die-with-parent \
+            `# Filesystem` \
             --ro-bind /nix/store /nix/store \
-            --ro-bind /etc /etc \
+            --ro-bind /etc/resolv.conf /etc/resolv.conf \
+            --ro-bind /etc/ssl /etc/ssl \
+            --ro-bind /etc/static /etc/static \
             --bind /home/none /home/none \
             --dev /dev \
             --proc /proc \
-            `# 3. Environment and startup` \
+            --tmpfs /tmp \
+            `# Environment` \
             --setenv HOME /home/none \
             --setenv USER none \
             --chdir /home/none \

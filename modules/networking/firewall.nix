@@ -55,6 +55,8 @@ _:
             }
           '';
         };
+
+        # sinkhole table moved to ../../modules/networking/sinkhole.nix
       };
     };
 

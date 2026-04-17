@@ -2,6 +2,7 @@
 {
   imports = [
     ../../modules/networking/firewall.nix
+    ../../modules/networking/sinkhole.nix
     ../../modules/networking/interfaces/eno1.nix
     ../../modules/networking/interfaces/enp4s0.nix
     ../../modules/networking/gateway-failover.nix
@@ -30,6 +31,7 @@
   systemd.network = {
     enable = true;
     wait-online.enable = true;
+
   };
 
 }

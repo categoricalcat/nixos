@@ -3,6 +3,7 @@
   pkgs,
   inputs,
   lib,
+  global,
   ...
 }:
 
@@ -10,7 +11,7 @@ let
   desktopEnvironment = "gnome";
   greeter = "gdm";
   mkHome = import ../../modules/home-manager.nix;
-  version = "25.11";
+  inherit (global) version;
 in
 {
   imports = [
@@ -23,6 +24,7 @@ in
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/common.nix
+    ../../modules/hardware/fanatec
     ../../modules/nix-settings.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
@@ -34,6 +36,7 @@ in
     ../../modules/services/openssh.nix
     ../../modules/services/tailscale.nix
     ../../modules/fido2.nix
+    ../../modules/audio.nix
   ];
 
   security.fido2.enable = true;
@@ -44,12 +47,12 @@ in
     lib.recursiveUpdate
       (mkHome {
         inherit inputs desktopEnvironment;
-        inherit (config.system) stateVersion;
+        stateVersion = global.homeVersion;
       })
       {
         users.workd = {
-          imports = [ ../../users/home-workd.nix ];
-          home.stateVersion = config.system.stateVersion;
+          imports = [ ../../users/home/workd.nix ];
+          home.stateVersion = global.homeVersion;
         };
       };
 

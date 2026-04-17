@@ -8,56 +8,77 @@
         systemNameservers = [
           "::1"
           "127.0.0.1"
+          "9.9.9.9"
         ];
         opendns = [
           "https://doh.opendns.com/dns-query"
+          "tls://dns.opendns.com"
+          "tcp://208.67.222.222"
           "208.67.222.222"
           "208.67.220.220"
+          "2620:119:35::35"
+          "2620:119:53::53"
         ];
         nextdns = [
-          "ecfc5e.dns.nextdns.io"
+          "quic://ecfc5e.dns.nextdns.io"
+          "h3://dns.nextdns.io/ecfc5e"
           "https://dns.nextdns.io/ecfc5e"
+          "tls://ecfc5e.dns.nextdns.io"
+          "tcp://45.90.28.0"
           "45.90.28.0"
           "45.90.30.0"
           "2a07:a8c0::ec:fc5e"
           "2a07:a8c1::ec:fc5e"
         ];
         freedns = [
-          "p0.freedns.controld.com"
+          "quic://p0.freedns.controld.com"
+          "h3://freedns.controld.com/p0"
           "https://freedns.controld.com/p0"
-          "2606:1a40:1::"
-          "2606:1a40::"
-          "76.76.10.0"
+          "tls://p0.freedns.controld.com"
+          "tcp://76.76.2.0"
           "76.76.2.0"
+          "76.76.10.0"
+          "2606:1a40::"
+          "2606:1a40:1::"
         ];
         quad9 = [
-          "dns.quad9.net"
+          "quic://dns.quad9.net"
+          "h3://dns.quad9.net/dns-query"
           "https://dns.quad9.net/dns-query"
-          "2620:fe::fe"
-          "2620:fe::9"
+          "tls://dns.quad9.net"
+          "tcp://9.9.9.9"
           "9.9.9.9"
           "149.112.112.112"
+          "2620:fe::fe"
+          "2620:fe::9"
         ];
         google = [
-          "dns.google.com"
           "https://dns.google/dns-query"
-          "2001:4860:4860::8888"
-          "2001:4860:4860::8844"
+          "tls://dns.google"
+          "tcp://8.8.8.8"
           "8.8.8.8"
           "8.8.4.4"
+          "2001:4860:4860::8888"
+          "2001:4860:4860::8844"
         ];
         cloudflare = [
-          "1dot1dot1dot1.cloudflare-dns.com"
           "https://cloudflare-dns.com/dns-query"
-          "2606:4700:4700::1111"
-          "2606:4700:4700::1001"
+          "tls://1dot1dot1dot1.cloudflare-dns.com"
+          "tcp://1.1.1.1"
           "1.1.1.1"
           "1.0.0.1"
+          "2606:4700:4700::1111"
+          "2606:4700:4700::1001"
         ];
         adguard = [
-          "dns.adguard-dns.com"
+          "quic://dns.adguard-dns.com"
           "https://dns.adguard-dns.com/dns-query"
+          "tls://dns.adguard-dns.com"
+          "tcp://94.140.14.14"
           "94.140.14.14"
+          "94.140.15.15"
+          "2a10:50c0::ad1:ff"
+          "2a10:50c0::ad2:ff"
         ];
         domain = "vpn";
       };
@@ -101,6 +122,11 @@
             address = "${host}/${builtins.toString prefixLength}";
             gateway = "192.168.0.1";
           };
+        };
+
+        sinkhole = {
+          ipv4.host = "192.168.0.24";
+          ipv6.host = "2001:db8::1";
         };
 
         secondary = {

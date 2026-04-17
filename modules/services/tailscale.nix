@@ -21,12 +21,13 @@ in
       if isServer then
         [
           "--advertise-exit-node"
-          "--advertise-routes=192.168.0.0/24"
+          "--advertise-routes=192.168.0.0/24,2001:db8::1/128"
           "--accept-dns=true"
         ]
       else
         [
           "--accept-dns=true"
+          "--accept-routes"
           "--exit-node=${allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.host}"
         ];
   };

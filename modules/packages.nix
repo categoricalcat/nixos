@@ -1,10 +1,13 @@
 # System packages configuration module
 
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
+let
+  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
+in
 {
   environment.systemPackages = with pkgs; [
     emacs-nox
-    cursor-cli
+    unstable.cursor-cli
 
     gcc
     gnumake

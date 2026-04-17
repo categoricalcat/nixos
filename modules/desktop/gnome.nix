@@ -54,23 +54,6 @@
       gnome-user-docs
     ];
 
-    services.pulseaudio.enable = false;
-    security.rtkit.enable = true;
-    services.pipewire = {
-      enable = true;
-      alsa.enable = true;
-      alsa.support32Bit = true;
-      pulse.enable = true;
-      extraConfig.pipewire."10-rates" = {
-        "context.properties" = {
-          "default.clock.rate" = 96000;
-          "default.clock.allowed-rates" = [
-            96000
-          ];
-        };
-      };
-    };
-
     environment.systemPackages = [ ];
   };
 }

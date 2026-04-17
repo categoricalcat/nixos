@@ -1,9 +1,8 @@
 # WSL-specific configuration module
 
 {
-  pkgs,
   inputs,
-  config,
+  global,
   ...
 }:
 
@@ -24,11 +23,9 @@ in
     ../../users/users.nix
   ];
 
-  system.stateVersion = "25.11";
+  system.stateVersion = global.version;
   wsl.defaultUser = "yi";
   wsl.enable = true;
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking = {
     hostName = "yichuang";
@@ -41,7 +38,7 @@ in
 
   home-manager = mkHome {
     inherit inputs;
-    inherit (config.system) stateVersion;
+    stateVersion = global.homeVersion;
   };
 
   services.openssh = {

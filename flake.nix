@@ -13,6 +13,12 @@
       home-manager-small,
       ...
     }:
+    let
+      global = {
+        version = "25.11";
+        homeVersion = "25.11";
+      };
+    in
     # https://flake.parts/module-arguments.html
     flake-parts.lib.mkFlake { inherit inputs; } (
       {
@@ -30,7 +36,7 @@
         flake = {
           nixosConfigurations = {
             yichuang = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 home-manager-small.nixosModules.home-manager
                 sops-nix.nixosModules.sops
@@ -40,7 +46,7 @@
             };
 
             yifuwuqi = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 sops-nix.nixosModules.sops
                 home-manager-small.nixosModules.home-manager
@@ -49,25 +55,28 @@
             };
 
             yixiaoqing = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 (_: {
-                  nixpkgs.overlays = [ (_final: prev: { dgop = inputs.dgop.packages.${prev.system}.default; }) ];
+                  nixpkgs.overlays = [
+                    (_final: prev: { dgop = inputs.dgop.packages.${prev.stdenv.hostPlatform.system}.default; })
+                  ];
                 })
                 ./hosts/yixiaoqing/configuration.nix
               ];
             };
 
             yitaishi = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs; };
+              specialArgs = { inherit inputs global; };
               modules = [
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 ./hosts/yitaishi/configuration.nix
+                inputs.lanzaboote.nixosModules.lanzaboote
               ];
             };
           };
@@ -113,6 +122,11 @@
 
     stylix = {
       url = "github:nix-community/stylix/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.0.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

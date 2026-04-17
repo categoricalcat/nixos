@@ -1,8 +1,8 @@
 {
   pkgs,
-  config,
   inputs,
   lib,
+  global,
   ...
 }:
 
@@ -10,7 +10,6 @@ let
   desktopEnvironment = "niri";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
-  version = "25.11";
 in
 {
   imports = [
@@ -24,6 +23,7 @@ in
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
+    # ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/services/samba/client.nix
@@ -31,28 +31,29 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/desktop.nix
-    ../../modules/services/zerotier.nix
+    # ../../modules/services/zerotier.nix
     ../../modules/services/tailscale.nix
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/tlp.nix
     ../../modules/services/openssh.nix
+
     ../../modules/fido2.nix
   ];
 
   security.fido2.enable = true;
 
-  system.stateVersion = version;
+  system.stateVersion = global.version;
 
   home-manager =
     lib.recursiveUpdate
       (mkHome {
         inherit inputs desktopEnvironment;
-        inherit (config.system) stateVersion;
+        stateVersion = global.homeVersion;
       })
       {
         users.workd = {
-          imports = [ ../../users/home-workd.nix ];
-          home.stateVersion = config.system.stateVersion;
+          imports = [ ../../users/home/workd.nix ];
+          home.stateVersion = global.homeVersion;
         };
       };
 
@@ -66,41 +67,16 @@ in
     rocmSupport = false;
   };
 
+  # distributedBuilds = {
+  #   enable = true;
+  #   role = "client";
+  # };
+
   nix = {
-    distributedBuilds = true;
-
-    buildMachines =
-      let
-        mkBuildMachine = hostName: {
-          inherit hostName;
-          system = "x86_64-linux";
-          maxJobs = 15;
-          speedFactor = 3;
-          protocol = "ssh-ng";
-          supportedFeatures = [
-            "nixos-test"
-            "benchmark"
-            "big-parallel"
-            "kvm"
-          ];
-          sshUser = config.users.users.yi.name;
-          sshKey = "/home/yi/.ssh/id_ed25519";
-        };
-      in
-      [
-        (mkBuildMachine "yi.zero")
-        # (mkBuildMachine "yi.vpn")
-      ];
-
-    extraOptions = ''
-      connect-timeout = 5
-    '';
-
     settings = {
       trusted-users = [
-        "root"
+        "@wheel"
       ];
-      builders-use-substitutes = true;
     };
   };
 

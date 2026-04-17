@@ -1,7 +1,18 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
+let
+  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
+in
 {
   nix = {
+    package = unstable.nix;
+
     gc = {
       automatic = true;
       dates = "weekly";
@@ -9,12 +20,13 @@
     };
 
     settings = {
+      allowed-users = [ "root" ] ++ builtins.attrNames config.users.users;
       auto-optimise-store = true;
       experimental-features = [
         "nix-command"
         "flakes"
       ];
-      download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
+      # download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
 
       substituters = [
         "https://nix-community.cachix.org"

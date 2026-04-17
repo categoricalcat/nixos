@@ -1,8 +1,7 @@
+{ pkgs, ... }:
 {
-  pkgs,
-  ...
-}:
-{
+  hardware.fanatec.enable = true;
+
   # https://wiki.nixos.org/wiki/Category:Gaming
   programs.gamemode.enable = true; # for performance mode
 
@@ -29,6 +28,6 @@
 
   # Enable AMDGPU overdrive in the kernel to allow full control
   # over voltage, clocks, and power limits via LACT.
-  # hardware.amdgpu.overdrive.enable = true; # Not available in standard NixOS 25.11 module yet, usually handled by lact module or kernel params.
+  # hardware.amdgpu.overdrive.enable = true; # Not available in standard NixOS module yet, usually handled by lact module or kernel params.
   # We will rely on services.lact.enable and the boot.kernelParams.
 }

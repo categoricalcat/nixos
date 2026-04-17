@@ -1,22 +1,23 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  allAddresses,
+  config,
+  ...
+}:
 
+let
+  host = config.networking.hostName;
+in
 {
   services.mysql = {
     enable = true;
     package = pkgs.mariadb;
-    ensureDatabases = [ "joplin" ];
-    ensureUsers = [
-      {
-        name = "joplin";
-        ensurePermissions = {
-          "joplin.*" = "ALL PRIVILEGES";
-        };
-      }
-    ];
+    ensureDatabases = [ ];
+    ensureUsers = [ ];
 
     settings = {
       mysqld = {
-        bind-address = "10.100.0.1";
+        bind-address = allAddresses.hosts.${host}.network.lan.ipv4.host;
       };
     };
   };

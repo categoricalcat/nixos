@@ -1,4 +1,9 @@
-{ addresses, ... }:
+{
+  addresses,
+  config,
+  lib,
+  ...
+}:
 {
   # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file
   services.adguardhome = {
@@ -17,9 +22,9 @@
         bind_hosts = [
           "127.0.0.1"
           addresses.network.lan.ipv4.host
-          addresses.network.zerotier.ipv4.host
-          addresses.network.tailscale.ipv4.host
-        ];
+        ]
+        ++ (lib.optional config.services.tailscale.enable addresses.network.tailscale.ipv4.host);
+        #        ++ (lib.optional config.services.zerotierone.enable addresses.network.zerotier.ipv4.host);
 
         upstream_dns =
           addresses.dns.quad9
@@ -49,8 +54,8 @@
         ratelimit = 0; # no per-client rate limit
         enable_dnssec = true;
         ipv6_disabled = false;
-        max_goroutines = 300;
-        upstream_timeout = "4s";
+        max_goroutines = 1000;
+        upstream_timeout = "2s";
         serve_http3 = true;
 
         cache_enabled = true;
@@ -59,7 +64,22 @@
       };
 
       filtering = {
+        blocking_mode = "custom_ip";
+        blocking_ipv4 = addresses.network.sinkhole.ipv4.host;
+        blocking_ipv6 = addresses.network.sinkhole.ipv6.host;
+        blocked_response_ttl = 60;
+
         rewrites = [
+          {
+            domain = "*.fufu.land";
+            answer = addresses.network.lan.ipv4.host;
+            enabled = true;
+          }
+          {
+            domain = "fufu.land";
+            answer = addresses.network.lan.ipv4.host;
+            enabled = true;
+          }
           {
             domain = "${addresses.hostName}.${addresses.dns.domain}";
             answer = addresses.network.tailscale.ipv4.host;
@@ -105,28 +125,39 @@
           enabled = false;
         }
         {
-          url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.plus.txt";
+          url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt";
           name = "Hagezi Multi PRO++";
+          enabled = true;
+        }
+        {
+          url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt";
+          name = "Hagezi TIF";
           enabled = true;
         }
       ];
 
+      user_rules = [ "||api.miwifi.com^" ];
+
       tls = {
-        enabled = false;
-        server_name = "${addresses.hostName}.${addresses.dns.domain}";
-        port_https = 443;
+        enabled = true;
+        server_name = "dns.fufu.land";
+        port_https = 3443;
         port_dns_over_tls = 853;
         port_dns_over_quic = 853;
 
-        # Self-signed certificate configuration
-        # AdGuard will auto-generate these if they don't exist
-        certificate_path = "/var/lib/private/adguardhome/certs/cert.pem";
-        private_key_path = "/var/lib/private/adguardhome/certs/key.pem";
+        # Use the centralized ACME wildcard certificates
+        certificate_path = "/var/lib/acme/fufu.land/fullchain.pem";
+        private_key_path = "/var/lib/acme/fufu.land/key.pem";
 
         # Enable all secure DNS protocols
         serve_plain_dns = true;
-        allow_unencrypted_doh = false;
+        allow_unencrypted_doh = true;
         strict_sni_check = false;
+      };
+
+      log = {
+        enabled = true;
+        file = "syslog";
       };
 
       querylog = {
@@ -138,7 +169,7 @@
 
       statistics = {
         enabled = true;
-        interval = "744h";
+        interval = "336h";
       };
     };
   };
@@ -149,6 +180,8 @@
     ];
     after = [
       "network-online.target"
-    ];
+    ]
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
+    #++ (lib.optional config.services.zerotierone.enable "zerotierone.service");
   };
 }

@@ -21,5 +21,7 @@ in
     gimp
     nautilus
     unstable.vial
+    unstable.obsidian
+    # unstable.nextcloud-client
   ];
 }
