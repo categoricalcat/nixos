@@ -50,6 +50,16 @@
   ];
 
   config = {
+    # Base audio — all desktop hosts get PipeWire
+    services.pulseaudio.enable = false;
+    security.rtkit.enable = true;
+    services.pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
+
     programs = {
       xwayland.enable = true;
       dconf.enable = true;

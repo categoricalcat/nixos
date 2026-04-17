@@ -32,6 +32,7 @@
           "wheel"
           "render"
           "video"
+          "audio"
           "dialout"
           "networkmanager"
           "systemd-journal"
