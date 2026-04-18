@@ -82,6 +82,21 @@
           proxyPass = "http://127.0.0.1:3333/dns-query";
         };
       };
+
+      # Netdata web UI (per-host metrics)
+      "netdata.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        basicAuthFile = config.sops.secrets."services/htpasswd".path;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:19999";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+      };
     };
   };
 }

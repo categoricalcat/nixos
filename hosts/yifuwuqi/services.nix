@@ -23,6 +23,8 @@
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
     ../../modules/services/nginx-proxy.nix
+    ../../modules/services/shared-auth.nix
+    ../../modules/services/monitoring/netdata.nix
     ../../modules/services/webdav.nix
   ];
 

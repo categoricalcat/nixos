@@ -69,3 +69,27 @@ busctl --user list | grep -i secret
 # polkit agent is running (niri only; GNOME uses gnome-shell's built-in agent)
 pgrep -a polkit
 ```
+
+### shared services htpasswd (yifuwuqi)
+
+Shared HTTP basic-auth file used by web UIs behind nginx (Netdata today;
+Prometheus/Alertmanager/Loki later). Declared in
+`modules/services/shared-auth.nix` as the sops secret `services/htpasswd`.
+
+```bash
+# generate a bcrypt entry (repeat to add more users)
+nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"
+
+# paste under services.htpasswd in the encrypted file
+sudo -E sops edit /etc/nixos/secrets/secrets.yaml
+```
+
+Expected shape (see `secrets/.secrets.example.yaml`):
+
+```yaml
+services:
+    htpasswd: |
+        admin:$2y$05$...
+```
+
+Rotating the password rotates it for every service that uses this file.
