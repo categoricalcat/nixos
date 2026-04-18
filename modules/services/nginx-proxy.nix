@@ -97,6 +97,40 @@
           '';
         };
       };
+
+      # SearXNG private metasearch
+      "search.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        basicAuthFile = config.sops.secrets."services/htpasswd".path;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:8888";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
+        };
+      };
+
+      # Portainer container management UI (backend serves HTTPS w/ self-signed cert)
+      "prtnr.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "https://127.0.0.1:9443";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_ssl_verify off;
+            proxy_ssl_server_name on;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 1d;
+            proxy_send_timeout 1d;
+            client_max_body_size 1G;
+          '';
+        };
+      };
+
     };
   };
 }

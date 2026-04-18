@@ -93,3 +93,14 @@ services:
 ```
 
 Rotating the password rotates it for every service that uses this file.
+
+### search (yifuwuqi)
+
+`search.fufu.land` -> SearXNG (`modules/services/searxng.nix`), behind the same
+`services/htpasswd` basic-auth gate. Adding a user is the same `htpasswd -nbB`
+flow described above; no extra sops keys are introduced.
+
+The signing key is generated on first boot into a stateful file outside the nix
+store (rotate by deleting and restarting):
+
+- SearXNG: `/var/lib/searx-secret/env` (`SEARXNG_SECRET=`)

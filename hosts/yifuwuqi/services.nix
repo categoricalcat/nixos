@@ -26,6 +26,7 @@
     ../../modules/services/shared-auth.nix
     ../../modules/services/monitoring/netdata.nix
     ../../modules/services/webdav.nix
+    ../../modules/services/searxng.nix
   ];
 
   services.logrotate = {
@@ -70,6 +71,8 @@
     rocmTargets = [ "gfx1035" ];
     rocmOverrideGfx = "10.3.0";
   };
+
+  services.ollama.loadModels = [ "qwen2.5:7b" ];
 
   services.fwupd.enable = true;
 

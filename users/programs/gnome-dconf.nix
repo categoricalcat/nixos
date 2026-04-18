@@ -10,6 +10,7 @@
           appindicator.extensionUuid
           dash-to-panel.extensionUuid
           gtile.extensionUuid
+          pip-on-top.extensionUuid
           weather-oclock.extensionUuid
         ];
 

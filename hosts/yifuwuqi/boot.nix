@@ -11,7 +11,7 @@
       systemd-boot.configurationLimit = 15;
     };
 
-    kernelPackages = lib.mkForce pkgs.linuxPackages_hardened;
+    kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
 
     initrd.availableKernelModules = lib.mkAfter [
       "sd_mod"
