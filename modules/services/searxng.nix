@@ -65,7 +65,7 @@ in
         safe_search = 0;
         autocomplete = "duckduckgo";
         autocomplete_min = 2;
-        # JSON is required so Open WebUI / AgenticSeek can consume the API.
+        # JSON enabled for LibreChat's webSearch and any MCP / scripted clients.
         formats = [
           "html"
           "json"

@@ -56,6 +56,12 @@ in
 
   serverMode.headless = true;
 
+  sops.secrets."tokens/deepseek" = {
+    owner = config.users.users.yi.name;
+    inherit (config.users.users.yi) group;
+    mode = "0400";
+  };
+
   # distributedBuilds = {
   #   enable = true;
   #   role = "server";

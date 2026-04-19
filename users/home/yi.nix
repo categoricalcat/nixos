@@ -11,9 +11,9 @@ in
   imports = [
     ./common.nix
     ../programs/fastfetch.nix
+    ../programs/opencode.nix
   ]
   ++ lib.optionals (desktopEnvironment != null) [
-    ../programs/opencode.nix
     ../programs/alacritty.nix
     ../programs/mprisence.nix
     ../../modules/desktop/web-apps.nix

@@ -27,6 +27,7 @@
     ../../modules/services/monitoring/netdata.nix
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
+    ../../modules/services/librechat.nix
   ];
 
   services.logrotate = {

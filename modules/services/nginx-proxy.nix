@@ -112,6 +112,24 @@
         };
       };
 
+      # LibreChat web UI. Auth is handled by LibreChat itself
+      # (modules/services/librechat.nix), so no nginx basic-auth in front.
+      "chat.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:3080";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 1d;
+            proxy_send_timeout 1d;
+            client_max_body_size 100M;
+          '';
+        };
+      };
+
       # Portainer container management UI (backend serves HTTPS w/ self-signed cert)
       "prtnr.fufu.land" = {
         useACMEHost = "fufu.land";
