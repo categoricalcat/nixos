@@ -7,8 +7,10 @@ _: {
       enabled_providers = [
         "deepseek"
         "ollama"
+        "gemini"
       ];
       provider = {
+        gemini.options.apiKey = "{file:/run/secrets/tokens/gemini}";
         deepseek.options.apiKey = "{file:/run/secrets/tokens/deepseek}";
         ollama = {
           name = "Ollama";

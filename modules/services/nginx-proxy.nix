@@ -149,6 +149,23 @@
         };
       };
 
+      # Opencode System Server
+      "agent.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:3010";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 1d;
+            proxy_send_timeout 1d;
+            client_max_body_size 1G;
+          '';
+        };
+      };
+
     };
   };
 }

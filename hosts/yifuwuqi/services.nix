@@ -28,6 +28,7 @@
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
     ../../modules/services/librechat.nix
+    ../../modules/services/opencode.nix
   ];
 
   services.logrotate = {
@@ -76,6 +77,8 @@
   services.ollama.loadModels = [ "qwen2.5:7b" ];
 
   services.fwupd.enable = true;
+
+  services.opencode.enable = true;
 
   environment.systemPackages = with pkgs; [
     google-authenticator

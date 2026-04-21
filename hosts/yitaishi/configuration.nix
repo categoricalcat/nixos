@@ -65,6 +65,12 @@ in
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
 
+  console.keyMap = "us-acentos";
+  services.xserver.xkb = {
+    layout = "us";
+    variant = "intl";
+  };
+
   environment.systemPackages = [ pkgs.xclip ];
 
   # services.xserver.resolutions = [

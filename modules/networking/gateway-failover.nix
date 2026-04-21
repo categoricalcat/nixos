@@ -2,56 +2,66 @@
 
 let
   inherit (addresses.network.lan) interface;
-  inherit (addresses.network.lan.ipv4) gateway;
-  pingTargets = [
-    "1.1.1.1"
-    "8.8.8.8"
-    "9.9.9.9"
-  ];
-  pingCount = 1;
+  inherit (addresses.network.lan.ipv4) gateway host;
+
+  metric = 100;
+  pingTarget = "8.8.8.8";
   pingTimeout = 2;
   pingDeadline = 5;
-  metric = 100;
-  sleepInterval = 2;
-  failureThreshold = 2;
-  recoveryThreshold = 2;
 
-  script = pkgs.writeShellApplication {
-    name = "gateway-failover";
-    runtimeInputs = with pkgs; [
-      iproute2
-      iputils
-      coreutils
-    ];
-    text = builtins.readFile ./gateway-failover.sh;
+  checkScript = pkgs.writeShellApplication {
+    name = "wan-check";
+    runtimeInputs = [ pkgs.iputils ];
+    text = ''
+      exec ping -I ${interface} -c 1 -W ${toString pingTimeout} -w ${toString pingDeadline} ${pingTarget} >/dev/null 2>&1
+    '';
+  };
+
+  notifyScript = pkgs.writeShellApplication {
+    name = "wan-notify";
+    runtimeInputs = [ pkgs.iproute2 ];
+    text = ''
+      # keepalived passes: TYPE NAME STATE PRIORITY
+      state="''${3:-}"
+      case "$state" in
+        MASTER)
+          ip route replace default via ${gateway} dev ${interface} src ${host} metric ${toString metric}
+          ;;
+        BACKUP|FAULT|STOP)
+          ip route del default via ${gateway} dev ${interface} metric ${toString metric} 2>/dev/null || true
+          ;;
+      esac
+    '';
   };
 in
 {
-  systemd.services."gateway-failover-${interface}" = {
-    description = "Layer 3 WAN failover monitor for ${interface}";
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    environment = {
-      INTERFACE = interface;
-      GATEWAY = gateway;
-      CHECK_IPS = builtins.concatStringsSep " " pingTargets;
-      PING_COUNT = toString pingCount;
-      PING_TIMEOUT = toString pingTimeout;
-      DEADLINE = toString pingDeadline;
-      METRIC = toString metric;
-      INTERVAL = toString sleepInterval;
-      FAILURE_THRESHOLD = toString failureThreshold;
-      RECOVERY_THRESHOLD = toString recoveryThreshold;
+  services.keepalived = {
+    enable = true;
+    enableScriptSecurity = true;
+
+    vrrpScripts.check_eno1 = {
+      script = "${checkScript}/bin/wan-check";
+      interval = 2;
+      timeout = pingDeadline;
+      rise = 2;
+      fall = 2;
+      user = "root";
     };
-    serviceConfig = {
-      Type = "simple";
-      Restart = "always";
-      RestartSec = "3s";
-      StandardOutput = "journal";
-      StandardError = "journal";
-      StartLimitBurst = 5;
-      ExecStart = "${script}/bin/gateway-failover";
+
+    vrrpInstances.uplink_eno1 = {
+      interface = interface;
+      state = "BACKUP";
+      virtualRouterId = 99;
+      priority = 100;
+      trackScripts = [ "check_eno1" ];
+      # No real VRRP peers; direct adverts to loopback to avoid leaking
+      # multicast on the LAN.
+      unicastPeers = [ "127.0.0.1" ];
+      extraConfig = ''
+        nopreempt
+        advert_int 1
+        notify "${notifyScript}/bin/wan-notify" root
+      '';
     };
   };
 }

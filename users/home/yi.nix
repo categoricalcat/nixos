@@ -16,6 +16,7 @@ in
   ++ lib.optionals (desktopEnvironment != null) [
     ../programs/alacritty.nix
     ../programs/mprisence.nix
+    ../programs/fcitx5.nix
     ../../modules/desktop/web-apps.nix
   ]
   ++ lib.optional (desktopEnvironment == "gnome") ../programs/gnome-dconf.nix
@@ -49,7 +50,9 @@ in
       gnomeExtensions.appindicator
       gnomeExtensions.dash-to-panel
       gnomeExtensions.gtile
+      gnomeExtensions.kimpanel
       gnomeExtensions.media-controls
+      gnomeExtensions.pip-on-top
       gnomeExtensions.weather-oclock
     ]
     ++ lib.optionals (desktopEnvironment != null) [

@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -72,5 +73,27 @@ in
       "x-systemd.after=zerotierone.service"
       "x-systemd.requires=zerotierone.service"
     ];
+  };
+
+  systemd.services.cifs-lazy-umount = lib.mkIf (hasTailscale || hasZerotier) {
+    description = "Lazy-unmount CIFS shares before VPN/network shutdown";
+    wantedBy = [ "multi-user.target" ];
+    after =
+      lib.optionals hasTailscale [
+        "tailscaled.service"
+        "mnt-smb-share.mount"
+        "mnt-smb-the.files.mount"
+      ]
+      ++ lib.optionals hasZerotier [
+        "zerotierone.service"
+        "mnt-smb-zero-share.mount"
+        "mnt-smb-zero-the.files.mount"
+      ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.coreutils}/bin/true";
+      ExecStop = "-${pkgs.util-linux}/bin/umount -a -l -t cifs";
+    };
   };
 }
