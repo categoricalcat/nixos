@@ -60,7 +60,7 @@ in
     systemd
     tcpdump
     traceroute
-    bitwarden-cli
+    unstable.bitwarden-cli
     wireguard-tools
   ];
 }

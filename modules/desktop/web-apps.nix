@@ -69,7 +69,7 @@ in
     };
 
     bitwarden = mkWebApp {
-      name = "Bitwarden";
+      name = "Bitwarden Web";
       url = "https://vault.bitwarden.com";
     };
   };

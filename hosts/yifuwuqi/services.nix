@@ -29,6 +29,7 @@
     ../../modules/services/searxng.nix
     ../../modules/services/librechat.nix
     ../../modules/services/opencode.nix
+    ../../modules/services/mcp-searxng.nix
   ];
 
   services.logrotate = {

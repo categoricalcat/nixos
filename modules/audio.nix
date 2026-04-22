@@ -21,7 +21,7 @@ in
           96000
           192000
         ];
-        "default.clock.quantum" = 128;
+        "default.clock.quantum" = 256;
         "default.clock.min-quantum" = 32;
         "default.clock.max-quantum" = 1024;
       };
@@ -31,6 +31,8 @@ in
   environment.systemPackages = [
     # DAW
     unstable.reaper
+    unstable.ardour
+    unstable.bitwig-studio
 
     # Guitar amp simulators
     unstable.guitarix
@@ -40,6 +42,8 @@ in
     # Audio plugins (LV2/VST)
     unstable.lsp-plugins
     unstable.calf
+    unstable.drumgizmo
+    unstable.x42-avldrums
 
     # Routing & monitoring
     unstable.qpwgraph

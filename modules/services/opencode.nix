@@ -5,6 +5,11 @@
   ...
 }:
 
+let
+  opencodeHome = "/home/yi";
+  opencodeConfigHome = "${opencodeHome}/.config";
+  opencodeConfigPath = "${opencodeConfigHome}/opencode/config.json";
+in
 {
   options.services.opencode = {
     enable = lib.mkEnableOption "Opencode Serve daemon";
@@ -14,7 +19,14 @@
     systemd.services.opencode = {
       description = "Opencode Serve Daemon";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+      wants = [
+        "network-online.target"
+        "podman-mcp-searxng.service"
+      ];
+      after = [
+        "network-online.target"
+        "podman-mcp-searxng.service"
+      ];
 
       serviceConfig = {
         ExecStart = "${pkgs.opencode}/bin/opencode serve --port 3010 --hostname 127.0.0.1";
@@ -25,7 +37,9 @@
       };
 
       environment = {
-        SEARXNG_URL = "http://127.0.0.1:8888";
+        HOME = opencodeHome;
+        XDG_CONFIG_HOME = opencodeConfigHome;
+        OPENCODE_CONFIG = opencodeConfigPath;
       };
     };
   };

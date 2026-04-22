@@ -16,7 +16,7 @@ in
 
     wl-clipboard
 
-    bitwarden-desktop
+    unstable.bitwarden-desktop
     prismlauncher
     gimp
     nautilus

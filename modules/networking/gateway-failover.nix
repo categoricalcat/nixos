@@ -49,7 +49,7 @@ in
     };
 
     vrrpInstances.uplink_eno1 = {
-      interface = interface;
+      inherit interface;
       state = "BACKUP";
       virtualRouterId = 99;
       priority = 100;

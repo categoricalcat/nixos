@@ -4,33 +4,36 @@
 }:
 
 let
-  secretDir = "/var/lib/searx-secret";
+  secretDir = "/run/searx-secret";
   secretEnv = "${secretDir}/env";
 in
 {
-  systemd.tmpfiles.rules = [
-    "d ${secretDir} 0750 searx searx -"
-  ];
-
-  # Generates SEARXNG_SECRET on first boot. The key only signs limiter / image-proxy
-  # tokens, so a stateful local file (instead of sops) is enough behind nginx + htpasswd.
+  # Generate a fresh runtime secret before each start. Rotating it is acceptable
+  # here because it only signs limiter / image-proxy tokens.
+  #
+  # The upstream NixOS searx module wires `services.searx.environmentFile` into
+  # both `searx-init.service` (envsubst) and `searx.service`, so this unit must
+  # finish before either of them, otherwise EnvironmentFile= fails on first
+  # boot and `searx-init` never writes /run/searx/settings.yml.
   systemd.services.searx-secret-init = {
-    description = "Generate SearXNG secret_key on first boot";
-    wantedBy = [ "searx.service" ];
-    before = [ "searx.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
+    description = "Generate runtime SearXNG secret_key";
+    wantedBy = [
+      "searx-init.service"
+      "searx.service"
+    ];
+    before = [
+      "searx-init.service"
+      "searx.service"
+    ];
+    serviceConfig.Type = "oneshot";
     script = ''
-      if [ ! -s ${secretEnv} ]; then
-        umask 077
-        printf 'SEARXNG_SECRET=%s\n' \
-          "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
-          > ${secretEnv}
-        chown searx:searx ${secretEnv}
-        chmod 0440 ${secretEnv}
-      fi
+      install -d -m 0750 -o root -g searx ${secretDir}
+      umask 077
+      printf 'SEARXNG_SECRET=%s\n' \
+        "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
+        > ${secretEnv}
+      chown root:searx ${secretEnv}
+      chmod 0440 ${secretEnv}
     '';
   };
 
@@ -42,7 +45,7 @@ in
 
     settings = {
       general = {
-        instance_name = "fufu search";
+        instance_name = "yi search";
         debug = false;
         privacypolicy_url = false;
         donation_url = false;
@@ -51,8 +54,13 @@ in
       };
 
       server = {
-        bind_address = "127.0.0.1";
+        # Bind on all host addresses so the Podman sidecar can reach SearXNG
+        # through the host LAN IP while local consumers can keep using loopback.
+        bind_address = "0.0.0.0";
         port = 8888;
+        # `searx-init.service` runs envsubst over this YAML and loads
+        # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
+        # replaced with the runtime-generated value before SearXNG starts.
         secret_key = "$SEARXNG_SECRET";
         base_url = "https://search.fufu.land/";
         image_proxy = true;
@@ -98,12 +106,13 @@ in
     };
   };
 
+  # Wait for live network before contacting upstream search engines. Ordering
+  # against searx-secret-init is handled by that unit's `before`/`wantedBy`
+  # above. SyslogLevel=err lifts captured stderr above the host's
+  # MaxLevelStore=notice journald cap so SearXNG's own errors survive to disk.
   systemd.services.searx = {
     wants = [ "network-online.target" ];
-    after = [
-      "network-online.target"
-      "searx-secret-init.service"
-    ];
-    requires = [ "searx-secret-init.service" ];
+    after = [ "network-online.target" ];
+    serviceConfig.SyslogLevel = "err";
   };
 }

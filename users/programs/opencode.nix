@@ -1,4 +1,8 @@
-_: {
+_:
+let
+  sharedMcp = import ../../modules/services/mcp-shared.nix;
+in
+{
   programs.opencode = {
     enable = true;
     settings = {
@@ -7,10 +11,10 @@ _: {
       enabled_providers = [
         "deepseek"
         "ollama"
-        "gemini"
+        "google"
       ];
       provider = {
-        gemini.options.apiKey = "{file:/run/secrets/tokens/gemini}";
+        google.options.apiKey = "{file:/run/secrets/tokens/gemini}";
         deepseek.options.apiKey = "{file:/run/secrets/tokens/deepseek}";
         ollama = {
           name = "Ollama";
@@ -30,6 +34,20 @@ _: {
               };
             };
           };
+        };
+      };
+
+      # MCP server configuration for SearXNG web search
+      mcp = sharedMcp.searxng.opencode;
+
+      # Configure default agent to always use search
+      agent = {
+        default = {
+          instructions = ''
+            When working on coding tasks, always search for relevant documentation, 
+            examples, and best practices using available web search tools.
+            Prefer using web search tools for up-to-date information and examples.
+          '';
         };
       };
     };

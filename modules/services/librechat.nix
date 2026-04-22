@@ -28,6 +28,7 @@
 let
   secretDir = "/var/lib/librechat-secret";
   secretEnv = "${secretDir}/env";
+  sharedMcp = import ./mcp-shared.nix;
 in
 {
   imports = [
@@ -85,6 +86,7 @@ in
     settings = {
       version = "1.2.1";
       cache = true;
+      interface.mcpServers.use = true;
 
       endpoints.custom = [
         {
@@ -120,6 +122,9 @@ in
         searchProvider = "searxng";
         searxngInstanceUrl = "http://127.0.0.1:8888";
       };
+
+      mcpSettings.allowedDomains = sharedMcp.searxng.allowedDomains;
+      mcpServers = sharedMcp.searxng.librechat;
     };
   };
 
@@ -127,11 +132,13 @@ in
     after = [
       "librechat-secret-init.service"
       "mongodb.service"
+      "podman-mcp-searxng.service"
       "searx.service"
     ];
     requires = [ "librechat-secret-init.service" ];
     wants = [
       "mongodb.service"
+      "podman-mcp-searxng.service"
       "searx.service"
     ];
   };
