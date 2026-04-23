@@ -89,19 +89,52 @@ in
       };
 
       outgoing = {
-        request_timeout = 5.0;
-        max_request_timeout = 15.0;
+        # Bumped from 5/15 so slower survivors (Bing, Qwant, Mojeek) get a
+        # chance to respond when faster engines (Brave) hit a 429 burst.
+        request_timeout = 6.0;
+        max_request_timeout = 20.0;
         pool_connections = 100;
         pool_maxsize = 15;
         enable_http2 = true;
       };
+
+      # Engine pool: drop the three engines that consistently fail from this
+      # IP (DDG/Startpage crash, Google denies SearXNG fetchers) so they stop
+      # burning the timeout budget, and add Mojeek (own crawl, no Big Tech
+      # rate-limiting) so a Brave 429 doesn't collapse the whole result set.
+      # Mullvad Leta is intentionally NOT enabled: its upstream engine
+      # requires SearXNG to run behind a Mullvad VPN connection, which we do
+      # not.
+      engines = [
+        {
+          name = "duckduckgo";
+          disabled = true;
+        }
+        {
+          name = "google";
+          disabled = true;
+        }
+        {
+          name = "startpage";
+          disabled = true;
+        }
+        {
+          name = "mojeek";
+          disabled = false;
+          shortcut = "mjk";
+        }
+      ];
 
       enabled_plugins = [
         "Basic Calculator"
         "Hash plugin"
         "Open Access DOI rewrite"
         "Unit converter plugin"
-        "Tracker URL remover"
+        # "Tracker URL remover" disabled - upstream issue searxng/searxng#4951:
+        # the per-result SQLite cache at /tmp/sxng_cache_DATA_CACHE.db locks
+        # itself readonly under our hardened systemd unit and spams every
+        # query with sqlite3.OperationalError. Search results going to MCP
+        # clients don't need utm_* stripping anyway.
       ];
     };
   };

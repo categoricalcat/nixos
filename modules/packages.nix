@@ -17,7 +17,10 @@ in
     zerotierone
 
     # System utilities
-    btop
+    # rocmSupport=true patches in the rpath so btop dlopens librocm_smi64
+    # and shows the AMD iGPU. Without it, btop builds CPU-only.
+    (btop.override { rocmSupport = true; })
+    amdgpu_top
     curl
     stow
     tmux
@@ -51,6 +54,7 @@ in
     ethtool
     iftop
     iperf3
+    jq
     kubectl
     ncdu
     nethogs

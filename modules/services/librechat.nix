@@ -6,7 +6,9 @@
 #   default `pkgs.librechat` resolves fine).
 # - Local MongoDB enabled via `services.librechat.enableLocalDB = true`,
 #   which the upstream module wires to `services.mongodb`.
-# - DeepSeek + Ollama exposed as custom OpenAI-compatible endpoints.
+# - DeepSeek (cloud) + Local (llama-swap on 127.0.0.1:11434, fed by
+#   `services.llama-swap-amdgpu`) exposed as custom OpenAI-compatible
+#   endpoints. The local endpoint reuses Ollama's port for drop-in compat.
 # - Native SearXNG web search hits the local SearXNG on 127.0.0.1:8888,
 #   bypassing the public htpasswd-protected vhost (SearXNG itself binds
 #   to loopback only).
@@ -28,7 +30,8 @@
 let
   secretDir = "/var/lib/librechat-secret";
   secretEnv = "${secretDir}/env";
-  sharedMcp = import ./mcp-shared.nix;
+  sharedMcp = import ./ai/mcp.nix;
+  ai = import ./ai/models.nix;
 in
 {
   imports = [
@@ -105,16 +108,16 @@ in
           modelDisplayLabel = "DeepSeek";
         }
         {
-          name = "Ollama";
-          apiKey = "ollama";
+          name = "Local";
+          apiKey = "none";
           baseURL = "http://127.0.0.1:11434/v1/";
           models = {
-            default = [ "qwen2.5:7b" ];
+            default = ai.local.librechatDefaults;
             fetch = true;
           };
           titleConvo = true;
           titleModel = "current_model";
-          modelDisplayLabel = "Ollama";
+          modelDisplayLabel = "Local";
         }
       ];
 

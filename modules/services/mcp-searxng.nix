@@ -10,7 +10,7 @@
 { addresses, ... }:
 
 let
-  sharedMcp = import ./mcp-shared.nix;
+  sharedMcp = import ./ai/mcp.nix;
 in
 
 {

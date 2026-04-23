@@ -34,4 +34,18 @@ in
       };
     };
   };
+
+  puppeteer = {
+    opencode = {
+      puppeteer = {
+        type = "local";
+        command = [
+          "npx"
+          "-y"
+          "@modelcontextprotocol/server-puppeteer"
+        ];
+        enabled = true;
+      };
+    };
+  };
 }

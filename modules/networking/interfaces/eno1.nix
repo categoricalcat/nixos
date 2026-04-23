@@ -29,6 +29,11 @@
         # The metric-100 default route is owned exclusively by keepalived
         # (see modules/networking/gateway-failover.nix). networkd must not
         # install it - that would race with keepalived's notify script.
+        #
+        # gateway-failover.nix also merges a /32 tracker route here for the
+        # WAN-check probe target (via the LAN gateway) so the keepalived
+        # check has a guaranteed path out eno1 regardless of the default
+        # route state. That's why `ip route` shows a host route on eno1.
 
         linkConfig = {
           MTUBytes = 1492;

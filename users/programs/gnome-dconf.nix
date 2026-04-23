@@ -36,6 +36,7 @@
       };
 
       "org/gnome/mutter" = {
+        workspaces-only-on-primary = false;
         center-new-windows = true;
         experimental-features = [
           "scale-monitor-framebuffer"

@@ -13,7 +13,7 @@
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
     # ../../modules/services/zerotier.nix
-    ../../modules/services/ollama-amdgpu.nix
+    ../../modules/services/ai/llama-swap.nix
     # ../../modules/services/playit-agent.nix
     # ../../modules/services/localtonet.nix
     ../../modules/services/tailscale.nix
@@ -41,7 +41,7 @@
     useRoutingFeatures = "server";
   };
 
-  programs.nix-ld.enable = true;
+
 
   security.pam = {
     services.sshd.googleAuthenticator.enable = true;
@@ -69,13 +69,11 @@
     };
   };
 
-  services.ollama-amdgpu = {
+  services.llama-swap-amdgpu = {
     enable = true;
     rocmTargets = [ "gfx1035" ];
     rocmOverrideGfx = "10.3.0";
   };
-
-  services.ollama.loadModels = [ "qwen2.5:7b" ];
 
   services.fwupd.enable = true;
 
