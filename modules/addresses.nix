@@ -205,7 +205,7 @@
         tailscale = {
           interface = "tailscale0";
           ipv4 = rec {
-            host = "100.69.0.2";
+            host = "100.69.0.4";
             prefixLength = 32;
             address = "${host}/${builtins.toString prefixLength}";
           };

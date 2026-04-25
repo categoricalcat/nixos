@@ -22,10 +22,12 @@ in
       wants = [
         "network-online.target"
         "podman-mcp-searxng.service"
+        "podman-mcp-playwright.service"
       ];
       after = [
         "network-online.target"
         "podman-mcp-searxng.service"
+        "podman-mcp-playwright.service"
       ];
 
       serviceConfig = {

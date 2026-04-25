@@ -283,3 +283,111 @@ There were two separate problems:
 2. `llama-swap`'s `systemd` device cgroup allowed `/dev/dri` as a path, but not the actual DRM character devices ROCm needs
 
 Once `btop` was rebuilt with `rocmSupport = true` and `llama-swap` was granted explicit access to `/dev/dri/card0` and `/dev/dri/renderD128`, both the monitor and `llama-server` started using the AMD APU correctly.
+
+## RPC Peer Rollout
+
+`yitaishi` now hosts a `llama-rpc-server` worker so `yifuwuqi` can offload
+large models to the RX 7900 XTX over Tailscale.
+
+### Sandbox reuse
+
+The new worker intentionally reuses the same ROCm-specific `systemd`
+overrides that fixed `yifuwuqi`:
+
+- `SupplementaryGroups = [ "video" "render" ]`
+- `MemoryDenyWriteExecute = false`
+- `PrivateUsers = false`
+- `PrivateDevices = false`
+- `SystemCallFilter = [ ]`
+- explicit `DeviceAllow` entries for `/dev/kfd` plus DRM character devices
+
+Important difference for `yitaishi`:
+
+- the worker does **not** hard-code only `card0` / `renderD128`
+- it exposes a `drmDevices` option so the host can allow the actual dGPU node
+  numbering it boots with
+- the current `yitaishi` config allows both common AMD layouts:
+  - `/dev/dri/card0`
+  - `/dev/dri/renderD128`
+  - `/dev/dri/card1`
+  - `/dev/dri/renderD129`
+
+This keeps the original fix while avoiding coupling the RPC worker to
+`yifuwuqi`'s APU numbering.
+
+### Probe location
+
+The worker keeps the same `ExecStartPre` pattern and runs:
+
+```text
+llama-server --list-devices
+```
+
+inside the RPC worker sandbox before startup.
+
+Configured in-service path:
+
+```text
+/var/log/llama-rpc-server/list-devices.log
+```
+
+Host-visible path with `DynamicUser = true`:
+
+```text
+/var/log/private/llama-rpc-server/list-devices.log
+```
+
+This is the first file to inspect if the worker comes up but ROCm is missing.
+
+### Disable runbook
+
+To disable RPC use without removing the worker:
+
+1. On `yifuwuqi`, set:
+
+```nix
+services.llama-swap-amdgpu.rpcPeers = [ ];
+```
+
+2. Rebuild `yifuwuqi`
+
+To disable the worker entirely:
+
+1. On `yitaishi`, set:
+
+```nix
+services.llama-swap-amdgpu.rpcServer.enable = false;
+```
+
+2. Rebuild `yitaishi`
+
+### Verification runbook
+
+On `yitaishi`:
+
+- `systemctl status llama-rpc-server`
+- `journalctl -u llama-rpc-server`
+- `cat /var/log/private/llama-rpc-server/list-devices.log`
+
+Expected probe output should include the RX 7900 XTX, for example:
+
+```text
+Available devices:
+  ROCm0: AMD Radeon RX 7900 XTX
+```
+
+On `yifuwuqi`:
+
+- request a model with `rpc = true` such as `gpt-oss:20b`
+- inspect `journalctl -u llama-swap`
+- confirm the spawned `llama-server` command contains:
+
+```text
+--rpc 100.69.0.2:50052
+```
+
+- confirm logs show both local ROCm and RPC placement
+
+If the worker starts but reports no ROCm-capable device again, the first thing
+to verify is the `drmDevices` allowlist for the actual `/dev/dri/*` numbering
+on `yitaishi`.

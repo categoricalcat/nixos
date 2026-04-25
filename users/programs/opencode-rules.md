@@ -10,12 +10,9 @@ The following are failures:
 - Saying you will use a tool and then printing `tool_name { ... }`
   in plain text.
 - Putting tool calls in JSON, code blocks, markdown, or prose.
-- Claiming article/page text without a real `puppeteer_evaluate`
-  result.
+- Claiming article/page text without a real tool result.
 - Stopping after `searxng_searxng_web_search` and replying with
   links, sources, or summaries.
-- Falling back to `searxng_web_url_read` for page reading. That tool
-  is deprecated for this workflow and must not be used as a backup.
 - Pretending success after a tool error.
 
 A tool counts as USED only when the runtime actually executes it and
@@ -33,48 +30,83 @@ emit a REAL tool call immediately. Prefer this response:
     Please switch to `qwen3-coder:30b`, `gpt-oss:20b`, `qwen3:8b`, or
     the cloud `deepseek/deepseek-chat` default.
 
-## REQUIRED execution policy (DIRECT BROWSER)
+## REQUIRED execution policy (STAGED RETRIEVAL)
 
-IF YOU CALL `searxng_searxng_web_search`, YOUR VERY NEXT ACTION
-MUST BE AN ACTUAL `puppeteer_navigate` TOOL CALL. STOPPING AFTER A
-SEARCH IS A BUG. Search results are only titles + URLs; the page
-content is what answers the question.
+Web work is a 3-step pipeline. Each step is a REAL tool call. You may
+not write a final answer until at least one page has actually been
+read by step 2 or step 3.
 
-Step 1 (search):
+The host SearXNG routes its outbound requests through Tor, so engines
+that previously got rate-limited or IP-blocked are usable again. The
+local Playwright MCP runs headless Chromium pinned to nixpkgs.
 
-    For current events or latest headlines, include `!news` in the query.
-    Example:
-    searxng_searxng_web_search { "query": "!news latest news today" }
+### Step 1 — Search
 
-Step 2 (read — MANDATORY before any text reply):
+Use `searxng_searxng_web_search` to get ranked URLs. For current
+events or latest headlines, include `!news` in the query.
 
-    You MUST use your local Puppeteer browser to read pages. This is the only way to reliably bypass anti-bot screens and regional blocks.
+    Action: searxng_searxng_web_search { "query": "!news latest news today" }
 
-    1. Call `puppeteer_navigate { "url": "<top result url>" }`
-    2. Call `puppeteer_evaluate { "script": "return document.body.innerText;" }`
+Search results are titles + URLs. They are NOT the answer. Do not
+stop here.
 
-Repeat step 2 for the top 1-3 most relevant URLs. Only then write
-your answer, citing the URLs you actually read.
+### Step 2 — Cheap read (default)
 
-No text reply is allowed:
+For each URL you intend to cite, try the cheap reader FIRST:
 
-- between search and the first `puppeteer_navigate`
-- between `puppeteer_navigate` and `puppeteer_evaluate`
-- before at least one page has been read
+    Action: searxng_web_url_read { "url": "<top result url>" }
 
-If you cannot produce a REAL tool call, do not roleplay one. Say
-so plainly and ask the user to switch to a stronger model instead of
-fabricating results.
+This is fast (no browser launch) and routes through the same Tor
+exits as search, so it bypasses most per-IP rate limits. Use it for
+1-3 of the top results.
 
-If `puppeteer_navigate` or `puppeteer_evaluate` fails, stop and say
-the browser tool failed. Do NOT fall back to `searxng_web_url_read`,
-search-result snippets, memory, or guesses.
+Step 2 is sufficient for: news articles, blog posts, docs sites,
+forum threads, README/markdown pages, plain HTML.
 
-Recommended fail-fast wording:
+### Step 3 — Browser escalation (only when needed)
 
-    I can't reliably execute the required MCP/browser tools with this model.
-    Please switch to `qwen3-coder:30b`, `gpt-oss:20b`, `qwen3:8b`, or
-    the cloud `deepseek/deepseek-chat` default.
+Escalate to the local headless Playwright browser when step 2
+returned any of:
+
+- empty / near-empty body
+- a 403, 429, "access denied", or Cloudflare challenge interstitial
+- obvious JavaScript-rendered shell (React/Vue/Angular SPA with no
+  meaningful pre-rendered content)
+- a login wall when the content is publicly readable in a real
+  browser
+
+Sequence:
+
+    Action: playwright_navigate { "url": "<failed url>" }
+    Action: playwright_evaluate { "script": "return document.body.innerText;" }
+
+Do not invoke Playwright when step 2 already produced usable text.
+Browser launches add seconds of latency per call and exhaust limited
+context faster.
+
+### Step 4 — Answer
+
+Only after at least one page has been read (step 2 or step 3), write
+your answer and cite the URLs you actually read. Do not cite a URL
+you only saw in step 1 search results.
+
+### Failure handling
+
+If step 2 fails AND step 3 fails for a given URL, move to the next
+candidate URL from step 1. If every candidate fails, stop and say so:
+
+    The available web tools could not retrieve usable content from any
+    of the top search results. Search returned URLs but both the cheap
+    reader and the headless browser failed.
+
+Do NOT fabricate. Do NOT cite from training memory after a tool
+failure. Do NOT skip a tier because you "expect" it to fail — try
+step 2 first every time.
+
+If you cannot produce a REAL tool call, do not roleplay one. Say so
+plainly and ask the user to switch to a stronger model.
+
+## Examples
 
 Below, lines beginning with `Action:` mean a REAL tool call executed
 by the runtime, not printed text.
@@ -98,57 +130,89 @@ Wrong. That is narration plus printed syntax, not a tool event.
 Wrong. That stops at step 1. The user asked what the news IS, not
 which sites exist.
 
-### Correct execution
+### Failure example 3 — skipping the cheap reader
 
     User: "today's news"
     Action: searxng_searxng_web_search { "query": "!news latest news today" }
+    Tool: [{"url":"https://cnn.com/article",...}]
+    Action: playwright_navigate { "url": "https://cnn.com/article" }
+
+Wrong. CNN article pages are static HTML; the cheap reader handles
+them. Browser escalation is reserved for cases where the cheap reader
+failed.
+
+### Correct execution — cheap path only
+
+    User: "what does the latest CNN article say"
+    Action: searxng_searxng_web_search { "query": "!news latest news today" }
     Tool: [{"url":"https://cnn.com/article",...}, {"url":"https://bbc.com/news/...",...}]
-    Action: puppeteer_navigate { "url": "https://cnn.com/article" }
-    Tool: <navigation result>
-    Action: puppeteer_evaluate { "script": "return document.body.innerText;" }
+    Action: searxng_web_url_read { "url": "https://cnn.com/article" }
     Tool: "Today's top stories are..."
     You:  "Today's top stories are: ... (cnn.com/article)"
+
+### Correct execution — escalation
+
+    User: "what does this SPA dashboard show"
+    Action: searxng_searxng_web_search { "query": "<query>" }
+    Tool: [{"url":"https://example.com/app",...}]
+    Action: searxng_web_url_read { "url": "https://example.com/app" }
+    Tool: "" or "<noscript>You need JavaScript</noscript>"
+    Action: playwright_navigate { "url": "https://example.com/app" }
+    Action: playwright_evaluate { "script": "return document.body.innerText;" }
+    Tool: "Dashboard contents: ..."
+    You:  "The dashboard shows ... (example.com/app)"
 
 ### Correct handling of a real tool failure
 
     User: "today's news"
     Action: searxng_searxng_web_search { "query": "!news latest news today" }
     Tool: [{"url":"https://cnn.com/article",...}]
-    Action: puppeteer_navigate { "url": "https://cnn.com/article" }
+    Action: searxng_web_url_read { "url": "https://cnn.com/article" }
+    Tool error: "403 Forbidden"
+    Action: playwright_navigate { "url": "https://cnn.com/article" }
     Tool error: "Failed to launch the browser process!"
-    You:  "The browser tool really ran, but it failed locally. I need the browser runtime fixed or a stronger working browser configuration before I can read the page."
+    You:  "Both tiers failed for cnn.com/article. The cheap reader was
+           blocked (403) and the headless browser failed to launch.
+           Trying the next candidate URL..."
 
-Do not continue with `searxng_web_url_read` after a Puppeteer error.
-That still violates the workflow.
+## Tool reference
 
-## SearXNG MCP Tool Calls and Arguments
+You have two sets of tools.
 
-You have access to two sets of tools.
-
-### SearXNG (Search Only)
+### SearXNG (search + cheap read)
 
 #### `searxng_searxng_web_search`
 
-- `query` (string): The search query. **MUST** include category bangs or language filters if applicable (see below).
+- `query` (string): The search query. **MUST** include category bangs
+  or language filters if applicable (see below).
 - `pageno` (number): Page number for pagination (default: 1).
-- `time_range` (string): "day", "month", or "year". **DO NOT SET THIS**. The instance silently drops it. Put recency hints in the `query` itself (e.g., `!news site:bbc.com 2026`).
+- `time_range` (string): "day", "month", or "year". **DO NOT SET
+  THIS**. The instance silently drops it. Put recency hints in the
+  `query` itself (e.g., `!news site:bbc.com 2026`).
 - `language` (string): e.g., "en", "fr" (default: "all").
 - `safesearch` (number): 0 (None), 1 (Moderate), 2 (Strict).
 
 #### `searxng_web_url_read`
 
 - `url` (string): Target URL to extract and convert to Markdown.
-- **DEPRECATED**: Use Puppeteer instead for all page reading to ensure reliability.
-- NEVER use this as a fallback when Puppeteer fails.
+- This is the **default** page reader (step 2 above). It runs no
+  browser, returns fast, and routes through Tor.
+- Escalate to Playwright only when this returns empty content, a
+  block page, or an unrendered SPA shell.
 
-### Puppeteer (Primary Web Reader)
+### Playwright (browser fallback)
 
-You have access to a full local Chrome browser via the following tools. **ALWAYS** use these for reading page content:
+Local headless Chromium pinned to the nixpkgs binary. Use these only
+as the step-3 escalation, not as the default reader.
 
-- `puppeteer_navigate`: Go to a URL.
-- `puppeteer_evaluate`: Run JavaScript. Use `return document.body.innerText;` to extract the fully rendered text content of the page.
-- `puppeteer_screenshot`: Take a picture if you need to see the layout.
-- `puppeteer_click`, `puppeteer_type`, `puppeteer_hover`: Interact with elements.
+- `playwright_navigate`: Go to a URL.
+- `playwright_evaluate`: Run JavaScript. Use
+  `return document.body.innerText;` to extract the fully rendered
+  text content of the page.
+- `playwright_screenshot`: Take a picture if you need to see the
+  layout.
+- `playwright_click`, `playwright_fill`, `playwright_hover`:
+  Interact with elements.
 
 ## SearXNG Category and Engine Bangs
 
@@ -159,18 +223,25 @@ To get high-quality results, prepend "bangs" to your `query`.
 - `!general` — Default web search.
 - `!images` — Image search.
 - `!videos` — Video search.
-- `!news` — **CRITICAL for "latest news"**. Returns actual articles instead of site homepages.
+- `!news` — **CRITICAL for "latest news"**. Returns actual articles
+  instead of site homepages.
 - `!map` — Map and location data.
 - `!music` — Music and audio.
-- `!it` — IT-specific (Stack Overflow, GitHub, documentation). Use for coding tasks.
+- `!it` — IT-specific (Stack Overflow, GitHub, documentation). Use
+  for coding tasks.
 - `!science` — Scientific papers and publications.
 - `!files` — File search.
 - `!social_media` — Social platforms.
 
 ### Common Engine Bangs & Languages
 
-- **Engines:** `!wp` (Wikipedia), `!gh` (GitHub), `!so` (Stack Overflow), `!ddg` (DuckDuckGo), `!go` (Google), `!bi` (Bing), `!yt` (YouTube), `!rd` (Reddit), `!mdn` (MDN Web Docs).
+- **Engines:** `!wp` (Wikipedia), `!gh` (GitHub), `!so` (Stack
+  Overflow), `!ddg` (DuckDuckGo), `!bi` (Bing), `!yt` (YouTube),
+  `!rd` (Reddit), `!mdn` (MDN Web Docs).
 - **Language:** Prefix with a colon (e.g., `:fr !news macron`).
+- Note: Google is intentionally disabled — Tor exits get CAPTCHA'd.
+  `!ddg`, `!bi`, and `!mjk` (Mojeek) are the recommended engine
+  bangs through this instance.
 
 ## Recommended local models for tool/agent work
 
@@ -201,5 +272,7 @@ to one of the recommended models above (or to the cloud
 ## Final reminder
 
 After every `searxng_searxng_web_search`, your next action MUST be
-an ACTUAL `puppeteer_navigate` tool call. No prose, no code block,
-no fake JSON, no exceptions.
+either `searxng_web_url_read` (default) or `playwright_navigate`
+(when the cheap reader is known to fail for that URL class). No
+prose, no code block, no fake JSON, no exceptions. Do not write a
+final answer until a page has actually been read.

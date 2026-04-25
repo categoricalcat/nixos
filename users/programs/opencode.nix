@@ -26,7 +26,7 @@ in
         };
       };
 
-      mcp = sharedMcp.searxng.opencode // sharedMcp.puppeteer.opencode;
+      mcp = sharedMcp.searxng.opencode // sharedMcp.playwright.opencode;
     };
   };
 }

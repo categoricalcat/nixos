@@ -112,11 +112,11 @@
         "quickshell": "quickshell"
       },
       "locked": {
-        "lastModified": 1776868325,
-        "narHash": "sha256-p5IqaxTTVB7mOpsKENNJbmKoqGiW5KBv4JfZ4VtV6lE=",
+        "lastModified": 1777092033,
+        "narHash": "sha256-pwLe5q103VntHpINHnfD3EMPkIMopmRxPB7uB3BwSGE=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "97fa86d8f0f73232119040dca264566f1dc22772",
+        "rev": "a459b7d1b4331bb22a5c9d7e62b7ea8a788bc4d2",
         "type": "github"
       },
       "original": {
@@ -504,11 +504,11 @@
     },
     "nixpkgs-small": {
       "locked": {
-        "lastModified": 1776913179,
-        "narHash": "sha256-Iwesd5EElZRa6DAV5tay8X2g2BFz9pctl9H2v8Uri+s=",
+        "lastModified": 1777034476,
+        "narHash": "sha256-23NDOICPZuvnAZWdYdp9zaodh547Eo3fSWp8R14tboc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "714c76b9f9abc1b58fc46721211f558cff36a6eb",
+        "rev": "d24b3b0d40c4e2c14ed2c66b6d15d0dd94a99a95",
         "type": "github"
       },
       "original": {
@@ -520,11 +520,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1776548001,
-        "narHash": "sha256-ZSK0NL4a1BwVbbTBoSnWgbJy9HeZFXLYQizjb2DPF24=",
+        "lastModified": 1776877367,
+        "narHash": "sha256-EHq1/OX139R1RvBzOJ0aMRT3xnWyqtHBRUBuO1gFzjI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b12141ef619e0a9c1c84dc8c684040326f27cdcc",
+        "rev": "0726a0ecb6d4e08f6adced58726b95db924cef57",
         "type": "github"
       },
       "original": {
@@ -590,16 +590,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1766725085,
-        "narHash": "sha256-O2aMFdDUYJazFrlwL7aSIHbUSEm3ADVZjmf41uBJfHs=",
+        "lastModified": 1776854048,
+        "narHash": "sha256-lLbV66V3RMNp1l8/UelmR4YzoJ5ONtgvEtiUMJATH/o=",
         "ref": "refs/heads/master",
-        "rev": "41828c4180fb921df7992a5405f5ff05d2ac2fff",
-        "revCount": 715,
+        "rev": "783c953987dc56ff0601abe6845ed96f1d00495a",
+        "revCount": 806,
         "type": "git",
         "url": "https://git.outfoxxed.me/quickshell/quickshell"
       },
       "original": {
-        "rev": "41828c4180fb921df7992a5405f5ff05d2ac2fff",
+        "rev": "783c953987dc56ff0601abe6845ed96f1d00495a",
         "type": "git",
         "url": "https://git.outfoxxed.me/quickshell/quickshell"
       }
@@ -733,11 +733,11 @@
     "thefiles": {
       "flake": false,
       "locked": {
-        "lastModified": 1775244528,
-        "narHash": "sha256-IPA36j1KPFJAXmSn12TeD48SMknuqLckAM3uSAroMKw=",
+        "lastModified": 1777029633,
+        "narHash": "sha256-U4Eu9E4jAuBys2zI6yBUAgT0azII+UHc3xFlLyJHKjI=",
         "ref": "refs/heads/main",
-        "rev": "951f254c7e8e93591fe697fb89b1041f1ba02874",
-        "revCount": 112,
+        "rev": "31d8a90de7b50f35f75ddcf60c5482c27fa653e9",
+        "revCount": 113,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/categoricalcat/the.files.git"
