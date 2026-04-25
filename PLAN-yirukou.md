@@ -124,24 +124,38 @@ The selected subnet is `10.42.0.0/24`, but the options considered were:
 | S5 | `172.20.0.0/24` | `172.20.0.1` | Low collision risk, less memorable. |
 | S6 | `192.168.0.0/24` | `192.168.0.1` or `.2` | Existing network. Useful only for transitional designs. |
 
-## 6. Optional VLAN Plan
+## 6. VLAN Plan
 
-Start flat unless there is an immediate need for IoT / guest isolation. VLANs can be added later.
+VLANs are from day one using a dedicated trunk port (`lan3`) on yirukou connected to the ER706W. The ER706W tags WiFi frames per SSID; yirukou handles all VLAN routing, firewall, and DHCP on the VLAN subinterfaces.
 
-Suggested VLAN layout if enabled:
+VLAN layout:
 
-| VLAN | Name | Subnet | Purpose |
-|---|---|---|---|
-| 10 | `lan` | `10.42.0.0/24` | Trusted LAN, wired plus main WiFi |
-| 20 | `iot` | `10.42.20.0/24` | IoT devices, no LAN access |
-| 30 | `guest` | `10.42.30.0/24` | Guest WiFi, Internet only |
-| 99 | `mgmt` | `10.42.99.0/24` | AP/switch management |
+| VLAN | Name | Subnet | Tagging | Purpose |
+|---|---|---|---|---|
+| *(untagged)* | `lan` | `10.42.0.0/24` | Native on `lan3` | Trusted LAN + ER706W management (`10.42.0.2`) |
+| 20 | `iot` | `10.42.20.0/24` | Tagged SSID `iot` | IoT devices, no LAN access |
+| 30 | `guest` | `10.42.30.0/24` | Tagged SSID `guest` | Guest WiFi, Internet only |
 
-If VLANs are used, yirukou owns all VLAN interfaces and firewall rules. The ER706W should only tag SSIDs and bridge frames.
+Trunk (802.1Q) — dedicated port `lan3`:
+
+```
+lan3 (physical cable to ER706W LAN port)
+ ├── untagged → br0 member          → ER706W management + "homelab" SSID clients
+ ├── lan3.20  → VLAN 20 netdev      → gateway 10.42.20.1/24 (iot)
+ └── lan3.30  → VLAN 30 netdev      → gateway 10.42.30.1/24 (guest)
+```
+
+`lan0`, `lan1`, `lan2` are plain bridge members in `br0` for wired trusted hosts. `lan3` is also a `br0` member so its untagged traffic (ER706W management, homelab SSID WiFi clients) lands on the trusted LAN at L2. The VLAN netdevs `lan3.20` and `lan3.30` are stacked on the raw `lan3` device and are NOT bridge members — they are routed L3 interfaces.
+
+ER706W role: tag SSIDs, bridge frames. No VLAN routing, no DHCP, no firewall.
+
+yirukou owns: all VLAN interfaces, all firewall rules between VLANs, DHCP per VLAN, VLAN-aware NAT.
+
+Full implementation spec: see `PLAN-yirukou-trunk.md`.
 
 ## 7. Topology Options
 
-### T1 - yirukou is the only gateway, ER706W is AP only
+### T1 - yirukou is the only gateway, ER706W is AP only (trunk)
 
 Diagram:
 
@@ -154,21 +168,30 @@ ISP router 192.168.1.1
    yirukou
    10.42.0.1
         |
-        | br0 = 10.42.0.0/24
+        | br0 = 10.42.0.0/24 (lan0,lan1,lan2)
         |
    +----+-----+------------------+
    |          |                  |
-ER706W     yifuwuqi           other LAN hosts
-10.42.0.2  10.42.0.42         10.42.0.x
+ lan3       yifuwuqi          other LAN hosts
+(trunk)    10.42.0.42         10.42.0.x
+   |
+   | untagged → br0 (ER706W mgmt + homelab SSID)
+   | vlan 20  → 10.42.20.0/24 (iot SSID)
+   | vlan 30  → 10.42.30.0/24 (guest SSID)
+   |
+ER706W
+10.42.0.2
 AP only
 ```
 
 Description:
 
-- yirukou owns the homelab LAN.
+- yirukou owns the homelab LAN + VLANs.
 - yirukou runs DHCP, DNS, firewall, NAT, Tailscale, and optional VPN egress.
-- ER706W is only WiFi AP + optional DHCP relay.
+- ER706W is only WiFi AP with per-SSID VLAN tagging.
 - ER706W WAN ports are unused.
+- `lan3` is a dedicated 802.1Q trunk. Untagged = trusted LAN (br0). Tagged VLAN 20/30 = iot/guest routed subinterfaces.
+- `lan0`,`lan1`,`lan2` are plain br0 members for wired trusted hosts.
 
 Pros:
 
@@ -457,7 +480,7 @@ Recommended path:
 5. Consider T3 only as a temporary staging phase.
 6. Consider T6 later if the ER706W AP workaround is irritating.
 
-## 9. Chosen Target Design: T1 + `10.42.0.0/24`
+## 9. Chosen Target Design: T1 + trunk + `10.42.0.0/24`
 
 Target topology:
 
@@ -469,20 +492,24 @@ ISP router
     |
 yirukou
 wan0: 192.168.1.x
-br0:  10.42.0.1/24
     |
-    +-- ER706W AP, 10.42.0.2
-    +-- yifuwuqi, 10.42.0.42
-    +-- yitaishi, 10.42.0.43 or DHCP reservation
-    +-- yixiaoqing, 10.42.0.44 or DHCP reservation
+    +-- br0: 10.42.0.1/24 (lan0,lan1,lan2)
+    |     +-- yifuwuqi, 10.42.0.42
+    |     +-- yitaishi, 10.42.0.43 or DHCP reservation
+    |     +-- yixiaoqing, 10.42.0.44 or DHCP reservation
+    |
+    +-- lan3: trunk to ER706W
+          ├── untagged → br0  (ER706W mgmt 10.42.0.2 + homelab SSID clients)
+          ├── lan3.20 → 10.42.20.1/24  (iot SSID clients)
+          └── lan3.30 → 10.42.30.1/24  (guest SSID clients)
 ```
 
 Services on yirukou:
 
-- systemd-networkd for WAN, bridge, optional VLANs
-- nftables firewall
-- NAT from `10.42.0.0/24` to WAN
-- AdGuardHome for DNS and DHCP
+- systemd-networkd for WAN, bridge, VLAN netdevs
+- nftables firewall (VLAN isolation included)
+- NAT from `10.42.0.0/24`, `10.42.20.0/24`, `10.42.30.0/24` to WAN
+- AdGuardHome for DNS and DHCP (one scope per VLAN interface)
 - Tailscale exit node / subnet router advertising `10.42.0.0/24`
 - SSH for admin
 - Netdata for gateway monitoring
@@ -500,12 +527,12 @@ Services on yifuwuqi:
 - Portainer
 - Secondary DNS, if desired
 
-## 10. ER706W Setup for T1
+## 10. ER706W Setup for T1 + trunk
 
 Goal:
 
-- ER706W provides WiFi only.
-- yirukou remains the gateway, DHCP server, DNS server, firewall, and NAT.
+- ER706W provides WiFi only with per-SSID VLAN tagging.
+- yirukou remains the gateway, DHCP server, DNS server, firewall, and NAT for all VLANs.
 
 Recommended sequence:
 
@@ -515,36 +542,35 @@ Recommended sequence:
 4. Configure LAN:
    - IP: `10.42.0.2`
    - Netmask: `255.255.255.0`
+   - Gateway: `10.42.0.1`
+   - DNS: `10.42.0.1`
    - DHCP server: disabled
-   - DHCP relay: enabled
-   - DHCP relay target: `10.42.0.1`
+   - DHCP relay: disabled (yirukou serves DHCP directly on each VLAN interface)
 5. Configure WAN:
    - Connection type: Dynamic IP
    - Status: disconnected
    - WAN cable: unplugged
-6. Configure WiFi:
-   - Main SSID: `homelab`
-   - Security: WPA3-Personal if all clients support it
-   - Fallback: WPA2/WPA3 mixed if needed
+6. Configure SSIDs with VLAN tagging:
+   - SSID `homelab`: untagged (native VLAN, clients land on 10.42.0.0/24)
+   - SSID `iot`: VLAN ID 20 (clients land on 10.42.20.0/24)
+   - SSID `guest`: VLAN ID 30 (clients land on 10.42.30.0/24)
+   - Security: WPA3-Personal (or WPA2/WPA3 mixed)
    - WPS: disabled
-7. Optional SSIDs:
-   - `iot` -> VLAN 20
-   - `guest` -> VLAN 30
-8. Disable ER706W features no longer used:
+7. Disable ER706W features no longer used:
    - VPN server/client
    - port forwards
    - static routes
    - policy routing
    - NAT rules
    - DHCP server
-9. Physical cabling:
-   - ER706W LAN port -> yirukou LAN/br0 port
+   - DHCP relay
+8. Physical cabling:
+   - ER706W LAN port → yirukou `lan3` (trunk port)
    - ER706W WAN port unplugged
-10. Test from WiFi:
-   - Client gets `10.42.0.x`
-   - Client gateway is `10.42.0.1`
-   - Client DNS is `10.42.0.1`
-   - Client reaches Internet
+9. Test from each SSID:
+   - `homelab` client gets `10.42.0.x`, gateway `10.42.0.1`, DNS `10.42.0.1`, Internet works
+   - `iot` client gets `10.42.20.x`, gateway `10.42.20.1`, DNS `10.42.20.1`, Internet works, cannot reach `10.42.0.x`
+   - `guest` client gets `10.42.30.x`, gateway `10.42.30.1`, DNS `10.42.30.1`, Internet works, cannot reach `10.42.0.x` or `10.42.20.x`
 
 Known limitations:
 
@@ -693,33 +719,34 @@ yirukou = rec {
       };
     };
 
-    lanInterfaces = [ "lan0" "lan1" "lan2" "lan3" ];
+    # br0 member ports (wired trusted hosts)
+    lanInterfaces = [ "lan0" "lan1" "lan2" ];
+
+    # Trunk port to ER706W (also a br0 member for untagged traffic)
+    trunk = {
+      interface = "lan3";
+    };
 
     vlans = {
       iot = {
         id = 20;
-        ipv4 = {
+        interface = "lan3.20";
+        ipv4 = rec {
           cidr = "10.42.20.0/24";
           host = "10.42.20.1";
           prefixLength = 24;
+          address = "${host}/${builtins.toString prefixLength}";
         };
       };
 
       guest = {
         id = 30;
-        ipv4 = {
+        interface = "lan3.30";
+        ipv4 = rec {
           cidr = "10.42.30.0/24";
           host = "10.42.30.1";
           prefixLength = 24;
-        };
-      };
-
-      mgmt = {
-        id = 99;
-        ipv4 = {
-          cidr = "10.42.99.0/24";
-          host = "10.42.99.1";
-          prefixLength = 24;
+          address = "${host}/${builtins.toString prefixLength}";
         };
       };
     };
@@ -728,7 +755,7 @@ yirukou = rec {
       interface = "tailscale0";
       ipv4 = rec {
         cidr = "100.64.0.0/10";
-        host = "100.69.0.X"; # pick next free, e.g. 100.69.0.2
+        host = "100.69.0.2"; # pick next free
         prefixLength = 32;
         address = "${host}/${builtins.toString prefixLength}";
       };
@@ -744,28 +771,26 @@ yirukou = rec {
 };
 ```
 
-## 16. Greenfield T1 Implementation Order
+## 16. Greenfield T1 + trunk Implementation Order
 
-1. Confirm T1 and subnet `10.42.0.0/24`.
-2. Add yirukou to `modules/addresses.nix`.
-3. Create `hosts/yirukou/*`.
+1. Confirm T1 + trunk and subnet `10.42.0.0/24`.
+2. Add yirukou to `modules/addresses.nix` (include trunk + VLAN entries).
+3. Create `hosts/yirukou/*` (networking.nix with VLAN netdevs + firewall).
 4. Add yirukou to `flake.nix`.
 5. Install / bootstrap yirukou.
-6. Connect yirukou WAN to ISP router.
-7. Verify yirukou has Internet.
-8. Enable yirukou DHCP/DNS/NAT/firewall.
-9. Reconfigure ER706W as AP + DHCP relay.
-10. Connect ER706W LAN port to yirukou LAN/br0.
-11. Move yifuwuqi to `10.42.0.42`.
-12. Update Tailscale advertised route to `10.42.0.0/24`.
-13. Update AdGuard rewrites.
-14. Renew DHCP leases on clients.
-15. Verify wired and WiFi clients:
-    - IP in `10.42.0.0/24`
-    - gateway `10.42.0.1`
-    - DNS `10.42.0.1`
-    - Internet works
-    - internal services resolve and connect
+6. Connect yirukou `wan0` to ISP router. Verify Internet.
+7. Enable DHCP/DNS/NAT/firewall/VLAN firewall on yirukou.
+8. Reconfigure ER706W with per-SSID VLAN tagging (section 10).
+9. Connect ER706W LAN port to yirukou `lan3` (trunk).
+10. Move yifuwuqi to `10.42.0.42`, connect to `br0` port.
+11. Update Tailscale advertised route to `10.42.0.0/24`.
+12. Update AdGuard rewrites.
+13. Renew DHCP leases on clients.
+14. Verify per-SSID isolation:
+    - `homelab`: `10.42.0.x`, gateway `10.42.0.1`, DNS `10.42.0.1`, Internet works
+    - `iot`: `10.42.20.x`, gateway `10.42.20.1`, DNS `10.42.20.1`, Internet works, cannot reach `10.42.0.x`
+    - `guest`: `10.42.30.x`, gateway `10.42.30.1`, DNS `10.42.30.1`, Internet works, cannot reach `10.42.0.x` or `10.42.20.x`
+    - internal services resolve and connect from trusted LAN
 
 ## 17. Transitional T3 Implementation Order
 
@@ -799,14 +824,14 @@ Stage 2:
 
 ## 18. Open Questions
 
-Current assumed answers:
+Decided:
 
-| Question | Assumed answer |
+| Question | Decided answer |
 |---|---|
-| Final topology | T1 |
+| Final topology | T1 with dedicated trunk port `lan3` |
 | LAN subnet | `10.42.0.0/24` |
-| VLANs day one | No, flat LAN first |
-| ER706W | Keep as AP + DHCP relay first |
+| VLANs day one | Yes, 802.1Q trunk with VLAN 20 (iot) + 30 (guest) |
+| ER706W | Keep as AP, tag SSIDs to VLANs, no DHCP relay |
 | VPN egress | Drop initially or reimplement on yirukou |
 | Encryption | WPA3 + Tailscale everywhere baseline |
 | Migration | Direct T1, or T3 staging if risk needs to be lower |
@@ -816,4 +841,3 @@ Still to decide:
 1. Direct T1 cutover, or T3 staging first?
 2. Keep ER706W as AP long-term, or replace with a real AP later?
 3. Do we need always-on VPN egress, or is Tailscale exit-node usage enough?
-4. Add VLANs immediately, or after the flat LAN is stable?
