@@ -23,6 +23,8 @@ yirukou
     +-- tailscale0 (100.69.0.2/32) — subnet router for 10.42.0.0/24
 ```
 
+This spec implements T1: yirukou as router plus ER706W as an AP-like VLAN trunk. The best long-term WiFi endpoint is still T6: the same yirukou design with a purpose-built VLAN-aware AP instead of the ER706W. Use T1a first if you want a safer cutover: untagged trusted LAN/WiFi only, then add VLANs after the router path is proven.
+
 **Subnets and DHCP:**
 
 | VLAN | Interface | Subnet | Gateway | DHCP scope |
@@ -116,11 +118,14 @@ systemd.network.networks."20-${each}" = {
 ```nix
 systemd.network.networks."20-lan3" = {
   matchConfig.Name = "lan3";
-  networkConfig.Bridge = "br0";
-  # VLAN netdevs lan3.20 and lan3.30 are stacked on the raw lan3 device.
-  # They intercept tagged frames before the bridge sees them.
+  networkConfig = {
+    Bridge = "br0";
+    VLAN = [ "lan3.20" "lan3.30" ];
+  };
   # Untagged frames pass through to br0 normally.
-  linkConfig.RequiredForOnline = "carrier";
+  # Tagged frames are delivered to the explicitly attached VLAN netdevs.
+  # Do not let an unplugged AP/trunk block boot or network-online during staging.
+  linkConfig.RequiredForOnline = "no";
 };
 ```
 
@@ -135,9 +140,11 @@ systemd.network.networks."30-br0" = {
     IPv6AcceptRA = "no";
     LinkLocalAddressing = "no";
     IPForward = "yes";
+    DHCPServer = "yes";
     IPMasquerade = "no";  # NAT handled by nftables
   };
-  linkConfig.RequiredForOnline = "carrier";
+  # WAN should gate Internet readiness; LAN ports should not block boot.
+  linkConfig.RequiredForOnline = "no";
 };
 ```
 
@@ -151,6 +158,7 @@ systemd.network.networks."40-lan3.20" = {
     DHCP = "no";
     IPv6AcceptRA = "no";
     IPForward = "yes";
+    DHCPServer = "yes";
   };
 };
 
@@ -161,6 +169,7 @@ systemd.network.networks."40-lan3.30" = {
     DHCP = "no";
     IPv6AcceptRA = "no";
     IPForward = "yes";
+    DHCPServer = "yes";
   };
 };
 ```
@@ -200,6 +209,7 @@ let
         DHCP = "no";
         IPv6AcceptRA = "no";
         IPForward = "yes";
+        DHCPServer = "yes";
       };
     };
   };
@@ -247,8 +257,14 @@ in
     // {
       "20-${addresses.network.trunk.interface}" = {
         matchConfig.Name = addresses.network.trunk.interface;
-        networkConfig.Bridge = lan.interface;
-        linkConfig.RequiredForOnline = "carrier";
+        networkConfig = {
+          Bridge = lan.interface;
+          VLAN = [
+            vlans.iot.interface
+            vlans.guest.interface
+          ];
+        };
+        linkConfig.RequiredForOnline = "no";
       };
       "30-${lan.interface}" = {
         matchConfig.Name = lan.interface;
@@ -258,8 +274,9 @@ in
           IPv6AcceptRA = "no";
           LinkLocalAddressing = "no";
           IPForward = "yes";
+          DHCPServer = "yes";
         };
-        linkConfig.RequiredForOnline = "carrier";
+        linkConfig.RequiredForOnline = "no";
       };
     }
     // (mkVlanNetwork vlans.iot)
@@ -278,10 +295,11 @@ in
 2. `10.42.0.0/24` (trusted LAN) → full Internet access, can initiate to any local subnet
 3. `10.42.20.0/24` (iot) → Internet only, **no** access to `10.42.0.0/24` or `10.42.30.0/24`
 4. `10.42.30.0/24` (guest) → Internet only, **no** access to `10.42.0.0/24` or `10.42.20.0/24`
-5. Allow SSH from all LAN+IoT+Guest to yirukou itself
-6. Allow DHCP+DNS from all subnets to yirukou
-7. Allow Tailscale traffic
-8. Allow established/related return traffic
+5. Allow DHCP+DNS from all subnets to yirukou
+6. Allow SSH/admin access only from trusted LAN and Tailscale
+7. Allow ICMP/ping to yirukou only from trusted LAN and Tailscale
+8. Allow Tailscale traffic
+9. Allow established/related return traffic
 
 ### 3.1 Complete nftables ruleset
 
@@ -304,7 +322,7 @@ networking.nftables.tables.yirukou = {
     # ── NAT ────────────────────────────────────────────────
     chain postrouting {
       type nat hook postrouting priority srcnat; policy accept;
-      oifname ${wan} masquerade
+      ip saddr ${allLANs} oifname ${wan} masquerade
     }
 
     # ── FORWARD (inter-VLAN isolation) ─────────────────────
@@ -353,12 +371,12 @@ networking.nftables.tables.yirukou = {
       # Established/related
       ct state established,related accept
 
-      # ICMP from anywhere
-      ip protocol icmp accept
-      ip6 nexthdr ipv6-icmp accept
+      # ICMP from trusted LAN only. Tailscale is accepted below.
+      iifname ${br0} ip protocol icmp accept
+      iifname ${br0} ip6 nexthdr ipv6-icmp accept
 
-      # SSH from all LAN subnets
-      iifname ${lanIfs} tcp dport 22 accept
+      # SSH from trusted LAN only. Tailscale is accepted below.
+      iifname ${br0} tcp dport 22 accept
 
       # DHCP from all LAN subnets
       iifname ${lanIfs} udp dport { 67, 68 } accept
@@ -371,8 +389,9 @@ networking.nftables.tables.yirukou = {
       iifname ${br0} tcp dport 853 accept
       iifname ${br0} udp dport 853 accept
 
-      # HTTP/HTTPS (AdGuard web UI 3000/3443) from trusted LAN only
-      iifname ${br0} tcp dport { 80, 443, 3000 } accept
+      # AdGuard web UI / local encrypted DNS from trusted LAN only
+      iifname ${br0} tcp dport { 3333, 3443, 853 } accept
+      iifname ${br0} udp dport 853 accept
 
       # Tailscale
       iifname ${tsIf} accept
@@ -386,16 +405,18 @@ networking.nftables.tables.yirukou = {
 ### 3.2 Why this works
 
 - `policy drop` on FORWARD means any inter-VLAN traffic that isn't explicitly allowed is dropped.
-- IoT (`10.42.20.0/24`) can reach the Internet (accepted by `iifname {lanIfs} oifname wan`) but has no rule allowing it to reach `10.42.0.0/24` or `10.42.30.0/24` — implicit drop.
+- IoT (`10.42.20.0/24`) can reach the Internet (accepted by `iifname {lanIfs} oifname wan`) and yirukou DHCP/DNS, but has no rule allowing it to reach `10.42.0.0/24`, `10.42.30.0/24`, or yirukou admin services — implicit drop.
 - Guest (`10.42.30.0/24`) same story — Internet only.
 - Trusted LAN can initiate to IoT/Guest (unidirectional accept) but IoT/Guest cannot initiate back except via established/related.
 - Each VLAN's broadcast domain is isolated because they're on different L3 interfaces. `br0` carries untagged trusted LAN; `lan3.20` and `lan3.30` are separate routed interfaces.
 
-## 4. AdGuardHome — DHCP per VLAN
+## 4. AdGuardHome DNS + systemd-networkd DHCP
 
-AdGuardHome must serve DHCP on multiple interfaces with different scopes.
+AdGuardHome should handle DNS/filtering only. systemd-networkd should handle DHCP on `br0`, `lan3.20`, and `lan3.30` because it is already managing the interfaces and supports one DHCP server per interface declaratively.
 
-### 4.1 Configuration sketch
+### 4.1 Rejected alternative: AdGuardHome DHCP per VLAN
+
+This sketch is kept as background only. AdGuardHome's DHCP server is not a good fit for multiple VLAN scopes, so do not use this as the target implementation.
 
 ```yaml
 # AdGuardHome.yaml (managed via NixOS module or manual config)
@@ -443,7 +464,7 @@ dhcp:
 #       range_end: 10.42.30.200
 ```
 
-**Important:** AdGuardHome's multi-scope DHCP support needs verification. If AdGuardHome cannot serve DHCP on multiple interfaces with different scopes, alternatives:
+**Important:** Do not depend on AdGuardHome multi-scope DHCP for this router. If systemd-networkd DHCP is not desired later, alternatives are:
 
 1. **Multiple AdGuardHome instances** — one per VLAN (via Podman containers bound to each VLAN interface)
 2. **systemd-networkd DHCP server** — configure `systemd.network.networks` with `[DHCPServer]` sections per interface, with AdGuardHome as DNS
@@ -471,11 +492,13 @@ systemd.network.networks."40-lan3.20" = {
 };
 ```
 
-AdGuardHome only needs to listen on each VLAN IP for DNS. It also needs to be serving DHCP on `br0`, or systemd-networkd can serve DHCP on `br0` too.
+AdGuardHome only needs to listen on each VLAN IP for DNS. It does not need to serve DHCP on any interface.
 
 **Decision:** Use systemd-networkd DHCP server on all interfaces. AdGuardHome handles DNS only. This avoids AdGuardHome multi-scope complexity and keeps DHCP fully declarative in NixOS.
 
 ### 4.2 systemd-networkd DHCP with AdGuardHome DNS
+
+Each serving interface needs `networkConfig.DHCPServer = "yes"` plus the matching `dhcpServerConfig`.
 
 ```nix
 # On br0
@@ -625,7 +648,7 @@ in
 
 Create `modules/services/tailscale-yirukou.nix` instead of modifying the existing module.
 
-**Decision:** Use Option B for now. Create a separate `modules/services/tailscale-yirukou.nix` that configures Tailscale as a subnet router advertising `10.42.0.0/24`, and import it in `hosts/yirukou/services.nix`. Keep the existing shared module for yifuwuqi.
+**Decision:** Prefer Option A. Make the existing Tailscale module configurable per host so yirukou can advertise `10.42.0.0/24` while yifuwuqi becomes a normal client or optional secondary route/exit node. Option B is acceptable only as a short bootstrap shortcut.
 
 ## 7. Files to Create/Modify
 
@@ -639,9 +662,9 @@ hosts/yirukou/
   services.nix          — AdGuardHome, Tailscale, SSH, Netdata
   addresses.nix         — _module.args.addresses = allAddresses.hosts.yirukou
   boot.nix              — kernel params, bootloader
-
-modules/services/tailscale-yirukou.nix  — subnet router config
 ```
+
+Optional bootstrap shortcut only: `modules/services/tailscale-yirukou.nix`. Prefer the configurable shared Tailscale module instead.
 
 ### 7.2 Modified files
 
@@ -650,8 +673,9 @@ modules/services/tailscale-yirukou.nix  — subnet router config
 | `modules/addresses.nix` | Add `yirukou` entry (see PLAN-yirukou.md §15) |
 | `flake.nix` | Add `yirukou` NixOS configuration |
 | `hosts/yifuwuqi/networking.nix` | Remove `gateway-failover.nix` import; update LAN to `10.42.0.42/24` |
-| `hosts/yifuwuqi/services.nix` | Optionally swap tailscale import to client-only |
-| `modules/services/adguardhome.nix` | Prefer on yirukou; update rewrites to `10.42.0.42` |
+| `hosts/yifuwuqi/services.nix` | Swap Tailscale to client-only unless keeping it as secondary route/exit node |
+| `modules/services/tailscale.nix` | Add per-host route advertisement and exit-node options |
+| `modules/services/adguardhome.nix` | Prefer DNS on yirukou; keep service rewrites pointing to yifuwuqi `10.42.0.42` unless reverse proxy moves |
 | `modules/networking/firewall.nix` | Add `10.42.0.0/24` to container isolation allow list |
 
 ## 8. Testing Plan
@@ -687,7 +711,7 @@ modules/services/tailscale-yirukou.nix  — subnet router config
    - IP: `10.42.30.50+`
    - Gateway: `10.42.30.1`
    - Internet works
-   - Cannot reach any `10.42.x.x` address other than its gateway+DHCP+DNS
+   - Can use its gateway only for DHCP/DNS; cannot ping/admin yirukou or reach other `10.42.x.x` addresses
 
 ### 8.3 VLAN isolation verification
 
@@ -719,9 +743,17 @@ nft list chain inet yirukou forward
 2. yirukou `wan0` → ISP router, verify Internet
 3. yirukou DHCP + DNS + NAT + firewall operational
 4. Verify wired client on `lan0` gets `10.42.0.x`
-5. ER706W factory reset, configure trunk SSIDs, connect to `lan3`
-6. Verify WiFi per SSID works + VLAN isolation
-7. Move yifuwuqi to `10.42.0.42`, reconnect to br0 port
-8. Update Tailscale route on yirukou; update AdGuard rewrites
-9. Move other wired clients to br0 ports
-10. Validate all services
+5. Optional T1a: configure ER706W as untagged trusted WiFi only and verify basic wireless
+6. ER706W factory reset or reconfigure, configure trunk SSIDs, connect to `lan3`
+7. Verify WiFi per SSID works + VLAN isolation
+8. Move yifuwuqi to `10.42.0.42`, reconnect to br0 port
+9. Update Tailscale route on yirukou; update AdGuard rewrites while keeping service records on yifuwuqi
+10. Move other wired clients to br0 ports
+11. Validate all services
+
+Rollback:
+
+1. Restore the ER706W backup and reconnect the old LAN.
+2. Restore yifuwuqi to `192.168.0.42/24` with gateway `192.168.0.1`.
+3. Re-enable ER706W DHCP.
+4. Disconnect or disable yirukou DHCP/NAT until fixed.

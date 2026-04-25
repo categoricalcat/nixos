@@ -11,16 +11,24 @@ Chosen target LAN:
 - ER706W management/AP IP, if kept as AP: `10.42.0.2`
 - yifuwuqi services host: `10.42.0.42`
 
-Recommended long-term topology:
+Recommended steady-state topology with current hardware:
 
 - yirukou is the only gateway, firewall, NAT, DHCP, DNS, and Tailscale subnet router.
-- ER706W is kept only as a WiFi access point and optional DHCP relay.
+- ER706W is kept only as an AP-like WiFi bridge with per-SSID VLAN tags.
 - yifuwuqi becomes services-only.
+
+Best long-term topology:
+
+- Same routed design as above, but replace the ER706W with a real AP such as an Omada EAP650/EAP670, UniFi U6/U7, or similar VLAN-aware AP.
+- This removes the ER706W AP-mode workaround while preserving yirukou as the network authority.
+- Current recommendation: deploy T1 with the ER706W first, but treat T6 as the best long-term WiFi endpoint if the ER706W workaround is unreliable.
 
 Best migration path:
 
-1. Optionally stage yirukou on the current `192.168.0.0/24` network first.
-2. Then cut over to the clean `10.42.0.0/24` network.
+1. Bootstrap yirukou standalone with one wired client.
+2. Cut over to T1 without VLANs first if you want the lowest-risk migration.
+3. Add ER706W trunked SSIDs and VLAN isolation after the basic router path works.
+4. Consider T3 only if you want to validate yirukou on the current `192.168.0.0/24` network before renumbering.
 
 ## 2. Hardware
 
@@ -57,9 +65,11 @@ Best migration path:
 Important ER706W caveat:
 
 - It does not have a real official "AP only" mode.
-- It can be used like an AP by disabling WAN use, disabling DHCP server, enabling DHCP relay, and connecting one LAN port to yirukou.
-- In that AP-like mode the ER706W itself may not have Internet access for NTP, Omada Cloud, or online firmware checks.
-- WiFi clients still work normally if DHCP relay / bridge behavior is configured correctly.
+- It can probably be used like an AP by disabling ER706W DHCP/routing, using one LAN port toward yirukou, and configuring SSID VLAN tags.
+- For clean T1, prefer no DHCP relay: DHCP broadcasts should reach yirukou directly over the untagged/VLAN bridge path.
+- If the firmware does not bridge the desired traffic cleanly, fallback options are DHCP relay per VLAN, a dummy LAN/VLAN setup, or using the ER706W WAN side only for device management.
+- In LAN-only/AP-like mode the ER706W itself may not have Internet access for NTP, Omada Cloud, or online firmware checks.
+- WiFi clients can still work normally if the switch/SSID VLAN behavior is configured correctly.
 
 ## 3. Existing Networks
 
@@ -126,7 +136,13 @@ The selected subnet is `10.42.0.0/24`, but the options considered were:
 
 ## 6. VLAN Plan
 
-VLANs are from day one using a dedicated trunk port (`lan3`) on yirukou connected to the ER706W. The ER706W tags WiFi frames per SSID; yirukou handles all VLAN routing, firewall, and DHCP on the VLAN subinterfaces.
+VLANs are the preferred steady-state design using a dedicated trunk port (`lan3`) on yirukou connected to the ER706W. The ER706W tags WiFi frames per SSID; yirukou handles all VLAN routing, firewall, and DHCP on the VLAN subinterfaces.
+
+Lower-risk staging option:
+
+- Start with only the untagged trusted LAN/WiFi path.
+- Prove yirukou routing, DHCP, DNS, NAT, and Tailscale first.
+- Then add VLAN 20 (`iot`) and VLAN 30 (`guest`) on the ER706W trunk.
 
 VLAN layout:
 
@@ -155,7 +171,7 @@ Full implementation spec: see `PLAN-yirukou-trunk.md`.
 
 ## 7. Topology Options
 
-### T1 - yirukou is the only gateway, ER706W is AP only (trunk)
+### T1 - yirukou is the only gateway, ER706W is AP-like trunk
 
 Diagram:
 
@@ -195,8 +211,8 @@ Description:
 
 Pros:
 
-- Cleanest long-term design.
-- One NAT layer.
+- Cleanest no-new-hardware design.
+- One homelab routing/NAT policy point. If the ISP router remains upstream, the ISP router may still NAT Internet traffic.
 - One gateway.
 - One DHCP server.
 - One DNS policy.
@@ -214,10 +230,49 @@ Cons:
 - ER706W AP-like mode has caveats: no proper AP mode, possible no NTP / Omada Cloud.
 - ER706W multi-WAN features are unused.
 - If yirukou is down, the LAN gateway is down.
+- If the ISP router remains upstream at `192.168.1.1`, Internet egress is still yirukou NAT behind ISP-router NAT.
 
 Verdict:
 
-- Best steady-state choice.
+- Best steady-state choice with current hardware if the ER706W VLAN/AP workaround is stable.
+
+### T1a - yirukou is the only gateway, ER706W is plain untagged WiFi first
+
+Diagram:
+
+```text
+ISP router 192.168.1.1
+        |
+      wan0
+   yirukou
+   10.42.0.1
+        |
+      br0 10.42.0.0/24
+        |
+   ER706W LAN port
+   untagged WiFi only
+```
+
+Description:
+
+- yirukou is still the gateway, firewall, DHCP, DNS, NAT, and Tailscale router.
+- ER706W initially carries only one untagged trusted SSID.
+- VLAN 20/30 SSIDs are added later after the basic routed design is proven.
+
+Pros:
+
+- Lowest-risk T1 migration.
+- Lets you debug yirukou WAN/LAN/DHCP/DNS/NAT before involving VLANs.
+- Easy to roll back to the ER706W router config if needed.
+
+Cons:
+
+- No IoT/guest isolation until the trunk phase is added.
+- Requires a second pass through ER706W WiFi/VLAN setup.
+
+Verdict:
+
+- Best practical staging path for T1.
 
 ### T2 - ER706W is WAN aggregator, yirukou is behind it, WiFi is VLAN-trunked back
 
@@ -440,6 +495,8 @@ Description:
 - Same as T1 for routing.
 - ER706W is sold or retired.
 - A purpose-built AP handles WiFi.
+- The AP trunk carries the trusted/native SSID plus tagged IoT and guest SSIDs directly to yirukou.
+- yirukou remains the router, DHCP server, DNS server, firewall, Tailscale subnet router, and optional VPN egress policy point.
 
 Pros:
 
@@ -457,28 +514,37 @@ Cons:
 
 Verdict:
 
-- Cleanest long-term if the ER706W AP workaround becomes annoying.
+- Cleanest long-term overall if buying/replacing WiFi hardware is acceptable.
 - T1 first, T6 later is reasonable.
+
+Long-term recommendation:
+
+- Choose T6 as the ideal final shape if the goal is a clean, low-maintenance homelab gateway.
+- Choose T1 as the best no-new-hardware target.
+- Treat the ER706W as a useful bridge to the final design, not as a component that must be preserved forever.
 
 ## 8. Ranking
 
 | Rank | Topology | Role |
 |---|---|---|
-| 1 | T1 | Best steady-state topology with current hardware |
-| 1 alt | T6 | Best steady-state if replacing ER706W with a real AP |
-| 2 | T3 | Best transitional topology |
-| 3 | T4 | Niche transparent firewall option |
-| 4 | T2 | Only worth it with real multi-WAN needs |
-| 5 | T5 | Too limited for the yirukou project |
+| 1 | T6 | Best long-term topology if replacing ER706W with a real AP |
+| 1 current-hardware | T1 | Best steady-state topology using the ER706W |
+| 2 | T1a | Safest T1 staging path |
+| 3 | T3 | Best transitional topology if avoiding immediate renumbering |
+| 4 | T4 | Niche transparent firewall option |
+| 5 | T2 | Only worth it with real multi-WAN needs |
+| 6 | T5 | Too limited for the yirukou project |
 
 Recommended path:
 
-1. Target T1.
+1. Target T1 with current hardware, or T6 if buying a real AP is acceptable now.
 2. Use `10.42.0.0/24`.
-3. Keep ER706W initially as AP + DHCP relay.
-4. Move VPN egress to yirukou if always-on VPN is still needed.
-5. Consider T3 only as a temporary staging phase.
-6. Consider T6 later if the ER706W AP workaround is irritating.
+3. Use T1a first if you want a gentler cutover.
+4. Keep ER706W initially as AP-like WiFi with DHCP server disabled and DHCP relay disabled unless firmware behavior forces a relay workaround.
+5. Add VLAN trunking after basic routing works.
+6. Move VPN egress to yirukou if always-on VPN is still needed.
+7. Consider T3 only as a temporary staging phase.
+8. Treat T6 as the best long-term WiFi option if the ER706W AP workaround is irritating.
 
 ## 9. Chosen Target Design: T1 + trunk + `10.42.0.0/24`
 
@@ -509,7 +575,8 @@ Services on yirukou:
 - systemd-networkd for WAN, bridge, VLAN netdevs
 - nftables firewall (VLAN isolation included)
 - NAT from `10.42.0.0/24`, `10.42.20.0/24`, `10.42.30.0/24` to WAN
-- AdGuardHome for DNS and DHCP (one scope per VLAN interface)
+- systemd-networkd DHCP server on each LAN/VLAN interface
+- AdGuardHome for DNS/filtering only, listening on each gateway IP
 - Tailscale exit node / subnet router advertising `10.42.0.0/24`
 - SSH for admin
 - Netdata for gateway monitoring
@@ -542,8 +609,8 @@ Recommended sequence:
 4. Configure LAN:
    - IP: `10.42.0.2`
    - Netmask: `255.255.255.0`
-   - Gateway: `10.42.0.1`
-   - DNS: `10.42.0.1`
+   - Gateway: `10.42.0.1`, if the firmware allows it in LAN/AP-like mode
+   - DNS: `10.42.0.1`, if the firmware allows it in LAN/AP-like mode
    - DHCP server: disabled
    - DHCP relay: disabled (yirukou serves DHCP directly on each VLAN interface)
 5. Configure WAN:
@@ -575,6 +642,8 @@ Recommended sequence:
 Known limitations:
 
 - ER706W may not reach Internet itself in this mode.
+- Some firmware builds may not allow a useful LAN-side default gateway; verify on the actual UI.
+- If management/NTP/firmware updates matter, either temporarily reconnect WAN, use the ER706W WAN-management workaround, or replace it with a real AP.
 - Firmware updates may need manual upload or temporary WAN reconnect.
 - NTP / Omada Cloud may not work unless using a workaround.
 - If this becomes annoying, replace with a real AP.
@@ -684,11 +753,14 @@ hosts/yirukou/
   - Remove router/failover duties.
   - Drop `gateway-failover.nix` import if yifuwuqi is no longer a gateway.
 - `modules/services/tailscale.nix`
-  - Change advertised LAN route from `192.168.0.0/24` to `10.42.0.0/24`.
-  - Move subnet advertisement to yirukou.
+  - Make route advertisement and exit-node behavior per-host configurable.
+  - Move `10.42.0.0/24` subnet advertisement to yirukou.
+  - Stop hardcoding yifuwuqi as the only server/exit node.
 - `modules/services/adguardhome.nix`
-  - Update rewrites from `192.168.0.42` to `10.42.0.42`.
-  - Prefer AdGuardHome on yirukou, with yifuwuqi optional as secondary DNS.
+  - Split gateway DNS from services-host rewrites.
+  - Keep service records such as `*.fufu.land` pointing at yifuwuqi (`10.42.0.42`) unless the reverse proxy also moves.
+  - Prefer AdGuardHome DNS on yirukou, with yifuwuqi optional as secondary DNS.
+  - Decide how DNS-over-TLS/HTTPS certificates are provided on yirukou if those listeners are kept.
 - `modules/networking/firewall.nix`
   - Review container egress rules that currently treat `192.168.0.0/16` specially.
   - Add / allow `10.42.0.0/24` where appropriate.
@@ -771,26 +843,36 @@ yirukou = rec {
 };
 ```
 
-## 16. Greenfield T1 + trunk Implementation Order
+## 16. Greenfield T1/T1a Implementation Order
 
-1. Confirm T1 + trunk and subnet `10.42.0.0/24`.
+1. Confirm T1/T1a/T6 path and subnet `10.42.0.0/24`.
 2. Add yirukou to `modules/addresses.nix` (include trunk + VLAN entries).
-3. Create `hosts/yirukou/*` (networking.nix with VLAN netdevs + firewall).
+3. Create `hosts/yirukou/*` (networking.nix with bridge, optional VLAN netdevs, DHCP, NAT, and firewall).
 4. Add yirukou to `flake.nix`.
 5. Install / bootstrap yirukou.
 6. Connect yirukou `wan0` to ISP router. Verify Internet.
-7. Enable DHCP/DNS/NAT/firewall/VLAN firewall on yirukou.
-8. Reconfigure ER706W with per-SSID VLAN tagging (section 10).
-9. Connect ER706W LAN port to yirukou `lan3` (trunk).
+7. Enable systemd-networkd DHCP, AdGuardHome DNS, NAT, and base firewall on yirukou.
+8. Test a wired laptop on `lan0` before moving the rest of the LAN.
+9. Optional T1a stage: configure ER706W as one untagged trusted SSID only, DHCP disabled, and connect it to yirukou.
 10. Move yifuwuqi to `10.42.0.42`, connect to `br0` port.
 11. Update Tailscale advertised route to `10.42.0.0/24`.
-12. Update AdGuard rewrites.
-13. Renew DHCP leases on clients.
-14. Verify per-SSID isolation:
+12. Update AdGuard rewrites while keeping service hostnames on yifuwuqi.
+13. Reconfigure ER706W with per-SSID VLAN tagging (section 10).
+14. Connect ER706W LAN port to yirukou `lan3` (trunk).
+15. Renew DHCP leases on clients.
+16. Verify per-SSID isolation:
     - `homelab`: `10.42.0.x`, gateway `10.42.0.1`, DNS `10.42.0.1`, Internet works
     - `iot`: `10.42.20.x`, gateway `10.42.20.1`, DNS `10.42.20.1`, Internet works, cannot reach `10.42.0.x`
     - `guest`: `10.42.30.x`, gateway `10.42.30.1`, DNS `10.42.30.1`, Internet works, cannot reach `10.42.0.x` or `10.42.20.x`
     - internal services resolve and connect from trusted LAN
+
+Rollback plan:
+
+1. Restore the backed-up ER706W config.
+2. Reconnect clients to the old ER706W LAN.
+3. Restore yifuwuqi to `192.168.0.42/24` with gateway `192.168.0.1`.
+4. Re-enable ER706W DHCP.
+5. Disable or disconnect yirukou until the config is fixed.
 
 ## 17. Transitional T3 Implementation Order
 
@@ -815,7 +897,7 @@ Stage 2:
 1. Schedule downtime.
 2. Change yirukou LAN to `10.42.0.1/24`.
 3. Change yifuwuqi to `10.42.0.42`.
-4. Reconfigure ER706W as AP + DHCP relay at `10.42.0.2`.
+4. Reconfigure ER706W as AP-like WiFi at `10.42.0.2`, with DHCP relay disabled unless the firmware requires a relay workaround.
 5. Move yirukou WAN to ISP router.
 6. Move LAN clients to yirukou br0 / ER706W AP.
 7. Update Tailscale route to `10.42.0.0/24`.
@@ -828,16 +910,18 @@ Decided:
 
 | Question | Decided answer |
 |---|---|
-| Final topology | T1 with dedicated trunk port `lan3` |
+| Final topology | T6 is best long-term if replacing WiFi hardware; T1 is best with current hardware |
 | LAN subnet | `10.42.0.0/24` |
-| VLANs day one | Yes, 802.1Q trunk with VLAN 20 (iot) + 30 (guest) |
-| ER706W | Keep as AP, tag SSIDs to VLANs, no DHCP relay |
+| VLANs | Preferred steady state: 802.1Q trunk with VLAN 20 (iot) + 30 (guest); T1a can stage untagged first |
+| ER706W | Keep as AP-like WiFi bridge if firmware works; replace with real AP if annoying |
 | VPN egress | Drop initially or reimplement on yirukou |
 | Encryption | WPA3 + Tailscale everywhere baseline |
-| Migration | Direct T1, or T3 staging if risk needs to be lower |
+| Migration | T1a first, direct T1 trunk if confident, or T3 staging if risk needs to be lower |
+| Best long-term WiFi endpoint | Purpose-built VLAN-aware AP; keep ER706W only if the workaround behaves well |
 
 Still to decide:
 
-1. Direct T1 cutover, or T3 staging first?
-2. Keep ER706W as AP long-term, or replace with a real AP later?
+1. Direct T1 cutover, T1a first, or T3 old-subnet staging?
+2. Keep ER706W as AP long-term, or replace with a real AP for the final design?
 3. Do we need always-on VPN egress, or is Tailscale exit-node usage enough?
+4. Should yirukou provide DNS-over-TLS/HTTPS locally, and if so how should it receive the `fufu.land` certificates?
