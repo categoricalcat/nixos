@@ -8,7 +8,6 @@
 #
 # Consumed by:
 #   - modules/services/ai/llama-swap.nix -> per-model llama-server cmd
-#   - modules/services/librechat.nix     -> endpoints.custom[Local].models.default
 #   - users/programs/opencode.nix        -> provider.local.models
 #
 # Context-length policy:
@@ -165,13 +164,10 @@ let
 
   optionalAttrs = cond: attrs: if cond then attrs else { };
 
-  toolCapable = builtins.filter (n: models.${n}.tools or false) (builtins.attrNames models);
 in
 {
   local = {
     inherit models;
-
-    librechatDefaults = toolCapable;
 
     opencodeModels = builtins.mapAttrs (
       n: m:

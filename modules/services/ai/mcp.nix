@@ -3,7 +3,7 @@
 # Both MCP servers run as podman sidecars on this host:
 #   - SearXNG MCP via `modules/services/mcp-searxng.nix`     -> 127.0.0.1:3001
 #   - Playwright MCP via `modules/services/mcp-playwright.nix` -> 127.0.0.1:3002
-# Clients (opencode, librechat) talk to them over loopback HTTP.
+# Clients talk to them over loopback HTTP.
 let
   searxngHost = "127.0.0.1";
   searxngPort = 3001;
@@ -36,14 +36,6 @@ in
         type = "remote";
         url = searxngMcpUrl;
         enabled = true;
-      };
-    };
-
-    librechat = {
-      searxng = {
-        type = "streamable-http";
-        url = searxngMcpUrl;
-        serverInstructions = true;
       };
     };
   };

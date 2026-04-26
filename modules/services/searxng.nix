@@ -73,7 +73,7 @@ in
         safe_search = 0;
         autocomplete = "duckduckgo";
         autocomplete_min = 2;
-        # JSON enabled for LibreChat's webSearch and any MCP / scripted clients.
+        # JSON enabled for MCP and scripted clients.
         formats = [
           "html"
           "json"
