@@ -80,9 +80,9 @@ in
     rpcPeers = [ "${yitaishiTs}:50052" ];
     # Device order is [RPC0, ROCm0_local], so "1,0" sends 100% of weights
     # and KV to the remote 7900 XTX and skips the local 680M entirely.
-    # Auto-distribution by free VRAM still funnels ~28% to the local APU,
+    # auto-distribution by free VRAM still funnels ~28% to the local APU,
     # which then bottlenecks the pipeline at 100% busy while the remote dGPU
-    # idles between hops. Measured benchmark on qwen2.5:7b: 25 tok/s with
+    # idles between hops. Measured benchmark on 7B-class models: 25 tok/s with
     # auto-split vs 56 tok/s with "1,0" (2.27x). All RPC-tagged models in
     # models.nix fit in the 7900 XTX's 24 GiB on their own.
     tensorSplit = "1,0";

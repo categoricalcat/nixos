@@ -8,14 +8,16 @@ Chosen target LAN:
 
 - Network: `10.42.0.0/24`
 - Gateway: `10.42.0.1` on yirukou
-- ER706W management/AP IP, if kept as AP: `10.42.0.2`
-- yifuwuqi services host: `10.42.0.42`
+- yifuwuqi services host: `10.42.0.2`
+- ER706W management/AP IP, if kept as AP: `10.42.0.254`
+- lan1, lan2: DHCP clients (yitaishi, yixiaoqing, etc.)
 
 Recommended steady-state topology with current hardware:
 
 - yirukou is the only gateway, firewall, NAT, DHCP, DNS, and Tailscale subnet router.
 - ER706W is kept only as an AP-like WiFi bridge with per-SSID VLAN tags.
 - yifuwuqi becomes services-only.
+- yirukou has two WAN connections: wan0 (ISP modem) and wan1 (ISP2 modem). Both modems use `192.168.1.0/24`, causing a subnet clash on the WAN side. The clash is documented but not solved here — full dual-WAN routing requires VRFs, netns isolation, or reconfiguring one ISP modem to a different subnet.
 
 Best long-term topology:
 
@@ -76,9 +78,10 @@ Important ER706W caveat:
 Current networks already used in this repository / environment:
 
 | Network | Current purpose |
-|---|---|
+|---|---|---|
 | `192.168.0.0/24` | Current ER706W LAN / VPN router network |
-| `192.168.1.0/24` | ISP router network, gateway `192.168.1.1` |
+| `192.168.1.0/24` | ISP router network, gateway `192.168.1.1` (wan0) |
+| `192.168.1.0/24` | ISP2 router network, gateway `192.168.1.1` (wan1) — **clashes with wan0 subnet** |
 | `10.0.0.0/24` | ZeroTier |
 | `10.88.0.0/16` | Podman |
 | `10.100.0.0/24` | WireGuard `wg0` |
@@ -89,13 +92,12 @@ Current networks already used in this repository / environment:
 Chosen new homelab LAN:
 
 | Item | Value |
-|---|---|
+|---|---|---|
 | LAN subnet | `10.42.0.0/24` |
 | yirukou LAN/gateway | `10.42.0.1` |
-| ER706W management IP | `10.42.0.2` |
-| yifuwuqi | `10.42.0.42` |
-| yitaishi | `10.42.0.43` or DHCP reservation |
-| yixiaoqing | `10.42.0.44` or DHCP reservation |
+| yifuwuqi | `10.42.0.2` (lan0) |
+| ER706W management IP | `10.42.0.254` |
+| lan1, lan2 | DHCP (yitaishi, yixiaoqing, etc.) |
 
 Why `10.42.0.0/24`:
 
@@ -148,7 +150,7 @@ VLAN layout:
 
 | VLAN | Name | Subnet | Tagging | Purpose |
 |---|---|---|---|---|
-| *(untagged)* | `lan` | `10.42.0.0/24` | Native on `lan3` | Trusted LAN + ER706W management (`10.42.0.2`) |
+| *(untagged)* | `lan` | `10.42.0.0/24` | Native on `lan3` | Trusted LAN + ER706W management (`10.42.0.254`) |
 | 20 | `iot` | `10.42.20.0/24` | Tagged SSID `iot` | IoT devices, no LAN access |
 | 30 | `guest` | `10.42.30.0/24` | Tagged SSID `guest` | Guest WiFi, Internet only |
 
@@ -176,28 +178,31 @@ Full implementation spec: see `PLAN-yirukou-trunk.md`.
 Diagram:
 
 ```text
-ISP router 192.168.1.1
-        |
-        | 192.168.1.0/24
-        |
-      wan0
-   yirukou
-   10.42.0.1
-        |
-        | br0 = 10.42.0.0/24 (lan0,lan1,lan2)
-        |
-   +----+-----+------------------+
-   |          |                  |
- lan3       yifuwuqi          other LAN hosts
-(trunk)    10.42.0.42         10.42.0.x
-   |
-   | untagged → br0 (ER706W mgmt + homelab SSID)
-   | vlan 20  → 10.42.20.0/24 (iot SSID)
-   | vlan 30  → 10.42.30.0/24 (guest SSID)
-   |
-ER706W
-10.42.0.2
-AP only
+ISP router 192.168.1.1        ISP2 router 192.168.1.1
+        |                              |
+        | 192.168.1.0/24               | 192.168.1.0/24 (clash)
+        |                              |
+      wan0                           wan1
+              \                    /
+               \                  /
+                  yirukou
+                  10.42.0.1
+                    |
+                    | br0 = 10.42.0.0/24 (lan0,lan1,lan2)
+                    |
+               +----+-----+------------------+
+               |          |                  |
+             lan3       lan0               lan1,lan2
+            (trunk)   yifuwuqi            DHCP clients
+                      10.42.0.2
+               |
+               | untagged → br0 (ER706W mgmt + homelab SSID)
+               | vlan 20  → 10.42.20.0/24 (iot SSID)
+               | vlan 30  → 10.42.30.0/24 (guest SSID)
+               |
+            ER706W
+           10.42.0.254
+           AP only
 ```
 
 Description:
@@ -207,7 +212,8 @@ Description:
 - ER706W is only WiFi AP with per-SSID VLAN tagging.
 - ER706W WAN ports are unused.
 - `lan3` is a dedicated 802.1Q trunk. Untagged = trusted LAN (br0). Tagged VLAN 20/30 = iot/guest routed subinterfaces.
-- `lan0`,`lan1`,`lan2` are plain br0 members for wired trusted hosts.
+- `lan0` is wired to yifuwuqi (`10.42.0.2`). `lan1`,`lan2` are DHCP ports for other wired trusted hosts (yitaishi, yixiaoqing).
+- `wan1` is a second WAN from ISP2 at the same `192.168.1.0/24` — subnet clash documented, not solved here.
 
 Pros:
 
@@ -229,7 +235,9 @@ Cons:
 - Requires reconfiguring ER706W into AP-like mode.
 - ER706W AP-like mode has caveats: no proper AP mode, possible no NTP / Omada Cloud.
 - ER706W multi-WAN features are unused.
+- wan1 and wan0 use the same `192.168.1.0/24` subnet; dual-WAN routing needs a solution (VRF, netns, or ISP modem reconfig) before wan1 can be activated.
 - If yirukou is down, the LAN gateway is down.
+- wan1 subnet clash (`192.168.1.0/24` on both WANs) means wan1 cannot be activated without a solution.
 - If the ISP router remains upstream at `192.168.1.1`, Internet egress is still yirukou NAT behind ISP-router NAT.
 
 Verdict:
@@ -241,16 +249,17 @@ Verdict:
 Diagram:
 
 ```text
-ISP router 192.168.1.1
-        |
-      wan0
-   yirukou
-   10.42.0.1
-        |
-      br0 10.42.0.0/24
-        |
-   ER706W LAN port
-   untagged WiFi only
+ISP router 192.168.1.1        ISP2 router 192.168.1.1
+        |                              |
+      wan0                           wan1
+              \                    /
+                  yirukou
+                  10.42.0.1
+                    |
+                  br0 10.42.0.0/24
+                    |
+             ER706W LAN port
+             untagged WiFi only
 ```
 
 Description:
@@ -480,13 +489,13 @@ Verdict:
 Diagram:
 
 ```text
-ISP router 192.168.1.1
-        |
+ISP router 192.168.1.1        ISP2 router 192.168.1.1
+        |                              |
      yirukou
      10.42.0.1
         |
         +-- real AP, e.g. EAP650 / EAP670 / U6
-        +-- yifuwuqi 10.42.0.42
+        +-- yifuwuqi 10.42.0.2
         +-- other clients
 ```
 
@@ -551,23 +560,23 @@ Recommended path:
 Target topology:
 
 ```text
-ISP router
-192.168.1.1
-    |
-    | DHCP or static on yirukou wan0
-    |
-yirukou
-wan0: 192.168.1.x
-    |
-    +-- br0: 10.42.0.1/24 (lan0,lan1,lan2)
-    |     +-- yifuwuqi, 10.42.0.42
-    |     +-- yitaishi, 10.42.0.43 or DHCP reservation
-    |     +-- yixiaoqing, 10.42.0.44 or DHCP reservation
-    |
-    +-- lan3: trunk to ER706W
-          ├── untagged → br0  (ER706W mgmt 10.42.0.2 + homelab SSID clients)
-          ├── lan3.20 → 10.42.20.1/24  (iot SSID clients)
-          └── lan3.30 → 10.42.30.1/24  (guest SSID clients)
+ISP router          ISP2 router
+192.168.1.1         192.168.1.1
+    |                     |
+    | DHCP or static      | DHCP or static (clash)
+    |                     |
+  wan0                  wan1
+         \              /
+              yirukou
+                |
+                +-- br0: 10.42.0.1/24 (lan0,lan1,lan2)
+                |     +-- lan0 → yifuwuqi, 10.42.0.2
+                |     +-- lan1,lan2 → DHCP (yitaishi, yixiaoqing, etc.)
+                |
+                +-- lan3: trunk to ER706W
+                      ├── untagged → br0  (ER706W mgmt 10.42.0.254 + homelab SSID clients)
+                      ├── lan3.20 → 10.42.20.1/24  (iot SSID clients)
+                      └── lan3.30 → 10.42.30.1/24  (guest SSID clients)
 ```
 
 Services on yirukou:
@@ -607,7 +616,7 @@ Recommended sequence:
 2. Factory reset ER706W for a clean baseline.
 3. Initial setup from a directly connected laptop.
 4. Configure LAN:
-   - IP: `10.42.0.2`
+   - IP: `10.42.0.254`
    - Netmask: `255.255.255.0`
    - Gateway: `10.42.0.1`, if the firmware allows it in LAN/AP-like mode
    - DNS: `10.42.0.1`, if the firmware allows it in LAN/AP-like mode
@@ -666,8 +675,8 @@ Example policy:
 
 | Source | Egress |
 |---|---|
-| `10.42.0.42` yifuwuqi | direct ISP |
-| `10.42.0.43` yitaishi | VPN |
+| `10.42.0.2` yifuwuqi | direct ISP |
+| `10.42.0.x` yitaishi (DHCP) | VPN |
 | `10.42.20.0/24` IoT | direct or blocked |
 | `10.42.30.0/24` guest | direct ISP |
 
@@ -746,7 +755,7 @@ hosts/yirukou/
 
 - `modules/addresses.nix`
   - Add `yirukou`.
-  - Update `yifuwuqi.network.lan` to `10.42.0.42/24`, gateway `10.42.0.1`.
+  - Update `yifuwuqi.network.lan` to `10.42.0.2/24`, gateway `10.42.0.1`.
 - `flake.nix`
   - Add `yirukou` NixOS configuration.
 - `hosts/yifuwuqi/networking.nix`
@@ -758,7 +767,7 @@ hosts/yirukou/
   - Stop hardcoding yifuwuqi as the only server/exit node.
 - `modules/services/adguardhome.nix`
   - Split gateway DNS from services-host rewrites.
-  - Keep service records such as `*.fufu.land` pointing at yifuwuqi (`10.42.0.42`) unless the reverse proxy also moves.
+  - Keep service records such as `*.fufu.land` pointing at yifuwuqi (`10.42.0.2`) unless the reverse proxy also moves.
   - Prefer AdGuardHome DNS on yirukou, with yifuwuqi optional as secondary DNS.
   - Decide how DNS-over-TLS/HTTPS certificates are provided on yirukou if those listeners are kept.
 - `modules/networking/firewall.nix`
@@ -779,6 +788,9 @@ yirukou = rec {
 
     wanSpare = {
       interface = "wan1";
+      # DHCP from ISP2 router at 192.168.1.1
+      # WARNING: subnet clash with wan0 (both 192.168.1.0/24).
+      # Activating wan1 requires VRF, netns isolation, or ISP modem reconfig.
     };
 
     lan = {
@@ -791,7 +803,7 @@ yirukou = rec {
       };
     };
 
-    # br0 member ports (wired trusted hosts)
+    # br0 member ports
     lanInterfaces = [ "lan0" "lan1" "lan2" ];
 
     # Trunk port to ER706W (also a br0 member for untagged traffic)
@@ -854,7 +866,7 @@ yirukou = rec {
 7. Enable systemd-networkd DHCP, AdGuardHome DNS, NAT, and base firewall on yirukou.
 8. Test a wired laptop on `lan0` before moving the rest of the LAN.
 9. Optional T1a stage: configure ER706W as one untagged trusted SSID only, DHCP disabled, and connect it to yirukou.
-10. Move yifuwuqi to `10.42.0.42`, connect to `br0` port.
+10. Move yifuwuqi to `10.42.0.2`, connect to `br0` port (lan0).
 11. Update Tailscale advertised route to `10.42.0.0/24`.
 12. Update AdGuard rewrites while keeping service hostnames on yifuwuqi.
 13. Reconfigure ER706W with per-SSID VLAN tagging (section 10).
@@ -896,8 +908,8 @@ Stage 2:
 
 1. Schedule downtime.
 2. Change yirukou LAN to `10.42.0.1/24`.
-3. Change yifuwuqi to `10.42.0.42`.
-4. Reconfigure ER706W as AP-like WiFi at `10.42.0.2`, with DHCP relay disabled unless the firmware requires a relay workaround.
+3. Change yifuwuqi to `10.42.0.2`.
+4. Reconfigure ER706W as AP-like WiFi at `10.42.0.254`, with DHCP relay disabled unless the firmware requires a relay workaround.
 5. Move yirukou WAN to ISP router.
 6. Move LAN clients to yirukou br0 / ER706W AP.
 7. Update Tailscale route to `10.42.0.0/24`.

@@ -3,24 +3,25 @@
 ## 1. Topology
 
 ```
-ISP router
-192.168.1.1
-    |
-    | 192.168.1.0/24 (DHCP)
-    |
-  wan0
-yirukou
-    |
-    +-- br0 (10.42.0.1/24)
-    |     members: lan0, lan1, lan2, lan3
-    |       lan0 → yifuwuqi (10.42.0.42)
-    |       lan1 → yitaishi (10.42.0.43)
-    |       lan2 → yixiaoqing (10.42.0.44)
-    |       lan3 → trunk to ER706W (untagged = ER706W mgmt + homelab SSID)
-    |
-    +-- lan3.20 (10.42.20.1/24) — VLAN 20, iot gateway
-    +-- lan3.30 (10.42.30.1/24) — VLAN 30, guest gateway
-    +-- tailscale0 (100.69.0.2/32) — subnet router for 10.42.0.0/24
+ISP router              ISP2 router
+192.168.1.1             192.168.1.1
+    |                         |
+    | 192.168.1.0/24 (DHCP)   | 192.168.1.0/24 (DHCP, clash)
+    |                         |
+  wan0                      wan1
+           \              /
+               yirukou
+                 |
+                 +-- br0 (10.42.0.1/24)
+                 |     members: lan0, lan1, lan2, lan3
+                 |       lan0 → yifuwuqi (10.42.0.2)
+                 |       lan1 → DHCP (yitaishi, etc.)
+                 |       lan2 → DHCP (yixiaoqing, etc.)
+                 |       lan3 → trunk to ER706W (untagged = ER706W mgmt + homelab SSID)
+                 |
+                 +-- lan3.20 (10.42.20.1/24) — VLAN 20, iot gateway
+                 +-- lan3.30 (10.42.30.1/24) — VLAN 30, guest gateway
+                 +-- tailscale0 (100.69.0.2/32) — subnet router for 10.42.0.0/24
 ```
 
 This spec implements T1: yirukou as router plus ER706W as an AP-like VLAN trunk. The best long-term WiFi endpoint is still T6: the same yirukou design with a purpose-built VLAN-aware AP instead of the ER706W. Use T1a first if you want a safer cutover: untagged trusted LAN/WiFi only, then add VLANs after the router path is proven.
@@ -37,10 +38,8 @@ Static reservations (on `br0` scope):
 
 | Host | IP |
 |---|---|
-| yifuwuqi | `10.42.0.42` |
-| yitaishi | `10.42.0.43` |
-| yixiaoqing | `10.42.0.44` |
-| ER706W | `10.42.0.2` |
+| yifuwuqi | `10.42.0.2` |
+| ER706W | `10.42.0.254` |
 
 **ER706W SSID to VLAN mapping:**
 
@@ -99,6 +98,26 @@ systemd.network.networks."10-wan0" = {
   dhcpV4Config.UseDNS = false;
   dhcpV4Config.RouteMetric = 100;
   linkConfig.RequiredForOnline = "carrier";
+};
+```
+
+#### WAN spare — `wan1` (clash documented, not activated)
+
+```nix
+# wan1 is connected to ISP2 modem at 192.168.1.1.
+# Subnet clash with wan0 (both 192.168.1.0/24).
+# Activating this requires VRF, netns, or ISP modem reconfig.
+# For now: DHCP enabled but isolated by manual intervention or
+# by not bringing the interface up automatically.
+systemd.network.networks."10-wan1" = {
+  matchConfig.Name = "wan1";
+  networkConfig = {
+    DHCP = "yes";
+    IPv6AcceptRA = "no";
+  };
+  dhcpV4Config.UseDNS = false;
+  dhcpV4Config.RouteMetric = 200;
+  linkConfig.RequiredForOnline = "no";
 };
 ```
 
@@ -250,6 +269,19 @@ in
         };
         linkConfig.RequiredForOnline = "carrier";
       };
+      # WAN spare (clash with wan0, not currently activated — see note above)
+      "10-wan1" = {
+        matchConfig.Name = addresses.network.wanSpare.interface;
+        networkConfig = {
+          DHCP = "yes";
+          IPv6AcceptRA = "no";
+        };
+        dhcpV4Config = {
+          UseDNS = false;
+          RouteMetric = 200;
+        };
+        linkConfig.RequiredForOnline = "no";
+      };
     }
     // (mkBridgeMember "lan0")
     // (mkBridgeMember "lan1")
@@ -316,13 +348,14 @@ networking.nftables.tables.yirukou = {
     iotIf    = addresses.network.vlans.iot.interface;
     guestIf  = addresses.network.vlans.guest.interface;
     tsIf     = addresses.network.tailscale.interface;
+    wanIfs   = "{ ${wan}, ${addresses.network.wanSpare.interface} }";
     allLANs  = "{ ${trusted}, ${iot}, ${guest} }";
     lanIfs   = "{ ${br0}, ${iotIf}, ${guestIf} }";
   in ''
     # ── NAT ────────────────────────────────────────────────
     chain postrouting {
       type nat hook postrouting priority srcnat; policy accept;
-      ip saddr ${allLANs} oifname ${wan} masquerade
+      ip saddr ${allLANs} oifname ${wanIfs} masquerade
     }
 
     # ── FORWARD (inter-VLAN isolation) ─────────────────────
@@ -330,8 +363,8 @@ networking.nftables.tables.yirukou = {
       type filter hook forward priority filter; policy drop;
 
       # Allow outbound from all LAN subnets to Internet
-      iifname ${lanIfs} oifname ${wan} accept
-      iifname ${wan} oifname ${lanIfs} ct state established,related accept
+      iifname ${lanIfs} oifname ${wanIfs} accept
+      iifname ${wanIfs} oifname ${lanIfs} ct state established,related accept
 
       # Trusted LAN ↔ Trusted LAN (same br0, no routing needed,
       # but forward hook still sees our routed traffic)
@@ -434,13 +467,9 @@ dhcp:
   # Static reservations
   dhcp_static_leases:
     - mac: <yifuwuqi MAC>
-      ip: "10.42.0.42"
-    - mac: <yitaishi MAC>
-      ip: "10.42.0.43"
-    - mac: <yixiaoqing MAC>
-      ip: "10.42.0.44"
-    - mac: <ER706W MAC>
       ip: "10.42.0.2"
+    - mac: <ER706W MAC>
+      ip: "10.42.0.254"
 
 # Second DHCP scope for IoT — separate interface
 # AdGuardHome calls these "DHCP options per interface"
@@ -537,17 +566,7 @@ AdGuardHome must listen on all three gateway IPs: `10.42.0.1`, `10.42.20.1`, `10
 systemd.network.networks."30-br0".dhcpServerStaticLeases = [
   { dhcpServerStaticLeaseConfig = {
       MACAddress = "<yifuwuqi MAC>";
-      Address = "10.42.0.42";
-    };
-  }
-  { dhcpServerStaticLeaseConfig = {
-      MACAddress = "<yitaishi MAC>";
-      Address = "10.42.0.43";
-    };
-  }
-  { dhcpServerStaticLeaseConfig = {
-      MACAddress = "<yixiaoqing MAC>";
-      Address = "10.42.0.44";
+      Address = "10.42.0.2";
     };
   }
 ];
@@ -562,7 +581,7 @@ The critical configuration on the ER706W is binding each SSID to a VLAN ID.
 **Expected ER706W web UI path:**
 
 1. **Network → LAN**:
-   - IP: `10.42.0.2/24`
+   - IP: `10.42.0.254/24`
    - Gateway: `10.42.0.1`
    - DNS: `10.42.0.1`
    - DHCP server: **disabled**
@@ -594,7 +613,7 @@ ER706W WAN port ──→ unplugged
 ### 5.3 ER706W caveats in trunk mode
 
 - The ER706W must support per-SSID VLAN tagging in its AP-like configuration (no WAN). The spec sheet lists "Wireless VLAN per SSID" — verify in the actual web UI after factory reset.
-- The ER706W management interface (web UI) is on `10.42.0.2` via untagged LAN.
+- The ER706W management interface (web UI) is on `10.42.0.254` via untagged LAN.
 - The ER706W itself may not have Internet access (no WAN route). This may break NTP, Omada Cloud, and online firmware checks. Acceptable for day one; replace with a real AP later if annoying.
 
 ## 6. Tailscale
@@ -672,10 +691,10 @@ Optional bootstrap shortcut only: `modules/services/tailscale-yirukou.nix`. Pref
 |---|---|
 | `modules/addresses.nix` | Add `yirukou` entry (see PLAN-yirukou.md §15) |
 | `flake.nix` | Add `yirukou` NixOS configuration |
-| `hosts/yifuwuqi/networking.nix` | Remove `gateway-failover.nix` import; update LAN to `10.42.0.42/24` |
+| `hosts/yifuwuqi/networking.nix` | Remove `gateway-failover.nix` import; update LAN to `10.42.0.2/24` |
 | `hosts/yifuwuqi/services.nix` | Swap Tailscale to client-only unless keeping it as secondary route/exit node |
 | `modules/services/tailscale.nix` | Add per-host route advertisement and exit-node options |
-| `modules/services/adguardhome.nix` | Prefer DNS on yirukou; keep service rewrites pointing to yifuwuqi `10.42.0.42` unless reverse proxy moves |
+| `modules/services/adguardhome.nix` | Prefer DNS on yirukou; keep service rewrites pointing to yifuwuqi `10.42.0.2` unless reverse proxy moves |
 | `modules/networking/firewall.nix` | Add `10.42.0.0/24` to container isolation allow list |
 
 ## 8. Testing Plan
@@ -700,13 +719,15 @@ Optional bootstrap shortcut only: `modules/services/tailscale-yirukou.nix`. Pref
    - IP: `10.42.0.51+`
    - Gateway: `10.42.0.1`
    - Internet works
-   - Can reach yifuwuqi (once migrated)
+    - Can reach yifuwuqi (once migrated) at `10.42.0.2`
 4. Connect phone to `iot`:
-   - IP: `10.42.20.50+`
-   - Gateway: `10.42.20.1`
-   - Internet works
-   - Cannot `ping 10.42.0.1` or `ping 10.42.0.42`
-   - `nslookup google.com 10.42.20.1` works (DNS)
+    - IP: `10.42.20.50+`
+    - Gateway: `10.42.20.1`
+    - Internet works
+    - Cannot `ping 10.42.0.1` or `ping 10.42.0.2`
+
+- `nslookup google.com 10.42.20.1` works (DNS)
+
 5. Connect phone to `guest`:
    - IP: `10.42.30.50+`
    - Gateway: `10.42.30.1`
@@ -726,7 +747,7 @@ From IoT device, try:
 ```bash
 ping 10.42.0.1      # should FAIL (no echo reply if ICMP blocked on input, or forward drop)
 ping 10.42.30.1     # should FAIL
-curl http://10.42.0.42:80  # should FAIL (forward drop)
+curl http://10.42.0.2:80  # should FAIL (forward drop)
 ```
 
 From guest device, same tests against `10.42.0.x` and `10.42.20.x`.
@@ -746,7 +767,7 @@ nft list chain inet yirukou forward
 5. Optional T1a: configure ER706W as untagged trusted WiFi only and verify basic wireless
 6. ER706W factory reset or reconfigure, configure trunk SSIDs, connect to `lan3`
 7. Verify WiFi per SSID works + VLAN isolation
-8. Move yifuwuqi to `10.42.0.42`, reconnect to br0 port
+8. Move yifuwuqi to `10.42.0.2`, reconnect to br0 port (lan0)
 9. Update Tailscale route on yirukou; update AdGuard rewrites while keeping service records on yifuwuqi
 10. Move other wired clients to br0 ports
 11. Validate all services

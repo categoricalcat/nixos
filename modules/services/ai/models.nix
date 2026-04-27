@@ -25,124 +25,61 @@
 #   the native window already covers the target.
 let
   models = {
-    "qwen3:8b" = {
-      tools = true;
-      reasoning = true;
-      rpc = true;
-      contextLength = 131072;
-      yarn = {
-        origCtx = 32768;
-        scale = 4;
-      };
-      llamaCpp = {
-        hfRepo = "Qwen/Qwen3-8B-GGUF";
-        quant = "Q4_K_M";
-      };
-    };
-
-    "qwen3:4b" = {
+    "qwen3.5:4b" = {
       tools = true;
       reasoning = true;
       rpc = false;
-      # Capped at 64k: non-RPC, runs on the 680M iGPU's ~7 GiB free UMA
-      # after weights. Standard GQA (no SWA), so KV grows linearly --
-      # 128k Q8 would hit ~9 GiB and OOM.
+      # Native 256k. 128k Q8 fits in yifuwuqi's 9.6 GiB UMA budget.
+      contextLength = 131072;
+      llamaCpp = {
+        hfRepo = "bartowski/Qwen_Qwen3.5-4B-GGUF";
+        quant = "Q4_K_M";
+      };
+    };
+
+    "nemotron-nano:4b" = {
+      tools = true;
+      reasoning = true;
+      rpc = false;
+      # Native 128k. Capped at 64k for concurrent headroom on the APU.
       contextLength = 65536;
-      yarn = {
-        origCtx = 32768;
-        scale = 2;
-      };
       llamaCpp = {
-        hfRepo = "Qwen/Qwen3-4B-GGUF";
+        hfRepo = "bartowski/nvidia_Llama-3.1-Nemotron-Nano-4B-v1.1-GGUF";
         quant = "Q4_K_M";
       };
     };
 
-    "qwen2.5:7b" = {
+    "qwen3:8b" = {
       tools = true;
-      rpc = true;
-      contextLength = 131072;
-      yarn = {
-        origCtx = 32768;
-        scale = 4;
-      };
+      reasoning = true;
+      rpc = false;
+      # Native 128k. Capped at 64k to stay within the 680M iGPU's UMA.
+      contextLength = 65536;
       llamaCpp = {
-        hfRepo = "Qwen/Qwen2.5-7B-Instruct-GGUF";
+        hfRepo = "bartowski/Qwen_Qwen3-8B-GGUF";
         quant = "Q4_K_M";
       };
     };
 
-    "qwen2.5-coder:7b" = {
-      tools = true;
-      rpc = true;
-      contextLength = 131072;
-      yarn = {
-        origCtx = 32768;
-        scale = 4;
-      };
-      llamaCpp = {
-        hfRepo = "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF";
-        quant = "Q4_K_M";
-      };
-    };
-
-    "gpt-oss:20b" = {
+    "glm-4.7-flash:30b" = {
       tools = true;
       reasoning = true;
       rpc = true;
-      # Native 128k. SWA + GQA give it unusually small KV (~37 KB/token),
-      # so 128k fits comfortably in the 7900 XTX with weights.
+      # MoE 30B (3B active). Native 131k. Optimized for agentic tasks.
       contextLength = 131072;
       llamaCpp = {
-        # gpt-oss ships natively in mxfp4; F16 is the standard llama.cpp build.
-        hfRepo = "ggml-org/gpt-oss-20b-GGUF";
-        quant = "F16";
-      };
-    };
-
-    "qwen3-coder:30b" = {
-      tools = true;
-      rpc = true;
-      # Native 256k. 192k at Q8 KV uses ~9.4 GiB which fits on the 7900
-      # XTX after the 14.8 GiB Q3_K_M weights. Going to 256k would need
-      # ~12.6 GiB KV with no headroom for compute buffers, so we cap at
-      # 192k. Repository-scale enough for agentic coding.
-      contextLength = 131072;
-      llamaCpp = {
-        # Qwen3-Coder-30B-A3B-Instruct: MoE 30B total / 3.3B active,
-        # explicitly trained for long-horizon agentic tool use. Q3_K_M
-        # at ~14.8 GB is the sweet spot for this host's 19 GiB UMA;
-        # active-params count keeps token throughput at 8B-class
-        # speeds despite the 30B nameplate. unsloth's repo because
-        # their Dynamic 2.0 quants outperform stock at the same file
-        # size and llama.cpp pulls them via -hf cleanly.
-        hfRepo = "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF";
+        hfRepo = "unsloth/GLM-4.7-Flash-GGUF";
         quant = "Q3_K_M";
       };
     };
 
-    "deepseek-r1-tools:8b" = {
+    "mistral-nemo:12b" = {
       tools = true;
-      reasoning = true;
       rpc = true;
-      # Native 128k via the Llama-3 backbone, no YaRN needed.
-      contextLength = 131072;
+      # Native 128k. Best-in-class for sequential tool dependencies.
+      contextLength = 128000;
       llamaCpp = {
-        # bartowski's reupload patches the chat template so tool calls work,
-        # which the upstream deepseek-r1 distill template does not.
-        hfRepo = "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF";
-        quant = "Q4_K_M";
-      };
-    };
-
-    "granite4:3b" = {
-      tools = true;
-      rpc = false;
-      # Granite 3.3 2B is tiny (~1.5 GB at Q4) and has small KV; 128k fits
-      # easily in the 680M's UMA budget.
-      contextLength = 131072;
-      llamaCpp = {
-        hfRepo = "ibm-granite/granite-3.3-2b-instruct-GGUF";
+        hfRepo = "bartowski/Mistral-Nemo-Instruct-2407-GGUF";
         quant = "Q4_K_M";
       };
     };
@@ -150,10 +87,8 @@ let
     "gemma3:4b" = {
       tools = true;
       reasoning = true;
-      rpc = false;
-      # Gemma3 uses 5:1 interleaved sliding-window attention so effective
-      # KV is ~5x smaller than a flat-attention model the same size --
-      # 128k fits comfortably in the 680M's UMA budget.
+      rpc = true;
+      # Native 128k. SWA + Vision-to-tool capabilities.
       contextLength = 131072;
       llamaCpp = {
         hfRepo = "ggml-org/gemma-3-4b-it-GGUF";
