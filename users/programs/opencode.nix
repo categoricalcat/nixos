@@ -1,11 +1,13 @@
-_:
+{ pkgs, inputs, ... }:
 let
+  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
   sharedMcp = import ../../modules/services/ai/mcp.nix;
   ai = import ../../modules/services/ai/models.nix;
 in
 {
   programs.opencode = {
     enable = true;
+    package = unstable.opencode;
 
     rules = builtins.readFile ./opencode-rules.md;
 

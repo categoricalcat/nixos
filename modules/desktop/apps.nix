@@ -12,7 +12,7 @@ in
     unstable.vscode-fhs
     unstable.code-cursor-fhs
     unstable.antigravity
-    unstable.discord-ptb
+    unstable.discord
 
     wl-clipboard
 
@@ -23,5 +23,15 @@ in
     unstable.vial
     unstable.obsidian
     # unstable.nextcloud-client
+  ];
+
+  services.udev.packages = [
+    (pkgs.writeTextFile {
+      name = "vial-udev-rules";
+      destination = "/etc/udev/rules.d/59-vial.rules";
+      text = ''
+        KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{serial}=="*vial:f64c2b3c*", MODE="0660", GROUP="users", TAG+="uaccess", TAG+="udev-acl"
+      '';
+    })
   ];
 }

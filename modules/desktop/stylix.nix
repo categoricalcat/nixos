@@ -50,6 +50,11 @@
               package = pkgs.noto-fonts-color-emoji;
               name = "Noto Color Emoji";
             };
+
+            sizes = {
+              applications = 11;
+              desktop = 11;
+            };
           };
 
           # Catppuccin Mocha (Base16 mapping)

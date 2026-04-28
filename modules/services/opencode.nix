@@ -2,10 +2,12 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }:
 
 let
+  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
   opencodeHome = "/home/yi";
   opencodeConfigHome = "${opencodeHome}/.config";
   opencodeConfigPath = "${opencodeConfigHome}/opencode/config.json";
@@ -31,7 +33,7 @@ in
       ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.opencode}/bin/opencode serve --port 3010 --hostname 127.0.0.1";
+        ExecStart = "${unstable.opencode}/bin/opencode serve --port 3010 --hostname 127.0.0.1";
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";

@@ -9,7 +9,7 @@
 
 let
   desktopEnvironment = "gnome";
-  greeter = "gdm";
+  greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
   inherit (global) version;
 in
