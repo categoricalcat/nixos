@@ -84,11 +84,20 @@ in
         clock-show-date = true;
         clock-show-seconds = false;
         clock-show-weekday = true;
-        enable-animations = true;
+        enable-animations = false;
       };
 
       "org/gnome/desktop/wm/preferences" = {
         button-layout = "appmenu:minimize,maximize,close";
+      };
+
+      "org/gnome/settings-daemon/plugins/xsettings" = {
+        overrides = lib.hm.gvariant.mkArray "{sv}" [
+          (lib.hm.gvariant.mkDictionaryEntry [
+            "Gtk/IMModule"
+            (lib.hm.gvariant.mkVariant "fcitx")
+          ])
+        ];
       };
 
       "org/gnome/mutter" = {

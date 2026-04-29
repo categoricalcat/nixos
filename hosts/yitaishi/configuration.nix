@@ -19,6 +19,7 @@ in
     ./hardware.nix
     ./gaming.nix
     ./networking.nix
+    ./power.nix
     ./addresses.nix
     ./services.nix
     ../../secrets/sops.nix
@@ -50,6 +51,20 @@ in
         stateVersion = global.homeVersion;
       })
       {
+        users.yi.dconf.settings = {
+          "org/gnome/desktop/session" = {
+            idle-delay = inputs.home-manager.lib.hm.gvariant.mkUint32 0;
+          };
+
+          "org/gnome/settings-daemon/plugins/power" = {
+            idle-dim = false;
+            sleep-inactive-ac-timeout = 0;
+            sleep-inactive-ac-type = "nothing";
+            sleep-inactive-battery-timeout = 0;
+            sleep-inactive-battery-type = "nothing";
+          };
+        };
+
         users.workd = {
           imports = [ ../../users/home/workd.nix ];
           home.stateVersion = global.homeVersion;
