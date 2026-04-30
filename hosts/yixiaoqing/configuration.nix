@@ -8,7 +8,7 @@
 
 let
   desktopEnvironment = "niri";
-  greeter = "tuigreet";
+  greeter = "ly";
   mkHome = import ../../modules/home-manager.nix;
 in
 {

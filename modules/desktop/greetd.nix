@@ -6,7 +6,6 @@
 }:
 
 let
-  greeting = "turmoil accompanies every great change";
   sessionCommand =
     if config.desktop.environment == "gnome" then
       "gnome-session"
@@ -28,7 +27,7 @@ in
               --time \
               --asterisks \
               --user-menu \
-              --greeting "${greeting}" \
+              --greeting "${config.desktop.greeting}" \
               --theme "border=magenta;text=magenta;prompt=magenta;time=magenta;action=magenta;button=magenta;container=black;input=white" \
               --cmd ${lib.escapeShellArg sessionCommand} \
               --remember \

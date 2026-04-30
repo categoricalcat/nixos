@@ -20,6 +20,7 @@
         gdm = {
           enable = config.desktop.greeter == "gdm";
           wayland = true;
+          banner = config.desktop.greeting;
         };
       };
 

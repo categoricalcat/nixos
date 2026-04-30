@@ -24,6 +24,8 @@
         "tuigreet"
         "dms"
         "gdm"
+        "regreet"
+        "ly"
         "none"
       ];
       default =
@@ -35,6 +37,12 @@
           "none";
       description = "Greeter to use";
     };
+
+    desktop.greeting = lib.mkOption {
+      type = lib.types.str;
+      default = "turmoil accompanies every great change";
+      description = "Greeting text for greeters and display managers that support one.";
+    };
   };
 
   imports = [
@@ -45,8 +53,10 @@
     ./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
+    ./desktop/regreet.nix
     ./desktop/apps.nix
     ./desktop/greetd.nix
+    ./desktop/ly.nix
   ];
 
   config = {
