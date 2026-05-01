@@ -54,9 +54,8 @@ in
       };
 
       server = {
-        # Bind on all host addresses so the Podman sidecar can reach SearXNG
-        # through the host LAN IP while local consumers can keep using loopback.
-        bind_address = "0.0.0.0";
+        # Keep raw SearXNG local; public access goes through nginx.
+        bind_address = "127.0.0.1";
         port = 8888;
         # `searx-init.service` runs envsubst over this YAML and loads
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
@@ -73,7 +72,7 @@ in
         safe_search = 0;
         autocomplete = "duckduckgo";
         autocomplete_min = 2;
-        # JSON enabled for MCP and scripted clients.
+        # JSON enabled for scripted clients.
         formats = [
           "html"
           "json"
@@ -146,8 +145,8 @@ in
         # "Tracker URL remover" disabled - upstream issue searxng/searxng#4951:
         # the per-result SQLite cache at /tmp/sxng_cache_DATA_CACHE.db locks
         # itself readonly under our hardened systemd unit and spams every
-        # query with sqlite3.OperationalError. Search results going to MCP
-        # clients don't need utm_* stripping anyway.
+        # query with sqlite3.OperationalError. Scripted search results don't
+        # need utm_* stripping anyway.
       ];
     };
   };

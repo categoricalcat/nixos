@@ -21,16 +21,8 @@ in
     systemd.services.opencode = {
       description = "Opencode Serve Daemon";
       wantedBy = [ "multi-user.target" ];
-      wants = [
-        "network-online.target"
-        "podman-mcp-searxng.service"
-        "podman-mcp-playwright.service"
-      ];
-      after = [
-        "network-online.target"
-        "podman-mcp-searxng.service"
-        "podman-mcp-playwright.service"
-      ];
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
 
       serviceConfig = {
         ExecStart = "${unstable.opencode}/bin/opencode serve --port 3010 --hostname 127.0.0.1";
@@ -42,6 +34,7 @@ in
 
       environment = {
         HOME = opencodeHome;
+        OPENCODE_ENABLE_EXA = "1";
         XDG_CONFIG_HOME = opencodeConfigHome;
         OPENCODE_CONFIG = opencodeConfigPath;
       };

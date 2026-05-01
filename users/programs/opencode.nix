@@ -1,7 +1,6 @@
 { pkgs, inputs, ... }:
 let
   unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
-  sharedMcp = import ../../modules/services/ai/mcp.nix;
   ai = import ../../modules/services/ai/models.nix;
 in
 {
@@ -9,7 +8,7 @@ in
     enable = true;
     package = unstable.opencode;
 
-    rules = builtins.readFile ./opencode-rules.md;
+    # rules = builtins.readFile ./opencode-rules.md;
 
     settings = {
       "$schema" = "https://opencode.ai/config.json";
@@ -28,7 +27,10 @@ in
         };
       };
 
-      mcp = sharedMcp.searxng.opencode // sharedMcp.playwright.opencode;
+      permission = {
+        webfetch = "allow";
+        websearch = "allow";
+      };
     };
   };
 }

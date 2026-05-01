@@ -30,12 +30,6 @@
         "tailscale0"
         "eno1"
       ];
-
-      # Expose SearXNG (bound to 0.0.0.0:8888) only to the default Podman
-      # bridge so the mcp-searxng sidecar can reach it via the host's LAN IP
-      # (or 10.88.0.1) without leaking the unauthenticated HTTP service to
-      # the LAN, VPN, or any other untrusted interface.
-      interfaces.podman0.allowedTCPPorts = [ 8888 ];
     };
 
     nftables = {

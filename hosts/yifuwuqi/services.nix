@@ -32,8 +32,6 @@ in
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
     ../../modules/services/opencode.nix
-    ../../modules/services/mcp-searxng.nix
-    ../../modules/services/mcp-playwright.nix
   ];
 
   services.logrotate = {
