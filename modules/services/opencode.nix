@@ -8,7 +8,7 @@
 
 let
   unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
-  opencodeHome = "/home/yi";
+  opencodeHome = config.users.users.yi.home;
   opencodeConfigHome = "${opencodeHome}/.config";
   opencodeConfigPath = "${opencodeConfigHome}/opencode/config.json";
 in
@@ -29,7 +29,7 @@ in
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";
-        Group = "users";
+        Group = "yi";
       };
 
       environment = {

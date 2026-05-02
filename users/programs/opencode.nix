@@ -11,7 +11,6 @@ in
     rules = builtins.readFile ./opencode-rules.md;
 
     settings = {
-      "$schema" = "https://opencode.ai/config.json";
       model = "deepseek/deepseek-v4-flash";
       default_agent = "plan";
       enabled_providers = [
