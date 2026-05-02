@@ -8,15 +8,19 @@ in
     enable = true;
     package = unstable.opencode;
 
-    # rules = builtins.readFile ./opencode-rules.md;
+    rules = builtins.readFile ./opencode-rules.md;
 
     settings = {
       "$schema" = "https://opencode.ai/config.json";
-      model = "deepseek/deepseek-chat";
+      model = "deepseek/deepseek-v4-flash";
+      default_agent = "plan";
       enabled_providers = [
         "deepseek"
         "local"
       ];
+      agent.plan = {
+        variant = "max";
+      };
       provider = {
         deepseek.options.apiKey = "{file:/run/secrets/tokens/deepseek}";
         local = {
@@ -30,6 +34,8 @@ in
       permission = {
         webfetch = "allow";
         websearch = "allow";
+        question = "allow";
+        task = "ask";
       };
     };
   };
