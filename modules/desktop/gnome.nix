@@ -56,7 +56,7 @@
     ];
 
     environment.sessionVariables = {
-      GNOME_SHELL_SLOWDOWN_FACTOR = "0.1";
+      GNOME_SHELL_SLOWDOWN_FACTOR = "0.3";
       QT_IM_MODULE = "fcitx";
       QT_IM_MODULES = "wayland;fcitx";
     };
@@ -75,7 +75,6 @@
       gnomeExtensions.vertical-workspaces
       gnomeExtensions.vitals
       gnomeExtensions.weather-oclock
-      gnomeExtensions.just-perfection
     ];
 
     home-manager.sharedModules = [ ./gnome-home.nix ];

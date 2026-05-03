@@ -67,14 +67,12 @@ in
           vertical-workspaces.extensionUuid
           vitals.extensionUuid
           weather-oclock.extensionUuid
-          just-perfection.extensionUuid
         ];
 
         favorite-apps = [
-          "floorp.desktop"
           "google-chrome.desktop"
           "org.gnome.Nautilus.desktop"
-          "org.gnome.Console.desktop"
+          "Alacritty.desktop"
         ];
       };
 
@@ -85,7 +83,7 @@ in
         clock-show-date = true;
         clock-show-seconds = false;
         clock-show-weekday = true;
-        enable-animations = false;
+        enable-animations = true;
       };
 
       "org/gnome/desktop/wm/preferences" = {
@@ -112,6 +110,10 @@ in
       };
 
       "org/gnome/shell/extensions/vertical-workspaces" = {
+        animation-speed-factor = 30;
+        ws-max-spacing = 16;
+        ws-thumbnail-scale = 16;
+        secondary-ws-thumbnail-scale = 16;
         ws-switcher-mode = 1;
       };
 
@@ -135,15 +137,15 @@ in
         animate-appicon-hover-animation-duration = [
           (lib.hm.gvariant.mkDictionaryEntry [
             "RIPPLE"
-            100
+            70
           ])
           (lib.hm.gvariant.mkDictionaryEntry [
             "PLANK"
-            90
+            60
           ])
           (lib.hm.gvariant.mkDictionaryEntry [
             "SIMPLE"
-            120
+            80
           ])
         ];
         animate-appicon-hover-animation-extent = [
@@ -162,7 +164,7 @@ in
         ];
         animate-window-launch = true;
         appicon-margin = 0;
-        appicon-padding = 4;
+        appicon-padding = 6;
         appicon-style = "NORMAL";
         dot-position = "BOTTOM";
         dot-style-focused = "DOTS";
@@ -172,7 +174,7 @@ in
         global-border-radius = 8;
         hotkeys-overlay-combo = "TEMPORARILY";
         intellihide = false;
-        intellihide-animation-time = 120;
+        intellihide-animation-time = 80;
         leftbox-padding = 4;
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
@@ -186,7 +188,7 @@ in
         panel-positions = ''{"AUS-S2LMQS085997":"TOP","GSM-0x000083cb":"TOP"}'';
         panel-side-margins = 4;
         panel-side-padding = 4;
-        panel-sizes = ''{"AUS-S2LMQS085997":32,"GSM-0x000083cb":32}'';
+        panel-sizes = ''{"AUS-S2LMQS085997":28,"GSM-0x000083cb":28}'';
         panel-top-bottom-padding = 0;
         panel-top-bottom-margins = 0;
         peek-mode = true;
@@ -209,7 +211,7 @@ in
         trans-use-custom-opacity = true;
         trans-use-dynamic-opacity = false;
         tray-padding = 4;
-        window-preview-animation-time = 120;
+        window-preview-animation-time = 80;
         window-preview-title-position = "TOP";
       };
 
@@ -253,17 +255,10 @@ in
         toggle-menu = [ "<Super>v" ];
       };
 
-      "org/gnome/shell/extensions/just-perfection" = {
-        controls-manager-spacing-size = 16;
-        workspace-switcher-size = 16;
-      };
     };
   };
 
-  gtk = {
-    enable = true;
-    cssExtra = ''
-      headerbar { min-height: 28px; padding: 2px 4px; }
-    '';
-  };
+  stylix.targets.gtk.extraCss = ''
+    headerbar { min-height: 28px; padding: 2px 4px; }
+  '';
 }
