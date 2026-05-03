@@ -112,11 +112,11 @@
         "quickshell": "quickshell"
       },
       "locked": {
-        "lastModified": 1777675128,
-        "narHash": "sha256-2zuDs9Lju99dg8MsSPf1frKPPgCRakDn+CEGX71cHJ0=",
+        "lastModified": 1777840511,
+        "narHash": "sha256-sxmMNmsUIgAijm3p0LKBhlu6R+MUBJRA5cqG5epSG5M=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "c1cbd0994f5a3585dded85069f2c9103c54f5285",
+        "rev": "082de6f1f0e058e679c188c2b31a4ffbd97d37aa",
         "type": "github"
       },
       "original": {
@@ -733,11 +733,11 @@
     "thefiles": {
       "flake": false,
       "locked": {
-        "lastModified": 1777029633,
-        "narHash": "sha256-U4Eu9E4jAuBys2zI6yBUAgT0azII+UHc3xFlLyJHKjI=",
+        "lastModified": 1777826699,
+        "narHash": "sha256-OZLFQlR7AILDMiBii2N7HVGKMJnCYTy49xwx7uroy6Y=",
         "ref": "refs/heads/main",
-        "rev": "31d8a90de7b50f35f75ddcf60c5482c27fa653e9",
-        "revCount": 113,
+        "rev": "1db3b622ca9dfd99811333dafe84d84d1fcdece6",
+        "revCount": 114,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/categoricalcat/the.files.git"
