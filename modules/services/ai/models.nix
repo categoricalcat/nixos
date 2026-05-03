@@ -134,6 +134,19 @@ let
       };
     };
 
+    "gemma4:31b" = {
+      tools = true;
+      reasoning = true;
+      rpc = true;
+      # Dense 31B. Native 256k, capped to 64k — same dense-KV policy as
+      # qwen3.6:27b to leave headroom for Q8 KV cache on the 7900 XTX.
+      contextLength = 65536;
+      llamaCpp = {
+        hfRepo = "unsloth/gemma-4-31B-it-GGUF";
+        quant = "Q4_K_M";
+      };
+    };
+
     "qwen3.6:27b" = {
       tools = true;
       reasoning = true;

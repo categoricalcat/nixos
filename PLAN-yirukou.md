@@ -936,4 +936,32 @@ Still to decide:
 1. Direct T1 cutover, T1a first, or T3 old-subnet staging?
 2. Keep ER706W as AP long-term, or replace with a real AP for the final design?
 3. Do we need always-on VPN egress, or is Tailscale exit-node usage enough?
-4. Should yirukou provide DNS-over-TLS/HTTPS locally, and if so how should it receive the `fufu.land` certificates?
+## 19. Hardening and Minimalism
+
+yirukou is designed as a secure, headless network appliance. Following the deprecation of `linuxPackages_hardened` and the `hardened` profile in NixOS unstable (as of early 2026), a new first-party approach is adopted using enhanced `serverMode` options.
+
+### Strategy
+- **Base Kernel**: Use `pkgs.linuxPackages_latest` (or standard LTS) instead of the removed hardened alias.
+- **Declarative Lockdown**: Leverage NixOS-native `security.*` and `boot.kernel.sysctl.*` options.
+- **Categorization**: 
+  - `serverMode.headless`: baseline minimalism for all servers (yifuwuqi, yirukou).
+  - `serverMode.appliance`: extreme lockdown for gateway appliances (yirukou).
+
+### Planned Implementation (`modules/server-mode.nix`)
+
+The `serverMode` module will be expanded to support these roles:
+
+| Category | Option | Key Settings |
+| :--- | :--- | :--- |
+| **Minimalism** | `headless = true` | Disable: GUI, Docs, Fonts, command-not-found, XDG sounds/icons/mime. |
+| **Hardening** | `appliance = true` | Enable: `lockKernelModules`, `protectKernelImage`, `unprivilegedUsernsRestrict`. |
+| **Network** | `appliance = true` | Sysctl: `kptr_restrict=2`, `unprivileged_bpf_disabled=1`, `bpf_jit_harden=2`, disable ICMP redirects. |
+
+### Impact on yirukou
+- `yirukou` will enable both `headless` and `appliance` modes.
+- This creates a "read-only" style runtime environment where new modules cannot be loaded and kernel memory is protected.
+- **Note**: `unprivilegedUsernsRestrict` is acceptable here as yirukou is not intended to run rootless containers (like Podman).
+
+### Impact on yifuwuqi
+- `yifuwuqi` will enable `headless` only.
+- This provides the space-saving benefits of minimalism (no fonts/docs) while maintaining compatibility for its Podman workload (which requires User Namespaces).

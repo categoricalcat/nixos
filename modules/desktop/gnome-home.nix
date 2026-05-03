@@ -67,6 +67,7 @@ in
           vertical-workspaces.extensionUuid
           vitals.extensionUuid
           weather-oclock.extensionUuid
+          just-perfection.extensionUuid
         ];
 
         favorite-apps = [
@@ -251,6 +252,18 @@ in
         notify-on-copy = false;
         toggle-menu = [ "<Super>v" ];
       };
+
+      "org/gnome/shell/extensions/just-perfection" = {
+        controls-manager-spacing-size = 16;
+        workspace-switcher-size = 16;
+      };
     };
+  };
+
+  gtk = {
+    enable = true;
+    cssExtra = ''
+      headerbar { min-height: 28px; padding: 2px 4px; }
+    '';
   };
 }

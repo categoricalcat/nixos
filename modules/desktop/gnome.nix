@@ -75,6 +75,7 @@
       gnomeExtensions.vertical-workspaces
       gnomeExtensions.vitals
       gnomeExtensions.weather-oclock
+      gnomeExtensions.just-perfection
     ];
 
     home-manager.sharedModules = [ ./gnome-home.nix ];
