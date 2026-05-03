@@ -5,6 +5,10 @@
   ...
 }:
 
+let
+  themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
+  dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
+in
 {
 
   systemd.user.services.swww = {
@@ -41,10 +45,17 @@
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
 
-    settings = builtins.fromJSON (builtins.readFile ./dms/settings.json) // {
+    settings = dmsSettings // {
       currentThemeName = lib.mkForce "dynamic";
       currentThemeCategory = lib.mkForce "dynamic";
       customThemeFile = lib.mkForce "";
+      iconTheme = lib.mkForce themeAssets.icons.dark;
+      cursorSettings = dmsSettings.cursorSettings // {
+        size = lib.mkForce themeAssets.cursor.size;
+        theme = lib.mkForce themeAssets.cursor.name;
+      };
+      fontFamily = lib.mkForce themeAssets.fonts.sansSerif.name;
+      monoFontFamily = lib.mkForce themeAssets.fonts.monospace.name;
     };
 
     session = builtins.fromJSON (builtins.readFile ./dms/session.json) // {

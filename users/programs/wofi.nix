@@ -2,14 +2,18 @@
 {
   pkgs,
   lib,
+  inputs,
   ...
 }:
 let
-  accent = "#b4befe";
-  background = "#1e1e2e";
-  background-alt = "#313244";
-  foreground = "#cdd6f4";
-  font = "Maple Mono NF CN";
+  colors = import ../../modules/theme.nix;
+  themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
+
+  accent = "#${colors.base07}";
+  background = "#${colors.base00}";
+  background-alt = "#${colors.base02}";
+  foreground = "#${colors.base05}";
+  font = themeAssets.fonts.sansSerif.name;
   rounding = 6;
   font-size = 11;
 in

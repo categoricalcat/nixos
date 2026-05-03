@@ -2,9 +2,13 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }:
 
+let
+  themeAssets = import ../theme-assets.nix { inherit inputs pkgs; };
+in
 {
   # Stylix shared configuration for Niri, GNOME, and KDE
   config =
@@ -21,40 +25,20 @@
           polarity = "dark";
           autoEnable = true;
 
-          cursor = {
-            package = pkgs.bibata-cursors;
-            name = "Bibata-Modern-Amber-Right";
-            size = 26;
-          };
+          inherit (themeAssets) cursor;
 
-          icons = {
-            package = pkgs.papirus-icon-theme;
-            dark = "Papirus-Dark";
-            light = "Papirus-Light";
+          icons = themeAssets.icons // {
+            enable = true;
           };
 
           fonts = {
-            serif = {
-              package = pkgs.maple-mono.NF-CN-unhinted;
-              name = "Maple Mono NF CN";
-            };
-            sansSerif = {
-              package = pkgs.maple-mono.NF-CN-unhinted;
-              name = "Maple Mono NF CN";
-            };
-            monospace = {
-              package = pkgs.maple-mono.NF-CN-unhinted;
-              name = "Maple Mono NF CN";
-            };
-            emoji = {
-              package = pkgs.noto-fonts-color-emoji;
-              name = "Noto Color Emoji";
-            };
-
-            sizes = {
-              applications = 11;
-              desktop = 11;
-            };
+            inherit (themeAssets.fonts)
+              serif
+              sansSerif
+              monospace
+              emoji
+              sizes
+              ;
           };
 
           # Catppuccin Mocha (Base16 mapping)
