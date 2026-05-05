@@ -46,6 +46,15 @@
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
       };
+
+      nix-builder = {
+        isSystemUser = true;
+        group = "nogroup";
+        description = "Nix remote builder";
+        home = "/var/lib/nix-builder";
+        createHome = true;
+        shell = pkgs.bashInteractive;
+      };
     };
 
     extraUsers = {

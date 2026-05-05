@@ -75,8 +75,8 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                ./hosts/yitaishi/configuration.nix
                 inputs.lanzaboote.nixosModules.lanzaboote
+                ./hosts/yitaishi/configuration.nix
               ];
             };
           };
@@ -123,6 +123,12 @@
     stylix = {
       url = "github:nix-community/stylix/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
     };
 
     lanzaboote = {

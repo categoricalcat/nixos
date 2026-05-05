@@ -27,5 +27,7 @@
     environment.systemPackages = with pkgs; [
       kdePackages.xdg-desktop-portal-kde
     ];
+
+    home-manager.sharedModules = [ ./kde-home.nix ];
   };
 }

@@ -21,6 +21,21 @@ nix-shell -p ssh-to-age --run \
 nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
 ```
 
+### Distributed Builds Key
+
+The `nix-builder` SSH key is distributed to all mesh nodes via SOPS. If you need to generate a new key or set it up for the first time:
+
+```bash
+# 1. Generate the key (will create ./nix-builder-key and ./nix-builder-key.pub)
+ssh-keygen -t ed25519 -f ~/.ssh/nix-builder-key
+
+# 2. Paste the private key into SOPS under ssh/nix-builder
+sudo -E sops edit /etc/nixos/secrets/distributed-builds.yaml
+
+# 3. Update the public key variable
+# Replace `builderPublicKey` in `modules/distributed-builds.nix` with the contents of `./nix-builder-key.pub`
+```
+
 ### samba server
 
 ```bash

@@ -55,6 +55,7 @@ in
       AllowUsers = [
         "yi"
         "workd"
+        "nix-builder"
       ];
       PermitRootLogin = "no";
       PasswordAuthentication = true;
@@ -112,6 +113,15 @@ in
 
       # Faster SFTP (if using internal-sftp)
       Subsystem sftp internal-sftp
+
+      Match User nix-builder
+        AuthenticationMethods publickey
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        X11Forwarding no
+        AllowTcpForwarding no
+        AllowAgentForwarding no
+        PermitTTY no
     '';
   };
 }

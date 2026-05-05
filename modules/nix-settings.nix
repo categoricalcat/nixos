@@ -22,6 +22,11 @@ in
     settings = {
       allowed-users = [ "root" ] ++ builtins.attrNames config.users.users;
       auto-optimise-store = true;
+      trusted-users = lib.mkAfter [
+        "root"
+        "yi"
+        "nix-builder"
+      ];
       experimental-features = [
         "nix-command"
         "flakes"

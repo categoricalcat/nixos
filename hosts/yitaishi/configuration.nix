@@ -27,6 +27,7 @@ in
     ../../modules/common.nix
     ../../modules/hardware/fanatec
     ../../modules/nix-settings.nix
+    ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/services/samba/client.nix

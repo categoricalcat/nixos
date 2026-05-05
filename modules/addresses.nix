@@ -155,9 +155,17 @@
 
       ssh = {
         listenPort = 24212;
-        listenAddresses = [ ];
-        listenWildcardIPv4 = "0.0.0.0";
-        listenWildcardIPv6 = "[::]";
+        listenAddresses = [
+          network.tailscale.ipv4.host
+        ];
+        listenWildcardIPv4 = null;
+        listenWildcardIPv6 = null;
+      };
+
+      nixBuild = {
+        enable = true;
+        systems = [ "x86_64-linux" ];
+        maxJobs = 8;
       };
 
       containers = {
@@ -189,12 +197,18 @@
       };
 
       ssh = {
-        listenPort = 22;
+        listenPort = 24212;
         listenAddresses = [
-          "127.0.0.1"
           network.tailscale.ipv4.host
         ];
+        listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
+      };
+
+      nixBuild = {
+        enable = true;
+        systems = [ "x86_64-linux" ];
+        maxJobs = 8;
       };
     };
 
@@ -213,11 +227,18 @@
       };
 
       ssh = {
-        listenPort = 22;
+        listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
         ];
+        listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
+      };
+
+      nixBuild = {
+        enable = true;
+        systems = [ "x86_64-linux" ];
+        maxJobs = 16;
       };
     };
   };

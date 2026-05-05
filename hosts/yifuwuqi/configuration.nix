@@ -22,7 +22,7 @@ in
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
-    # ../../modules/distributed-builds.nix
+    ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix

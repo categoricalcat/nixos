@@ -1,4 +1,5 @@
 secrets/secrets.yaml
+secrets/distributed-builds.yaml
 secrets/key.txt
 result
 .sops.yaml
