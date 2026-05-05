@@ -44,7 +44,7 @@ in
       widgetStyle = "Breeze";
       iconTheme = themeAssets.icons.dark;
       wallpaper = ./wallpaper.jpg;
-      wallpaperFillMode = "crop";
+      wallpaperFillMode = "preserveAspectCrop";
       clickItemTo = "open";
       enableMiddleClickPaste = false;
 
@@ -53,11 +53,6 @@ in
         inherit (themeAssets.cursor) size;
         cursorFeedback = "None";
         taskManagerFeedback = false;
-      };
-
-      splashScreen = {
-        theme = "None";
-        engine = "none";
       };
     };
 
@@ -161,6 +156,11 @@ in
 
       kwinrc = {
         ModifierOnlyShortcuts.Meta = "org.kde.plasmashell,/PlasmaShell,org.kde.PlasmaShell,activateLauncherMenu";
+      };
+
+      ksplashrc.KSplash = {
+        Engine = "none";
+        Theme = "None";
       };
     };
   };

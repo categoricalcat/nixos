@@ -17,9 +17,11 @@
       };
 
       displayManager = {
+        defaultSession = lib.mkIf (config.desktop.greeter == "sddm") "plasma";
+
         sddm = {
-          enable = true;
-          wayland.enable = false;
+          enable = config.desktop.greeter == "sddm";
+          wayland.enable = true;
         };
       };
     };

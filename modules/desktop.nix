@@ -25,12 +25,15 @@
         "dms"
         "gdm"
         "regreet"
+        "sddm"
         "ly"
         "none"
       ];
       default =
         if config.desktop.environment == "gnome" then
           "gdm"
+        else if config.desktop.environment == "kde" then
+          "sddm"
         else if config.desktop.environment == "niri" then
           "tuigreet"
         else
