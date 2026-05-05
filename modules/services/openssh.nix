@@ -93,6 +93,7 @@ in
       ];
 
       KexAlgorithms = [
+        "sntrup761x25519-sha512@openssh.com" # Post-quantum secure (default in modern OpenSSH)
         "curve25519-sha256" # Fast and secure
         "curve25519-sha256@libssh.org" # Alternative implementation
         "diffie-hellman-group-exchange-sha256"

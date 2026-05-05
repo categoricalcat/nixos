@@ -47,6 +47,8 @@ let
         IdentityFile ${builderPrivateKey}
         IdentitiesOnly yes
         StrictHostKeyChecking accept-new
+        ConnectTimeout 3
+        ConnectionAttempts 1
     '') remoteBuilders
   );
 in
@@ -76,6 +78,7 @@ in
     settings = {
       builders-use-substitutes = true;
       connect-timeout = 5;
+      fallback = true;
     };
   };
 
