@@ -241,5 +241,40 @@
         maxJobs = 16;
       };
     };
+
+    yirukou = rec {
+      hostName = "yirukou";
+
+      network = {
+        tailscale = {
+          interface = "tailscale0";
+          ipv4 = rec {
+            host = "100.69.0.6";
+            prefixLength = 32;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+        };
+
+        lan = {
+          interface = "br0";
+          ipv4 = rec {
+            cidr = "10.42.0.0/24";
+            host = "10.42.0.1";
+            prefixLength = 24;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+        };
+      };
+
+      ssh = {
+        listenPort = 24212;
+        listenAddresses = [
+          network.tailscale.ipv4.host
+          network.lan.ipv4.host
+        ];
+        listenWildcardIPv4 = null;
+        listenWildcardIPv6 = null;
+      };
+    };
   };
 }

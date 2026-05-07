@@ -79,6 +79,15 @@
                 ./hosts/yitaishi/configuration.nix
               ];
             };
+
+            yirukou = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                home-manager.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                ./hosts/yirukou/configuration.nix
+              ];
+            };
           };
         };
 
