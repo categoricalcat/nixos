@@ -62,17 +62,6 @@ in
     mode = "0400";
   };
 
-  sops.secrets."tokens/gemini" = {
-    owner = config.users.users.yi.name;
-    inherit (config.users.users.yi) group;
-    mode = "0400";
-  };
-
-  # distributedBuilds = {
-  #   enable = true;
-  #   role = "server";
-  # };
-
   nix.settings = {
     trusted-users = [
       "@wheel"
