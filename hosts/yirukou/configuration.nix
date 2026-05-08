@@ -10,15 +10,18 @@ in
 {
   imports = [
     ./boot.nix
+    ./services.nix
     ./hardware.nix
     ./addresses.nix
     ./networking.nix
-    ./services.nix
+    ../../users/users.nix
+    ../../secrets/sops.nix
     ../../modules/common.nix
     ../../modules/locale.nix
     ../../modules/server-mode.nix
-    ../../users/users.nix
-    ../../secrets/sops.nix
+    ../../modules/nix-settings.nix
+    ../../modules/server-settings.nix
+    ../../modules/packages.nix
   ];
 
   system.stateVersion = global.version;
@@ -28,20 +31,12 @@ in
     stateVersion = global.homeVersion;
   };
 
-  nix = {
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 9d";
-    };
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      auto-optimise-store = true;
-    };
-  };
-
   nixpkgs.hostPlatform = "x86_64-linux";
+
+  zramSwap = {
+    enable = true;
+    priority = 100;
+    memoryPercent = 100;
+    algorithm = "zstd";
+  };
 }

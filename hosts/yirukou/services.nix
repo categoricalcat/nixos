@@ -10,10 +10,11 @@
   services.xserver = {
     enable = true;
     desktopManager.lxqt.enable = true;
-    displayManager.sddm.enable = true;
   };
 
+  services.displayManager.sddm.enable = true;
+
   environment.systemPackages = with pkgs; [
-    firefox
+    ungoogled-chromium
   ];
 }

@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   ...
 }:
@@ -10,8 +9,6 @@
     loader = {
       systemd-boot.configurationLimit = 15;
     };
-
-    kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
 
     initrd.availableKernelModules = lib.mkAfter [
       "sd_mod"

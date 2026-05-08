@@ -68,11 +68,6 @@ in
     mode = "0400";
   };
 
-  # distributedBuilds = {
-  #   enable = true;
-  #   role = "server";
-  # };
-
   nix.settings = {
     trusted-users = [
       "@wheel"
