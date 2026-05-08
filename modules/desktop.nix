@@ -12,7 +12,6 @@
         "gnome"
         "hyprland"
         "niri"
-        "kde"
         "cosmic"
       ];
       default = "gnome";
@@ -25,15 +24,12 @@
         "dms"
         "gdm"
         "regreet"
-        "sddm"
         "ly"
         "none"
       ];
       default =
         if config.desktop.environment == "gnome" then
           "gdm"
-        else if config.desktop.environment == "kde" then
-          "sddm"
         else if config.desktop.environment == "niri" then
           "tuigreet"
         else
@@ -52,7 +48,6 @@
     ./desktop/gnome.nix
     ./desktop/hyprland.nix
     ./desktop/niri.nix
-    ./desktop/kde.nix
     ./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
@@ -86,7 +81,6 @@
       fcitx5.addons = with pkgs; [
         qt6Packages.fcitx5-chinese-addons
         fcitx5-gtk
-        kdePackages.fcitx5-qt
       ];
     };
 
