@@ -1,34 +1,40 @@
-_: {
+{ pkgs, inputs, ... }:
+let
+  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
+  ai = import ../../modules/services/ai/models.nix;
+in
+{
   programs.opencode = {
     enable = true;
+    package = unstable.opencode;
+
+    rules = builtins.readFile ./opencode-rules.md;
+
     settings = {
-      "$schema" = "https://opencode.ai/config.json";
-      model = "deepseek/deepseek-chat";
+      model = "deepseek/deepseek-v4-flash";
+      default_agent = "plan";
       enabled_providers = [
         "deepseek"
-        "ollama"
+        "local"
       ];
+      agent.plan = {
+        variant = "max";
+      };
       provider = {
         deepseek.options.apiKey = "{file:/run/secrets/tokens/deepseek}";
-        ollama = {
-          name = "Ollama";
+        local = {
+          name = "Local";
           npm = "@ai-sdk/openai-compatible";
           options.baseURL = "http://127.0.0.1:11434/v1";
-          models = {
-            "deepseek-r1:8b" = {
-              _launch = true;
-              name = "deepseek-r1:8b";
-            };
-            "deepseek-v3.2:cloud" = {
-              _launch = true;
-              name = "deepseek-v3.2:cloud";
-              limit = {
-                context = 163840;
-                output = 65536;
-              };
-            };
-          };
+          models = ai.local.opencodeModels;
         };
+      };
+
+      permission = {
+        webfetch = "allow";
+        websearch = "allow";
+        question = "allow";
+        task = "ask";
       };
     };
   };

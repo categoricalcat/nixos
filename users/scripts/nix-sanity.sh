@@ -1,6 +1,11 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 
 set -euo pipefail
+
+if [ ! -f "flake.nix" ]; then
+  echo "flake.nix not found" >&2
+  exit 1
+fi
 
 quiet=false
 action="dry-build"

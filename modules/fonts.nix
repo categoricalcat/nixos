@@ -1,22 +1,18 @@
-{ pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  lib,
+  ...
+}:
 
+let
+  themeAssets = import ./theme-assets.nix { inherit inputs pkgs; };
+in
 {
   fonts = {
     fontconfig = {
       enable = true;
-      defaultFonts = {
-        monospace = [
-          "Maple Mono NF CN"
-        ];
-        sansSerif = [
-          # "Lexend"
-          "Maple Mono NF CN"
-        ];
-        serif = [
-          # "Roboto Serif"
-          "Maple Mono NF CN"
-        ];
-      };
+      defaultFonts = lib.mkForce themeAssets.fonts.defaultFamilies;
 
       antialias = true;
       hinting = {
@@ -32,15 +28,7 @@
     fontDir.enable = true;
     enableDefaultPackages = false;
 
-    packages = with pkgs; [
-      maple-mono.NF-CN-unhinted
-      (google-fonts.override {
-        fonts = [
-          "Lexend"
-          "Roboto Serif"
-        ];
-      })
-    ];
+    inherit (themeAssets.fonts) packages;
   };
 
 }

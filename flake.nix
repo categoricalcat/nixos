@@ -75,8 +75,8 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                ./hosts/yitaishi/configuration.nix
                 inputs.lanzaboote.nixosModules.lanzaboote
+                ./hosts/yitaishi/configuration.nix
               ];
             };
           };

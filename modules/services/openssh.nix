@@ -55,6 +55,7 @@ in
       AllowUsers = [
         "yi"
         "workd"
+        "nix-builder"
       ];
       PermitRootLogin = "no";
       PasswordAuthentication = true;
@@ -92,6 +93,7 @@ in
       ];
 
       KexAlgorithms = [
+        "sntrup761x25519-sha512@openssh.com" # Post-quantum secure (default in modern OpenSSH)
         "curve25519-sha256" # Fast and secure
         "curve25519-sha256@libssh.org" # Alternative implementation
         "diffie-hellman-group-exchange-sha256"
@@ -112,6 +114,15 @@ in
 
       # Faster SFTP (if using internal-sftp)
       Subsystem sftp internal-sftp
+
+      Match User nix-builder
+        AuthenticationMethods publickey
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        X11Forwarding no
+        AllowTcpForwarding no
+        AllowAgentForwarding no
+        PermitTTY no
     '';
   };
 }

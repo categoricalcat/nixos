@@ -22,7 +22,7 @@ in
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
-    # ../../modules/distributed-builds.nix
+    ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix
@@ -56,10 +56,11 @@ in
 
   serverMode.headless = true;
 
-  # distributedBuilds = {
-  #   enable = true;
-  #   role = "server";
-  # };
+  sops.secrets."tokens/deepseek" = {
+    owner = config.users.users.yi.name;
+    inherit (config.users.users.yi) group;
+    mode = "0400";
+  };
 
   nix.settings = {
     trusted-users = [

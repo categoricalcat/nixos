@@ -5,6 +5,7 @@ _:
 {
   # Time zone
   time.timeZone = "America/Sao_Paulo";
+  environment.sessionVariables.TZ = "America/Sao_Paulo";
 
   i18n = {
     defaultLocale = "pt_BR.UTF-8";

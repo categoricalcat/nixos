@@ -20,6 +20,7 @@
         gdm = {
           enable = config.desktop.greeter == "gdm";
           wayland = true;
+          banner = config.desktop.greeting;
         };
       };
 
@@ -54,6 +55,28 @@
       gnome-user-docs
     ];
 
-    environment.systemPackages = [ ];
+    environment.sessionVariables = {
+      GNOME_SHELL_SLOWDOWN_FACTOR = "0.3";
+      QT_IM_MODULE = "fcitx";
+      QT_IM_MODULES = "wayland;fcitx";
+    };
+
+    environment.systemPackages = with pkgs; [
+      dconf2nix
+      dconf-editor
+
+      gnomeExtensions.appindicator
+      gnomeExtensions.clipboard-indicator
+      gnomeExtensions.dash-to-panel
+      gnomeExtensions.gtile
+      gnomeExtensions.kimpanel
+      gnomeExtensions.media-controls
+      gnomeExtensions.pip-on-top
+      gnomeExtensions.vertical-workspaces
+      gnomeExtensions.vitals
+      gnomeExtensions.weather-oclock
+    ];
+
+    home-manager.sharedModules = [ ./gnome-home.nix ];
   };
 }

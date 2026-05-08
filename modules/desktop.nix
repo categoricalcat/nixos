@@ -12,7 +12,6 @@
         "gnome"
         "hyprland"
         "niri"
-        "kde"
         "cosmic"
       ];
       default = "gnome";
@@ -24,6 +23,8 @@
         "tuigreet"
         "dms"
         "gdm"
+        "regreet"
+        "ly"
         "none"
       ];
       default =
@@ -35,18 +36,25 @@
           "none";
       description = "Greeter to use";
     };
+
+    desktop.greeting = lib.mkOption {
+      type = lib.types.str;
+      default = "turmoil accompanies every great change";
+      description = "Greeting text for greeters and display managers that support one.";
+    };
   };
 
   imports = [
     ./desktop/gnome.nix
     ./desktop/hyprland.nix
     ./desktop/niri.nix
-    ./desktop/kde.nix
     ./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
+    ./desktop/regreet.nix
     ./desktop/apps.nix
     ./desktop/greetd.nix
+    ./desktop/ly.nix
   ];
 
   config = {
@@ -65,8 +73,6 @@
       dconf.enable = true;
     };
 
-    console.keyMap = "br-abnt2";
-
     i18n.inputMethod = {
       enable = true;
       type = "fcitx5";
@@ -75,7 +81,6 @@
       fcitx5.addons = with pkgs; [
         qt6Packages.fcitx5-chinese-addons
         fcitx5-gtk
-        kdePackages.fcitx5-qt
       ];
     };
 

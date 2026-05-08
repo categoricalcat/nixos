@@ -46,6 +46,15 @@
         group = "workd";
         hashedPasswordFile = config.sops.secrets."passwords/workd".path;
       };
+
+      nix-builder = {
+        isSystemUser = true;
+        group = "nogroup";
+        description = "Nix remote builder";
+        home = "/var/lib/nix-builder";
+        createHome = true;
+        shell = pkgs.bashInteractive;
+      };
     };
 
     extraUsers = {
@@ -84,6 +93,7 @@
   environment.systemPackages = [
     (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
     (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
+    (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
 
   ];
 

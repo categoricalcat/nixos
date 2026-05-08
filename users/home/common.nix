@@ -23,4 +23,9 @@
       echo "the.files repository already exists"
     fi
   '';
+
+  home.file = {
+    "NixOS/nixpkgs".source = inputs.nixpkgs;
+    "nix-community/home-manager".source = inputs.home-manager;
+  };
 }

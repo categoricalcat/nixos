@@ -1,4 +1,4 @@
-_:
+{ addresses, ... }:
 
 {
   networking = {
@@ -48,7 +48,7 @@ _:
               # targeting private IP ranges.
 
               # 1. Allow containers to talk to the host's LAN/VPN/ZT IPs directly for services (like MariaDB)
-              ip saddr { 10.88.0.0/16, 172.17.0.0/16, 172.18.0.0/16 } ip daddr { 10.100.0.1, 10.0.0.1, 192.168.0.42 } accept
+              ip saddr { 10.88.0.0/16, 172.17.0.0/16, 172.18.0.0/16 } ip daddr { ${addresses.network.vpn.ipv4.host}, ${addresses.network.zerotier.ipv4.host}, ${addresses.network.lan.ipv4.host} } accept
 
               # 2. Block containers from reaching any other internal IP range
               ip saddr { 10.88.0.0/16, 172.17.0.0/16, 172.18.0.0/16 } ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 } drop

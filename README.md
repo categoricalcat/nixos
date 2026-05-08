@@ -21,6 +21,21 @@ nix-shell -p ssh-to-age --run \
 nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
 ```
 
+### Distributed Builds Key
+
+The `nix-builder` SSH key is distributed to all mesh nodes via SOPS. If you need to generate a new key or set it up for the first time:
+
+```bash
+# 1. Generate the key (will create ./nix-builder-key and ./nix-builder-key.pub)
+ssh-keygen -t ed25519 -f ~/.ssh/nix-builder-key
+
+# 2. Paste the private key into SOPS under ssh/nix-builder
+sudo -E sops edit /etc/nixos/secrets/distributed-builds.yaml
+
+# 3. Update the public key variable
+# Replace `builderPublicKey` in `modules/distributed-builds.nix` with the contents of `./nix-builder-key.pub`
+```
+
 ### samba server
 
 ```bash
@@ -69,3 +84,38 @@ busctl --user list | grep -i secret
 # polkit agent is running (niri only; GNOME uses gnome-shell's built-in agent)
 pgrep -a polkit
 ```
+
+### shared services htpasswd (yifuwuqi)
+
+Shared HTTP basic-auth file used by web UIs behind nginx (Netdata today;
+Prometheus/Alertmanager/Loki later). Declared in
+`modules/services/shared-auth.nix` as the sops secret `services/htpasswd`.
+
+```bash
+# generate a bcrypt entry (repeat to add more users)
+nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"
+
+# paste under services.htpasswd in the encrypted file
+sudo -E sops edit /etc/nixos/secrets/secrets.yaml
+```
+
+Expected shape (see `secrets/.secrets.example.yaml`):
+
+```yaml
+services:
+    htpasswd: |
+        admin:$2y$05$...
+```
+
+Rotating the password rotates it for every service that uses this file.
+
+### search (yifuwuqi)
+
+`search.fufu.land` -> SearXNG (`modules/services/searxng.nix`), behind the same
+`services/htpasswd` basic-auth gate. Adding a user is the same `htpasswd -nbB`
+flow described above; no extra sops keys are introduced.
+
+The signing key is generated on first boot into a stateful file outside the nix
+store (rotate by deleting and restarting):
+
+- SearXNG: `/var/lib/searx-secret/env` (`SEARXNG_SECRET=`)

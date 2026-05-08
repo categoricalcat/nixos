@@ -1,96 +1,86 @@
 {
+  allAddresses,
   config,
   lib,
-  allAddresses,
   ...
 }:
 
 let
-  cfg = config.distributedBuilds;
-  serverHost = allAddresses.hosts.yifuwuqi;
-  clientHost = allAddresses.hosts.yixiaoqing;
-  serverAddress = serverHost.network.tailscale.ipv4.host;
-  clientAddress = clientHost.network.tailscale.ipv4.host;
+  builderPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILoRXgk+BMdw/tEdHJSkBd4MmFkB+A3YVmMWNVlLjXb6 yi@yifuwuqi";
+  builderPrivateKey = config.sops.secrets."ssh/nix-builder".path;
+
+  defaultSupportedFeatures = [
+    "nixos-test"
+    "benchmark"
+    "big-parallel"
+    "kvm"
+  ];
+
+  meshNodes = lib.filterAttrs (
+    _name: host:
+    (host.nixBuild.enable or false)
+    && (host.network.tailscale.ipv4.host or null) != null
+    && (host.ssh.listenPort or null) != null
+  ) allAddresses.hosts;
+
+  remoteBuilders = lib.filterAttrs (
+    _name: host: host.hostName != config.networking.hostName
+  ) meshNodes;
+
+  buildMachines = lib.mapAttrsToList (_name: host: {
+    inherit (host) hostName;
+    inherit (host.nixBuild) systems maxJobs;
+
+    sshUser = "nix-builder";
+    sshKey = builderPrivateKey;
+    protocol = "ssh-ng";
+    speedFactor = host.nixBuild.speedFactor or 1;
+    supportedFeatures = host.nixBuild.supportedFeatures or defaultSupportedFeatures;
+  }) remoteBuilders;
+
+  sshHostConfig = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (_name: host: ''
+      Host ${host.hostName}
+        HostName ${host.network.tailscale.ipv4.host}
+        Port ${toString host.ssh.listenPort}
+        User nix-builder
+        IdentityFile ${builderPrivateKey}
+        IdentitiesOnly yes
+        StrictHostKeyChecking accept-new
+        ConnectTimeout 3
+        ConnectionAttempts 1
+    '') remoteBuilders
+  );
 in
 {
-  options.distributedBuilds = {
-    enable = lib.mkEnableOption "distributed Nix builds";
+  assertions = [
+    {
+      assertion = builtins.hasAttr config.networking.hostName meshNodes;
+      message = "This host imports distributed-builds.nix but is not marked nixBuild.enable in allAddresses.";
+    }
+  ];
 
-    role = lib.mkOption {
-      type = lib.types.enum [
-        "none"
-        "client"
-        "server"
-      ];
-      default = "none";
-      description = "Whether this host acts as the distributed build client or server.";
+  sops.secrets."ssh/nix-builder" = {
+    sopsFile = "/etc/nixos/secrets/distributed-builds.yaml";
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
+
+  users.users.nix-builder.openssh.authorizedKeys.keys = [
+    builderPublicKey
+  ];
+
+  nix = {
+    distributedBuilds = true;
+    inherit buildMachines;
+
+    settings = {
+      builders-use-substitutes = true;
+      connect-timeout = 5;
+      fallback = true;
     };
   };
 
-  config = lib.mkIf cfg.enable (
-    lib.mkMerge [
-      {
-        assertions = [
-          {
-            assertion = cfg.role != "none";
-            message = "distributedBuilds.enable requires distributedBuilds.role to be `client` or `server`.";
-          }
-          {
-            assertion = cfg.role != "server" || config.services.openssh.enable;
-            message = "distributedBuilds server mode requires services.openssh.enable.";
-          }
-          {
-            assertion =
-              cfg.role != "server"
-              || lib.any (entry: lib.elem entry config.nix.settings.trusted-users) [
-                "yi"
-                "@wheel"
-              ];
-            message = "distributedBuilds server mode requires nix.settings.trusted-users to include `yi` or `@wheel`.";
-          }
-        ];
-      }
-
-      (lib.mkIf (cfg.role == "client") {
-        nix = {
-          distributedBuilds = lib.mkDefault true;
-
-          buildMachines = lib.mkDefault [
-            {
-              hostName = serverAddress;
-              system = "x86_64-linux";
-              maxJobs = 15;
-              speedFactor = 3;
-              protocol = "ssh-ng";
-              supportedFeatures = [
-                "nixos-test"
-                "benchmark"
-                "big-parallel"
-                "kvm"
-              ];
-              sshUser = "yi";
-              sshKey = "/home/yi/.ssh/id_ed25519";
-            }
-          ];
-
-          settings = {
-            builders-use-substitutes = lib.mkDefault true;
-            connect-timeout = lib.mkDefault 5;
-          };
-        };
-
-        programs.ssh.extraConfig = lib.mkAfter ''
-          Host ${serverAddress}
-            Port ${toString serverHost.ssh.listenPort}
-        '';
-      })
-
-      (lib.mkIf (cfg.role == "server") {
-        services.openssh.extraConfig = lib.mkAfter ''
-          Match User yi Address ${clientAddress}
-            AuthenticationMethods publickey
-        '';
-      })
-    ]
-  );
+  programs.ssh.extraConfig = lib.mkAfter sshHostConfig;
 }

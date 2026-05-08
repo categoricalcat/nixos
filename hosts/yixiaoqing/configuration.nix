@@ -8,7 +8,7 @@
 
 let
   desktopEnvironment = "niri";
-  greeter = "tuigreet";
+  greeter = "ly";
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -23,7 +23,7 @@ in
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
-    # ../../modules/distributed-builds.nix
+    ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/services/samba/client.nix
@@ -59,6 +59,12 @@ in
 
   desktop.environment = desktopEnvironment;
   desktop.greeter = greeter;
+
+  console.keyMap = "br-abnt2";
+  services.xserver.xkb = {
+    layout = "br";
+    variant = "thinkpad";
+  };
 
   security.polkit.enable = true;
 

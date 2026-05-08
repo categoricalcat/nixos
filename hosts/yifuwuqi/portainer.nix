@@ -6,7 +6,7 @@
   virtualisation.oci-containers.containers.portainer = {
     autoStart = true;
     image = "portainer/portainer-ce:lts";
-    ports = [ "9443:9443" ];
+    ports = [ "127.0.0.1:9443:9443" ];
     volumes = [
       "/var/lib/container-volumes/portainer:/data"
       "/run/podman/podman.sock:/var/run/docker.sock"

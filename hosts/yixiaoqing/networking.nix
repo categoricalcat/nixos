@@ -6,12 +6,12 @@ _: {
       enable = true;
       wifi = {
         powersave = true;
-        backend = "iwd";
+        # backend = "iwd";
       };
     };
 
     wireless.iwd = {
-      enable = true;
+      enable = false;
       settings = {
         General = {
           EnableNetworkConfiguration = false;
