@@ -1,4 +1,9 @@
-{ addresses, lib, ... }:
+{
+  addresses,
+  allAddresses,
+  lib,
+  ...
+}:
 
 let
   nftSet = values: lib.concatStringsSep ", " values;
@@ -7,6 +12,7 @@ let
   trustedHostDestinations = nftSet [
     addresses.network.zerotier.ipv4.host
     addresses.network.lan.ipv4.host
+    allAddresses.hosts.yirukou.network.lan.ipv4.host
   ];
 in
 
@@ -17,15 +23,8 @@ in
       allowPing = true;
       logReversePathDrops = true;
       logRefusedPackets = true;
-      allowedTCPPorts = [
-        53 # DNS
-        80 # HTTP
-        443 # HTTPS / DoH
-        853 # DNS-over-TLS
-      ];
+      allowedTCPPorts = [ ];
       allowedUDPPorts = [
-        53 # DNS
-        853 # DNS-over-QUIC
         5353 # mDNS/Avahi
       ];
 

@@ -1,4 +1,5 @@
 {
+  addresses,
   pkgs,
   lib,
   config,
@@ -25,7 +26,7 @@ in
       after = [ "network-online.target" ];
 
       serviceConfig = {
-        ExecStart = "${unstable.opencode}/bin/opencode serve --port 3010 --hostname 127.0.0.1";
+        ExecStart = "${unstable.opencode}/bin/opencode serve --port 3010 --hostname ${addresses.network.lan.ipv4.host}";
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";

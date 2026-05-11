@@ -1,4 +1,5 @@
 {
+  addresses,
   pkgs,
   ...
 }:
@@ -54,8 +55,9 @@ in
       };
 
       server = {
-        # Keep raw SearXNG local; public access goes through nginx.
-        bind_address = "127.0.0.1";
+        # Public access still goes through nginx on yirukou, but the backend
+        # must be reachable from the router over LAN.
+        bind_address = addresses.network.lan.ipv4.host;
         port = 8888;
         # `searx-init.service` runs envsubst over this YAML and loads
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is

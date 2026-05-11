@@ -15,6 +15,7 @@ in
     ../../modules/services/avahi.nix
     ../../modules/services/openssh.nix
     ../../modules/services/adguardhome.nix
+    ../../modules/services/dnsdist.nix
     ../../modules/services/cloudflared.nix
     # ../../modules/services/zerotier.nix
     ../../modules/services/ai/llama-swap.nix
@@ -26,8 +27,6 @@ in
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
-    ../../modules/services/nginx-proxy.nix
-    ../../modules/services/shared-auth.nix
     ../../modules/services/monitoring/netdata.nix
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
@@ -39,8 +38,13 @@ in
     checkConfig = false;
   };
 
-  services.tailscale = {
-    useRoutingFeatures = "server";
+  yi.tailscale = {
+    routingMode = "client";
+    exitNodeHost = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
+  };
+
+  yi.netdata = {
+    childMode = true;
   };
 
   security.pam = {

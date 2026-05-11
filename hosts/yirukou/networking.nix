@@ -12,6 +12,11 @@
     ./networking/dhcp.nix
   ];
 
+  services.resolved = {
+    enable = false;
+    extraConfig = "DNSStubListener=no";
+  };
+
   networking = {
     inherit (addresses) hostName;
     nameservers = addresses.dns.systemNameservers;

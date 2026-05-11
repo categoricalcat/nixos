@@ -14,6 +14,17 @@ let
     wan.primary.interface
     wan.fallback.interface
   ];
+  internalTcpPorts = [
+    53
+    80
+    443
+    853
+  ];
+  internalUdpPorts = [
+    53
+    67 # DHCPv4
+    853
+  ];
   nftStringSet = values: lib.concatStringsSep ", " (map (value: ''"${value}"'') values);
   internalSet = nftStringSet internalInterfaces;
   wanSet = nftStringSet wanInterfaces;
@@ -26,8 +37,30 @@ in
       filterForward = true;
       allowPing = true;
       interfaces = {
-        ${lan.interface}.allowedUDPPorts = [ 67 ]; # DHCPv4
-        ${untrusted.interface}.allowedUDPPorts = [ 67 ]; # DHCPv4
+        ${lan.interface} = {
+          allowedTCPPorts = internalTcpPorts;
+          allowedUDPPorts = internalUdpPorts;
+        };
+        ${untrusted.interface} = {
+          allowedTCPPorts = internalTcpPorts;
+          allowedUDPPorts = internalUdpPorts;
+        };
+        ${wan.primary.interface} = {
+          allowedTCPPorts = [
+            80
+            443
+            853
+          ];
+          allowedUDPPorts = [ 853 ];
+        };
+        ${wan.fallback.interface} = {
+          allowedTCPPorts = [
+            80
+            443
+            853
+          ];
+          allowedUDPPorts = [ 853 ];
+        };
       };
       extraForwardRules = ''
         iifname "${lan.interface}" oifname { ${wanSet} } accept comment "lan to wan"
