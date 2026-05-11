@@ -75,11 +75,9 @@ in
       };
 
       dns = {
-        bind_hosts = [
-          "127.0.0.1"
-          addresses.network.lan.ipv4.host
-        ]
-        ++ (lib.optional config.services.tailscale.enable addresses.network.tailscale.ipv4.host);
+        # Wildcard so DoT/DoQ/DoH stay reachable on the dynamic fallback WAN IP.
+        # Plain DNS on 5353 stays loopback-only via the firewall (no WAN allow rule).
+        bind_hosts = [ "0.0.0.0" ];
         #        ++ (lib.optional config.services.zerotierone.enable addresses.network.zerotier.ipv4.host);
 
         upstream_dns =
