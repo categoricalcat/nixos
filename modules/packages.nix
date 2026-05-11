@@ -65,6 +65,5 @@ in
     tcpdump
     traceroute
     # unstable.bitwarden-cli
-    wireguard-tools
   ];
 }

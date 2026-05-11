@@ -18,7 +18,6 @@
 
     kernelModules = lib.mkAfter [
       "amdgpu"
-      "wireguard"
       "nft_masq"
     ];
   };

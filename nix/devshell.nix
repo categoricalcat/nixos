@@ -8,6 +8,8 @@ _: {
         rustfmt
         clippy
         rust-analyzer
+        nix-tree
+        nix-inspect
       ];
 
       defaultShell = pkgs.mkShell {
@@ -54,7 +56,7 @@ _: {
       devShells.default = defaultShell;
       devShells.sandbox = sandboxShell;
 
-      #packages.default = defaultShell;
-      #packages.sandbox = sandboxShell;
+      packages.default = defaultShell;
+      packages.sandbox = sandboxShell;
     };
 }

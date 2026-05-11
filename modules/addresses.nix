@@ -1,6 +1,6 @@
 {
 
-  hosts = {
+  hosts = rec {
     yifuwuqi = rec {
       hostName = "yifuwuqi";
 
@@ -85,20 +85,6 @@
 
       network = {
 
-        vpn = {
-          interface = "wg0";
-          ipv6 = rec {
-            host = "fd00:100::1"; # Using ULA for VPN
-            prefixLength = 64;
-            address = "${host}/${builtins.toString prefixLength}";
-          };
-          ipv4 = rec {
-            host = "10.100.0.1";
-            prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
-          };
-        };
-
         zerotier = {
           interface = "zt0";
           ipv6 = rec {
@@ -149,8 +135,17 @@
         };
       };
 
-      wireguard = {
-        listenPort = 51820;
+      gatewayFailover = {
+        inherit (network.lan) interface;
+        inherit (network.lan.ipv4) gateway;
+        source = network.lan.ipv4.host;
+        metric = 100;
+        pingTarget = "4.2.2.2";
+        pingTimeout = 2;
+        pingDeadline = 5;
+        virtualRouterId = 99;
+        priority = 100;
+        unicastPeers = [ "127.0.0.1" ];
       };
 
       ssh = {
@@ -168,7 +163,8 @@
         maxJobs = 8;
       };
 
-      containers = {
+      containers = rec {
+        defaultSubnet = "10.88.0.0/16";
         subnetPools = [
           {
             base = "172.17.0.0/16";
@@ -179,6 +175,18 @@
             size = 24;
           }
         ];
+
+        isolation = {
+          sourceSubnets = [
+            defaultSubnet
+          ]
+          ++ (map (pool: pool.base) subnetPools);
+          blockedDestinationSubnets = [
+            "10.0.0.0/8"
+            "172.16.0.0/12"
+            "192.168.0.0/16"
+          ];
+        };
       };
     };
 
@@ -245,7 +253,26 @@
     yirukou = rec {
       hostName = "yirukou";
 
+      dns = rec {
+        systemNameservers = [
+          network.lan.ipv4.host
+          yifuwuqi.network.lan.ipv4.host
+        ];
+        lanServers = systemNameservers;
+      };
+
       network = {
+        wan = {
+          primary = {
+            interface = "enp7s0";
+            routeMetric = 100;
+          };
+          fallback = {
+            interface = "enp6s0";
+            routeMetric = 200;
+          };
+        };
+
         tailscale = {
           interface = "tailscale0";
           ipv4 = rec {
@@ -257,13 +284,59 @@
 
         lan = {
           interface = "br0";
+          ports = [
+            "enp5s0"
+            "enp4s0"
+            "enp3s0"
+            "enp2s0"
+          ];
           ipv4 = rec {
             cidr = "10.42.0.0/24";
             host = "10.42.0.1";
             prefixLength = 24;
             address = "${host}/${builtins.toString prefixLength}";
           };
+          dhcp.pool = rec {
+            start = "10.42.0.100";
+            end = "10.42.0.250";
+            range = "${start} - ${end}";
+          };
         };
+
+        untrusted = rec {
+          parentInterface = "enp2s0";
+          vlanId = 42;
+          interface = "${parentInterface}.${builtins.toString vlanId}";
+          ipv4 = rec {
+            cidr = "10.42.42.0/24";
+            host = "10.42.42.1";
+            prefixLength = 24;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+          dhcp.pool = rec {
+            start = "10.42.42.100";
+            end = "10.42.42.250";
+            range = "${start} - ${end}";
+          };
+        };
+
+        sinkhole = {
+          ipv4.host = "10.42.0.24";
+          ipv6.host = "2001:db8::2";
+        };
+      };
+
+      gatewayFailover = {
+        inherit (network.wan.primary) interface;
+        gateway = null;
+        source = null;
+        metric = 100;
+        pingTarget = null;
+        pingTimeout = 2;
+        pingDeadline = 5;
+        virtualRouterId = 99;
+        priority = 100;
+        unicastPeers = [ "127.0.0.1" ];
       };
 
       ssh = {

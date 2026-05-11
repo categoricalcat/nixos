@@ -27,7 +27,7 @@
         ];
 
         # The metric-100 default route is owned exclusively by keepalived
-        # (see modules/networking/gateway-failover.nix). networkd must not
+        # (see ../gateway-failover.nix). networkd must not
         # install it - that would race with keepalived's notify script.
         #
         # gateway-failover.nix also merges a /32 tracker route here for the

@@ -1,80 +1,112 @@
-{ addresses, pkgs, ... }:
+{
+  addresses,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  inherit (addresses.network.lan) interface;
-  inherit (addresses.network.lan.ipv4) gateway host;
+  cfg = addresses.gatewayFailover;
+  isDhcp = cfg.gateway == null;
 
-  metric = 100;
-  # Less-famous anycast IP (Level3/CenturyLink). Not in the AdGuardHome
-  # upstream list, so pinning it to eno1 (see the tracker route below) does
-  # not affect any other service on this host.
-  pingTarget = "4.2.2.2";
-  pingTimeout = 2;
-  pingDeadline = 5;
+  leaseDiscover = ''
+    discover_lease() {
+      LEASE_ADDR=$(ip -4 addr show dev "$1" 2>/dev/null | awk '/inet /{split($2,a,"/"); print a[1]; exit}')
+      [ -z "$LEASE_ADDR" ] && return 1
+      for f in /run/systemd/netif/leases/*; do
+        [ -f "$f" ] || continue
+        gv=$(awk -F= -v ip="$LEASE_ADDR" '$1=="ADDRESS"&&$2==ip{f=1; next} f&&$1=="ROUTER"{print $2; exit}' "$f")
+        [ -n "$gv" ] && { echo "$gv"; return 0; }
+      done
+      return 1
+    }
+  '';
 
   checkScript = pkgs.writeShellApplication {
     name = "wan-check";
-    runtimeInputs = [ pkgs.iputils ];
-    text = ''
-      exec ping -I ${interface} -c 1 -W ${toString pingTimeout} -w ${toString pingDeadline} ${pingTarget} >/dev/null 2>&1
-    '';
+    runtimeInputs = [ pkgs.iputils ] ++ lib.optionals isDhcp [ pkgs.gawk ];
+    text =
+      if isDhcp then
+        ''
+          ${leaseDiscover}
+          GW=$(discover_lease ${cfg.interface})
+          [ -z "$GW" ] && exit 1
+          exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "$GW" >/dev/null 2>&1
+        ''
+      else
+        ''
+          exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} ${cfg.pingTarget} >/dev/null 2>&1
+        '';
   };
 
   notifyScript = pkgs.writeShellApplication {
     name = "wan-notify";
-    runtimeInputs = [ pkgs.iproute2 ];
-    text = ''
-      # keepalived passes: TYPE NAME STATE PRIORITY
-      state="''${3:-}"
-      case "$state" in
-        MASTER)
-          ip route replace default via ${gateway} dev ${interface} src ${host} metric ${toString metric}
-          ;;
-        BACKUP|FAULT|STOP)
-          ip route del default via ${gateway} dev ${interface} metric ${toString metric} 2>/dev/null || true
-          ;;
-      esac
-    '';
+    runtimeInputs = [ pkgs.iproute2 ] ++ lib.optionals isDhcp [ pkgs.gawk ];
+    text =
+      if isDhcp then
+        ''
+          ${leaseDiscover}
+          GW=$(discover_lease ${cfg.interface})
+          SRC=$LEASE_ADDR
+          [ -z "$GW" ] && exit 1
+          state="''${3:-}"
+          case "$state" in
+            MASTER)
+              ip route replace default via "$GW" dev ${cfg.interface} src "$SRC" metric ${toString cfg.metric}
+              ;;
+            BACKUP|FAULT|STOP)
+              ip route del default via "$GW" dev ${cfg.interface} metric ${toString cfg.metric} 2>/dev/null || true
+              ;;
+          esac
+        ''
+      else
+        ''
+          state="''${3:-}"
+          case "$state" in
+            MASTER)
+              ip route replace default via ${cfg.gateway} dev ${cfg.interface} src ${cfg.source} metric ${toString cfg.metric}
+              ;;
+            BACKUP|FAULT|STOP)
+              ip route del default via ${cfg.gateway} dev ${cfg.interface} metric ${toString cfg.metric} 2>/dev/null || true
+              ;;
+          esac
+        '';
   };
 in
 {
-  # Tracker route for the WAN check. Without it, `ping -I <interface>
-  # <pingTarget>` has no on-link or via route through the interface (the
-  # metric-100 default is only added by notify_master *after* the check
-  # passes), so the kernel ARPs the target on the LAN, the ping fails, and
-  # keepalived never leaves FAULT - the box gets stuck on the fallback
-  # uplink. Pinning <pingTarget>/32 to <gateway> dev <interface> breaks the
-  # chicken-and-egg: the probe always has a path through the primary uplink,
-  # so the check reflects real WAN reachability.
-  systemd.network.networks."30-eno1".routes = [
-    {
-      Destination = "${pingTarget}/32";
-      Gateway = gateway;
-    }
-  ];
+  # Tracker route for static mode only: pins the ping target through the
+  # managed interface so the check can always reach it even before keepalived
+  # installs the default route.
+  systemd.network.networks = lib.mkIf (!isDhcp) {
+    "30-${cfg.interface}" = {
+      matchConfig.Name = cfg.interface;
+      routes = [
+        {
+          Destination = "${cfg.pingTarget}/32";
+          Gateway = cfg.gateway;
+        }
+      ];
+    };
+  };
 
   services.keepalived = {
     enable = true;
     enableScriptSecurity = true;
 
-    vrrpScripts.check_eno1 = {
+    vrrpScripts."check_${cfg.interface}" = {
       script = "${checkScript}/bin/wan-check";
       interval = 2;
-      timeout = pingDeadline;
+      timeout = cfg.pingDeadline;
       rise = 2;
       fall = 2;
       user = "root";
     };
 
-    vrrpInstances.uplink_eno1 = {
-      inherit interface;
+    vrrpInstances."uplink_${cfg.interface}" = {
+      inherit (cfg) interface;
       state = "BACKUP";
-      virtualRouterId = 99;
-      priority = 100;
-      trackScripts = [ "check_eno1" ];
-      # No real VRRP peers; direct adverts to loopback to avoid leaking
-      # multicast on the LAN.
-      unicastPeers = [ "127.0.0.1" ];
+      inherit (cfg) virtualRouterId priority unicastPeers;
+      trackScripts = [ "check_${cfg.interface}" ];
       extraConfig = ''
         nopreempt
         advert_int 1
