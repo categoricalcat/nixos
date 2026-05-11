@@ -1,4 +1,10 @@
-{ addresses, ... }:
+{ addresses, lib, ... }:
+
+let
+  resolvFallbackNameservers = map (
+    server: lib.removeSuffix "]" (lib.removePrefix "[" (lib.removeSuffix ":53" server))
+  ) (addresses.dns.fallbackServers or [ ]);
+in
 {
   # Interface roles, VLANs, and DHCP ranges live in modules/addresses.nix.
 
@@ -19,7 +25,7 @@
 
   networking = {
     inherit (addresses) hostName;
-    nameservers = addresses.dns.systemNameservers;
+    nameservers = addresses.dns.systemNameservers ++ lib.take 2 resolvFallbackNameservers;
 
     networkmanager.enable = false;
     useNetworkd = true;

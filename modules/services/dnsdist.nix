@@ -47,6 +47,8 @@ let
     end
 
     addAction(AllRule(), LuaAction(makeQueryRestartable))
+    addAction(PoolAvailableRule(""), PoolAction(""))
+    addAction(AllRule(), PoolAction("fallback"))
     addResponseAction(AllRule(), LuaResponseAction(retryLocalFailureOnFallback))
 
     -- Rate-limit health-check logs
