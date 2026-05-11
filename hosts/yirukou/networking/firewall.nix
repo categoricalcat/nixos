@@ -1,5 +1,6 @@
 {
   addresses,
+  config,
   lib,
   ...
 }:
@@ -9,6 +10,7 @@ let
   internalInterfaces = [
     lan.interface
     untrusted.interface
+    config.services.tailscale.interfaceName
   ];
   wanInterfaces = [
     wan.primary.interface
@@ -63,8 +65,7 @@ in
         };
       };
       extraForwardRules = ''
-        iifname "${lan.interface}" oifname { ${wanSet} } accept comment "lan to wan"
-        iifname "${untrusted.interface}" oifname { ${wanSet} } accept comment "untrusted to wan"
+        iifname { ${internalSet} } oifname { ${wanSet} } accept comment "internal to wan"
       '';
     };
 

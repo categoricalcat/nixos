@@ -131,7 +131,7 @@ in
           };
           ipv4 = rec {
             cidr = "100.64.0.0/10";
-            host = "100.69.0.1";
+            host = "100.69.0.6";
             prefixLength = 32;
             address = "${host}/${builtins.toString prefixLength}";
           };
@@ -285,7 +285,7 @@ in
         tailscale = {
           interface = "tailscale0";
           ipv4 = rec {
-            host = "100.69.0.6";
+            host = "100.69.0.1";
             prefixLength = 32;
             address = "${host}/${builtins.toString prefixLength}";
           };
