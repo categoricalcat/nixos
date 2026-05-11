@@ -75,10 +75,9 @@ in
       };
 
       dns = {
-        # Wildcard so DoT/DoQ/DoH stay reachable on the dynamic fallback WAN IP.
-        # Plain DNS on 5353 stays loopback-only via the firewall (no WAN allow rule).
+        # Wildcard so plain DNS / DoT / DoQ / DoH stay reachable on the dynamic fallback WAN IP.
+        # Plain DNS on port 53 is gated to internal interfaces by the host firewall.
         bind_hosts = [ "0.0.0.0" ];
-        #        ++ (lib.optional config.services.zerotierone.enable addresses.network.zerotier.ipv4.host);
 
         upstream_dns =
           addresses.dns.quad9

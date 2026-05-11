@@ -29,7 +29,7 @@ in
         RouteMetric = fallback.routeMetric;
         UseDNS = true;
       };
-      linkConfig.RequiredForOnline = "no";
+      linkConfig.RequiredForOnline = "routable";
     };
   };
 }

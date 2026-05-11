@@ -34,5 +34,6 @@ in
 
   systemd.network = {
     enable = true;
+    wait-online.anyInterface = true;
   };
 }
