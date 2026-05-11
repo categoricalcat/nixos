@@ -7,6 +7,9 @@
 
 let
   yifuwuqiLan = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
+  acmeResolvers = map (resolver: "--dns.resolvers=${resolver}") (
+    addresses.dns.fallbackServers or [ "9.9.9.9:53" ]
+  );
 in
 {
   sops.secrets = {
@@ -27,6 +30,7 @@ in
       extraDomainNames = [ "fufu.land" ];
       dnsProvider = "cloudflare";
       credentialsFile = config.sops.secrets.cloudflare_api_token.path;
+      extraLegoFlags = acmeResolvers;
       group = "nginx";
     };
   };
