@@ -9,7 +9,6 @@
     ../../modules/services/tailscale.nix
     ../../modules/services/samba/client.nix
     ../../modules/services/adguardhome.nix
-    ../../modules/services/dnsdist.nix
     ../../modules/services/nginx-proxy.nix
     ../../modules/services/monitoring/netdata.nix
     ./goaccess.nix
