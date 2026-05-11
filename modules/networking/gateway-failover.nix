@@ -8,6 +8,12 @@
 let
   cfg = addresses.gatewayFailover;
   isDhcp = cfg.gateway == null;
+  hasDhcpPingTarget = isDhcp && cfg.pingTarget != null;
+  pingTargetHost =
+    if cfg.pingTarget == null then
+      null
+    else
+      lib.removeSuffix "]" (lib.removePrefix "[" (lib.removeSuffix ":53" cfg.pingTarget));
 
   leaseDiscover = ''
     discover_lease() {
@@ -24,18 +30,33 @@ let
 
   checkScript = pkgs.writeShellApplication {
     name = "wan-check";
-    runtimeInputs = [ pkgs.iputils ] ++ lib.optionals isDhcp [ pkgs.gawk ];
+    runtimeInputs = [
+      pkgs.iputils
+    ]
+    ++ lib.optionals isDhcp [ pkgs.gawk ]
+    ++ lib.optionals hasDhcpPingTarget [ pkgs.iproute2 ];
     text =
       if isDhcp then
-        ''
-          ${leaseDiscover}
-          GW=$(discover_lease ${cfg.interface})
-          [ -z "$GW" ] && exit 1
-          exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "$GW" >/dev/null 2>&1
-        ''
+        if cfg.pingTarget == null then
+          ''
+            ${leaseDiscover}
+            GW=$(discover_lease ${cfg.interface})
+            [ -z "$GW" ] && exit 1
+            exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "$GW" >/dev/null 2>&1
+          ''
+        else
+          ''
+            ${leaseDiscover}
+            GW=$(discover_lease ${cfg.interface})
+            SRC=$LEASE_ADDR
+            [ -z "$GW" ] && exit 1
+            TARGET=${lib.escapeShellArg pingTargetHost}
+            ip route replace "$TARGET/32" via "$GW" dev ${cfg.interface} src "$SRC" metric ${toString cfg.metric}
+            exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "$TARGET" >/dev/null 2>&1
+          ''
       else
         ''
-          exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} ${cfg.pingTarget} >/dev/null 2>&1
+          exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} ${pingTargetHost} >/dev/null 2>&1
         '';
   };
 
@@ -82,7 +103,7 @@ in
       matchConfig.Name = cfg.interface;
       routes = [
         {
-          Destination = "${cfg.pingTarget}/32";
+          Destination = "${pingTargetHost}/32";
           Gateway = cfg.gateway;
         }
       ];

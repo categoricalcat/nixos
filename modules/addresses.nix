@@ -340,7 +340,7 @@ in
         gateway = null;
         source = null;
         metric = 100;
-        pingTarget = null;
+        pingTarget = builtins.head dns.fallbackServers;
         pingTimeout = 2;
         pingDeadline = 5;
         virtualRouterId = 99;
