@@ -28,6 +28,7 @@ in
       dhcpV4Config = {
         RouteMetric = fallback.routeMetric;
         UseDNS = true;
+        UseRoutes = false;
       };
       linkConfig.RequiredForOnline = "routable";
     };

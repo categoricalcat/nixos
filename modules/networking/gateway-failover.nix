@@ -1,120 +1,146 @@
 {
   addresses,
-  lib,
   pkgs,
   ...
 }:
 
 let
   cfg = addresses.gatewayFailover;
-  isDhcp = cfg.gateway == null;
-  hasDhcpPingTarget = isDhcp && cfg.pingTarget != null;
-  pingTargetHost =
-    if cfg.pingTarget == null then
-      null
-    else
-      lib.removeSuffix "]" (lib.removePrefix "[" (lib.removeSuffix ":53" cfg.pingTarget));
 
+  isDhcpSide = side: side.gateway == null;
+  anyDhcp = sides: builtins.any isDhcpSide sides;
+
+  # Discovers the DHCP gateway for an interface and sets two variables
+  # in the caller's shell:
+  #   DISCOVERED_GW  - ROUTER from /run/systemd/netif/leases/*
+  #   DISCOVERED_SRC - the interface's current IPv4 address
+  # We avoid `$(...)` here on purpose: command substitution would put
+  # those side effects in a subshell, hiding them from the caller.
   leaseDiscover = ''
     discover_lease() {
-      LEASE_ADDR=$(ip -4 addr show dev "$1" 2>/dev/null | awk '/inet /{split($2,a,"/"); print a[1]; exit}')
-      [ -z "$LEASE_ADDR" ] && return 1
+      DISCOVERED_GW=
+      DISCOVERED_SRC=$(ip -4 addr show dev "$1" 2>/dev/null | awk '/inet /{split($2,a,"/"); print a[1]; exit}')
+      [ -z "$DISCOVERED_SRC" ] && return 1
       for f in /run/systemd/netif/leases/*; do
         [ -f "$f" ] || continue
-        gv=$(awk -F= -v ip="$LEASE_ADDR" '$1=="ADDRESS"&&$2==ip{f=1; next} f&&$1=="ROUTER"{print $2; exit}' "$f")
-        [ -n "$gv" ] && { echo "$gv"; return 0; }
+        gv=$(awk -F= -v ip="$DISCOVERED_SRC" '$1=="ADDRESS"&&$2==ip{f=1; next} f&&$1=="ROUTER"{print $2; exit}' "$f")
+        if [ -n "$gv" ]; then
+          DISCOVERED_GW=$gv
+          return 0
+        fi
       done
       return 1
     }
   '';
 
+  # Emit leaseDiscover only when a script actually has a DHCP side, so
+  # shellcheck inside writeShellApplication doesn't flag the helper's
+  # output variables as unused.
+  leaseDiscoverFor = sides: if anyDhcp sides then leaseDiscover else "";
+
+  # Emits shell that sets SIDE_IFACE / SIDE_METRIC / GW / SRC for one side.
+  # Static side: GW and SRC come from config.
+  # DHCP side:   GW and SRC come from discover_lease.
+  resolveSide =
+    side:
+    let
+      gwLine = if side.gateway != null then ''GW="${side.gateway}"'' else ''GW="$DISCOVERED_GW"'';
+      srcLine =
+        if side.gateway != null then
+          (if side.source != null then ''SRC="${side.source}"'' else ''SRC=""'')
+        else
+          ''SRC="$DISCOVERED_SRC"'';
+      discoverLine =
+        if side.gateway != null then "" else ''discover_lease "${side.interface}" || return 1'';
+    in
+    ''
+      SIDE_IFACE="${side.interface}"
+      SIDE_METRIC="${toString side.metric}"
+      ${discoverLine}
+      ${gwLine}
+      ${srcLine}
+    '';
+
+  # Wraps `ip route replace <DEST>` so the optional `src` argument is only
+  # added when SRC is non-empty. Avoids array gymnastics under set -u.
+  routeReplace = dest: ''
+    if [ -n "''${SRC:-}" ]; then
+      ip route replace ${dest} via "$GW" dev "$SIDE_IFACE" src "$SRC" metric "$SIDE_METRIC"
+    else
+      ip route replace ${dest} via "$GW" dev "$SIDE_IFACE" metric "$SIDE_METRIC"
+    fi
+  '';
+
+  # Pings cfg.pingTarget bound to the primary interface. First installs a
+  # /32 to that target via the primary's gateway so the probe always exits
+  # via the primary even while in FAULT (default route on fallback).
   checkScript = pkgs.writeShellApplication {
     name = "wan-check";
     runtimeInputs = [
       pkgs.iputils
-    ]
-    ++ lib.optionals isDhcp [ pkgs.gawk ]
-    ++ lib.optionals hasDhcpPingTarget [ pkgs.iproute2 ];
-    text =
-      if isDhcp then
-        if cfg.pingTarget == null then
-          ''
-            ${leaseDiscover}
-            GW=$(discover_lease ${cfg.interface})
-            [ -z "$GW" ] && exit 1
-            exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "$GW" >/dev/null 2>&1
-          ''
-        else
-          ''
-            ${leaseDiscover}
-            GW=$(discover_lease ${cfg.interface})
-            SRC=$LEASE_ADDR
-            [ -z "$GW" ] && exit 1
-            TARGET=${lib.escapeShellArg pingTargetHost}
-            ip route replace "$TARGET/32" via "$GW" dev ${cfg.interface} src "$SRC" metric ${toString cfg.metric}
-            exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "$TARGET" >/dev/null 2>&1
-          ''
-      else
-        ''
-          exec ping -I ${cfg.interface} -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} ${pingTargetHost} >/dev/null 2>&1
-        '';
+      pkgs.iproute2
+      pkgs.gawk
+    ];
+    text = ''
+      ${leaseDiscoverFor [ cfg.primary ]}
+
+      resolve_primary() {
+        ${resolveSide cfg.primary}
+      }
+
+      resolve_primary || exit 1
+      ${routeReplace "${cfg.pingTarget}/32"}
+      exec ping -I "$SIDE_IFACE" -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "${cfg.pingTarget}" >/dev/null 2>&1
+    '';
   };
 
+  # Switches the default route to the primary on MASTER, to the fallback on
+  # FAULT/BACKUP/STOP. Flushes conntrack on every transition so existing
+  # NAT sessions rebuild over the now-active WAN.
   notifyScript = pkgs.writeShellApplication {
     name = "wan-notify";
-    runtimeInputs = [ pkgs.iproute2 ] ++ lib.optionals isDhcp [ pkgs.gawk ];
-    text =
-      if isDhcp then
-        ''
-          ${leaseDiscover}
-          GW=$(discover_lease ${cfg.interface})
-          SRC=$LEASE_ADDR
-          [ -z "$GW" ] && exit 1
-          state="''${3:-}"
-          case "$state" in
-            MASTER)
-              ip route replace default via "$GW" dev ${cfg.interface} src "$SRC" metric ${toString cfg.metric}
-              ;;
-            BACKUP|FAULT|STOP)
-              ip route del default via "$GW" dev ${cfg.interface} metric ${toString cfg.metric} 2>/dev/null || true
-              ;;
-          esac
-        ''
-      else
-        ''
-          state="''${3:-}"
-          case "$state" in
-            MASTER)
-              ip route replace default via ${cfg.gateway} dev ${cfg.interface} src ${cfg.source} metric ${toString cfg.metric}
-              ;;
-            BACKUP|FAULT|STOP)
-              ip route del default via ${cfg.gateway} dev ${cfg.interface} metric ${toString cfg.metric} 2>/dev/null || true
-              ;;
-          esac
-        '';
+    runtimeInputs = [
+      pkgs.iproute2
+      pkgs.conntrack-tools
+      pkgs.gawk
+    ];
+    text = ''
+      ${leaseDiscoverFor [
+        cfg.primary
+        cfg.fallback
+      ]}
+
+      resolve_primary() {
+        ${resolveSide cfg.primary}
+      }
+      resolve_fallback() {
+        ${resolveSide cfg.fallback}
+      }
+
+      state="''${3:-}"
+      case "$state" in
+        MASTER)
+          resolve_primary || exit 1
+          ;;
+        BACKUP|FAULT|STOP)
+          resolve_fallback || exit 1
+          ;;
+        *)
+          exit 0
+          ;;
+      esac
+
+      ${routeReplace "default"}
+      conntrack -F >/dev/null 2>&1 || true
+    '';
   };
 in
 {
-  # Tracker route for static mode only: pins the ping target through the
-  # managed interface so the check can always reach it even before keepalived
-  # installs the default route.
-  systemd.network.networks = lib.mkIf (!isDhcp) {
-    "30-${cfg.interface}" = {
-      matchConfig.Name = cfg.interface;
-      routes = [
-        {
-          Destination = "${pingTargetHost}/32";
-          Gateway = cfg.gateway;
-        }
-      ];
-    };
-  };
-
   services.keepalived = {
     enable = true;
     enableScriptSecurity = true;
 
-    vrrpScripts."check_${cfg.interface}" = {
+    vrrpScripts."check_${cfg.primary.interface}" = {
       script = "${checkScript}/bin/wan-check";
       interval = 2;
       timeout = cfg.pingDeadline;
@@ -123,14 +149,14 @@ in
       user = "root";
     };
 
-    vrrpInstances."uplink_${cfg.interface}" = {
-      inherit (cfg) interface;
-      state = "BACKUP";
+    vrrpInstances."uplink_${cfg.primary.interface}" = {
+      inherit (cfg.primary) interface;
+      state = "MASTER";
       inherit (cfg) virtualRouterId priority unicastPeers;
-      trackScripts = [ "check_${cfg.interface}" ];
+      trackScripts = [ "check_${cfg.primary.interface}" ];
       extraConfig = ''
-        nopreempt
         advert_int 1
+        preempt_delay 0
         notify "${notifyScript}/bin/wan-notify" root
       '';
     };

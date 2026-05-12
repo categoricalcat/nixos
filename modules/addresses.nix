@@ -139,10 +139,18 @@ in
       };
 
       gatewayFailover = {
-        inherit (network.lan) interface;
-        inherit (network.lan.ipv4) gateway;
-        source = network.lan.ipv4.host;
-        metric = 100;
+        primary = {
+          inherit (network.lan) interface;
+          inherit (network.lan.ipv4) gateway;
+          source = network.lan.ipv4.host;
+          metric = 100;
+        };
+        fallback = {
+          inherit (network.secondary) interface;
+          gateway = null;
+          source = null;
+          metric = 200;
+        };
         pingTarget = "4.2.2.2";
         pingTimeout = 2;
         pingDeadline = 5;
@@ -336,11 +344,19 @@ in
       };
 
       gatewayFailover = {
-        inherit (network.wan.primary) interface;
-        gateway = null;
-        source = null;
-        metric = 100;
-        pingTarget = builtins.head dns.fallbackServers;
+        primary = {
+          inherit (network.wan.primary) interface;
+          gateway = null;
+          source = null;
+          metric = network.wan.primary.routeMetric;
+        };
+        fallback = {
+          inherit (network.wan.fallback) interface;
+          gateway = null;
+          source = null;
+          metric = network.wan.fallback.routeMetric;
+        };
+        pingTarget = "1.1.1.1";
         pingTimeout = 2;
         pingDeadline = 5;
         virtualRouterId = 99;

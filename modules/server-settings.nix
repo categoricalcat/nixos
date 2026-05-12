@@ -53,10 +53,9 @@
     SystemMaxFileSize=50M
     SystemKeepFree=1G
     MaxRetentionSec=7day
-    RateLimitIntervalSec=30s
-    RateLimitBurst=500
+    RateLimitIntervalSec=100ms
+    RateLimitBurst=5000
     Compress=yes
-    MaxLevelStore=notice
   '';
 
   # Override gc retention for servers (longer than default 9d)
