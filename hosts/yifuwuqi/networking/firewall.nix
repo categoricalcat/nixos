@@ -21,6 +21,13 @@ in
     firewall = {
       enable = true;
       allowPing = true;
+      # Strict rpfilter (the default) drops inbound packets whose source
+      # address doesn't pass a FIB reverse-path check on the arriving
+      # interface.  Because yifuwuqi routes all traffic through a Tailscale
+      # exit node, return traffic arrives on tailscale0 with source IPs that
+      # fail strict rpfilter.  "loose" only verifies the source is routable
+      # via *any* interface, which is compatible with Tailscale + exit nodes.
+      checkReversePath = "loose";
       logReversePathDrops = true;
       logRefusedPackets = true;
       allowedTCPPorts = [ ];
