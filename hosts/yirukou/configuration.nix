@@ -33,10 +33,5 @@ in
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
-  zramSwap = {
-    enable = true;
-    priority = 100;
-    memoryPercent = 100;
-    algorithm = "zstd";
-  };
+  zramSwap.enable = false;
 }

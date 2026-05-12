@@ -1,76 +1,64 @@
-{
-  lib,
-  ...
-}:
+_:
 
 {
-
-  # Optimized kernel parameters
-  boot.kernel.sysctl = {
-    # Dual-stack setup - enable both IPv4 and IPv6 forwarding
-    "net.ipv4.ip_forward" = 1;
-    "net.ipv6.conf.all.forwarding" = 1;
-    "net.ipv6.conf.default.forwarding" = 1;
-
-    "net.ipv6.conf.all.disable_ipv6" = 0;
-    "net.ipv6.conf.all.use_tempaddr" = 0;
-    "net.ipv6.conf.all.accept_ra" = 1;
-
-    # Network buffer tuning (adjusted for your 19GB RAM)
-    "net.core.rmem_default" = 262144; # Increased from 131072
-    "net.core.rmem_max" = 268435456; # Increased from 134217728
-    "net.core.wmem_default" = 262144; # Increased from 131072
-    "net.core.wmem_max" = 268435456; # Increased from 134217728
-    "net.core.netdev_max_backlog" = 10000; # Increased from 5000 (for 1Gbps+)
-    "net.core.netdev_budget" = 1200; # Increased from 600
-    "net.core.default_qdisc" = "fq";
-
-    # TCP optimization (BBR-specific tuning)
-    "net.ipv4.tcp_rmem" = "4096 262144 268435456";
-    "net.ipv4.tcp_wmem" = "4096 262144 268435456";
-    "net.ipv4.tcp_congestion_control" = "bbr";
-    "net.ipv4.tcp_mtu_probing" = 2; # More aggressive probing (was 1)
-    "net.ipv4.tcp_notsent_lowat" = 16384; # Reduce bufferbloat
-
-    # Connection handling (optimized for server load)
-    "net.core.somaxconn" = 4096; # Increased from 1024
-    "net.ipv4.tcp_max_syn_backlog" = 8192; # Increased from 2048
-    "net.ipv4.tcp_synack_retries" = 2; # Faster connection failure detection
-
-    # Keepalive optimization
-    "net.ipv4.tcp_keepalive_time" = 300; # Reduced from 600 (5 min)
-    "net.ipv4.tcp_keepalive_probes" = 3; # Reduced from 6
-    "net.ipv4.tcp_keepalive_intvl" = 30; # Reduced from 60
-
-    # Memory management
-    "vm.swappiness" = 10; # Reduce swap tendency
-    "vm.vfs_cache_pressure" = 50; # Balance cache reclaim
-
-    # Security-hardened TCP settings
-    "net.ipv4.tcp_rfc1337" = 1; # Protect against TIME-WAIT attacks
-    "net.ipv4.tcp_syncookies" = 1; # Enable SYN flood protection
-
-    # Source validation and spoofing protection
-    "net.ipv4.conf.all.rp_filter" = 1;
-    "net.ipv4.conf.default.rp_filter" = 1;
-
-    # Ignore ICMP redirects
-    "net.ipv4.conf.all.accept_redirects" = 0;
-    "net.ipv6.conf.all.accept_redirects" = 0;
-    "net.ipv4.conf.all.send_redirects" = 0;
-
-    # Ignore ICMP broadcasts (Smurf attacks)
-    "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
-
-    # Required by containers to properly mark packets
-    "net.ipv4.conf.all.src_valid_mark" = 1;
-  };
-
-  # Essential kernel modules
-  boot.kernelModules = lib.mkAfter [
-    "tcp_bbr"
-    "tcp_htcp" # Fallback congestion control
+  imports = [
+    ../../../modules/networking/sysctl-base.nix
   ];
 
-  services.fstrim.enable = true;
+  boot.kernel.sysctl = {
+    # Use larger default and maximum socket receive buffers for busy services.
+    "net.core.rmem_default" = 262144;
+    "net.core.rmem_max" = 67108864;
+
+    # Match send buffers to the receive side for high-throughput TCP endpoints.
+    "net.core.wmem_default" = 262144;
+    "net.core.wmem_max" = 67108864;
+
+    # Give the kernel more room and CPU budget for bursts arriving from NICs.
+    "net.core.netdev_max_backlog" = 10000;
+    "net.core.netdev_budget" = 1200;
+
+    # Pair BBR with fq so paced TCP flows get per-flow queueing support.
+    "net.core.default_qdisc" = "fq";
+
+    # Let autotuned TCP receive windows grow for long-lived service traffic.
+    "net.ipv4.tcp_rmem" = "4096 262144 67108864";
+
+    # Let autotuned TCP send windows grow to the same 64 MiB ceiling.
+    "net.ipv4.tcp_wmem" = "4096 262144 67108864";
+
+    # Use BBR congestion control for hosted services on this endpoint.
+    "net.ipv4.tcp_congestion_control" = "bbr";
+
+    # Always probe for a working path MTU when black-hole PMTU is suspected.
+    "net.ipv4.tcp_mtu_probing" = 2;
+
+    # Keep unsent TCP data bounded so nginx/services see lower tail latency.
+    "net.ipv4.tcp_notsent_lowat" = 16384;
+
+    # Allow larger accept queues for services under connection bursts.
+    "net.core.somaxconn" = 4096;
+
+    # Hold more half-open SYNs before syncookies become necessary.
+    "net.ipv4.tcp_max_syn_backlog" = 8192;
+
+    # Fail unacknowledged SYN-ACKs quickly to avoid stale half-open state.
+    "net.ipv4.tcp_synack_retries" = 2;
+
+    # Detect dead TCP peers after five minutes of idleness.
+    "net.ipv4.tcp_keepalive_time" = 300;
+
+    # Send only a few keepalive probes before declaring the peer dead.
+    "net.ipv4.tcp_keepalive_probes" = 3;
+
+    # Space keepalive probes thirty seconds apart.
+    "net.ipv4.tcp_keepalive_intvl" = 30;
+
+    # Prefer compressed zram swap for service and AI workloads.
+    "vm.swappiness" = 100;
+  };
+
+  boot.kernelModules = [
+    "tcp_bbr"
+  ];
 }

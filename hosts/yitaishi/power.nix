@@ -66,6 +66,7 @@ in
             energy_perf_bias = "performance";
             min_perf_pct = 100;
           };
+          # Keep the performance profile aligned with the zram-first VM policy.
           sysctl."vm.swappiness" = 100;
         };
         yitaishi-balanced.main.include = "yitaishi-performance";

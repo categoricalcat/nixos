@@ -63,10 +63,38 @@ in
       })
     ];
 
-    systemd.services.netdata = {
-      wants = [ "network-online.target" ];
-      after = [ "network-online.target" ];
-      preStart = "mkdir -p /tmp/netdata";
+    systemd.services = {
+      chrony-waitsync-for-netdata = {
+        description = "Wait for Chrony synchronization before Netdata";
+        wants = [
+          "chronyd.service"
+          "network-online.target"
+        ];
+        after = [
+          "chronyd.service"
+          "network-online.target"
+        ];
+        before = [ "netdata.service" ];
+        script = ''
+          ${config.services.chrony.package}/bin/chronyc waitsync 30 0.5 5 2 || true
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          TimeoutStartSec = "75s";
+        };
+      };
+
+      netdata = {
+        wants = [
+          "network-online.target"
+          "chrony-waitsync-for-netdata.service"
+        ];
+        after = [
+          "network-online.target"
+          "chrony-waitsync-for-netdata.service"
+        ];
+        preStart = "mkdir -p /tmp/netdata";
+      };
     };
   };
 }
