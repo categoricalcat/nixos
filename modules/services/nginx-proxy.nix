@@ -12,13 +12,10 @@ let
   );
 in
 {
+  imports = [ ./shared-auth.nix ];
+
   sops.secrets = {
     cloudflare_api_token = { };
-    "services/htpasswd" = {
-      owner = "nginx";
-      group = "nginx";
-      mode = "0440";
-    };
   };
 
   security.acme = {

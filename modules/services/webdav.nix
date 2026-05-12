@@ -5,6 +5,8 @@
 }:
 
 {
+  imports = [ ./shared-auth.nix ];
+
   sops.secrets."webdav/htpasswd" = {
     owner = "nginx";
     group = "nginx";
