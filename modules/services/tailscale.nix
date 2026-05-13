@@ -34,6 +34,12 @@ in
       description = "Subnets to advertise via Tailscale (e.g. [\"10.42.0.0/24\"]).";
     };
 
+    acceptRoutes = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether client-mode hosts should accept advertised Tailscale subnet routes.";
+    };
+
     exitNodeHost = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
@@ -56,7 +62,7 @@ in
         else
           [
             "--accept-dns=true"
-            "--accept-routes"
+            "--accept-routes=${if cfg.acceptRoutes then "true" else "false"}"
           ]
           ++ lib.optionals (cfg.exitNodeHost != null) [
             "--exit-node=${cfg.exitNodeHost}"

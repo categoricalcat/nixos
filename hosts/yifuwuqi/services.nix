@@ -34,12 +34,13 @@ in
 
   services.logrotate = {
     enable = true;
-    checkConfig = false;
+    checkConfig = true;
   };
 
   yi.tailscale = {
     routingMode = "client";
     exitNodeHost = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
+    acceptRoutes = false;
   };
 
   yi.netdata = {
