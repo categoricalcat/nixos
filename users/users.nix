@@ -81,6 +81,7 @@
   };
 
   programs.mtr.enable = true;
+  programs.trippy.enable = true;
 
   programs.zsh = {
     enable = true;
