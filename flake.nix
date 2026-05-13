@@ -45,11 +45,11 @@
               ];
             };
 
-            yifuwuqi = nixpkgs-small.lib.nixosSystem {
+            yifuwuqi = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
               modules = [
                 sops-nix.nixosModules.sops
-                home-manager-small.nixosModules.home-manager
+                home-manager.nixosModules.home-manager
                 ./hosts/yifuwuqi/configuration.nix
               ];
             };

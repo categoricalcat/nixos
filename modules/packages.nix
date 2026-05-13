@@ -36,6 +36,7 @@ in
     k6
     nil
     nix-direnv
+    nixd
     nixfmt
     nftables
     rclone

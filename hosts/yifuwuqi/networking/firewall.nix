@@ -38,6 +38,7 @@ in
       trustedInterfaces = [
         "tailscale0"
         "eno1"
+        "enp4s0"
       ];
 
       interfaces."eno1".allowedTCPPorts = [ 24212 ];
