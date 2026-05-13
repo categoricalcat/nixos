@@ -47,32 +47,44 @@ in
     };
   };
 
-  config = {
-    services.tailscale = {
-      enable = lib.mkDefault true;
-      package = unstable.tailscale;
-      useRoutingFeatures = if isServer then "server" else "client";
-      extraUpFlags =
+  config =
+    let
+      # Flags that are also valid for `tailscale set`. We feed the exact same
+      # list to both `extraUpFlags` (first registration) and `extraSetFlags`
+      # (re-applied on every daemon start) so a rebuild always reconciles the
+      # daemon's saved prefs with what Nix declares. Without this, a host
+      # that registered earlier keeps stale prefs (e.g. ExitNodeID) even
+      # after we change exitNodeHost in config, because `tailscale up` is
+      # only run on initial auth.
+      runtimeFlags =
         if isServer then
-          [ "--accept-dns=true" ]
-          ++ lib.optional (
-            cfg.advertiseRoutes != [ ]
-          ) "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}"
-          ++ lib.optional (cfg.routingMode == "both") "--advertise-exit-node"
+          [
+            "--accept-dns=true"
+            "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}"
+            "--advertise-exit-node=${if cfg.routingMode == "both" then "true" else "false"}"
+          ]
         else
           [
             "--accept-dns=true"
             "--accept-routes=${if cfg.acceptRoutes then "true" else "false"}"
-          ]
-          ++ lib.optionals (cfg.exitNodeHost != null) [
-            "--exit-node=${cfg.exitNodeHost}"
-            "--exit-node-allow-lan-access=true"
+            # An empty value to `--exit-node` clears the pref, so a host
+            # that previously had one assigned drops it on the next rebuild.
+            "--exit-node=${if cfg.exitNodeHost != null then cfg.exitNodeHost else ""}"
+            "--exit-node-allow-lan-access=${if cfg.exitNodeHost != null then "true" else "false"}"
           ];
-    };
+    in
+    {
+      services.tailscale = {
+        enable = lib.mkDefault true;
+        package = unstable.tailscale;
+        useRoutingFeatures = if isServer then "server" else "client";
+        extraUpFlags = runtimeFlags;
+        extraSetFlags = runtimeFlags;
+      };
 
-    networking.firewall = {
-      trustedInterfaces = [ config.services.tailscale.interfaceName ];
-      allowedUDPPorts = [ config.services.tailscale.port ];
+      networking.firewall = {
+        trustedInterfaces = [ config.services.tailscale.interfaceName ];
+        allowedUDPPorts = [ config.services.tailscale.port ];
+      };
     };
-  };
 }
