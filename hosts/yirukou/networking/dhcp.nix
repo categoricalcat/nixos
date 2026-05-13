@@ -15,10 +15,15 @@ in
       valid-lifetime = 4000;
       renew-timer = 1000;
       rebind-timer = 2000;
-      interfaces-config.interfaces = [
-        lan.interface
-        untrusted.interface
-      ];
+      interfaces-config = {
+        interfaces = [
+          lan.interface
+          untrusted.interface
+        ];
+        service-sockets-require-all = false;
+        service-sockets-max-retries = 60;
+        service-sockets-retry-wait-time = 1000;
+      };
       lease-database = {
         type = "memfile";
         persist = true;

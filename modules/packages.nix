@@ -65,5 +65,6 @@ in
     tcpdump
     traceroute
     # unstable.bitwarden-cli
+    ripgrep
   ];
 }

@@ -163,6 +163,7 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
+          network.lan.ipv4.host
         ];
         listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;

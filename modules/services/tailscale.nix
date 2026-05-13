@@ -58,7 +58,10 @@ in
             "--accept-dns=true"
             "--accept-routes"
           ]
-          ++ lib.optional (cfg.exitNodeHost != null) "--exit-node=${cfg.exitNodeHost}";
+          ++ lib.optionals (cfg.exitNodeHost != null) [
+            "--exit-node=${cfg.exitNodeHost}"
+            "--exit-node-allow-lan-access=true"
+          ];
     };
 
     networking.firewall = {
