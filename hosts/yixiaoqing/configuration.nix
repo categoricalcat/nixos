@@ -8,7 +8,8 @@
 
 let
   desktopEnvironment = "niri";
-  greeter = "ly";
+  desktopShell = "noctalia";
+  greeter = "regreet";
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -47,7 +48,7 @@ in
   home-manager =
     lib.recursiveUpdate
       (mkHome {
-        inherit inputs desktopEnvironment;
+        inherit inputs desktopEnvironment desktopShell;
         stateVersion = global.homeVersion;
       })
       {
@@ -58,6 +59,7 @@ in
       };
 
   desktop.environment = desktopEnvironment;
+  desktop.shell = desktopShell;
   desktop.greeter = greeter;
 
   console.keyMap = "br-abnt2";

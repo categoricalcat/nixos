@@ -37,6 +37,16 @@
       description = "Greeter to use";
     };
 
+    desktop.shell = lib.mkOption {
+      type = lib.types.enum [
+        "dms"
+        "noctalia"
+        "none"
+      ];
+      default = if config.desktop.environment == "niri" then "dms" else "none";
+      description = "Desktop shell to run on top of the compositor";
+    };
+
     desktop.greeting = lib.mkOption {
       type = lib.types.str;
       default = "turmoil accompanies every great change";
@@ -51,6 +61,7 @@
     ./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
+    ./desktop/noctalia.nix
     ./desktop/regreet.nix
     ./desktop/apps.nix
     ./desktop/greetd.nix

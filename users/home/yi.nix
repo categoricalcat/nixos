@@ -2,6 +2,7 @@
   pkgs,
   lib,
   desktopEnvironment ? null,
+  desktopShell ? null,
   ...
 }:
 let
@@ -19,8 +20,11 @@ in
     ../programs/fcitx5.nix
     ../../modules/desktop/web-apps.nix
   ]
-  ++ lib.optionals (desktopEnvironment == "niri") [
+  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "dms") [
     ../programs/dms.nix
+  ]
+  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "noctalia") [
+    ../programs/noctalia.nix
   ];
 
   home.username = "yi";
