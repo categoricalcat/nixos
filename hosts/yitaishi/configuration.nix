@@ -17,6 +17,7 @@ in
   imports = [
     ./boot.nix
     ./hardware.nix
+    ./graphics.nix
     ./gaming.nix
     ./networking.nix
     ./power.nix

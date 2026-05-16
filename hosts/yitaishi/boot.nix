@@ -14,8 +14,6 @@
       pkiBundle = "/var/lib/sbctl";
     };
 
-    initrd.kernelModules = [ "amdgpu" ];
-
     kernelModules = lib.mkAfter [
       "fuse"
       "k10temp"
@@ -23,7 +21,6 @@
     ];
 
     kernelParams = [
-      "amdgpu.ppfeaturemask=0xffffffff"
       "amd_pstate=active"
     ];
   };
