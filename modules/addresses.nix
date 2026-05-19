@@ -171,6 +171,7 @@ in
 
       nixBuild = {
         enable = true;
+        remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 8;
       };
@@ -227,6 +228,7 @@ in
 
       nixBuild = {
         enable = true;
+        remoteBuilder = false;
         systems = [ "x86_64-linux" ];
         maxJobs = 8;
       };
@@ -257,6 +259,7 @@ in
 
       nixBuild = {
         enable = true;
+        remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
       };

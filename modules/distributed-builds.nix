@@ -24,7 +24,7 @@ let
   ) allAddresses.hosts;
 
   remoteBuilders = lib.filterAttrs (
-    _name: host: host.hostName != config.networking.hostName
+    _name: host: (host.nixBuild.remoteBuilder or false) && host.hostName != config.networking.hostName
   ) meshNodes;
 
   buildMachines = lib.mapAttrsToList (_name: host: {

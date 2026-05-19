@@ -10,5 +10,6 @@
 
 # Services
 
+- [Nix Build Host And Mesh](services/nix-build-cache.md)
 - [Monitoring](services/monitoring.md)
 - [AI and ROCm](services/ai-rocm.md)
