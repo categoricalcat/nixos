@@ -22,12 +22,13 @@ through `yi.netdata.childMode`.
 
 Current deployment:
 
-- `yirukou` runs Netdata parent mode.
-- `yifuwuqi` runs Netdata child mode.
-- The child streams metrics to `10.42.0.1:19999`.
-- The parent allows streams from `10.42.0.2`.
+- `yifuwuqi` runs Netdata parent mode.
+- `yirukou` runs Netdata child mode.
+- The child streams metrics to `10.42.0.2:19999`.
+- The parent allows streams from `10.42.0.1`.
+- LAN IPs come from `modules/addresses.nix`, not hardcoded literals.
 - `netdata.fufu.land` is served by `nginx` on `yirukou` and proxies to
-  `127.0.0.1:19999`.
+  `http://10.42.0.2:19999`.
 
 ## Access Control
 

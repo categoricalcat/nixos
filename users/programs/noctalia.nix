@@ -25,7 +25,9 @@ in
         showCapsule = true;
         fontScale = 1.0; # DMS barConfigs[0].fontScale = 1
         outerCorners = true;
-        # backgroundOpacity, capsuleOpacity → provided by Stylix (opacity.desktop = 1.0)
+        # backgroundOpacity → provided by Stylix (opacity.desktop = 1.0)
+        # DMS barConfigs[0].widgetTransparency = 0.48 maps to per-capsule opacity here.
+        capsuleOpacity = lib.mkForce 0.48;
 
         # Widget layout mapped from DMS barConfigs[0].leftWidgets/centerWidgets/rightWidgets
         widgets = {
@@ -37,13 +39,30 @@ in
           center = [
             { id = "MediaMini"; } # DMS: music
             { id = "Clock"; } # DMS: clock
+            # DMS centerWidgets also includes "weather". Noctalia does not ship a
+            # core bar Weather widget in the pinned revision; weather is surfaced
+            # via the calendar card, control-center weather card, and the optional
+            # desktop weather widget instead. Intentional gap.
           ];
           right = [
             { id = "SystemMonitor"; } # DMS: cpuTemp + cpuUsage + memUsage (combined)
             { id = "Battery"; } # DMS: battery
+            { id = "Spacer"; } # DMS: spacer (size = 20, matches Noctalia Spacer.width default)
             { id = "Tray"; } # DMS: systemTray
             { id = "NotificationHistory"; } # DMS: notificationButton
-            { id = "ControlCenter"; } # DMS: controlCenterButton
+            # DMS rightWidgets also includes "clipboard". Noctalia has no core bar
+            # Clipboard widget; clipboard history is exposed via the launcher
+            # (>clip prefix) through ClipboardProvider. Intentional gap.
+            # DMS controlCenterButton is a compound status widget; mirrored here
+            # with discrete Noctalia widgets in DMS's defaultControlCenterGroupOrder.
+            # Skipped icons reflect DMS toggles: showAudioIcon=false, showBatteryIcon=false
+            # (Battery is its own widget above), showPrinterIcon=false.
+            { id = "Network"; } # DMS controlCenterButton: showNetworkIcon = true
+            { id = "VPN"; } # DMS controlCenterButton: showVpnIcon = true
+            { id = "Bluetooth"; } # DMS controlCenterButton: showBluetoothIcon = true
+            { id = "Microphone"; } # DMS controlCenterButton: showMicIcon = true
+            { id = "Brightness"; } # DMS controlCenterButton: showBrightnessIcon = true
+            { id = "ControlCenter"; } # DMS: controlCenterButton (panel toggle)
           ];
         };
       };
@@ -61,7 +80,9 @@ in
         fontDefault = themeAssets.fonts.sansSerif.name;
         fontFixed = themeAssets.fonts.monospace.name;
         fontDefaultScale = 1.0; # DMS fontScale = 1
-        panelBackgroundOpacity = lib.mkForce 0.93; # DMS widgetTransparency=0.48 → semi-transparent panels
+        # panelBackgroundOpacity → provided by Stylix (opacity.popups = 1.0),
+        # matching DMS popupTransparency = 1.0. Bar widget transparency is
+        # configured separately as bar.capsuleOpacity above.
       };
 
       # ── Location / Weather ──

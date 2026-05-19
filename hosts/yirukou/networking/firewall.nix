@@ -70,12 +70,15 @@ in
       allowPing = false;
       interfaces = {
         ${lan.interface} = {
-          allowedTCPPorts = internalTcpPorts;
+          allowedTCPPorts = internalTcpPorts ++ [ addresses.ssh.listenPort ];
           allowedUDPPorts = internalUdpPorts;
         };
         ${untrusted.interface} = {
           allowedTCPPorts = internalTcpPorts;
           allowedUDPPorts = internalUdpPorts;
+        };
+        ${config.services.tailscale.interfaceName} = {
+          allowedTCPPorts = [ addresses.ssh.listenPort ];
         };
       };
       extraInputRules = ''

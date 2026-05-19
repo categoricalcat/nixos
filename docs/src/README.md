@@ -6,8 +6,8 @@ This book documents the maintained parts of the NixOS fleet.
 
 | Host | Role | Notes |
 | --- | --- | --- |
-| `yirukou` | router, DNS, reverse proxy, monitoring parent | Owns the `10.42.0.0/24` LAN and Tailscale subnet routing. |
-| `yifuwuqi` | services and AI host | Runs hosted services, Netdata child mode, and `llama-swap`. |
+| `yirukou` | router, DNS, reverse proxy | Owns the `10.42.0.0/24` LAN and Tailscale subnet routing; runs Netdata child mode. |
+| `yifuwuqi` | services, AI, and monitoring parent | Runs hosted services, Netdata parent mode, and `llama-swap`. |
 | `yitaishi` | desktop and AI RPC worker | Exposes the RX 7900 XTX over Tailscale for `llama.cpp` RPC. |
 | `yixiaoqing` | laptop | General client host. |
 | `yichuang` | WSL host | Development environment. |

@@ -49,10 +49,6 @@ in
     acceptRoutes = false;
   };
 
-  yi.netdata = {
-    childMode = true;
-  };
-
   security.pam = {
     services.sshd.googleAuthenticator.enable = true;
   };

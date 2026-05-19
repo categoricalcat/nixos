@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}:
+{ ... }:
 
 {
   imports = [
@@ -19,14 +16,7 @@
     advertiseRoutes = [ "10.42.0.0/24" ];
   };
 
-  services.xserver = {
-    enable = true;
-    desktopManager.lxqt.enable = true;
+  yi.netdata = {
+    childMode = true;
   };
-
-  services.displayManager.sddm.enable = true;
-
-  environment.systemPackages = with pkgs; [
-    ungoogled-chromium
-  ];
 }

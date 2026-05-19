@@ -20,6 +20,7 @@ in
     ../../modules/locale.nix
     ../../modules/server-mode.nix
     ../../modules/nix-settings.nix
+    ../../modules/distributed-builds.nix
     ../../modules/server-settings.nix
     ../../modules/packages.nix
   ];
@@ -30,6 +31,8 @@ in
     inherit inputs;
     stateVersion = global.homeVersion;
   };
+
+  serverMode.headless = true;
 
   nixpkgs.hostPlatform = "x86_64-linux";
 

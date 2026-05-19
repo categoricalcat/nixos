@@ -18,8 +18,9 @@ Each machine can always build locally. Remote builders are restricted to hosts w
 | `yifuwuqi` | yes | `yitaishi` |
 | `yitaishi` | yes | `yifuwuqi` |
 | `yixiaoqing` | yes | `yifuwuqi`, `yitaishi` |
+| `yirukou` | yes | `yifuwuqi`, `yitaishi` |
 
-`yixiaoqing` participates in distributed builds as a client and local builder, but it is not advertised as a remote builder for the other hosts.
+`yixiaoqing` and `yirukou` participate in distributed builds as clients and local builders, but they are not advertised as remote builders for the other hosts.
 
 When `yifuwuqi` is used as `--build-host`, the build runs on `yifuwuqi` and any
 remote builders `yifuwuqi` can use. With the current topology, that means

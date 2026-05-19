@@ -377,6 +377,13 @@ in
         listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
       };
+
+      nixBuild = {
+        enable = true;
+        remoteBuilder = false;
+        systems = [ "x86_64-linux" ];
+        maxJobs = 1;
+      };
     };
   };
 }

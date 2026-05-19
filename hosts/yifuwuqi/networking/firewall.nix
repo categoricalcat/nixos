@@ -41,7 +41,7 @@ in
         "enp4s0"
       ];
 
-      interfaces."eno1".allowedTCPPorts = [ 24212 ];
+      interfaces."eno1".allowedTCPPorts = [ addresses.ssh.listenPort ];
       # interfaces."eno1".allowedUDPPorts = [];
     };
 

@@ -93,13 +93,13 @@ in
         };
       };
 
-      # Netdata web UI — local parent (shows both hosts via streaming)
+      # Netdata web UI — yifuwuqi parent (shows both hosts via streaming)
       "netdata.fufu.land" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
         basicAuthFile = config.sops.secrets."services/htpasswd".path;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:19999";
+          proxyPass = "http://${yifuwuqiLan}:19999";
           proxyWebsockets = true;
           extraConfig = ''
             proxy_set_header X-Forwarded-Host $host;

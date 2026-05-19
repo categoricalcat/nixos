@@ -3,12 +3,15 @@
   inputs,
   lib,
   config,
+  allAddresses,
   ...
 }:
 
 let
   unstable = import ../../nixpkgs-unstable.nix { inherit inputs pkgs; };
   inherit (config.yi.netdata) childMode;
+  yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
+  yifuwuqiLan = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
 in
 {
   options.yi.netdata = {
@@ -17,7 +20,7 @@ in
       default = false;
       description = ''
         false (default): parent mode, accepts incoming streams from children.
-        true: child mode, streams all metrics to parent at 10.42.0.1.
+        true: child mode, streams all metrics to parent at ${yifuwuqiLan}.
       '';
     };
   };
@@ -51,14 +54,14 @@ in
         text = ''
           [stream]
               enabled = yes
-              destination = 10.42.0.1:19999
+              destination = ${yifuwuqiLan}:19999
         '';
       })
       (lib.mkIf (!childMode) {
         text = ''
           [stream]
               enabled = yes
-              allow from = 10.42.0.2
+              allow from = ${yirukouLan}
         '';
       })
     ];
