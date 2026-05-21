@@ -17,7 +17,6 @@ in
   ++ lib.optionals (desktopEnvironment != null) [
     ../programs/alacritty.nix
     ../programs/mprisence.nix
-    ../programs/fcitx5.nix
     ../../modules/desktop/web-apps.nix
   ]
   ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "dms") [

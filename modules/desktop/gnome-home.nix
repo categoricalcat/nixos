@@ -67,6 +67,7 @@ in
           vertical-workspaces.extensionUuid
           vitals.extensionUuid
           weather-oclock.extensionUuid
+          user-themes.extensionUuid
         ];
 
         favorite-apps = [

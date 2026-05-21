@@ -88,11 +88,43 @@
       enable = true;
       type = "fcitx5";
 
-      fcitx5.waylandFrontend = true;
       fcitx5.addons = with pkgs; [
         qt6Packages.fcitx5-chinese-addons
         fcitx5-gtk
       ];
+
+      fcitx5.settings = {
+        globalOptions.Hotkey = {
+          TriggerKeys = "Control+Shift+space";
+          EnumerateForwardKeys = "";
+          EnumerateBackwardKeys = "";
+          EnumerateGroupForwardKeys = "";
+          EnumerateGroupBackwardKeys = "";
+          EnumerateSkipFirst = false;
+        };
+
+        inputMethod =
+          let
+            kbLayout = if config.desktop.environment == "gnome" then "us-intl" else "br";
+            kbIM = "keyboard-${kbLayout}";
+          in
+          {
+            "Groups/0" = {
+              Name = "Default";
+              "Default Layout" = kbLayout;
+              DefaultIM = kbIM;
+            };
+            "Groups/0/Items/0" = {
+              Name = kbIM;
+              Layout = "";
+            };
+            "Groups/0/Items/1" = {
+              Name = "pinyin";
+              Layout = "";
+            };
+            GroupOrder."0" = "Default";
+          };
+      };
     };
 
     # Critical for window managers to autostart Fcitx5
