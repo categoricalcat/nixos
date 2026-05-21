@@ -111,11 +111,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779339956,
-        "narHash": "sha256-MKUt692eD61mPJFbrz4dr2fEU5SBGuUtdLQZnG989Iw=",
+        "lastModified": 1779373992,
+        "narHash": "sha256-sVXPDkUea3ldAmnvg5ldUXc8jrPEpTWaJiWvugI43q4=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "fb9ec8e72111054edff34a380362e82a409d6600",
+        "rev": "b84e5abc4aec3e9cc0d3f5c8509adf4b42dbae90",
         "type": "github"
       },
       "original": {
@@ -541,11 +541,11 @@
         "noctalia-qs": "noctalia-qs"
       },
       "locked": {
-        "lastModified": 1779125269,
-        "narHash": "sha256-vMF9Hd5/UoLggIJcLKK/oC1SnxoQdgIaUMdVB48zQ7A=",
+        "lastModified": 1779372755,
+        "narHash": "sha256-H9aGZWiEuFyBo8w2p+ctpbAOT+/OHQG8v9poS0qNCPM=",
         "owner": "noctalia-dev",
         "repo": "noctalia-shell",
-        "rev": "da95089dfe5148ee7fb33b3faa314e86de1e6f25",
+        "rev": "8e37cecde14922eb8aecfe8eb6ca92a20f5c4ba6",
         "type": "github"
       },
       "original": {
@@ -768,21 +768,17 @@
       }
     },
     "thefiles": {
-      "flake": false,
       "locked": {
-        "lastModified": 1777826699,
-        "narHash": "sha256-OZLFQlR7AILDMiBii2N7HVGKMJnCYTy49xwx7uroy6Y=",
-        "ref": "refs/heads/main",
-        "rev": "1db3b622ca9dfd99811333dafe84d84d1fcdece6",
-        "revCount": 114,
-        "submodules": true,
+        "dirtyRev": "12bb2e3c869b92b9002bece811d1ed16f3ca8c46-dirty",
+        "dirtyShortRev": "12bb2e3-dirty",
+        "lastModified": 1779379328,
+        "narHash": "sha256-58Q4DIlid9xwCzqfyG44k7wMaFpTFPQFRO1aAxkiNjI=",
         "type": "git",
-        "url": "https://github.com/categoricalcat/the.files.git"
+        "url": "file:///home/yi/the.files"
       },
       "original": {
-        "submodules": true,
         "type": "git",
-        "url": "https://github.com/categoricalcat/the.files.git"
+        "url": "file:///home/yi/the.files"
       }
     },
     "tinted-foot": {

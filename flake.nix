@@ -165,8 +165,7 @@
     };
 
     thefiles = {
-      url = "git+https://github.com/categoricalcat/the.files.git?submodules=1";
-      flake = false;
+      url = "git+file:///home/yi/the.files";
     };
   };
 }

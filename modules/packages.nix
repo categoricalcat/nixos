@@ -19,23 +19,19 @@ in
     # System utilities
     # rocmSupport=true patches in the rpath so btop dlopens librocm_smi64
     # and shows the AMD iGPU. Without it, btop builds CPU-only.
-    (btop.override { rocmSupport = true; })
     amdgpu_top
     curl
     stow
-    tmux
     wget
 
     # Development tools
     deadnix
     dig
-    direnv
     fd
     gh
     git
     k6
     nil
-    nix-direnv
     nixd
     nixfmt
     nftables
@@ -46,9 +42,6 @@ in
 
     # Shell and related tools
     shellcheck
-    fzf
-    starship
-    zoxide
 
     bat
     brotli
