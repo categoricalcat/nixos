@@ -6,8 +6,13 @@
 }:
 
 let
-  builderPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILoRXgk+BMdw/tEdHJSkBd4MmFkB+A3YVmMWNVlLjXb6 yi@yifuwuqi";
-  builderPrivateKey = config.sops.secrets."ssh/nix-builder".path;
+  keys = import ../secrets/keys.nix;
+  builderPrivateKey = keys.paths.sshHostKey;
+
+  authorizedClientKeys = lib.pipe keys.hosts [
+    (lib.filterAttrs (name: host: host.sshPublicKey != null && name != config.networking.hostName))
+    (lib.mapAttrsToList (_: host: host.sshPublicKey))
+  ];
 
   defaultSupportedFeatures = [
     "nixos-test"
@@ -60,16 +65,7 @@ in
     }
   ];
 
-  sops.secrets."ssh/nix-builder" = {
-    sopsFile = "/etc/nixos/secrets/distributed-builds.yaml";
-    owner = "root";
-    group = "root";
-    mode = "0400";
-  };
-
-  users.users.nix-builder.openssh.authorizedKeys.keys = [
-    builderPublicKey
-  ];
+  users.users.nix-builder.openssh.authorizedKeys.keys = authorizedClientKeys;
 
   nix = {
     distributedBuilds = true;

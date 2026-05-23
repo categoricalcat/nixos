@@ -3,8 +3,6 @@ let
   unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
-  # --- New Unstable TUI Utilities ---
-
   programs.mcfly = {
     enable = true;
     package = unstable.mcfly;
@@ -44,8 +42,6 @@ in
     enable = true;
     package = unstable.zellij;
   };
-
-  # --- Existing TUI & Shell Utilities (Moved from packages.nix) ---
 
   programs.btop = {
     enable = true;

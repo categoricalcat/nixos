@@ -1,8 +1,6 @@
 secrets/secrets.yaml
-secrets/distributed-builds.yaml
 secrets/key.txt
 result
 docs/book/
-.sops.yaml
 .pre-commit-config.yaml
 .cursor/plans

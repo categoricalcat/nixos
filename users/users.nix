@@ -4,6 +4,9 @@
   ...
 }:
 
+let
+  keys = import ../secrets/keys.nix;
+in
 {
   users = {
     mutableUsers = true;
@@ -28,6 +31,7 @@
         description = "yi";
         group = "yi";
         hashedPasswordFile = config.sops.secrets."passwords/yi".path;
+        openssh.authorizedKeys.keys = keys.users.yi.sshAuthorizedKeys;
         extraGroups = [
           "wheel"
           "render"

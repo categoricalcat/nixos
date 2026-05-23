@@ -37,23 +37,16 @@ flowchart LR
 
 ## Builder SSH Key
 
-The `nix-builder` SSH key is shared through `/etc/nixos/secrets/distributed-builds.yaml`:
+Each host authenticates to remote builders using its own SSH host key at
+`/persist/keys/ssh/ssh_host_ed25519_key`. Authorized client public keys come
+from `secrets/keys.nix`, so adding a host to the mesh is the same step as
+registering its SSH host public key.
 
-```yaml
-ssh:
-  nix-builder: |
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    ...
-    -----END OPENSSH PRIVATE KEY-----
-```
+There is no shared builder keypair and no SOPS file dedicated to it. Rotation
+is the same as rotating the host's SSH host key.
 
-This key is used for:
-
-- `ssh-ng` remote builders in `nix.buildMachines`.
-- Copying remote builder results back to the requesting build host.
-
-It is an OpenSSH key for SSH transport. No Nix binary-cache signing key is
-needed for this workflow.
+No Nix binary-cache signing key is needed for this workflow; the SSH transport
+is what carries built paths back to the requester.
 
 ## Build Locally, Switch Locally
 
@@ -98,4 +91,4 @@ NIX_SSHOPTS="-o RequestTTY=force" nixos-rebuild switch \
 
 - Builder topology: `modules/addresses.nix`
 - Distributed build wiring: `modules/distributed-builds.nix`
-- Secret shape example: `secrets/.distributed-builds.example.yaml`
+- Public key registry: `secrets/keys.nix`

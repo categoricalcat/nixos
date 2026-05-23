@@ -1,5 +1,6 @@
 creation_rules:
-  - path_regex: secrets/.*\.yaml$
+  - path_regex: (/persist/keys/sops|secrets)/.*\.yaml$
     key_groups:
       - age:
-          - string
+          - age1host
+          - age1user
