@@ -18,5 +18,8 @@ in
     sops.defaultSopsFile = keys.paths.sopsDefaultFile;
     sops.useSystemdActivation = true;
     sops.validateSopsFiles = false;
+
+    # Let the sops CLI derive an age identity from the user's SSH key
+    environment.variables.SOPS_AGE_SSH_PRIVATE_KEY_FILE = keys.paths.userSshKey config.users.users.yi.home;
   };
 }

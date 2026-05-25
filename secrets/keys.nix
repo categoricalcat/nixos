@@ -61,6 +61,8 @@ in
     sopsDir = "${keysFolder}/sops";
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
     sopsFallbackKeyFile = "${keysFolder}/sops/key.txt";
+    # User SSH private key (for sops age identity derivation, etc.)
+    userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
   };
 
   inherit
