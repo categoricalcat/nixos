@@ -21,7 +21,7 @@ in
           96000
           192000
         ];
-        "default.clock.quantum" = 256;
+        "default.clock.quantum" = 512;
         "default.clock.min-quantum" = 32;
         "default.clock.max-quantum" = 1024;
       };
@@ -42,6 +42,10 @@ in
     # Audio plugins (LV2/VST)
     unstable.lsp-plugins
     unstable.calf
+    unstable.zam-plugins
+    unstable.dragonfly-reverb
+    unstable.chow-tape-model
+    unstable.x42-plugins
     unstable.drumgizmo
     unstable.x42-avldrums
 
@@ -49,6 +53,14 @@ in
     unstable.qpwgraph
     unstable.pavucontrol
   ];
+
+  # Plugin search paths so DAWs can find NixOS-installed LV2/VST/VST3/LADSPA
+  environment.variables = {
+    LV2_PATH = "/run/current-system/sw/lib/lv2:$HOME/.lv2";
+    VST_PATH = "/run/current-system/sw/lib/vst:$HOME/.vst";
+    VST3_PATH = "/run/current-system/sw/lib/vst3:$HOME/.vst3";
+    LADSPA_PATH = "/run/current-system/sw/lib/ladspa:$HOME/.ladspa";
+  };
 
   security.pam.loginLimits = [
     {
