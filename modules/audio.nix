@@ -54,8 +54,7 @@ in
     unstable.pavucontrol
   ];
 
-  # Plugin search paths so DAWs can find NixOS-installed LV2/VST/VST3/LADSPA
-  environment.variables = {
+  environment.sessionVariables = {
     LV2_PATH = "/run/current-system/sw/lib/lv2:$HOME/.lv2";
     VST_PATH = "/run/current-system/sw/lib/vst:$HOME/.vst";
     VST3_PATH = "/run/current-system/sw/lib/vst3:$HOME/.vst3";

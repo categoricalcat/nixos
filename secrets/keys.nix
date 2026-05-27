@@ -1,3 +1,4 @@
+# bad faith, are we? c:
 let
   keysFolder = "/persist/keys";
 
@@ -17,17 +18,15 @@ let
       ageRecipient = "age1netr6u2q9ecz56cslyhka9gqujgdul0zhgrppnnfw0v9wx46f3xqmte9an";
     };
 
-    # Fill this in after the host is reachable or its public host key is copied
-    # out-of-band. Do not guess this value.
     yixiaoqing = {
-      sshPublicKey = null;
-      ageRecipient = null;
+      sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA9kVxqYIW4P8q9jm0DZ4YdZUynbgsUYoMR023HUhMZN root@fuyidong";
+      ageRecipient = "age1u65y7my2zrctutytmhwjdjnrlqvk6x5vs42s4z333wldy9djeywsd63svn";
     };
 
-    yichuang = {
-      sshPublicKey = null;
-      ageRecipient = null;
-    };
+    # yichuang = {
+    #   sshPublicKey = null;
+    #   ageRecipient = null;
+    # };
   };
 
   users = {
@@ -45,9 +44,6 @@ let
   };
 
   legacy = {
-    # Existing recipient from the current .sops.yaml/key.txt migration path.
-    # Keep this until every host has switched and decrypted via the persisted
-    # SSH host key identity.
     sopsAgeRecipient = "age1gftvv43376wv8djfuntn596pk3mv75dhv5fe99la9q29p4dqldnqqwf45h";
   };
 in
@@ -61,7 +57,6 @@ in
     sopsDir = "${keysFolder}/sops";
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
     sopsFallbackKeyFile = "${keysFolder}/sops/key.txt";
-    # User SSH private key (for sops age identity derivation, etc.)
     userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
   };
 
