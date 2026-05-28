@@ -1,8 +1,14 @@
-{ pkgs, lib, inputs, ... }:
+{
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 
 let
   unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
-in{
+in
+{
   boot.kernelPackages = unstable.linuxPackages_zen;
 
   boot = {

@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   config,
   ...
@@ -108,7 +109,9 @@ in
 
   environment.pathsToLink = [ "/share/zsh" ];
 
-  environment.etc."nixos".source = "${config.users.users.yi.home}/the.files/nixos";
+  environment.etc."nixos".source =
+    pkgs.runCommandLocal "etc-nixos" { }
+      "ln -s ${lib.escapeShellArg "${config.users.users.yi.home}/the.files/nixos"} $out";
 
   # services.emacs = {
   #   enable = true;
