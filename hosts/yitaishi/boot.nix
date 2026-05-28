@@ -1,6 +1,9 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, ... }:
 
-{
+let
+  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
+in{
+  boot.kernelPackages = unstable.linuxPackages_zen;
 
   boot = {
     loader = {
@@ -23,6 +26,10 @@
     kernelParams = [
       "amd_pstate=active"
     ];
+
+    extraModprobeConfig = ''
+      options snd_usb_audio implicit_fb=1
+    '';
   };
 
   boot.loader.systemd-boot.enable = lib.mkForce false;

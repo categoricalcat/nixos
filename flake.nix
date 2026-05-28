@@ -76,6 +76,7 @@
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 inputs.lanzaboote.nixosModules.lanzaboote
+                inputs.musnix.nixosModules.musnix
                 ./hosts/yitaishi/configuration.nix
               ];
             };
@@ -144,6 +145,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    musnix = {
+      url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     dgop = {
       url = "github:AvengeMedia/dgop";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -151,7 +157,7 @@
 
     dms = {
       url = "github:AvengeMedia/DankMaterialShell";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     noctalia = {

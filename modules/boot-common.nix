@@ -1,4 +1,4 @@
-{ inputs, pkgs, ... }:
+{ inputs, pkgs, lib, ... }:
 
 let
   unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
@@ -19,5 +19,5 @@ in
     };
   };
 
-  boot.kernelPackages = unstable.linuxPackages_latest;
+  boot.kernelPackages = lib.mkDefault unstable.linuxPackages_latest;
 }

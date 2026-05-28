@@ -118,8 +118,7 @@ in
   };
 
   boot.kernel.sysctl = {
-    # Prefer compressed zram swap on this workstation.
-    "vm.swappiness" = 100;
+    "vm.swappiness" = lib.mkForce 1;
 
     # Avoid aggressive watermark boosting that can over-reclaim with zram.
     "vm.watermark_boost_factor" = 0;

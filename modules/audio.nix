@@ -3,6 +3,9 @@ let
   unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
+  musnix.enable = true;
+  musnix.rtirq.enable = true;
+
   security.rtkit.enable = true;
   services.pulseaudio.enable = false;
 
@@ -16,15 +19,26 @@ in
     extraConfig.pipewire."10-low-latency" = {
       "context.properties" = {
         "default.clock.rate" = 96000;
-        "default.clock.allowed-rates" = [
-          48000
-          96000
-          192000
-        ];
-        "default.clock.quantum" = 512;
+        "default.clock.quantum" = 256;
         "default.clock.min-quantum" = 32;
         "default.clock.max-quantum" = 1024;
       };
+    };
+
+    wireplumber.extraConfig."99-disable-suspend" = {
+      "monitor.alsa.rules" = [
+        {
+          matches = [
+            { "node.name" = "~alsa_input.*"; }
+            { "node.name" = "~alsa_output.*"; }
+          ];
+          actions = {
+            update-props = {
+              "session.suspend-timeout-seconds" = 0;
+            };
+          };
+        }
+      ];
     };
   };
 
@@ -41,6 +55,8 @@ in
 
     # Audio plugins (LV2/VST)
     unstable.lsp-plugins
+    unstable.kapitonov-plugins-pack
+    unstable.reaper-reapack-extension
     unstable.calf
     unstable.zam-plugins
     unstable.dragonfly-reverb

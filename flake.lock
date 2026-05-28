@@ -107,15 +107,15 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-unstable"
         ]
       },
       "locked": {
-        "lastModified": 1779827912,
-        "narHash": "sha256-K9c1EUSKd/LDJIDYgEODCfiYqlMVjtkoNlYPxm06R+w=",
+        "lastModified": 1779985142,
+        "narHash": "sha256-1D1kx8fQ09atW4+U+v7YXml58BCcc+DUomUo0S/7614=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "a366bf3ca09eb0802ee20d9e1bebadd719af2ef2",
+        "rev": "38176ab5435fe03f79fc17cc4ac01a3fe8c9e053",
         "type": "github"
       },
       "original": {
@@ -427,6 +427,26 @@
         "type": "github"
       }
     },
+    "musnix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777848538,
+        "narHash": "sha256-Dj51C0NWsglqRrCpdmMr2nFiYacFOid1Tor4H9yG2HY=",
+        "owner": "musnix",
+        "repo": "musnix",
+        "rev": "8548782f0d1d0928daa3fffde8a008f72219a3f3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "musnix",
+        "repo": "musnix",
+        "type": "github"
+      }
+    },
     "niri-float-sticky": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -472,11 +492,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1779467186,
-        "narHash": "sha256-nOesoDCiXcUftqbRBMz9tt4blI5PvljMWbm3kuCA+0s=",
+        "lastModified": 1779796641,
+        "narHash": "sha256-ZsIrKmhp4vbBXoXXmR/tBXA/UCsAQiJL9vsgZEduhVY=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b77b3de8775677f84492abe84635f87b0e153f0f",
+        "rev": "25f538306313eae3927264466c70d7001dcea1df",
         "type": "github"
       },
       "original": {
@@ -503,11 +523,11 @@
     },
     "nixpkgs-small": {
       "locked": {
-        "lastModified": 1779771657,
-        "narHash": "sha256-OmS7eoI8ffGRsprz49v2yZqOKAcYr4JU8LlM9zabKss=",
+        "lastModified": 1779930049,
+        "narHash": "sha256-6mqKLf7ukajFOrVjO7EH1i37CQOVG22AnuU3wR84xK0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d60e39a68a425c89bfc5b1d3f26777c4d7e56279",
+        "rev": "f5190b692864072e79a2fb7c52d72d1d57fcb269",
         "type": "github"
       },
       "original": {
@@ -634,6 +654,7 @@
         "home-manager": "home-manager",
         "home-manager-small": "home-manager-small",
         "lanzaboote": "lanzaboote",
+        "musnix": "musnix",
         "niri-float-sticky": "niri-float-sticky",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
@@ -772,7 +793,7 @@
         "dirtyRev": "7a191378a1fc6f176a734f0dc6a3b8bcf3589a9b-dirty",
         "dirtyShortRev": "7a19137-dirty",
         "lastModified": 1779478377,
-        "narHash": "sha256-vm9Q5UMbOLSaxSjGR4ok5DzdJaqcKMZmuAJvK8BPTS8=",
+        "narHash": "sha256-ZTTuBPig3F2g8i9VBBvzQ8c2tSWSh/WDISLEK6BBDco=",
         "type": "git",
         "url": "file:///home/yi/the.files"
       },
