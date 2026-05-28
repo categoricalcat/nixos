@@ -78,6 +78,7 @@ in
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
     sopsFallbackKeyFile = "${keysFolder}/sops/key.txt";
     userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
+    gitSigningKey = homeDir: "${homeDir}/.ssh/id_git_ed25519.pub";
   };
 
   inherit

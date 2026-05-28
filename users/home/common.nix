@@ -15,6 +15,7 @@
 
   imports = [
     inputs.thefiles.homeModules.default
+    ../programs/git.nix
     ../programs/tui.nix
   ];
 
