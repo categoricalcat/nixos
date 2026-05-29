@@ -5,6 +5,7 @@
   ...
 }:
 let
+  keys = import ../../secrets/keys.nix;
   listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
   listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
 in
@@ -18,10 +19,25 @@ in
       "time-sync.target"
     ]
     ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
+
+    preStart = lib.mkBefore ''
+      if [ ! -s ${keys.paths.sshHostKey} ]; then
+        echo "Missing persisted SSH host key: ${keys.paths.sshHostKey}" >&2
+        echo "Refusing to generate a new host/SOPS identity automatically." >&2
+        exit 1
+      fi
+    '';
   };
 
   services.openssh = {
     enable = true;
+
+    hostKeys = [
+      {
+        path = keys.paths.sshHostKey;
+        type = "ed25519";
+      }
+    ];
 
     listenAddresses =
       (map (addr: {

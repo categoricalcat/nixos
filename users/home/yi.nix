@@ -2,6 +2,7 @@
   pkgs,
   lib,
   desktopEnvironment ? null,
+  desktopShell ? null,
   ...
 }:
 let
@@ -16,11 +17,13 @@ in
   ++ lib.optionals (desktopEnvironment != null) [
     ../programs/alacritty.nix
     ../programs/mprisence.nix
-    ../programs/fcitx5.nix
     ../../modules/desktop/web-apps.nix
   ]
-  ++ lib.optionals (desktopEnvironment == "niri") [
+  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "dms") [
     ../programs/dms.nix
+  ]
+  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "noctalia") [
+    ../programs/noctalia.nix
   ];
 
   home.username = "yi";

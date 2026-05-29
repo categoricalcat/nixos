@@ -1,9 +1,13 @@
 {
+  lib,
   pkgs,
   config,
   ...
 }:
 
+let
+  keys = import ../secrets/keys.nix;
+in
 {
   users = {
     mutableUsers = true;
@@ -28,6 +32,7 @@
         description = "yi";
         group = "yi";
         hashedPasswordFile = config.sops.secrets."passwords/yi".path;
+        openssh.authorizedKeys.keys = keys.users.yi.sshAuthorizedKeys;
         extraGroups = [
           "wheel"
           "render"
@@ -81,6 +86,7 @@
   };
 
   programs.mtr.enable = true;
+  programs.trippy.enable = true;
 
   programs.zsh = {
     enable = true;
@@ -103,7 +109,9 @@
 
   environment.pathsToLink = [ "/share/zsh" ];
 
-  environment.etc."nixos".source = "${config.users.users.yi.home}/the.files/nixos";
+  environment.etc."nixos".source =
+    pkgs.runCommandLocal "etc-nixos" { }
+      "ln -s ${lib.escapeShellArg "${config.users.users.yi.home}/the.files/nixos"} $out";
 
   # services.emacs = {
   #   enable = true;

@@ -45,11 +45,11 @@
               ];
             };
 
-            yifuwuqi = nixpkgs-small.lib.nixosSystem {
+            yifuwuqi = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
               modules = [
                 sops-nix.nixosModules.sops
-                home-manager-small.nixosModules.home-manager
+                home-manager.nixosModules.home-manager
                 ./hosts/yifuwuqi/configuration.nix
               ];
             };
@@ -76,7 +76,17 @@
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 inputs.lanzaboote.nixosModules.lanzaboote
+                inputs.musnix.nixosModules.musnix
                 ./hosts/yitaishi/configuration.nix
+              ];
+            };
+
+            yirukou = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                home-manager.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                ./hosts/yirukou/configuration.nix
               ];
             };
           };
@@ -135,6 +145,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    musnix = {
+      url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     dgop = {
       url = "github:AvengeMedia/dgop";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -142,7 +157,12 @@
 
     dms = {
       url = "github:AvengeMedia/DankMaterialShell";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     niri-float-sticky = {
@@ -151,8 +171,7 @@
     };
 
     thefiles = {
-      url = "git+https://github.com/categoricalcat/the.files.git?submodules=1";
-      flake = false;
+      url = "git+file:///home/yi/the.files";
     };
   };
 }

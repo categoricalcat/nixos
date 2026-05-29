@@ -26,7 +26,10 @@ else
   rebuild_flags=(--print-build-logs --show-trace)
 fi
 
+HOST_NAME=${HOST:-$(hostname)}
+
 sudo nix fmt
+./users/scripts/setup-sops.sh
 git add .
 nix flake check "${check_flags[@]}"
-sudo nixos-rebuild --flake ".#$(hostname)" --upgrade "${rebuild_flags[@]}" "$action"
+sudo nixos-rebuild --flake ".#$HOST_NAME" --upgrade "${rebuild_flags[@]}" "$action"

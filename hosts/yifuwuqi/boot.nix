@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   ...
 }:
@@ -11,8 +10,6 @@
       systemd-boot.configurationLimit = 15;
     };
 
-    kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
-
     initrd.availableKernelModules = lib.mkAfter [
       "sd_mod"
     ];
@@ -21,7 +18,6 @@
 
     kernelModules = lib.mkAfter [
       "amdgpu"
-      "wireguard"
       "nft_masq"
     ];
   };

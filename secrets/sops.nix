@@ -5,28 +5,21 @@
   ...
 }:
 let
-  hasRegularSopsSecrets = lib.any (secret: !secret.neededForUsers) (
-    lib.attrValues config.sops.secrets
-  );
-  hasSeparateHome = builtins.hasAttr "/home" config.fileSystems;
+  keys = import ./keys.nix;
+  hostKeys = keys.hosts.${config.networking.hostName} or { };
+  needsLegacyKey = (hostKeys.ageRecipient or null) == null;
 in
 {
   config = {
-    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    sops.age.sshKeyPaths = [ keys.paths.sshHostKey ];
+    sops.age.keyFile = lib.mkIf needsLegacyKey keys.paths.sopsFallbackKeyFile;
 
     # This encrypted file is kept outside the flake source, so use the runtime path.
-    sops.defaultSopsFile = "/etc/nixos/secrets/secrets.yaml";
-    sops.age.keyFile = "/etc/nixos/secrets/key.txt";
+    sops.defaultSopsFile = keys.paths.sopsDefaultFile;
     sops.useSystemdActivation = true;
     sops.validateSopsFiles = false;
 
-    environment.variables.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
-    systemd.globalEnvironment.SOPS_AGE_KEY_FILE = "/etc/nixos/secrets/key.txt";
-
-    # Some hosts mount /home separately while /etc/nixos points into that tree.
-    systemd.services.sops-install-secrets = lib.mkIf (hasRegularSopsSecrets && hasSeparateHome) {
-      wants = [ "home.mount" ];
-      after = [ "home.mount" ];
-    };
+    # Let the sops CLI derive an age identity from the user's SSH key
+    environment.variables.SOPS_AGE_SSH_PRIVATE_KEY_FILE = keys.paths.userSshKey config.users.users.yi.home;
   };
 }

@@ -54,8 +54,9 @@ in
       };
 
       server = {
-        # Keep raw SearXNG local; public access goes through nginx.
-        bind_address = "127.0.0.1";
+        # Public access still goes through nginx on yirukou, but the backend
+        # must be reachable from the router over LAN and directly via Tailscale.
+        bind_address = "0.0.0.0";
         port = 8888;
         # `searx-init.service` runs envsubst over this YAML and loads
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
@@ -191,9 +192,8 @@ in
   # search engines. Ordering against searx-secret-init is handled by that
   # unit's `before`/`wantedBy` above. `tor.service` is pulled in
   # transitively via `wait-for-tor.service`, so it's not listed directly
-  # here. SyslogLevel=err lifts captured stderr above the host's
-  # MaxLevelStore=notice journald cap so SearXNG's own errors survive to
-  # disk.
+  # here. SyslogLevel=err ensures SearXNG's own errors are clearly
+  # distinguished in the journal.
   systemd.services.searx = {
     wants = [
       "network-online.target"

@@ -67,6 +67,7 @@ in
           vertical-workspaces.extensionUuid
           vitals.extensionUuid
           weather-oclock.extensionUuid
+          user-themes.extensionUuid
         ];
 
         favorite-apps = [
@@ -78,6 +79,7 @@ in
 
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
+        accent-color = "pink";
         show-battery-percentage = true;
         clock-format = "24h";
         clock-show-date = true;
@@ -261,4 +263,6 @@ in
   stylix.targets.gtk.extraCss = ''
     headerbar { min-height: 28px; padding: 2px 4px; }
   '';
+
+  gtk.enable = true;
 }

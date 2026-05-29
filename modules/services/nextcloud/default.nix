@@ -126,4 +126,11 @@ in
     owner = "nextcloud";
     group = "nextcloud";
   };
+
+  # Ensure the nextcloud user and group exist so sops-install-secrets doesn't fail
+  users.groups.nextcloud = { };
+  users.users.nextcloud = {
+    isSystemUser = true;
+    group = "nextcloud";
+  };
 }

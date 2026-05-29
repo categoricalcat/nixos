@@ -1,5 +1,11 @@
+keys:
+  - &yifuwuqi_host age1_example_host_key_for_yifuwuqi
+  - &yifuwuqi_yi age1_example_mesh_key_for_yi_on_yifuwuqi
+
 creation_rules:
-  - path_regex: secrets/.*\.yaml$
+  - path_regex: (/persist/keys/sops|secrets)/.*\.yaml$
     key_groups:
       - age:
-          - string
+          - *yifuwuqi_host
+          - *yifuwuqi_yi
+          # ... include other hosts here

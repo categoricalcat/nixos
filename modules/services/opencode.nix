@@ -25,7 +25,7 @@ in
       after = [ "network-online.target" ];
 
       serviceConfig = {
-        ExecStart = "${unstable.opencode}/bin/opencode serve --port 3010 --hostname 127.0.0.1";
+        ExecStart = "${unstable.opencode}/bin/opencode serve --port 3010 --hostname 0.0.0.0";
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";

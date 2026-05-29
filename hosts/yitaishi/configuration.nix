@@ -17,6 +17,7 @@ in
   imports = [
     ./boot.nix
     ./hardware.nix
+    ./graphics.nix
     ./gaming.nix
     ./networking.nix
     ./power.nix
@@ -117,9 +118,15 @@ in
   };
 
   boot.kernel.sysctl = {
-    "vm.swappiness" = 100;
+    "vm.swappiness" = lib.mkForce 1;
+
+    # Avoid aggressive watermark boosting that can over-reclaim with zram.
     "vm.watermark_boost_factor" = 0;
+
+    # Keep the kernel's free-memory watermark scaling conservative.
     "vm.watermark_scale_factor" = 100;
+
+    # Swap individual pages instead of clustering reads around zram.
     "vm.page-cluster" = 0;
   };
 }

@@ -8,6 +8,7 @@
 let
   themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
+  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
 
@@ -29,6 +30,9 @@ in
     };
   };
 
+  # Prevent fcitx5 Qt plugin from crashing quickshell (SIGSEGV in FcitxCandidateWindow)
+  systemd.user.services.dms.Service.Environment = [ "QT_IM_MODULE=" ];
+
   imports = [
     inputs.dms.homeModules.dank-material-shell
   ];
@@ -44,6 +48,8 @@ in
     enableAudioWavelength = true; # Audio visualizer (cava)
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
+
+    quickshell.package = unstable.quickshell;
 
     settings = dmsSettings // {
       currentThemeName = lib.mkForce "dynamic";

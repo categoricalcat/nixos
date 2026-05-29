@@ -1,13 +1,73 @@
 {
   addresses,
+  allAddresses,
   config,
+  inputs,
   lib,
+  pkgs,
   ...
 }:
+
+let
+  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
+  yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
+  rewriteAliases = [
+    {
+      suffix = "lan";
+      path = [
+        "network"
+        "lan"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "vpn";
+      path = [
+        "network"
+        "tailscale"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "ts";
+      path = [
+        "network"
+        "tailscale"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "zero";
+      path = [
+        "network"
+        "zerotier"
+        "ipv4"
+        "host"
+      ];
+    }
+  ];
+  mkRewrite =
+    host: alias:
+    let
+      answer = lib.attrByPath alias.path null host;
+    in
+    lib.optional (answer != null) {
+      domain = "${host.hostName}.${alias.suffix}";
+      inherit answer;
+      enabled = true;
+    };
+  hostRewrites = lib.concatMap (host: lib.concatMap (alias: mkRewrite host alias) rewriteAliases) (
+    builtins.attrValues allAddresses.hosts
+  );
+in
 {
   # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file
   services.adguardhome = {
     enable = true;
+    package = unstable.adguardhome;
     host = "0.0.0.0";
     port = 3333;
     mutableSettings = false;
@@ -19,12 +79,9 @@
       };
 
       dns = {
-        bind_hosts = [
-          "127.0.0.1"
-          addresses.network.lan.ipv4.host
-        ]
-        ++ (lib.optional config.services.tailscale.enable addresses.network.tailscale.ipv4.host);
-        #        ++ (lib.optional config.services.zerotierone.enable addresses.network.zerotier.ipv4.host);
+        # Wildcard so plain DNS / DoT / DoQ / DoH stay reachable on the dynamic fallback WAN IP.
+        # Plain DNS on port 53 is gated to internal interfaces by the host firewall.
+        bind_hosts = [ "0.0.0.0" ];
 
         upstream_dns =
           addresses.dns.quad9
@@ -72,45 +129,16 @@
         rewrites = [
           {
             domain = "*.fufu.land";
-            answer = addresses.network.lan.ipv4.host;
+            answer = yirukouLan;
             enabled = true;
           }
           {
             domain = "fufu.land";
-            answer = addresses.network.lan.ipv4.host;
+            answer = yirukouLan;
             enabled = true;
           }
-          {
-            domain = "${addresses.hostName}.${addresses.dns.domain}";
-            answer = addresses.network.tailscale.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "wg.localto.net";
-            answer = "192.168.0.42";
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}.lan";
-            answer = addresses.network.lan.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}";
-            answer = addresses.network.lan.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}.zero";
-            answer = addresses.network.zerotier.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}.ts";
-            answer = addresses.network.tailscale.ipv4.host;
-            enabled = true;
-          }
-        ];
+        ]
+        ++ hostRewrites;
       };
 
       filters = [
@@ -138,7 +166,7 @@
 
       user_rules = [ "||api.miwifi.com^" ];
 
-      tls = {
+      tls = lib.mkIf (config.security.acme.certs ? "fufu.land") {
         enabled = true;
         server_name = "dns.fufu.land";
         port_https = 3443;

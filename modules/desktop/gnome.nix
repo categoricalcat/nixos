@@ -57,8 +57,6 @@
 
     environment.sessionVariables = {
       GNOME_SHELL_SLOWDOWN_FACTOR = "0.3";
-      QT_IM_MODULE = "fcitx";
-      QT_IM_MODULES = "wayland;fcitx";
     };
 
     environment.systemPackages = with pkgs; [

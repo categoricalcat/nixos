@@ -1,13 +1,8 @@
 {
   pkgs,
-  allAddresses,
-  config,
   ...
 }:
 
-let
-  host = config.networking.hostName;
-in
 {
   services.mysql = {
     enable = true;
@@ -17,7 +12,7 @@ in
 
     settings = {
       mysqld = {
-        bind-address = allAddresses.hosts.${host}.network.lan.ipv4.host;
+        bind-address = "0.0.0.0";
       };
     };
   };

@@ -13,7 +13,6 @@
       swww
       xwayland-satellite
       inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
-      # inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell
     ];
 
     programs.niri.enable = true;

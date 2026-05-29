@@ -1,19 +1,27 @@
-_: {
+{ inputs, ... }:
+{
   perSystem =
-    { pkgs, config, ... }:
+    {
+      pkgs,
+      config,
+      ...
+    }:
     let
-      rustPkgs = with pkgs; [
+      unstablePkgs = import ../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
+      rustPkgs = with unstablePkgs; [
         cargo
         rustc
         rustfmt
         clippy
         rust-analyzer
+        nix-tree
+        nix-inspect
       ];
 
       defaultShell = pkgs.mkShell {
         packages = rustPkgs;
         shellHook = ''
-          export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
+          export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
           ${config.pre-commit.devShell.shellHook or ""}
         '';
       };
@@ -27,7 +35,7 @@ _: {
         ];
         shellHook = ''
           echo "Entering ephemeral sandbox as 'none'..."
-          export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
+          export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
 
           exec bwrap \
             --unshare-user --uid 65534 --gid 65534 \
@@ -54,7 +62,7 @@ _: {
       devShells.default = defaultShell;
       devShells.sandbox = sandboxShell;
 
-      #packages.default = defaultShell;
-      #packages.sandbox = sandboxShell;
+      packages.default = defaultShell;
+      packages.sandbox = sandboxShell;
     };
 }
