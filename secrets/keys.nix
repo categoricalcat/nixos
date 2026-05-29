@@ -23,10 +23,6 @@ let
       ageRecipient = "age1u65y7my2zrctutytmhwjdjnrlqvk6x5vs42s4z333wldy9djeywsd63svn";
     };
 
-    # yichuang = {
-    #   sshPublicKey = null;
-    #   ageRecipient = null;
-    # };
   };
 
   users = {
@@ -56,8 +52,8 @@ let
         };
 
         yixiaoqing = {
-          sshPublicKey = null;
-          ageRecipient = null;
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEnmvcucoKU8G0WLIV6NMsen1Es94bC/3yCRwOLEV2mP";
+          ageRecipient = "age1avrhy95azlryttkfxuyu0cf2w00u97fwq04usghqg5sjx8qmg36sp7dm94";
         };
       };
     };
