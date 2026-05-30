@@ -2,7 +2,6 @@
   addresses,
   allAddresses,
   config,
-  pkgs,
   ...
 }:
 
@@ -129,10 +128,6 @@ in
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://${yifuwuqiLan}:5000";
-        };
-        locations."= /" = {
-          alias = "${pkgs.writeTextDir "index.html" (builtins.readFile ./harmonia-dashboard.html)}/";
-          index = "index.html";
         };
       };
 
