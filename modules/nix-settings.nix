@@ -40,7 +40,7 @@ in
         "https://cache.nixos.org/"
       ];
       trusted-public-keys = [
-        "yifuwuqi-cache:k3diDzo5ydrNjlrbZexjTtQxK67HEJYZqGA4r3c7azM=%"
+        "yifuwuqi-cache:k3diDzo5ydrNjlrbZexjTtQxK67HEJYZqGA4r3c7azM="
         "nixos-rocm.cachix.org-1:VEpsf7pRIijjd8csKjFNBGzkBqOmw8H9PRmgAq14LnE"
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
