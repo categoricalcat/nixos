@@ -3,11 +3,13 @@
   lib,
   pkgs,
   inputs,
+  allAddresses,
   ...
 }:
 
 let
   unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
+  yifuwuqiTs = allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.host;
 in
 {
   nix = {
@@ -34,7 +36,8 @@ in
       # download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
 
       substituters = [
-        "https://cache.fufu.land"
+        # "https://cache.fufu.land"  # TODO: re-enable once nginx proxy is verified
+        "http://${yifuwuqiTs}:5000"
         "https://nix-community.cachix.org"
         "https://nixos-rocm.cachix.org"
         "https://cache.nixos.org/"
