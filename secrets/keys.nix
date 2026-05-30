@@ -59,9 +59,6 @@ let
     };
   };
 
-  legacy = {
-    sopsAgeRecipient = "age1gftvv43376wv8djfuntn596pk3mv75dhv5fe99la9q29p4dqldnqqwf45h";
-  };
 in
 {
   paths = {
@@ -72,7 +69,6 @@ in
     sshHostPublicKey = "${keysFolder}/ssh/ssh_host_ed25519_key.pub";
     sopsDir = "${keysFolder}/sops";
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
-    sopsFallbackKeyFile = "${keysFolder}/sops/key.txt";
     userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
     gitSigningKey = homeDir: "${homeDir}/.ssh/id_git_ed25519.pub";
   };
@@ -80,7 +76,6 @@ in
   inherit
     hosts
     users
-    legacy
     ;
 
   sopsAgeRecipients = builtins.filter (x: x != null) [
@@ -92,6 +87,5 @@ in
     users.yi.meshKeys.yitaishi.ageRecipient
     users.yi.meshKeys.yirukou.ageRecipient
     users.yi.meshKeys.yixiaoqing.ageRecipient
-    legacy.sopsAgeRecipient
   ];
 }

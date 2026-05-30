@@ -2,6 +2,7 @@
   addresses,
   allAddresses,
   config,
+  pkgs,
   ...
 }:
 
@@ -119,6 +120,19 @@ in
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Proto $scheme;
           '';
+        };
+      };
+
+      # Harmonia Binary Cache — proxied to yifuwuqi
+      "cache.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:5000";
+        };
+        locations."= /" = {
+          alias = "${pkgs.writeTextDir "index.html" (builtins.readFile ./harmonia-dashboard.html)}/";
+          index = "index.html";
         };
       };
 

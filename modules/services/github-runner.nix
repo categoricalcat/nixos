@@ -18,6 +18,7 @@
       findutils
       gawk
       gzip
+      nix
     ];
   };
 

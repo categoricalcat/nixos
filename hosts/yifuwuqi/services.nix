@@ -22,7 +22,7 @@ in
     # ../../modules/services/localtonet.nix
     ../../modules/services/tailscale.nix
     # ../../modules/services/omada-controller.nix
-    # ../../modules/services/github-runner.nix
+    ../../modules/services/github-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
@@ -30,6 +30,7 @@ in
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
     ../../modules/services/opencode.nix
+    ../../modules/services/harmonia.nix
   ];
 
   services.logrotate = {

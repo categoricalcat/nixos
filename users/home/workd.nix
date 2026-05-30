@@ -10,6 +10,6 @@
   home.homeDirectory = "/home/workd";
 
   home.packages = with pkgs; [
-    nodejs_20
+    nodejs_24
   ];
 }

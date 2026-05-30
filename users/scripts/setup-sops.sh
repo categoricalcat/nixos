@@ -73,6 +73,25 @@ for key in "$MESH_KEY" "$GIT_KEY"; do
     fi
 done
 
+echo "-> generate sops age identity for yi"
+sudo -u yi mkdir -p "$USER_HOME/.config/sops/age"
+if sudo -u yi nix shell nixpkgs#ssh-to-age -c ssh-to-age -private-key -i "$MESH_KEY" > "$USER_HOME/.config/sops/age/keys.txt"; then
+    chown yi:yi "$USER_HOME/.config/sops/age/keys.txt"
+    chmod 0600 "$USER_HOME/.config/sops/age/keys.txt"
+else
+    rm -f "$USER_HOME/.config/sops/age/keys.txt"
+    echo "-> warning: could not derive age identity from mesh key" >&2
+fi
+
+echo "-> generate sops age identity for root"
+mkdir -p /root/.config/sops/age
+if nix shell nixpkgs#ssh-to-age -c ssh-to-age -private-key -i "$HOST_KEY" > /root/.config/sops/age/keys.txt; then
+    chmod 0600 /root/.config/sops/age/keys.txt
+else
+    rm -f /root/.config/sops/age/keys.txt
+    echo "-> warning: could not derive age identity from host key" >&2
+fi
+
 # We are running as root, so we can cat these files safely.
 HOST_PUB=$(cat "$HOST_KEY.pub")
 MESH_PUB=$(cat "$MESH_KEY.pub")
@@ -133,18 +152,14 @@ chown root:wheel /persist/keys/sops
 chmod 0770 /persist/keys/sops
 
 echo "-> syncing secrets to /persist/keys/sops/secrets.yaml"
-if [ -f "secrets/secrets.yaml" ] && [ ! -f "/persist/keys/sops/secrets.yaml" ]; then
-    cp secrets/secrets.yaml /persist/keys/sops/secrets.yaml
+if [ -f "secrets/secrets.yaml" ] && ! cmp -s secrets/secrets.yaml /persist/keys/sops/secrets.yaml; then
+    echo "-> refreshing /persist/keys/sops/secrets.yaml from repo"
+    install -m 0660 -o root -g wheel secrets/secrets.yaml /persist/keys/sops/secrets.yaml
 fi
 
 if [ -f /persist/keys/sops/secrets.yaml ]; then
     chown root:wheel /persist/keys/sops/secrets.yaml
     chmod 0660 /persist/keys/sops/secrets.yaml
-fi
-
-if [ -f /persist/keys/sops/key.txt ]; then
-    chown root:root /persist/keys/sops/key.txt
-    chmod 0600 /persist/keys/sops/key.txt
 fi
 
 echo "-> generate .sops.yaml"

@@ -16,13 +16,9 @@ permissions:
 jobs:
   check:
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@main
-      - uses: cachix/install-nix-action@master
-      - uses: nix-community/cache-nix-action@main
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
       - run: nix fmt --override-input thefiles github:categoricalcat/the.files -- --ci
 
@@ -30,34 +26,26 @@ jobs:
 
   generate-matrix:
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       hosts: ${{ steps.set-matrix.outputs.hosts }}
     steps:
       - uses: actions/checkout@main
-      - uses: cachix/install-nix-action@master
       - id: set-matrix
         run: |
           HOSTS="$(nix eval --override-input thefiles github:categoricalcat/the.files --json .#nixosConfigurations --apply 'cfgs: builtins.attrNames cfgs')"
           echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
 
-      - uses: nix-community/cache-nix-action@main
-        with:
-          primary-key: nix-${{ runner.os }}-${{ join(fromJson(steps.set-matrix.outputs.hosts), '') }}
-
-  eval:
-    needs: generate-matrix
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
+  build:
+    needs: [check, generate-matrix]
+    if: github.actor == github.repository_owner
+    timeout-minutes: 120
+    runs-on: self-hosted
     strategy:
       matrix:
         host: ${{ fromJson(needs.generate-matrix.outputs.hosts) }}
-      fail-fast: false
+      fail-fast: true
     steps:
       - uses: actions/checkout@main
-      - uses: cachix/install-nix-action@master
-      - uses: nix-community/cache-nix-action@main
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
 
-      - run: nix eval --override-input thefiles github:categoricalcat/the.files --raw .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.drvPath
+      - run: nix build --override-input thefiles github:categoricalcat/the.files .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
