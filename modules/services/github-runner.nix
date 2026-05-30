@@ -4,7 +4,7 @@
   services.github-runners."nixos" = {
     enable = true;
     user = "nix-builder";
-    group = "nix-builder";
+    group = "nogroup";
     url = "https://github.com/categoricalcat/nixos";
     tokenFile = config.sops.secrets."tokens/github-runner-nixos".path;
     replace = true;
@@ -39,6 +39,6 @@
   sops.secrets."tokens/github-runner-nixos" = {
     mode = "0640";
     owner = "nix-builder";
-    group = "nix-builder";
+    group = "nogroup";
   };
 }
