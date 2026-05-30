@@ -26,7 +26,7 @@ in
       domain = "*.fufu.land";
       extraDomainNames = [ "fufu.land" ];
       dnsProvider = "cloudflare";
-      credentialsFile = config.sops.secrets.cloudflare_api_token.path;
+      environmentFile = config.sops.secrets.cloudflare_api_token.path;
       extraLegoFlags = acmeResolvers;
       group = "nginx";
     };

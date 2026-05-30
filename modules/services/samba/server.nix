@@ -49,6 +49,7 @@ in
 
   fileSystems."/srv/shares/the.files" = {
     device = "/home/yi/the.files";
+    fsType = "none";
     options = [ "bind" ];
   };
 

@@ -10,7 +10,7 @@
   config = lib.mkIf (config.desktop.environment == "niri") {
     environment.systemPackages = with pkgs; [
       gnome-screenshot
-      swww
+      awww
       xwayland-satellite
       inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];

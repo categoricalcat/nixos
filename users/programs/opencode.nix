@@ -8,7 +8,7 @@ in
     enable = true;
     package = unstable.opencode;
 
-    rules = builtins.readFile ./opencode-rules.md;
+    context = builtins.readFile ./opencode-rules.md;
 
     settings = {
       model = "deepseek/deepseek-v4-flash";

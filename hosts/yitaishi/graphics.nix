@@ -14,8 +14,6 @@ in
       enable = true;
       enable32Bit = true;
 
-      # Keep Mesa/RADV on the NixOS 25.11 defaults for Steam/Proton, while
-      # using unstable ROCm for compute workloads on the RX 7900 XTX.
       extraPackages = with unstable.rocmPackages; [
         clr
         clr.icd
