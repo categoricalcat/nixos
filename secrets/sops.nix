@@ -13,6 +13,7 @@ in
   config = {
     sops.age.sshKeyPaths = [ keys.paths.sshHostKey ];
     sops.age.keyFile = lib.mkIf needsLegacyKey keys.paths.sopsFallbackKeyFile;
+    sops.age.generateKey = !needsLegacyKey;
 
     # This encrypted file is kept outside the flake source, so use the runtime path.
     sops.defaultSopsFile = keys.paths.sopsDefaultFile;
