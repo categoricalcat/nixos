@@ -76,7 +76,7 @@ let
 in
 {
 
-  hosts = rec {
+  hosts = {
     yifuwuqi = rec {
       hostName = "yifuwuqi";
 
@@ -173,7 +173,8 @@ in
         enable = true;
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
-        maxJobs = 8;
+        maxJobs = 16;
+        speedFactor = 80;
       };
 
       containers = rec {
@@ -262,6 +263,7 @@ in
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
+        speedFactor = 100;
       };
     };
 
