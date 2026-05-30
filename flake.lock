@@ -790,10 +790,11 @@
     },
     "thefiles": {
       "locked": {
-        "dirtyRev": "7a191378a1fc6f176a734f0dc6a3b8bcf3589a9b-dirty",
-        "dirtyShortRev": "7a19137-dirty",
-        "lastModified": 1779478377,
+        "lastModified": 1780172016,
         "narHash": "sha256-tPQO1WvKlIhDYQFLibkcLHKLGhc3GVbOfGBw5U1Wqhw=",
+        "ref": "refs/heads/main",
+        "rev": "d1e60c23002a4f8f2d0dbbd48857731056617855",
+        "revCount": 118,
         "type": "git",
         "url": "file:///home/yi/the.files"
       },
