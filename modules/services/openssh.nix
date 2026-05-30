@@ -23,6 +23,9 @@ in
     ]
     ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
 
+    startLimitIntervalSec = 0;
+    serviceConfig.RestartSec = "2s";
+
     preStart = lib.mkBefore ''
       if [ ! -s ${keys.paths.sshHostKey} ]; then
         echo "Missing persisted SSH host key: ${keys.paths.sshHostKey}" >&2
