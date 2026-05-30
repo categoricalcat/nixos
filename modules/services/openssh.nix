@@ -138,7 +138,10 @@ in
         X11Forwarding no
         AllowTcpForwarding no
         AllowAgentForwarding no
+        AllowStreamLocalForwarding no
         PermitTTY no
+        PermitOpen none
+        ForceCommand nix-daemon --stdio
     '';
   };
 }

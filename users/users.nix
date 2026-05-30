@@ -58,7 +58,7 @@ in
         description = "Nix remote builder";
         home = "/var/lib/nix-builder";
         createHome = true;
-        shell = pkgs.bashInteractive;
+        shell = pkgs.bash;
       };
     };
 
