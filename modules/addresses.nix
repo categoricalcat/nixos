@@ -388,4 +388,52 @@ in
       };
     };
   };
+
+  aliases = [
+    {
+      suffix = "lan";
+      path = [
+        "network"
+        "lan"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "local";
+      path = [
+        "network"
+        "lan"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "vpn";
+      path = [
+        "network"
+        "tailscale"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "ts";
+      path = [
+        "network"
+        "tailscale"
+        "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "zero";
+      path = [
+        "network"
+        "zerotier"
+        "ipv4"
+        "host"
+      ];
+    }
+  ];
 }

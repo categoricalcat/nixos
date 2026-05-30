@@ -54,13 +54,6 @@ in
     services.sshd.googleAuthenticator.enable = true;
   };
 
-  programs.ssh = {
-    startAgent = true;
-    # enable = true;
-    agentTimeout = "15m";
-    # addKeysToAgent = "confirm";
-  };
-
   services.fail2ban = {
     enable = true;
     jails = {

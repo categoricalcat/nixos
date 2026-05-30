@@ -11,44 +11,7 @@
 let
   unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
-  rewriteAliases = [
-    {
-      suffix = "lan";
-      path = [
-        "network"
-        "lan"
-        "ipv4"
-        "host"
-      ];
-    }
-    {
-      suffix = "vpn";
-      path = [
-        "network"
-        "tailscale"
-        "ipv4"
-        "host"
-      ];
-    }
-    {
-      suffix = "ts";
-      path = [
-        "network"
-        "tailscale"
-        "ipv4"
-        "host"
-      ];
-    }
-    {
-      suffix = "zero";
-      path = [
-        "network"
-        "zerotier"
-        "ipv4"
-        "host"
-      ];
-    }
-  ];
+
   mkRewrite =
     host: alias:
     let
@@ -59,9 +22,9 @@ let
       inherit answer;
       enabled = true;
     };
-  hostRewrites = lib.concatMap (host: lib.concatMap (alias: mkRewrite host alias) rewriteAliases) (
-    builtins.attrValues allAddresses.hosts
-  );
+  hostRewrites = lib.concatMap (
+    host: lib.concatMap (alias: mkRewrite host alias) allAddresses.aliases
+  ) (builtins.attrValues allAddresses.hosts);
 in
 {
   # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file

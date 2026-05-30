@@ -70,6 +70,7 @@ in
     sopsDir = "${keysFolder}/sops";
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
     userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
+    userGitSshKey = homeDir: "${homeDir}/.ssh/id_git_ed25519";
     gitSigningKey = homeDir: "${homeDir}/.ssh/id_git_ed25519.pub";
   };
 

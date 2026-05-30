@@ -1,13 +1,16 @@
 {
   addresses,
+  allAddresses,
   config,
   lib,
+  inputs,
   ...
 }:
 let
   keys = import ../../secrets/keys.nix;
   listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
   listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
+  dynamicSshConfig = import ../ssh-dynamic.nix { inherit lib allAddresses keys; };
 in
 {
 
@@ -74,53 +77,7 @@ in
         "nix-builder"
       ];
       PermitRootLogin = "no";
-      PasswordAuthentication = true;
-      KbdInteractiveAuthentication = true;
-      ChallengeResponseAuthentication = true;
-      AuthenticationMethods = "publickey keyboard-interactive";
-      MaxAuthTries = 3;
-      LoginGraceTime = 30;
-
-      # GSSAPIAuthentication = false;
-      AllowTcpForwarding = "yes"; # Enable TCP port forwarding
-      AllowAgentForwarding = true; # Allow SSH agent forwarding
-      AllowStreamLocalForwarding = "yes"; # Allow Unix domain socket forwarding
-      PermitTunnel = "yes"; # Allow tun device forwarding (VPN over SSH)
-      GatewayPorts = "yes"; # Allow remote hosts to connect to forwarded ports
-      # Options for GatewayPorts:
-      # - "no" = only loopback addresses can connect (default)
-      # - "yes" = all interfaces can connect
-      # - "clientspecified" = client decides per forwarding
-
-      # Performance optimizations
-      UseDns = false;
-      Compression = false; # Disable compression - it hurts performance on fast networks
-      TCPKeepAlive = true; # Detect dead connections
-      ClientAliveInterval = 30; # Send keepalive every 60 seconds
-      ClientAliveCountMax = 10; # Disconnect after 3 missed keepalives
-
-      # Cipher and algorithm optimizations (fastest first)
-      Ciphers = [
-        "chacha20-poly1305@openssh.com" # Fast on modern CPUs
-        "aes128-gcm@openssh.com" # Hardware accelerated on most CPUs
-        "aes256-gcm@openssh.com" # Secure but slightly slower
-        "aes128-ctr" # Fallback
-        "aes256-ctr" # Fallback
-      ];
-
-      KexAlgorithms = [
-        "sntrup761x25519-sha512@openssh.com" # Post-quantum secure (default in modern OpenSSH)
-        "curve25519-sha256" # Fast and secure
-        "curve25519-sha256@libssh.org" # Alternative implementation
-        "diffie-hellman-group-exchange-sha256"
-      ];
-
-      # Use faster MACs
-      Macs = [
-        "umac-128-etm@openssh.com" # Fastest
-        "hmac-sha2-256-etm@openssh.com" # Good balance
-        "hmac-sha2-512-etm@openssh.com" # More secure but slower
-      ];
+      GatewayPorts = "yes";
     };
 
     # Additional performance settings
@@ -144,4 +101,8 @@ in
         ForceCommand nix-daemon --stdio
     '';
   };
+
+  programs.ssh.extraConfig = builtins.readFile "${inputs.thefiles}/.ssh/config" + ''
+    ${dynamicSshConfig}
+  '';
 }

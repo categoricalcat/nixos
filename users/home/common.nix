@@ -17,6 +17,7 @@
     inputs.thefiles.homeModules.default
     ../programs/git.nix
     ../programs/tui.nix
+    ../programs/ssh
   ];
 
   home.file = {
