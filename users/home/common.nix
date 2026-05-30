@@ -13,6 +13,14 @@
     npm-check-updates
   ];
 
+  programs.zsh = {
+    enable = true;
+    enableCompletion = true;
+    autosuggestion.enable = true;
+    syntaxHighlighting.enable = true;
+    initContent = builtins.readFile "${inputs.thefiles}/.zshrc";
+  };
+
   imports = [
     inputs.thefiles.homeModules.default
     ../programs/git.nix
