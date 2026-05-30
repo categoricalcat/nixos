@@ -21,9 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - run: nix fmt --override-input thefiles github:categoricalcat/the.files -- --ci
+      - run: nix fmt --refresh --override-input thefiles github:categoricalcat/the.files -- --ci
 
-      - run: nix flake check --override-input thefiles github:categoricalcat/the.files --print-build-logs --show-trace
+      - run: nix flake check --refresh --override-input thefiles github:categoricalcat/the.files --print-build-logs --show-trace
 
   generate-matrix:
     if: github.actor == github.repository_owner
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@main
       - id: set-matrix
         run: |
-          HOSTS="$(nix eval --override-input thefiles github:categoricalcat/the.files --json .#nixosConfigurations --apply 'cfgs: builtins.attrNames cfgs')"
+          HOSTS="$(nix eval --refresh --override-input thefiles github:categoricalcat/the.files --json .#nixosConfigurations --apply 'cfgs: builtins.attrNames cfgs')"
           echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
 
   build:
@@ -50,4 +50,4 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - run: nix build --override-input thefiles github:categoricalcat/the.files .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+      - run: nix build --refresh --override-input thefiles github:categoricalcat/the.files .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
