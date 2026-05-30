@@ -3,6 +3,8 @@
 {
   services.github-runners."nixos" = {
     enable = true;
+    user = "nix-builder";
+    group = "nix-builder";
     url = "https://github.com/categoricalcat/nixos";
     tokenFile = config.sops.secrets."tokens/github-runner-nixos".path;
     replace = true;
@@ -22,12 +24,6 @@
     ];
   };
 
-  users.groups.github-runner = { };
-  users.users.github-runner = {
-    isSystemUser = true;
-    group = "github-runner";
-  };
-
   # Ensure runner starts after network and secrets are ready
   systemd.services."github-runner-nixos" = {
     wants = [
@@ -42,7 +38,7 @@
 
   sops.secrets."tokens/github-runner-nixos" = {
     mode = "0640";
-    owner = "github-runner";
-    group = "github-runner";
+    owner = "nix-builder";
+    group = "nix-builder";
   };
 }
