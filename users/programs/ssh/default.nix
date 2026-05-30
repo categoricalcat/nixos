@@ -22,7 +22,7 @@ in
     enable = true;
     enableDefaultConfig = false;
     matchBlocks = {
-      "*" = {};
+      "*" = { };
     };
     extraConfig = builtins.readFile "${inputs.thefiles}/.ssh/config" + ''
       ${dynamicSshConfig}

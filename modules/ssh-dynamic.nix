@@ -1,4 +1,8 @@
-{ lib, allAddresses, keys }:
+{
+  lib,
+  allAddresses,
+  keys,
+}:
 let
   mkSshRewrite =
     host: alias:
