@@ -14,7 +14,7 @@ let
     };
 
     yirukou = {
-      sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPcmdHKr8j7x8uIx4qZ6qJTMS47YGsKHv1udKpR8eRbn";
+      sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPcmdHKr8j7x8uIx4qZ6qJTMS47YGsKHv1udKpR8eRbn root@nixos";
       ageRecipient = "age1netr6u2q9ecz56cslyhka9gqujgdul0zhgrppnnfw0v9wx46f3xqmte9an";
     };
 
@@ -47,8 +47,8 @@ let
         };
 
         yirukou = {
-          sshPublicKey = null;
-          ageRecipient = null;
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJxn53xfvn7s7hceO1LuYveOhWbbLX5fj27fNdR2bbgi yi@yirukou";
+          ageRecipient = "age1qv55r86rg4kdy3vrt8autrl0sz245r6qadzc0dvjsrzw9yjtuusswn0d45";
         };
 
         yixiaoqing = {
