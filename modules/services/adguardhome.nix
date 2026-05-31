@@ -148,7 +148,7 @@ in
 
       log = {
         enabled = true;
-        file = "syslog";
+        file = "";
       };
 
       querylog = {
