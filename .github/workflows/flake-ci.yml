@@ -1,4 +1,4 @@
-name: lucky flake ci
+name: cursed flake ci/cd
 
 on:
   push:
@@ -14,16 +14,46 @@ permissions:
   contents: read
 
 jobs:
+  builders:
+    if: github.actor == github.repository_owner
+    timeout-minutes: 5
+    runs-on: self-hosted
+    outputs:
+      flags: ${{ steps.pings.outputs.flags }}
+    steps:
+      - id: pings
+        run: |
+          check() { ping -c 1 -W 1 "$1.vpn" >/dev/null 2>&1; }
+
+          flags=""
+          for builder in yitaishi; do
+            if check "$builder" && check "$builder"; then
+              line=$(grep "$builder" /etc/nix/machines || true)
+              if [ -n "$line" ]; then
+                flags="$flags $line ;"
+              fi
+            fi
+          done
+
+          if [ -n "$flags" ]; then
+            echo "flags=--builders '$flags'" >> "$GITHUB_OUTPUT"
+          else
+            echo "flags=--builders ''" >> "$GITHUB_OUTPUT"
+          fi
+
   check:
+    needs: [builders]
     if: github.actor == github.repository_owner
     timeout-minutes: 30
     runs-on: self-hosted
+    env:
+      BUILDER_FLAGS: ${{ needs.builders.outputs.flags }}
     steps:
       - uses: actions/checkout@main
 
       - run: nix fmt --refresh --override-input thefiles github:categoricalcat/the.files -- --ci
 
-      - run: nix flake check --refresh --override-input thefiles github:categoricalcat/the.files --print-build-logs --show-trace
+      - run: nix flake check ${{ env.BUILDER_FLAGS }} --refresh --override-input thefiles github:categoricalcat/the.files --print-build-logs --show-trace
 
   generate-matrix:
     if: github.actor == github.repository_owner
@@ -39,10 +69,12 @@ jobs:
           echo "hosts=$HOSTS" >> "$GITHUB_OUTPUT"
 
   build:
-    needs: [check, generate-matrix]
+    needs: [check, builders, generate-matrix]
     if: github.actor == github.repository_owner
     timeout-minutes: 120
     runs-on: self-hosted
+    env:
+      BUILDER_FLAGS: ${{ needs.builders.outputs.flags }}
     strategy:
       matrix:
         host: ${{ fromJson(needs.generate-matrix.outputs.hosts) }}
@@ -50,4 +82,4 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - run: nix build --refresh --override-input thefiles github:categoricalcat/the.files .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+      - run: nix build ${{ env.BUILDER_FLAGS }} --refresh --override-input thefiles github:categoricalcat/the.files .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
