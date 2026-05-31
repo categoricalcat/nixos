@@ -18,8 +18,12 @@
         nix-inspect
       ];
 
+      nixosRebuildWrapper = pkgs.writeShellScriptBin "nixos-rebuild" ''
+        exec command nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
+      '';
+
       defaultShell = pkgs.mkShell {
-        packages = rustPkgs;
+        packages = rustPkgs ++ [ nixosRebuildWrapper ];
         shellHook = ''
           export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
           ${config.pre-commit.devShell.shellHook or ""}

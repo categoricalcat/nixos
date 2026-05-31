@@ -173,7 +173,7 @@
     };
 
     thefiles = {
-      url = "git+file:///home/yi/the.files";
+      url = "github:categoricalcat/the.files";
     };
   };
 }
