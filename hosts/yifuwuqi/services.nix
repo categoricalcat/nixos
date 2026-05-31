@@ -22,7 +22,7 @@ in
     # ../../modules/services/localtonet.nix
     ../../modules/services/tailscale.nix
     # ../../modules/services/omada-controller.nix
-    ../../modules/services/github-runner.nix
+    ../../modules/hercules-ci.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud

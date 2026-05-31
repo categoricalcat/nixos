@@ -34,6 +34,8 @@
         ];
 
         flake = {
+          herculesCI.ciSystems = [ "x86_64-linux" ];
+
           nixosConfigurations = {
             yichuang = nixpkgs-small.lib.nixosSystem {
               specialArgs = { inherit inputs global; };

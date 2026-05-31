@@ -28,10 +28,13 @@ jobs:
           flags=""
           for builder in yitaishi; do
             if check "$builder" && check "$builder"; then
+              echo "$builder online"
               line=$(grep "$builder" /etc/nix/machines || true)
               if [ -n "$line" ]; then
                 flags="$flags $line ;"
               fi
+            else
+              echo "$builder offline"
             fi
           done
 
