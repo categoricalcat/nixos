@@ -786,11 +786,11 @@
     },
     "thefiles": {
       "locked": {
-        "lastModified": 1780186846,
-        "narHash": "sha256-YS4H7n23iCmb6cv4sbBv3SruGmwG4EVJ6SqMhrVGWB8=",
+        "lastModified": 1780244791,
+        "narHash": "sha256-tszaI9feYy20NTrilk7FD+QlmJIZCd1a3ISbq+PvE1o=",
         "owner": "categoricalcat",
         "repo": "the.files",
-        "rev": "4609e67ebd453daee77aee79dc1312971097d44c",
+        "rev": "b17a8a9775d51099468287bdb90831a0c10780bb",
         "type": "github"
       },
       "original": {
