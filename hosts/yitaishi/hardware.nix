@@ -52,4 +52,32 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+
+  fileSystems."/mnt/sda1" = {
+    device = "/dev/disk/by-uuid/8E96675496673C39";
+    fsType = "ntfs";
+    options = [
+      "rw"
+      "uid=1000"
+      "gid=1000"
+      "dmask=022"
+      "fmask=133"
+      "exec"
+      "nofail"
+    ];
+  };
+
+  fileSystems."/mnt/nvme1n1p1" = {
+    device = "/dev/disk/by-uuid/641C61911C615F54";
+    fsType = "ntfs";
+    options = [
+      "rw"
+      "uid=1000"
+      "gid=1000"
+      "dmask=022"
+      "fmask=133"
+      "exec"
+      "nofail"
+    ];
+  };
 }
