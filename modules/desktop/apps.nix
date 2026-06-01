@@ -16,7 +16,7 @@ in
 
     wl-clipboard
 
-    unstable.bitwarden-desktop
+    (unstable.bitwarden-desktop.override { electron_39 = electron; })
     prismlauncher
     gimp
     nautilus
