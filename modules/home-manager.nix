@@ -22,4 +22,9 @@
     imports = [ ../users/home/yi.nix ];
     home.stateVersion = stateVersion;
   };
+
+  users.workd = {
+    imports = [ ../users/home/workd.nix ];
+    home.stateVersion = stateVersion;
+  };
 }

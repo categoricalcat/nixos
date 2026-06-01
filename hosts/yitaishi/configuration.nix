@@ -66,11 +66,6 @@ in
             sleep-inactive-battery-type = "nothing";
           };
         };
-
-        users.workd = {
-          imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = global.homeVersion;
-        };
       };
 
   sops.secrets."tokens/deepseek" = {

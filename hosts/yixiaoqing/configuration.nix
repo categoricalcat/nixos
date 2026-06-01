@@ -46,18 +46,10 @@ in
 
   system.stateVersion = global.version;
 
-  home-manager =
-    lib.recursiveUpdate
-      (mkHome {
-        inherit inputs desktopEnvironment desktopShell;
-        stateVersion = global.homeVersion;
-      })
-      {
-        users.workd = {
-          imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = global.homeVersion;
-        };
-      };
+  home-manager = mkHome {
+    inherit inputs desktopEnvironment desktopShell;
+    stateVersion = global.homeVersion;
+  };
 
   desktop.environment = desktopEnvironment;
   desktop.shell = desktopShell;
