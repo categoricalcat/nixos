@@ -8,6 +8,7 @@
     ../../modules/services/tailscale.nix
     # ../../modules/services/zerotier.nix
     ../../modules/hercules-ci.nix
+    ../../modules/services/lan-mouse.nix
   ];
 
   services.llama-swap-amdgpu = {
@@ -41,4 +42,19 @@
   };
 
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 50052 ];
+
+  services.lan-mouse.settings = {
+    release_bind = [
+      "KeyRightCtrl"
+      "KeyRightalt"
+    ];
+    clients = [
+      {
+        position = "right";
+        hostname = "yixiaoqing";
+        activate_on_startup = true;
+        ips = [ (import ../../modules/addresses.nix).hosts.yixiaoqing.network.tailscale.ipv4.host ];
+      }
+    ];
+  };
 }

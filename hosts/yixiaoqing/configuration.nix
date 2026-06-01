@@ -23,6 +23,7 @@ in
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/common.nix
+    ../../modules/services/lan-mouse.nix
     ../../modules/nix-settings.nix
     ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix
@@ -135,5 +136,11 @@ in
 
     # Swap individual pages instead of clustering reads around zram.
     "vm.page-cluster" = 0;
+  };
+
+  services.lan-mouse.settings = {
+    authorized_fingerprints = {
+      # "yitaishi-fingerprint" = "yitaishi";
+    };
   };
 }
