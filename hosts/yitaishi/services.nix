@@ -7,7 +7,6 @@
     ../../modules/services/ai/llama-swap.nix
     ../../modules/services/tailscale.nix
     # ../../modules/services/zerotier.nix
-    ../../modules/hercules-ci.nix
     ../../modules/services/lan-mouse.nix
   ];
 
