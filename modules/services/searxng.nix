@@ -162,8 +162,14 @@ in
   # reachability AND bootstrap.
   systemd.services.wait-for-tor = {
     description = "Wait for Tor SOCKS to be usable";
-    after = [ "tor.service" ];
-    wants = [ "tor.service" ];
+    after = [
+      "tor.service"
+      "network-online.target"
+    ];
+    wants = [
+      "tor.service"
+      "network-online.target"
+    ];
     before = [ "searx.service" ];
     wantedBy = [ "searx.service" ];
     serviceConfig = {
@@ -172,15 +178,15 @@ in
       TimeoutStartSec = "180s";
       ExecStart = pkgs.writeShellScript "wait-for-tor" ''
         set -eu
-        attempts=60
+        attempts=25
         for i in $(seq 1 $attempts); do
-          if ${pkgs.curl}/bin/curl --silent --fail --max-time 5 \
+          if ${pkgs.curl}/bin/curl --silent --fail --max-time 15 \
               --socks5-hostname 127.0.0.1:9050 \
               https://check.torproject.org/api/ip > /dev/null 2>&1; then
             echo "Tor SOCKS ready after $i attempt(s)"
             exit 0
           fi
-          sleep 2
+          sleep 5
         done
         echo "Tor SOCKS not ready after $attempts attempts" >&2
         exit 1

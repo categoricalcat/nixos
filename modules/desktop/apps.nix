@@ -12,7 +12,7 @@ in
     unstable.vscode-fhs
     unstable.code-cursor-fhs
     unstable.antigravity
-    unstable.discord
+    discord
 
     wl-clipboard
 

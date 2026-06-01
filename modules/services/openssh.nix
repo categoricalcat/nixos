@@ -18,7 +18,6 @@ in
     wants = [ "network-online.target" ];
     after = [
       "network-online.target"
-      "multi-user.target"
       "time-sync.target"
     ]
     ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
@@ -33,6 +32,12 @@ in
         exit 1
       fi
     '';
+  };
+
+  boot.kernel.sysctl = {
+    # Allow sshd to bind to Tailscale IP before tailscaled assigns it
+    "net.ipv4.ip_nonlocal_bind" = 1;
+    "net.ipv6.ip_nonlocal_bind" = 1;
   };
 
   services.openssh = {
