@@ -31,29 +31,52 @@ in
       };
     };
 
-    wireplumber.extraConfig."99-disable-suspend" = {
+    extraConfig.client."99-qbz-bitperfect-audio" = {
+      "stream.rules" = [
+        {
+          matches = [
+            { "application.process.binary" = "qbz"; }
+            { "application.name" = "PipeWire ALSA [qbz]"; }
+          ];
+          actions = {
+            update-props = {
+              "resample.disable" = true;
+              "channelmix.disable" = true;
+            };
+          };
+        }
+      ];
+    };
+
+    wireplumber.extraConfig."99-qbz-dac-audio" = {
       "monitor.alsa.rules" = [
         {
           matches = [
-            { "node.name" = "~alsa_output.*Feixiang_USB_HIFI.*"; }
+            {
+              "node.name" = "alsa_output.usb-Feixiang_USB_HIFI_Audio-01.pro-output-0";
+              "media.class" = "Audio/Sink";
+            }
           ];
           actions = {
             update-props = {
-              "audio.rate" = 192000;
+              "audio.allowed-rates" = [
+                44100
+                48000
+                88200
+                96000
+                176400
+                192000
+              ];
+              "resample.disable" = true;
+              "channelmix.disable" = true;
             };
           };
         }
-        {
-          matches = [
-            { "node.name" = "~alsa_input.*Focusrite_Scarlett_4i4.*"; }
-            { "node.name" = "~alsa_output.*Focusrite_Scarlett_4i4.*"; }
-          ];
-          actions = {
-            update-props = {
-              "audio.rate" = 96000;
-            };
-          };
-        }
+      ];
+    };
+
+    wireplumber.extraConfig."99-disable-suspend" = {
+      "monitor.alsa.rules" = [
         {
           matches = [
             { "node.name" = "~alsa_input.*"; }
@@ -110,6 +133,12 @@ in
       item = "rtprio";
       type = "-";
       value = "95";
+    }
+    {
+      domain = "@audio";
+      item = "nice";
+      type = "-";
+      value = "-11";
     }
     {
       domain = "@audio";
