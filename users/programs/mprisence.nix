@@ -67,6 +67,11 @@ let
       chromium = {
         ignore = false;
       };
+
+      qbz = {
+        ignore = false;
+        allow_streaming = true;
+      };
     };
   };
 in

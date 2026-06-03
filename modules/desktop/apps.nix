@@ -15,6 +15,8 @@ in
     unstable.onlyoffice-desktopeditors
     discord
 
+    unstable.qbz
+
     wl-clipboard
 
     # (unstable.bitwarden-desktop.override { electron_39 = electron; })

@@ -19,6 +19,12 @@ in
     extraConfig.pipewire."10-low-latency" = {
       "context.properties" = {
         "default.clock.rate" = 96000;
+        "default.clock.allowed-rates" = [
+          44100
+          48000
+          96000
+          192000
+        ];
         "default.clock.quantum" = 256;
         "default.clock.min-quantum" = 32;
         "default.clock.max-quantum" = 1024;
@@ -27,6 +33,27 @@ in
 
     wireplumber.extraConfig."99-disable-suspend" = {
       "monitor.alsa.rules" = [
+        {
+          matches = [
+            { "node.name" = "~alsa_output.*Feixiang_USB_HIFI.*"; }
+          ];
+          actions = {
+            update-props = {
+              "audio.rate" = 192000;
+            };
+          };
+        }
+        {
+          matches = [
+            { "node.name" = "~alsa_input.*Focusrite_Scarlett_4i4.*"; }
+            { "node.name" = "~alsa_output.*Focusrite_Scarlett_4i4.*"; }
+          ];
+          actions = {
+            update-props = {
+              "audio.rate" = 96000;
+            };
+          };
+        }
         {
           matches = [
             { "node.name" = "~alsa_input.*"; }

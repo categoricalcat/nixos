@@ -14,57 +14,45 @@ let
     (lib.mapAttrsToList (_: host: host.sshPublicKey))
   ];
 
-  defaultSupportedFeatures = [
-    "nixos-test"
-    "benchmark"
-    "big-parallel"
-    "kvm"
+  # Explicitly define the builders we want to use, skipping the current host if it is one.
+  remoteBuilders = [
+    "yifuwuqi"
+    # "yitaishi"
   ];
 
-  meshNodes = lib.filterAttrs (
-    _name: host:
-    (host.nixBuild.enable or false)
-    && (host.network.tailscale.ipv4.host or null) != null
-    && (host.ssh.listenPort or null) != null
-  ) allAddresses.hosts;
+  activeBuilders = builtins.filter (name: name != config.networking.hostName) remoteBuilders;
 
-  remoteBuilders = lib.filterAttrs (
-    _name: host: (host.nixBuild.remoteBuilder or false) && host.hostName != config.networking.hostName
-  ) meshNodes;
-
-  buildMachines = lib.mapAttrsToList (_name: host: {
-    inherit (host) hostName;
-    inherit (host.nixBuild) systems maxJobs;
-
+  buildMachines = map (name: {
+    hostName = name;
     sshUser = "nix-builder";
     sshKey = builderPrivateKey;
     protocol = "ssh-ng";
-    speedFactor = host.nixBuild.speedFactor or 1;
-    supportedFeatures = host.nixBuild.supportedFeatures or defaultSupportedFeatures;
-  }) remoteBuilders;
+    maxJobs = allAddresses.hosts.${name}.nixBuild.maxJobs;
+    speedFactor = allAddresses.hosts.${name}.nixBuild.speedFactor;
+    supportedFeatures = [
+      "nixos-test"
+      "benchmark"
+      "big-parallel"
+      "kvm"
+    ];
+    systems = allAddresses.hosts.${name}.nixBuild.systems;
+  }) activeBuilders;
 
   sshHostConfig = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (_name: host: ''
-      Host ${host.hostName}
-        HostName ${host.network.tailscale.ipv4.host}
-        Port ${toString host.ssh.listenPort}
+    map (name: ''
+      Host ${name}
+        HostName ${allAddresses.hosts.${name}.network.tailscale.ipv4.host}
+        Port ${toString allAddresses.hosts.${name}.ssh.listenPort}
         User nix-builder
         IdentityFile ${builderPrivateKey}
         IdentitiesOnly yes
         StrictHostKeyChecking accept-new
         ConnectTimeout 3
         ConnectionAttempts 1
-    '') remoteBuilders
+    '') activeBuilders
   );
 in
 {
-  assertions = [
-    {
-      assertion = builtins.hasAttr config.networking.hostName meshNodes;
-      message = "This host imports distributed-builds.nix but is not marked nixBuild.enable in allAddresses.";
-    }
-  ];
-
   users.users.nix-builder.openssh.authorizedKeys.keys = authorizedClientKeys;
 
   nix = {

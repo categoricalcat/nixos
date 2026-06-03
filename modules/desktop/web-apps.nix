@@ -38,11 +38,6 @@ in
       url = "https://web.whatsapp.com";
     };
 
-    tidal = mkWebApp {
-      name = "Tidal";
-      url = "https://tidal.com";
-    };
-
     nix-search = mkWebApp {
       name = "Nix Search";
       url = "https://search.nixos.org/packages";
