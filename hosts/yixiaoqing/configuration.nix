@@ -52,7 +52,9 @@ in
   };
 
   desktop.environment = desktopEnvironment;
-  desktop.monitors = [ ]; # FIXME: add monitor identifiers for yixiaoqing here
+  desktop.monitors = [
+    "SDC-0x00000000"
+  ];
   # desktop.shell = desktopShell;
   desktop.greeter = greeter;
 

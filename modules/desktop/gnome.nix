@@ -28,6 +28,20 @@
         core-developer-tools.enable = false;
         games.enable = false;
       };
+
+      geoclue2 = {
+        enable = true;
+        appConfig."gnome-shell" = {
+          isAllowed = true;
+          isSystem = true;
+          users = [ "1000" ];
+        };
+        appConfig."org.gnome.Weather" = {
+          isAllowed = true;
+          isSystem = true;
+          users = [ "1000" ];
+        };
+      };
     };
 
     xdg.portal = {
@@ -65,7 +79,8 @@
       gnomeExtensions.kimpanel
       gnomeExtensions.pip-on-top
       gnomeExtensions.vitals
-      gnomeExtensions.openmeteoweather
+      gnome-weather
+      gnomeExtensions.weather-oclock
       gnomeExtensions.vertical-workspaces
       gnomeExtensions.mpris-label
       gnomeExtensions.tiling-assistant

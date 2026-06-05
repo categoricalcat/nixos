@@ -71,7 +71,7 @@ in
           kimpanel.extensionUuid
           pip-on-top.extensionUuid
           vitals.extensionUuid
-          openmeteoweather.extensionUuid
+          weather-oclock.extensionUuid
           user-themes.extensionUuid
           vertical-workspaces.extensionUuid
           mpris-label.extensionUuid
@@ -256,15 +256,19 @@ in
         toggle-menu = [ "<Super>v" ];
       };
 
+      "org/gnome/system/location" = {
+        enabled = true;
+      };
+
+      "org/gnome/shell/weather" = {
+        automatic-location = true;
+      };
+
       "org/gnome/shell/extensions/mpris-label" = {
         extension-place = "center";
         max-string-length = 14;
         left-padding = 0;
         right-padding = 0;
-      };
-
-      "org/gnome/shell/extensions/openmeteoweather" = {
-        position = "right";
       };
 
     };
