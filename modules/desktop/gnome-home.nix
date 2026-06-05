@@ -26,14 +26,15 @@ let
       element = "taskbar";
       visible = true;
       position = "stackedTL";
+
     }
     {
-      element = "centerBox";
+      element = "dateMenu";
       visible = true;
       position = "centerMonitor";
     }
     {
-      element = "dateMenu";
+      element = "centerBox";
       visible = true;
       position = "centerMonitor";
     }
@@ -70,7 +71,7 @@ in
           kimpanel.extensionUuid
           pip-on-top.extensionUuid
           vitals.extensionUuid
-          weather-oclock.extensionUuid
+          openmeteoweather.extensionUuid
           user-themes.extensionUuid
           vertical-workspaces.extensionUuid
           mpris-label.extensionUuid
@@ -212,7 +213,7 @@ in
         panel-top-bottom-margins = 0;
         peek-mode = true;
         prefs-opened = false;
-        show-appmenu = false;
+        show-appmenu = true;
         show-apps-icon-side-padding = 4;
         show-favorites = true;
         show-favorites-all-monitors = true;
@@ -253,6 +254,17 @@ in
         history-size = 50;
         notify-on-copy = false;
         toggle-menu = [ "<Super>v" ];
+      };
+
+      "org/gnome/shell/extensions/mpris-label" = {
+        extension-place = "center";
+        max-string-length = 14;
+        left-padding = 0;
+        right-padding = 0;
+      };
+
+      "org/gnome/shell/extensions/openmeteoweather" = {
+        position = "right";
       };
 
     };

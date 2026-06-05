@@ -2,11 +2,15 @@
   inputs,
   pkgs,
   lib,
+  config,
+  options,
   ...
 }:
 
 let
-  themeAssets = import ./theme-assets.nix { inherit inputs pkgs; };
+  disableHinting = config.networking.hostName == "yixiaoqing";
+  themeAssets = import ./theme-assets.nix { inherit inputs pkgs disableHinting; };
+  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
   fonts = {
@@ -16,8 +20,8 @@ in
 
       antialias = true;
       hinting = {
-        enable = false;
-        style = "none";
+        enable = !disableHinting;
+        style = if disableHinting then "none" else "slight";
       };
       subpixel = {
         rgba = "rgb";
@@ -28,7 +32,18 @@ in
     fontDir.enable = true;
     enableDefaultPackages = false;
 
-    inherit (themeAssets.fonts) packages;
+    packages =
+      themeAssets.fonts.packages
+      ++ lib.optionals (options ? desktop) (
+        with unstable;
+        [
+          dejavu_fonts
+          freefont_ttf
+          gyre-fonts
+          liberation_ttf
+          unifont
+          noto-fonts-color-emoji
+        ]
+      );
   };
-
 }

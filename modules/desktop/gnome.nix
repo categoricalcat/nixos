@@ -65,7 +65,7 @@
       gnomeExtensions.kimpanel
       gnomeExtensions.pip-on-top
       gnomeExtensions.vitals
-      gnomeExtensions.weather-oclock
+      gnomeExtensions.openmeteoweather
       gnomeExtensions.vertical-workspaces
       gnomeExtensions.mpris-label
       gnomeExtensions.tiling-assistant
