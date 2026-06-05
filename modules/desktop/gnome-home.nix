@@ -240,7 +240,7 @@ in
         fixed-widths = true;
         hide-icons = false;
         hot-sensors = [
-          "__temperature_max__"
+          "__temperature_avg__"
           "_processor_usage_"
           "_memory_usage_"
         ];
@@ -261,7 +261,7 @@ in
       };
 
       "org/gnome/shell/weather" = {
-        automatic-location = true;
+        automatic-location = osConfig.networking.hostName != "yitaishi";
       };
 
       "org/gnome/shell/extensions/mpris-label" = {

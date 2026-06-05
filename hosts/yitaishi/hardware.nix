@@ -54,7 +54,7 @@
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   fileSystems."/mnt/sda1" = {
-    device = "/dev/disk/by-uuid/8E96675496673C39";
+    device = "/dev/disk/by-uuid/2325B2053D2BBAD3";
     fsType = "ntfs";
     options = [
       "rw"
