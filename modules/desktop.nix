@@ -52,6 +52,18 @@
       default = "turmoil accompanies every great change";
       description = "Greeting text for greeters and display managers that support one.";
     };
+
+    desktop.monitors = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Monitor list. Currently, for dash-to-panel.
+
+        useful:
+        dconf read /org/gnome/shell/extensions/dash-to-panel/panel-sizes
+        awk -F'[<>]' '/<vendor>/{v=$3} /<product>/{print "\"" v "-" $3 "\""}' ~/.config/monitors.xml | sort -u
+      '';
+    };
   };
 
   imports = [

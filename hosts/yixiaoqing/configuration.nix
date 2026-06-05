@@ -7,8 +7,8 @@
 }:
 
 let
-  desktopEnvironment = "niri";
-  desktopShell = "dms";
+  desktopEnvironment = "gnome";
+  #desktopShell = "dms";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
@@ -47,18 +47,19 @@ in
   system.stateVersion = global.version;
 
   home-manager = mkHome {
-    inherit inputs desktopEnvironment desktopShell;
+    inherit inputs desktopEnvironment;
     stateVersion = global.homeVersion;
   };
 
   desktop.environment = desktopEnvironment;
-  desktop.shell = desktopShell;
+  desktop.monitors = [ ]; # FIXME: add monitor identifiers for yixiaoqing here
+  # desktop.shell = desktopShell;
   desktop.greeter = greeter;
 
   console.keyMap = "br-abnt2";
   services.xserver.xkb = {
     layout = "br";
-    variant = "thinkpad";
+    model = "thinkpad";
   };
 
   security.polkit.enable = true;

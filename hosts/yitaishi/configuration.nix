@@ -46,27 +46,10 @@ in
 
   system.stateVersion = version;
 
-  home-manager =
-    lib.recursiveUpdate
-      (mkHome {
-        inherit inputs desktopEnvironment;
-        stateVersion = global.homeVersion;
-      })
-      {
-        users.yi.dconf.settings = {
-          "org/gnome/desktop/session" = {
-            idle-delay = inputs.home-manager.lib.hm.gvariant.mkUint32 0;
-          };
-
-          "org/gnome/settings-daemon/plugins/power" = {
-            idle-dim = false;
-            sleep-inactive-ac-timeout = 0;
-            sleep-inactive-ac-type = "nothing";
-            sleep-inactive-battery-timeout = 0;
-            sleep-inactive-battery-type = "nothing";
-          };
-        };
-      };
+  home-manager = mkHome {
+    inherit inputs desktopEnvironment;
+    stateVersion = global.homeVersion;
+  };
 
   sops.secrets."tokens/deepseek" = {
     owner = config.users.users.yi.name;
@@ -75,6 +58,11 @@ in
   };
 
   desktop.environment = desktopEnvironment;
+  desktop.monitors = [
+    "GSM-0x000083cb"
+    "AUS-S2LMQS085997"
+    "GSM-0x01010101"
+  ];
   desktop.greeter = greeter;
 
   console.keyMap = "us-acentos";

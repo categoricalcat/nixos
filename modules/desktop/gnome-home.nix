@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  osConfig,
+  ...
+}:
 
 let
   panelElements = [
@@ -56,18 +61,21 @@ in
     settings = {
       "org/gnome/shell" = {
         disable-user-extensions = false;
+        disable-extension-version-validation = true;
         enabled-extensions = with pkgs.gnomeExtensions; [
           appindicator.extensionUuid
           clipboard-indicator.extensionUuid
           dash-to-panel.extensionUuid
           gtile.extensionUuid
           kimpanel.extensionUuid
-          media-controls.extensionUuid
           pip-on-top.extensionUuid
-          vertical-workspaces.extensionUuid
           vitals.extensionUuid
           weather-oclock.extensionUuid
           user-themes.extensionUuid
+          vertical-workspaces.extensionUuid
+          mpris-label.extensionUuid
+          tiling-assistant.extensionUuid
+          impatience.extensionUuid
         ];
 
         favorite-apps = [
@@ -112,10 +120,8 @@ in
       };
 
       "org/gnome/shell/extensions/vertical-workspaces" = {
-        animation-speed-factor = 30;
+        animation-speed-factor = 50;
         ws-max-spacing = 16;
-        ws-thumbnail-scale = 16;
-        secondary-ws-thumbnail-scale = 16;
         ws-switcher-mode = 1;
       };
 
@@ -131,6 +137,18 @@ in
         night-light-enabled = false;
         night-light-schedule-automatic = true;
         night-light-temperature = lib.hm.gvariant.mkUint32 3700;
+      };
+
+      "org/gnome/desktop/session" = lib.mkIf (osConfig.networking.hostName == "yitaishi") {
+        idle-delay = lib.hm.gvariant.mkUint32 0;
+      };
+
+      "org/gnome/settings-daemon/plugins/power" = lib.mkIf (osConfig.networking.hostName == "yitaishi") {
+        idle-dim = false;
+        sleep-inactive-ac-timeout = 0;
+        sleep-inactive-ac-type = "nothing";
+        sleep-inactive-battery-timeout = 0;
+        sleep-inactive-battery-type = "nothing";
       };
 
       "org/gnome/shell/extensions/dash-to-panel" = {
@@ -180,17 +198,16 @@ in
         leftbox-padding = 4;
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
-        panel-anchors = ''{"AUS-S2LMQS085997":"MIDDLE","GSM-0x000083cb":"MIDDLE"}'';
-        panel-element-positions = builtins.toJSON {
-          "AUS-S2LMQS085997" = panelElements;
-          "GSM-0x000083cb" = panelElements;
-        };
+        panel-anchors = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: "MIDDLE"));
+        panel-element-positions = builtins.toJSON (
+          lib.genAttrs osConfig.desktop.monitors (_m: panelElements)
+        );
         panel-element-positions-monitors-sync = true;
-        panel-lengths = ''{"AUS-S2LMQS085997":100,"GSM-0x000083cb":100}'';
-        panel-positions = ''{"AUS-S2LMQS085997":"TOP","GSM-0x000083cb":"TOP"}'';
+        panel-lengths = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: 100));
+        panel-positions = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: "TOP"));
         panel-side-margins = 4;
         panel-side-padding = 4;
-        panel-sizes = ''{"AUS-S2LMQS085997":28,"GSM-0x000083cb":28}'';
+        panel-sizes = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: 28));
         panel-top-bottom-padding = 0;
         panel-top-bottom-margins = 0;
         peek-mode = true;
@@ -215,25 +232,6 @@ in
         tray-padding = 4;
         window-preview-animation-time = 80;
         window-preview-title-position = "TOP";
-      };
-
-      "org/gnome/shell/extensions/mediacontrols" = {
-        elements-order = [
-          "ICON"
-          "LABEL"
-          "CONTROLS"
-        ];
-        extension-index = lib.hm.gvariant.mkUint32 0;
-        extension-position = "Center";
-        labels-order = [
-          "TITLE"
-          "-"
-          "ARTIST"
-        ];
-        scroll-labels = true;
-        show-control-icons = true;
-        show-label = true;
-        show-player-icon = true;
       };
 
       "org/gnome/shell/extensions/vitals" = {

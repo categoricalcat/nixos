@@ -39,5 +39,9 @@
         };
       };
     };
+
+    systemd.user.services.xdg-desktop-portal-gnome.environment = {
+      XDG_CURRENT_DESKTOP = "GNOME";
+    };
   };
 }

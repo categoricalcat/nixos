@@ -54,10 +54,6 @@
       gnome-user-docs
     ];
 
-    environment.sessionVariables = {
-      GNOME_SHELL_SLOWDOWN_FACTOR = "0.3";
-    };
-
     environment.systemPackages = with pkgs; [
       dconf2nix
       dconf-editor
@@ -67,11 +63,13 @@
       gnomeExtensions.dash-to-panel
       gnomeExtensions.gtile
       gnomeExtensions.kimpanel
-      gnomeExtensions.media-controls
       gnomeExtensions.pip-on-top
-      gnomeExtensions.vertical-workspaces
       gnomeExtensions.vitals
       gnomeExtensions.weather-oclock
+      gnomeExtensions.vertical-workspaces
+      gnomeExtensions.mpris-label
+      gnomeExtensions.tiling-assistant
+      gnomeExtensions.impatience
     ];
 
     home-manager.sharedModules = [ ./gnome-home.nix ];
