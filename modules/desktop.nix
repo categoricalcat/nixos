@@ -5,6 +5,23 @@
   ...
 }:
 
+let
+  keyboardProfiles = {
+    us = {
+      layout = "us";
+      variant = "intl";
+      keyMap = "us-acentos";
+      fcitxLayout = "us-intl";
+    };
+    br = {
+      layout = "br";
+      variant = "thinkpad";
+      keyMap = "br-abnt2";
+      fcitxLayout = "br";
+    };
+  };
+  kb = keyboardProfiles.${config.desktop.keyboard};
+in
 {
   options = {
     desktop.environment = lib.mkOption {
@@ -64,6 +81,15 @@
         awk -F'[<>]' '/<vendor>/{v=$3} /<product>/{print "\"" v "-" $3 "\""}' ~/.config/monitors.xml | sort -u
       '';
     };
+
+    desktop.keyboard = lib.mkOption {
+      type = lib.types.enum [
+        "us"
+        "br"
+      ];
+      default = "us";
+      description = "Keyboard layout profile";
+    };
   };
 
   imports = [
@@ -91,6 +117,11 @@
       pulse.enable = true;
     };
 
+    console.keyMap = kb.keyMap;
+    services.xserver.xkb = {
+      inherit (kb) layout variant;
+    };
+
     programs = {
       xwayland.enable = true;
       dconf.enable = true;
@@ -115,27 +146,23 @@
           EnumerateSkipFirst = false;
         };
 
-        inputMethod =
-          let
-            kbLayout = if config.desktop.environment == "gnome" then "us-intl" else "br";
-            kbIM = "keyboard-${kbLayout}";
-          in
-          {
-            "Groups/0" = {
-              Name = "Default";
-              "Default Layout" = kbLayout;
-              DefaultIM = kbIM;
-            };
-            "Groups/0/Items/0" = {
-              Name = kbIM;
-              Layout = "";
-            };
-            "Groups/0/Items/1" = {
-              Name = "pinyin";
-              Layout = "";
-            };
-            GroupOrder."0" = "Default";
+        inputMethod = {
+          "Groups/0" = {
+            Name = "Default";
+            "Default Layout" = kb.fcitxLayout;
+            DefaultIM = "keyboard-${kb.fcitxLayout}";
           };
+          "Groups/0/Items/0" = {
+            Name = "keyboard-${kb.fcitxLayout}";
+            Layout = kb.layout;
+            Variant = kb.variant;
+          };
+          "Groups/0/Items/1" = {
+            Name = "pinyin";
+            Layout = "";
+          };
+          GroupOrder."0" = "Default";
+        };
       };
     };
 

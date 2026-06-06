@@ -36,6 +36,10 @@
           mods = "Control|Shift";
           action = "SpawnNewInstance";
         }
+        {
+          key = "F11";
+          action = "ToggleFullscreen";
+        }
       ];
     };
   };

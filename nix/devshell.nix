@@ -26,7 +26,6 @@
         packages = rustPkgs ++ [ nixosRebuildWrapper ];
         shellHook = ''
           export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
-          ${config.pre-commit.devShell.shellHook or ""}
         '';
       };
 

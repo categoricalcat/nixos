@@ -65,11 +65,7 @@ in
   ];
   desktop.greeter = greeter;
 
-  console.keyMap = "us-acentos";
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "intl";
-  };
+  desktop.keyboard = "us";
 
   environment.systemPackages = [ pkgs.xclip ];
 

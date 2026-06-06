@@ -1,3 +1,30 @@
 {
-    "nixEnvSelector.suggestion": false
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nil",
+  "nix.serverSettings": {
+    "nil": {
+      "formatting": {
+        "command": [
+          "treefmt",
+          "--stdin",
+          "{file}"
+        ]
+      },
+      "nix": {
+        "flake": {
+          "autoArchive": true,
+          "autoEvalInputs": true
+        }
+      }
+    }
+  },
+  "[nix]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "jnoortheen.nix-ide"
+  },
+  "nixEnvSelector.suggestion": false,
+  "files.associations": {
+    "*.nix": "nix",
+    "flake.lock": "json"
+  }
 }

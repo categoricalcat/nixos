@@ -58,11 +58,7 @@ in
   # desktop.shell = desktopShell;
   desktop.greeter = greeter;
 
-  console.keyMap = "br-abnt2";
-  services.xserver.xkb = {
-    layout = "br";
-    model = "thinkpad";
-  };
+  desktop.keyboard = "br";
 
   security.polkit.enable = true;
 

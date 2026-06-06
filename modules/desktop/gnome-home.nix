@@ -54,6 +54,11 @@ let
       position = "stackedBR";
     }
   ];
+
+  xkb = osConfig.services.xserver.xkb;
+  kbLayout = xkb.layout or "us";
+  kbVariant = xkb.variant or "";
+  kbSourceId = if kbVariant != "" then "${kbLayout}+${kbVariant}" else kbLayout;
 in
 
 {
@@ -96,6 +101,13 @@ in
         clock-show-weekday = true;
         enable-animations = true;
       };
+
+      "org/gnome/desktop/input-sources".sources = [
+        (lib.hm.gvariant.mkTuple [
+          "xkb"
+          kbSourceId
+        ])
+      ];
 
       "org/gnome/desktop/wm/preferences" = {
         button-layout = "appmenu:minimize,maximize,close";
@@ -258,6 +270,8 @@ in
 
       "org/gnome/system/location" = {
         enabled = true;
+        max-accuracy-level = "exact";
+        automatic-location = true;
       };
 
       "org/gnome/shell/weather" = {
@@ -275,7 +289,7 @@ in
   };
 
   stylix.targets.gtk.extraCss = ''
-    headerbar { min-height: 28px; padding: 2px 4px; }
+    headerbar { min-height: 28px; padding: 2px 4px; border-radius: 8px; }
   '';
 
   gtk.enable = true;

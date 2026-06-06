@@ -5,3 +5,4 @@ docs/book/
 .pre-commit-config.yaml
 .cursor/plans
 .sops.yaml
+.direnv
