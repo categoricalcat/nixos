@@ -22,24 +22,23 @@ in
     ./addresses.nix
     ../../secrets/sops.nix
     ../../users/users.nix
-    ../../modules/common.nix
-    ../../modules/services/lan-mouse.nix
-    ../../modules/nix-settings.nix
-    ../../modules/distributed-builds.nix
-    ../../modules/boot-common.nix
-    ../../modules/networking/ipv6.nix
-    ../../modules/services/samba/client.nix
-    ../../modules/packages.nix
-    ../../modules/locale.nix
-    ../../modules/fonts.nix
-    ../../modules/desktop.nix
-    # ../../modules/services/zerotier.nix
-    ../../modules/services/tailscale.nix
-    # ../../modules/services/power-profiles-daemon.nix
-    ../../modules/services/tlp.nix
-    ../../modules/services/openssh.nix
-
     ../../modules/fido2.nix
+    ../../modules/fonts.nix
+    ../../modules/common.nix
+    ../../modules/locale.nix
+    ../../modules/desktop.nix
+    ../../modules/packages.nix
+    ../../modules/boot-common.nix
+    ../../modules/nix-settings.nix
+    ../../modules/services/tlp.nix
+    ../../modules/networking/ipv6.nix
+    ../../modules/services/openssh.nix
+    ../../modules/distributed-builds.nix
+    ../../modules/services/lan-mouse.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/services/samba/client.nix
+    # ../../modules/services/power-profiles-daemon.nix
+    # ../../modules/services/zerotier.nix
   ];
 
   security.fido2.enable = true;
@@ -52,13 +51,21 @@ in
   };
 
   desktop.environment = desktopEnvironment;
-  desktop.monitors = [
-    "SDC-0x00000000"
-  ];
   desktop.shell = desktopShell;
   desktop.greeter = greeter;
-
   desktop.keyboard = "br";
+  desktop.monitors = [
+    {
+      name = "eDP-1";
+      mode = "2880x1800@60";
+      scale = 1.5;
+      transform = "normal";
+      position = {
+        x = 1280;
+        y = 0;
+      };
+    }
+  ];
 
   security.polkit.enable = true;
 

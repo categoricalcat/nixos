@@ -24,6 +24,9 @@ in
   ]
   ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "noctalia") [
     ../programs/noctalia.nix
+  ]
+  ++ lib.optionals (desktopEnvironment == "niri") [
+    ../programs/niri.nix
   ];
 
   home.username = "yi";

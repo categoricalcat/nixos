@@ -211,16 +211,22 @@ in
         leftbox-padding = 4;
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
-        panel-anchors = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: "MIDDLE"));
+        panel-anchors = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: "MIDDLE")
+        );
         panel-element-positions = builtins.toJSON (
-          lib.genAttrs osConfig.desktop.monitors (_m: panelElements)
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: panelElements)
         );
         panel-element-positions-monitors-sync = true;
-        panel-lengths = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: 100));
-        panel-positions = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: "TOP"));
+        panel-lengths = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: 100)
+        );
+        panel-positions = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: "TOP")
+        );
         panel-side-margins = 4;
         panel-side-padding = 4;
-        panel-sizes = builtins.toJSON (lib.genAttrs osConfig.desktop.monitors (_m: 28));
+        panel-sizes = builtins.toJSON (lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: 28));
         panel-top-bottom-padding = 0;
         panel-top-bottom-margins = 0;
         peek-mode = true;

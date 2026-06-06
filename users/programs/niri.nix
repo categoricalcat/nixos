@@ -1,0 +1,29 @@
+{
+  lib,
+  osConfig,
+  inputs,
+  ...
+}:
+
+let
+  cfg = osConfig.desktop.monitors;
+
+  generateOutput = m: ''
+    output "${m.name}" {
+      ${lib.optionalString (m.mode != null) ''mode "${m.mode}"''}
+      scale ${toString m.scale}
+      transform "${m.transform}"
+      ${lib.optionalString (
+        m.position != null
+      ) "position x=${toString m.position.x} y=${toString m.position.y}"}
+    }
+  '';
+
+  outputsKdl = lib.concatStringsSep "\n" (map generateOutput cfg);
+in
+{
+  xdg.configFile."niri/config.kdl".text = ''
+    ${builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl"}
+    ${outputsKdl}
+  '';
+}

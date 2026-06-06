@@ -9,6 +9,7 @@
 
 let
   desktopEnvironment = "gnome";
+  desktopShell = "none";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
   inherit (global) version;
@@ -16,30 +17,30 @@ in
 {
   imports = [
     ./boot.nix
+    ./power.nix
+    ./gaming.nix
     ./hardware.nix
     ./graphics.nix
-    ./gaming.nix
-    ./networking.nix
-    ./power.nix
-    ./addresses.nix
     ./services.nix
-    ../../secrets/sops.nix
+    ./addresses.nix
+    ./networking.nix
     ../../users/users.nix
-    ../../modules/common.nix
-    ../../modules/hardware/fanatec
-    ../../modules/nix-settings.nix
-    ../../modules/distributed-builds.nix
-    ../../modules/boot-common.nix
-    ../../modules/networking/ipv6.nix
-    ../../modules/services/samba/client.nix
-    ../../modules/packages.nix
-    ../../modules/locale.nix
+    ../../secrets/sops.nix
     ../../modules/fonts.nix
-    ../../modules/desktop.nix
-    ../../modules/services/openssh.nix
-    ../../modules/services/tailscale.nix
     ../../modules/fido2.nix
     ../../modules/audio.nix
+    ../../modules/common.nix
+    ../../modules/locale.nix
+    ../../modules/packages.nix
+    ../../modules/desktop.nix
+    ../../modules/boot-common.nix
+    ../../modules/hardware/fanatec
+    ../../modules/nix-settings.nix
+    ../../modules/networking/ipv6.nix
+    ../../modules/services/openssh.nix
+    ../../modules/distributed-builds.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/services/samba/client.nix
   ];
 
   security.fido2.enable = true;
@@ -58,14 +59,38 @@ in
   };
 
   desktop.environment = desktopEnvironment;
-  desktop.monitors = [
-    "GSM-0x000083cb"
-    "AUS-S2LMQS085997"
-    "GSM-0x01010101"
-  ];
+  desktop.shell = desktopShell;
   desktop.greeter = greeter;
-
   desktop.keyboard = "us";
+  desktop.monitors = [
+    {
+      name = "GSM-0x000083cb";
+      mode = "2560x1080@74.991";
+      position = {
+        x = 0;
+        y = 2160;
+      };
+      scale = 1.0;
+    }
+    {
+      name = "AUS-S2LMQS085997";
+      mode = "1920x1080@239.760";
+      position = {
+        x = 2560;
+        y = 2160;
+      };
+      scale = 1.0;
+    }
+    {
+      name = "GSM-0x01010101";
+      mode = "3840x2160@120.000";
+      position = {
+        x = 640;
+        y = 0;
+      };
+      scale = 1.0;
+    }
+  ];
 
   environment.systemPackages = [ pkgs.xclip ];
 
