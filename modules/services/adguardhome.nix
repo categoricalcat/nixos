@@ -79,7 +79,9 @@ in
         serve_http3 = true;
 
         cache_enabled = true;
-        cache_size = 5000000;
+        cache_size = 20000000;
+        cache_ttl_min = 300;
+        cache_ttl_max = 86400;
         cache_optimistic = true;
       };
 
@@ -154,13 +156,13 @@ in
       querylog = {
         enabled = true;
         file_enabled = true;
-        interval = "2160h";
+        interval = "720h";
         size_memory = 10485760; # 10MiB
       };
 
       statistics = {
         enabled = true;
-        interval = "336h";
+        interval = "720h";
       };
     };
   };
@@ -174,5 +176,9 @@ in
     ]
     ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
     #++ (lib.optional config.services.zerotierone.enable "zerotierone.service");
+
+    environment = {
+      GOMEMLIMIT = "2560MiB";
+    };
   };
 }
