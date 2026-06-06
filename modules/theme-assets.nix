@@ -1,7 +1,6 @@
 {
   inputs,
   pkgs,
-  disableHinting ? false,
 }:
 
 let
@@ -22,7 +21,7 @@ in
 
   fonts = rec {
     mapleMono = {
-      package = if disableHinting then unstable.maple-mono.NF-CN-unhinted else unstable.maple-mono.NF-CN;
+      package = unstable.maple-mono.NF-CN-unhinted;
       name = "Maple Mono NF CN";
     };
 

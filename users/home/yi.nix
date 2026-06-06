@@ -45,5 +45,11 @@ in
       haskell-language-server
       stack
       ghcid
+    ]
+    ++ lib.optionals (desktopEnvironment != null) [
+      smile
+      wtype
+      ksnip
+      wl-clipboard
     ];
 }

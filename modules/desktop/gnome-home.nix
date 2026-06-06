@@ -138,6 +138,10 @@ in
         ws-switcher-mode = 1;
       };
 
+      "org/gnome/shell/keybindings" = {
+        show-screenshot-ui = [ "<Shift><Super>s" ];
+      };
+
       # Input and touchpad
       "org/gnome/desktop/peripherals/touchpad" = {
         tap-to-click = true;
@@ -289,6 +293,26 @@ in
         max-string-length = 14;
         left-padding = 0;
         right-padding = 0;
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys" = {
+        mic-mute = [ "F12" ];
+        custom-keybindings = [
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+        ];
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+        binding = "<Super>period";
+        command = "smile";
+        name = "Smile Emoji Picker";
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
+        binding = "Print";
+        command = "ksnip -r";
+        name = "Ksnip Screenshot";
       };
 
     };

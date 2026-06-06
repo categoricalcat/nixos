@@ -2,17 +2,19 @@
   inputs,
   pkgs,
   lib,
-  config,
   options,
   ...
 }:
 
 let
-  disableHinting = config.networking.hostName == "yixiaoqing";
-  themeAssets = import ./theme-assets.nix { inherit inputs pkgs disableHinting; };
+  themeAssets = import ./theme-assets.nix { inherit inputs pkgs; };
   unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
+  environment.variables = {
+    FREETYPE_PROPERTIES = "cff:no-stem-darkening=0 autofitter:no-stem-darkening=0 type1:no-stem-darkening=0";
+  };
+
   fonts = {
     fontconfig = {
       enable = true;
@@ -20,12 +22,13 @@ in
 
       antialias = true;
       hinting = {
-        enable = !disableHinting;
-        style = if disableHinting then "none" else "slight";
+        enable = false;
+        style = "none";
       };
+
       subpixel = {
-        rgba = "rgb";
-        lcdfilter = "light";
+        rgba = "none";
+        lcdfilter = "none";
       };
     };
 

@@ -25,5 +25,10 @@ in
   xdg.configFile."niri/config.kdl".text = ''
     ${builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl"}
     ${outputsKdl}
+    binds {
+      Mod+Period { spawn "smile"; }
+      Print { spawn "ksnip" "-r"; }
+      F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    }
   '';
 }
