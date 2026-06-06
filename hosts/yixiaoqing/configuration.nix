@@ -38,7 +38,7 @@ in
     ../../modules/services/tailscale.nix
     ../../modules/services/samba/client.nix
     # ../../modules/services/power-profiles-daemon.nix
-    # ../../modules/services/zerotier.nix
+    ../../modules/services/netbird.nix
   ];
 
   security.fido2.enable = true;

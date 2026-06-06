@@ -9,7 +9,7 @@ let
   addresses = import ../../addresses.nix;
 
   hasTailscale = config.services.tailscale.enable;
-  hasZerotier = config.services.zerotierone.enable;
+  hasNetbird = config.services.netbird.enable;
 
   credentialsFile = "/etc/samba/credentials/yi";
   mountCommonOptions = [
@@ -56,26 +56,26 @@ in
     ];
   };
 
-  # ZeroTier Samba mounts — only on hosts with ZeroTier enabled
-  fileSystems."/mnt/smb/zero/share" = lib.mkIf hasZerotier {
-    device = "//${addresses.hosts.yifuwuqi.network.zerotier.ipv4.host}/share";
+  # Netbird Samba mounts — only on hosts with Netbird enabled
+  fileSystems."/mnt/smb/nb/share" = lib.mkIf hasNetbird {
+    device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/share";
     fsType = "cifs";
     options = mountCommonOptions ++ [
-      "x-systemd.after=zerotierone.service"
-      "x-systemd.requires=zerotierone.service"
+      "x-systemd.after=netbird.service"
+      "x-systemd.requires=netbird.service"
     ];
   };
 
-  fileSystems."/mnt/smb/zero/the.files" = lib.mkIf hasZerotier {
-    device = "//${addresses.hosts.yifuwuqi.network.zerotier.ipv4.host}/the.files";
+  fileSystems."/mnt/smb/nb/the.files" = lib.mkIf hasNetbird {
+    device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/the.files";
     fsType = "cifs";
     options = mountCommonOptions ++ [
-      "x-systemd.after=zerotierone.service"
-      "x-systemd.requires=zerotierone.service"
+      "x-systemd.after=netbird.service"
+      "x-systemd.requires=netbird.service"
     ];
   };
 
-  systemd.services.cifs-lazy-umount = lib.mkIf (hasTailscale || hasZerotier) {
+  systemd.services.cifs-lazy-umount = lib.mkIf (hasTailscale || hasNetbird) {
     description = "Lazy-unmount CIFS shares before VPN/network shutdown";
     wantedBy = [ "multi-user.target" ];
     after =
@@ -84,10 +84,10 @@ in
         "mnt-smb-share.mount"
         "mnt-smb-the.files.mount"
       ]
-      ++ lib.optionals hasZerotier [
-        "zerotierone.service"
-        "mnt-smb-zero-share.mount"
-        "mnt-smb-zero-the.files.mount"
+      ++ lib.optionals hasNetbird [
+        "netbird.service"
+        "mnt-smb-nb-share.mount"
+        "mnt-smb-nb-the.files.mount"
       ];
     serviceConfig = {
       Type = "oneshot";

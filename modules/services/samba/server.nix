@@ -3,7 +3,7 @@ _:
 let
   addresses = import ../../addresses.nix;
   tailscaleCidr = addresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr;
-  zeroCidr = addresses.hosts.yifuwuqi.network.zerotier.ipv4.cidr;
+  nbCidr = addresses.hosts.yifuwuqi.network.netbird.ipv4.cidr;
   lanCidr = addresses.hosts.yirukou.network.lan.ipv4.cidr;
 in
 {
@@ -13,7 +13,7 @@ in
 
     settings = {
       global = {
-        "hosts allow" = "${lanCidr} ${tailscaleCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
+        "hosts allow" = "${lanCidr} ${tailscaleCidr} ${nbCidr} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
         "load printers" = "no";
         "printing" = "bsd";

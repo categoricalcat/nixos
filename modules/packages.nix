@@ -14,7 +14,6 @@ in
     killall
     zsh
     cloudflared
-    zerotierone
 
     # System utilities
     # rocmSupport=true patches in the rpath so btop dlopens librocm_smi64

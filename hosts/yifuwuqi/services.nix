@@ -16,7 +16,7 @@ in
     ../../modules/services/openssh.nix
     ../../modules/services/adguardhome.nix
     ../../modules/services/cloudflared.nix
-    # ../../modules/services/zerotier.nix
+    ../../modules/services/netbird.nix
     ../../modules/services/ai/llama-swap.nix
     # ../../modules/services/playit-agent.nix
     # ../../modules/services/localtonet.nix

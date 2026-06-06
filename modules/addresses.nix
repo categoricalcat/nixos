@@ -88,16 +88,11 @@ in
 
       network = {
 
-        zerotier = {
-          interface = "zt0";
-          ipv6 = rec {
-            host = "fd00::1"; # Using ULA for VPN
-            prefixLength = 64;
-            address = "${host}/${builtins.toString prefixLength}";
-          };
+        netbird = {
+          interface = "wt0";
           ipv4 = rec {
-            cidr = "10.0.0.0/24";
-            host = "10.0.0.1";
+            cidr = "100.85.0.0/24";
+            host = "100.85.0.1";
             prefixLength = 24;
             address = "${host}/${builtins.toString prefixLength}";
           };
@@ -208,6 +203,16 @@ in
       hostName = "yixiaoqing";
 
       network = {
+        netbird = {
+          interface = "wt0";
+          ipv4 = rec {
+            cidr = "100.85.0.0/24";
+            host = "100.85.0.3";
+            prefixLength = 24;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+        };
+
         tailscale = {
           interface = "tailscale0";
           ipv4 = rec {
@@ -239,6 +244,16 @@ in
       hostName = "yitaishi";
 
       network = {
+        netbird = {
+          interface = "wt0";
+          ipv4 = rec {
+            cidr = "100.85.0.0/24";
+            host = "100.85.0.4";
+            prefixLength = 24;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+        };
+
         tailscale = {
           interface = "tailscale0";
           ipv4 = rec {
@@ -285,6 +300,16 @@ in
       // sharedDnsUpstreams;
 
       network = {
+        netbird = {
+          interface = "wt0";
+          ipv4 = rec {
+            cidr = "100.85.0.0/24";
+            host = "100.85.0.2";
+            prefixLength = 24;
+            address = "${host}/${builtins.toString prefixLength}";
+          };
+        };
+
         wan = {
           primary = {
             interface = "enp7s0";
@@ -427,10 +452,10 @@ in
       ];
     }
     {
-      suffix = "zero";
+      suffix = "nb";
       path = [
         "network"
-        "zerotier"
+        "netbird"
         "ipv4"
         "host"
       ];

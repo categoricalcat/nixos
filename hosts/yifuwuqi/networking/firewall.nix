@@ -10,7 +10,7 @@ let
   containerSourceSubnets = nftSet addresses.containers.isolation.sourceSubnets;
   privateDestinationSubnets = nftSet addresses.containers.isolation.blockedDestinationSubnets;
   trustedHostDestinations = nftSet [
-    addresses.network.zerotier.ipv4.host
+    addresses.network.netbird.ipv4.host
     addresses.network.lan.ipv4.host
     allAddresses.hosts.yirukou.network.lan.ipv4.host
   ];

@@ -4,6 +4,7 @@
   imports = [
     ../../modules/services/openssh.nix
     ../../modules/services/tailscale.nix
+    ../../modules/services/netbird.nix
     ../../modules/services/samba/client.nix
     ../../modules/services/adguardhome.nix
     ../../modules/services/nginx-proxy.nix
