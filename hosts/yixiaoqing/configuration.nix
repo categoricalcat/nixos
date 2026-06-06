@@ -7,8 +7,8 @@
 }:
 
 let
-  desktopEnvironment = "gnome";
-  #desktopShell = "dms";
+  desktopEnvironment = "niri";
+  desktopShell = "dms";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
@@ -55,7 +55,7 @@ in
   desktop.monitors = [
     "SDC-0x00000000"
   ];
-  # desktop.shell = desktopShell;
+  desktop.shell = desktopShell;
   desktop.greeter = greeter;
 
   desktop.keyboard = "br";

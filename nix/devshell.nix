@@ -19,7 +19,7 @@
       ];
 
       nixosRebuildWrapper = pkgs.writeShellScriptBin "nixos-rebuild" ''
-        exec command nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
+        exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
       '';
 
       defaultShell = pkgs.mkShell {
