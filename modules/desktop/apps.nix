@@ -25,6 +25,7 @@ in
     nautilus
     unstable.vial
     unstable.obsidian
+    unstable.obs-studio
     # unstable.nextcloud-client
   ];
 
