@@ -82,6 +82,7 @@ in
           mpris-label.extensionUuid
           tiling-assistant.extensionUuid
           impatience.extensionUuid
+          valent.extensionUuid
         ];
 
         favorite-apps = [

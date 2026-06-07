@@ -150,6 +150,7 @@ in
     ./desktop/apps.nix
     ./desktop/greetd.nix
     ./desktop/ly.nix
+    ./desktop/valent.nix
   ];
 
   config = {
