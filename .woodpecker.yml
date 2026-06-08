@@ -1,5 +1,14 @@
+clone:
+  - name: clone
+    image: woodpeckerci/plugin-git
+    settings:
+      lfs: false
+
 when:
-  - event: [manual, push, cron]
+  - event: push
+    branch: [main, develop]
+  - event: pull_request
+  - event: [manual, cron]
 
 steps:
   - name: notify-pending

@@ -62,7 +62,7 @@ Woodpecker repository secrets:
 | Secret | Purpose | How to obtain |
 | --- | --- | --- |
 | `attic_token` | Push token for Attic cache `yi` | Same as SOPS `tokens/attic-push-token` |
-| `github_status_token` | Token used by `ci/github-status.sh` to set GitHub commit status | GitHub PAT with commit status write permission |
+| `github_status_token` | Token used by `ci/github-status.sh` to set GitHub commit status | See [Woodpecker Bootstrap](#woodpecker-bootstrap) |
 
 ## Generate SOPS Secrets
 
@@ -179,9 +179,7 @@ Open `ci.fufu.land`.
    - `attic_token`: same value as SOPS `tokens/attic-push-token`
    - `github_status_token`: GitHub token allowed to write commit statuses
 
-For `github_status_token`, use a fine-grained GitHub token for
-`categoricalcat/nixos` with commit status write permission if available. A
-classic token with `repo:status` is the fallback for status updates.
+For `github_status_token`, use a fine-grained GitHub PAT (**Developer Settings -> Personal access tokens**) restricted to your repository with **Commit statuses: Read and write** permission. *(Fallback: A classic token with `repo:status`)*.
 
 ## Trigger Tokens
 
