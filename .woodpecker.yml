@@ -19,17 +19,47 @@ steps:
       GITHUB_STATUS_TOKEN:
         from_secret: github_status_token
 
-  - name: build-and-push
+  - name: generate-hosts
+    image: bash
+    commands:
+      - |
+        set -euo pipefail
+        thefiles='--override-input thefiles github:categoricalcat/the.files'
+        nix eval --refresh $thefiles --json .#nixosConfigurations --apply 'c: builtins.attrNames c' | jq -r '.[]' > .hosts
+        echo "Discovered hosts:"
+        cat .hosts
+
+  - name: fmt
+    image: bash
+    commands:
+      - nix fmt -- --ci
+
+  - name: flake-check
+    image: bash
+    commands:
+      - nix flake check --print-build-logs --show-trace
+
+  - name: build
+    image: bash
+    commands:
+      - |
+        set -euo pipefail
+        thefiles='--override-input thefiles github:categoricalcat/the.files'
+        while read -r h; do
+          echo "=== Building $h ==="
+          nix build --refresh $thefiles --print-build-logs ".#nixosConfigurations.$h.config.system.build.toplevel" --out-link "result-$h"
+        done < .hosts
+
+  - name: push
     image: bash
     commands:
       - attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
       - |
         set -euo pipefail
-        thefiles='--override-input thefiles github:categoricalcat/the.files'
-        for h in $(nix eval --refresh $thefiles --json .#nixosConfigurations --apply 'c: builtins.attrNames c' | jq -r '.[]'); do
-          nix build --refresh $thefiles --print-build-logs ".#nixosConfigurations.$h.config.system.build.toplevel" --out-link "result-$h"
+        while read -r h; do
+          echo "=== Pushing $h ==="
           attic push "$ATTIC_CACHE_NAME" "result-$h"
-        done
+        done < .hosts
     environment:
       ATTIC_TOKEN:
         from_secret: attic_token
