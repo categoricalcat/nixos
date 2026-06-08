@@ -1,11 +1,21 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  allAddresses,
+  ...
+}:
 
+let
+  internalHost = config.networking.hostName;
+  repo = "categoricalcat/nixos";
+  services = allAddresses.hosts.yifuwuqi.services;
+in
 {
   services.github-runners."nixos" = {
     enable = true;
     user = "nix-builder";
     group = "nogroup";
-    url = "https://github.com/categoricalcat/nixos";
+    url = "https://github.com/${repo}";
     tokenFile = config.sops.secrets."tokens/github-runner-nixos".path;
     replace = true;
     extraLabels = [
@@ -14,17 +24,23 @@
     extraPackages = with pkgs; [
       bash
       coreutils
+      curl
       git
       gnugrep
       gnused
       findutils
       gawk
       gzip
+      jq
       nix
     ];
+    extraEnvironment = {
+      FORGEJO_INTERNAL_URL = "http://${internalHost}:${toString services.forgejo.httpPort}";
+      WOODPECKER_INTERNAL_URL = "http://${internalHost}:${toString services.woodpecker.httpPort}";
+      GITHUB_REPO = repo;
+    };
   };
 
-  # Ensure runner starts after network and secrets are ready
   systemd.services."github-runner-nixos" = {
     wants = [
       "network-online.target"

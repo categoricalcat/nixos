@@ -7,6 +7,16 @@
 
 let
   yifuwuqiLan = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
+  yifuwuqiServices = allAddresses.hosts.yifuwuqi.services;
+  trustedProxyCidrs = [
+    allAddresses.hosts.yirukou.network.lan.ipv4.cidr
+    allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
+    allAddresses.hosts.yifuwuqi.network.netbird.ipv4.cidr
+  ];
+  restrictedProxyConfig = ''
+    ${builtins.concatStringsSep "\n" (map (cidr: "allow ${cidr};") trustedProxyCidrs)}
+    deny all;
+  '';
   acmeResolvers = map (resolver: "--dns.resolvers=${resolver}") (
     addresses.dns.fallbackServers or [ "9.9.9.9:53" ]
   );
@@ -112,7 +122,6 @@ in
       "search.fufu.land" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
-        basicAuthFile = config.sops.secrets."services/htpasswd".path;
         locations."/" = {
           proxyPass = "http://${yifuwuqiLan}:8888";
           extraConfig = ''
@@ -122,12 +131,37 @@ in
         };
       };
 
-      # Harmonia Binary Cache — proxied to yifuwuqi
-      "cache.fufu.land" = {
+      # Attic Binary Cache — proxied to yifuwuqi
+      "${yifuwuqiServices.attic.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:5000";
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.attic.port}";
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+
+      # Forgejo git forge — proxied to yifuwuqi
+      "${yifuwuqiServices.forgejo.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.forgejo.httpPort}";
+          extraConfig = ''
+            client_max_body_size 512M;
+            ${restrictedProxyConfig}
+          '';
+        };
+      };
+
+      # Woodpecker CI — proxied to yifuwuqi
+      "${yifuwuqiServices.woodpecker.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.woodpecker.httpPort}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
         };
       };
 

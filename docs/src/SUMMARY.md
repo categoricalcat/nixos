@@ -12,5 +12,6 @@
 
 - [Secrets And Host Keys](services/secrets.md)
 - [Nix Build Host And Mesh](services/nix-build-cache.md)
+- [CI and Binary Cache](services/ci-cache.md)
 - [Monitoring](services/monitoring.md)
 - [AI and ROCm](services/ai-rocm.md)
