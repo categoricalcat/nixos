@@ -24,10 +24,10 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsS -X POST -H "Authorization: token $FORGEJO_TOKEN" \
-            "$FORGEJO_INTERNAL_URL/api/v1/repos/$GITHUB_REPO/mirror-sync"
+            "$FORGEJO_INTERNAL_URL/api/v1/repos/$FORGEJO_REPO/mirror-sync"
           for _ in $(seq 1 60); do
             cur=$(curl -fsS -H "Authorization: token $FORGEJO_TOKEN" \
-              "$FORGEJO_INTERNAL_URL/api/v1/repos/$GITHUB_REPO/branches/$BRANCH" | jq -r .commit.id)
+              "$FORGEJO_INTERNAL_URL/api/v1/repos/$FORGEJO_REPO/branches/$BRANCH" | jq -r .commit.id)
             if [ "$cur" = "$SHA" ]; then
               break
             fi
@@ -38,7 +38,7 @@ jobs:
             exit 1
           fi
           rid=$(curl -fsS -H "Authorization: Bearer $WOODPECKER_TOKEN" \
-            "$WOODPECKER_INTERNAL_URL/api/repos/lookup/$GITHUB_REPO" | jq -r .id)
+            "$WOODPECKER_INTERNAL_URL/api/repos/lookup/$FORGEJO_REPO" | jq -r .id)
           curl -fsS -X POST -H "Authorization: Bearer $WOODPECKER_TOKEN" \
             "$WOODPECKER_INTERNAL_URL/api/repos/$rid/pipelines" \
             -d "{\"branch\":\"$BRANCH\"}"

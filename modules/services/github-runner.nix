@@ -7,6 +7,7 @@
 
 let
   repo = "categoricalcat/nixos";
+  forgejoRepo = "yi/nixos";
   services = allAddresses.hosts.yifuwuqi.services;
 
   # Idiomatic Nix: generate a script to export our dynamic environment variables
@@ -14,6 +15,7 @@ let
   setupCiEnv = pkgs.writeShellScriptBin "setup-ci-env" ''
     echo "FORGEJO_INTERNAL_URL=https://${services.forgejo.domain}" >> "$GITHUB_ENV"
     echo "WOODPECKER_INTERNAL_URL=https://${services.woodpecker.domain}" >> "$GITHUB_ENV"
+    echo "FORGEJO_REPO=${forgejoRepo}" >> "$GITHUB_ENV"
     echo "GITHUB_REPO=${repo}" >> "$GITHUB_ENV"
   '';
 in
