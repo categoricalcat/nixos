@@ -9,6 +9,14 @@ let
   internalHost = config.networking.hostName;
   repo = "categoricalcat/nixos";
   services = allAddresses.hosts.yifuwuqi.services;
+
+  # Idiomatic Nix: generate a script to export our dynamic environment variables
+  # to the GitHub Actions runner environment.
+  setupCiEnv = pkgs.writeShellScriptBin "setup-ci-env" ''
+    echo "FORGEJO_INTERNAL_URL=http://${internalHost}:${toString services.forgejo.httpPort}" >> "$GITHUB_ENV"
+    echo "WOODPECKER_INTERNAL_URL=http://${internalHost}:${toString services.woodpecker.httpPort}" >> "$GITHUB_ENV"
+    echo "GITHUB_REPO=${repo}" >> "$GITHUB_ENV"
+  '';
 in
 {
   services.github-runners."nixos" = {
@@ -33,12 +41,8 @@ in
       gzip
       jq
       nix
+      setupCiEnv
     ];
-    extraEnvironment = {
-      FORGEJO_INTERNAL_URL = "http://${internalHost}:${toString services.forgejo.httpPort}";
-      WOODPECKER_INTERNAL_URL = "http://${internalHost}:${toString services.woodpecker.httpPort}";
-      GITHUB_REPO = repo;
-    };
   };
 
   systemd.services."github-runner-nixos" = {

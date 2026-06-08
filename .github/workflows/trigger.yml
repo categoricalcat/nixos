@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 10
     runs-on: self-hosted
     steps:
+      - name: load nix environment
+        run: setup-ci-env
       - name: sync mirror and trigger woodpecker
         env:
           FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
