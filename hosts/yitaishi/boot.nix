@@ -40,5 +40,9 @@ in
 
   boot.loader.systemd-boot.enable = lib.mkForce false;
 
+  boot.initrd.systemd.settings.Manager = {
+    DefaultTimeoutStopSec = "10s";
+  };
+
   environment.systemPackages = [ pkgs.sbctl ];
 }

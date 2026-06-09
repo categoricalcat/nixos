@@ -3,6 +3,7 @@
   inputs,
   lib,
   global,
+  allAddresses,
   ...
 }:
 
@@ -137,6 +138,11 @@ in
   };
 
   services.lan-mouse.settings = {
+    left = {
+      hostname = "${allAddresses.hosts.yitaishi.hostName}.vpn";
+      activate_on_startup = true;
+      ips = [ allAddresses.hosts.yitaishi.network.tailscale.ipv4.host ];
+    };
     authorized_fingerprints = {
       # "yitaishi-fingerprint" = "yitaishi";
     };

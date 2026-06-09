@@ -15,3 +15,7 @@
 - [CI and Binary Cache](services/ci-cache.md)
 - [Monitoring](services/monitoring.md)
 - [AI and ROCm](services/ai-rocm.md)
+
+# Hardware
+
+- [USB Boot Delays](hardware/usb-boot-delays.md)

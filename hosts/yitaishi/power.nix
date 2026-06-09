@@ -83,11 +83,6 @@ in
       HandleSuspendKey = "ignore";
       HandleHibernateKey = "ignore";
     };
-
-    udev.extraRules = ''
-      ACTION=="add|change", SUBSYSTEM=="usb", TEST=="power/control", ATTR{power/control}="on"
-      ACTION=="add|change", SUBSYSTEM=="pci", TEST=="power/control", ATTR{power/control}="on"
-    '';
   };
 
   powerManagement = {

@@ -55,7 +55,7 @@
 
   fileSystems."/mnt/sda1" = {
     device = "/dev/disk/by-uuid/2325B2053D2BBAD3";
-    fsType = "ntfs";
+    fsType = "ntfs3";
     options = [
       "rw"
       "uid=1000"
@@ -64,12 +64,14 @@
       "fmask=007"
       "exec"
       "nofail"
+      "x-systemd.automount"
+      "noauto"
     ];
   };
 
   fileSystems."/mnt/nvme1n1p1" = {
     device = "/dev/disk/by-uuid/641C61911C615F54";
-    fsType = "ntfs";
+    fsType = "ntfs3";
     options = [
       "rw"
       "uid=1000"
@@ -78,6 +80,8 @@
       "fmask=007"
       "exec"
       "nofail"
+      "x-systemd.automount"
+      "noauto"
     ];
   };
 }

@@ -1,5 +1,6 @@
 {
   addresses,
+  allAddresses,
   ...
 }:
 {
@@ -47,13 +48,10 @@
       "KeyRightCtrl"
       "KeyRightalt"
     ];
-    clients = [
-      {
-        position = "right";
-        hostname = "yixiaoqing";
-        activate_on_startup = true;
-        ips = [ (import ../../modules/addresses.nix).hosts.yixiaoqing.network.tailscale.ipv4.host ];
-      }
-    ];
+    right = {
+      hostname = "${allAddresses.hosts.yixiaoqing.hostName}.vpn";
+      activate_on_startup = true;
+      ips = [ allAddresses.hosts.yixiaoqing.network.tailscale.ipv4.host ];
+    };
   };
 }

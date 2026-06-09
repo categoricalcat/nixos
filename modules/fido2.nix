@@ -16,6 +16,7 @@ in
   };
 
   config = mkIf cfg.enable {
+    users.groups.plugdev = { };
     security = {
       pam = {
         u2f = {
