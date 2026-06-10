@@ -6,8 +6,14 @@
       ...
     }:
     let
-      unstablePkgs = import ../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
-      rustPkgs = with unstablePkgs; [
+      _pkgs = pkgs;
+    in
+    let
+      pkgs = import ../modules/nixpkgs-unstable.nix {
+        inherit inputs;
+        pkgs = _pkgs;
+      };
+      rustPkgs = with pkgs; [
         cargo
         rustc
         rustfmt
@@ -38,7 +44,7 @@
       defaultShell = pkgs.mkShell {
         packages = rustPkgs ++ nixDevPkgs ++ [ nixosRebuildWrapper ];
         shellHook = ''
-          export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
+          export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
         '';
       };
 
@@ -51,7 +57,7 @@
         ];
         shellHook = ''
           echo "Entering ephemeral sandbox as 'none'..."
-          export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
+          export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
 
           exec bwrap \
             --unshare-user --uid 65534 --gid 65534 \

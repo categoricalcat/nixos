@@ -38,13 +38,13 @@ steps:
     image: bash
     depends_on: [fmt]
     commands:
-      - statix -- check .
+      - nix develop --command statix check .
 
   - name: deadnix
     image: bash
     depends_on: [statix]
     commands:
-      - deadnix -- --fail .
+      - nix develop --command deadnix --fail .
 
   - name: flake-check
     image: bash
