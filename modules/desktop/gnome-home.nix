@@ -114,6 +114,13 @@ in
         button-layout = "appmenu:minimize,maximize,close";
       };
 
+      "org/gnome/desktop/wm/keybindings" = {
+        switch-windows = [ "<Alt>Tab" ];
+        switch-windows-backward = [ "<Shift><Alt>Tab" ];
+        switch-applications = [ "<Super>Tab" ];
+        switch-applications-backward = [ "<Shift><Super>Tab" ];
+      };
+
       "org/gnome/settings-daemon/plugins/xsettings" = {
         overrides = lib.hm.gvariant.mkArray "{sv}" [
           (lib.hm.gvariant.mkDictionaryEntry [

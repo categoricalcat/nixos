@@ -27,6 +27,8 @@
         exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
       '';
 
+      inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./inspect.sh);
+
       nixDevPkgs = with pkgs; [
         statix # Lints and suggestions for Nix
         deadnix # Nix dead code locator
@@ -47,6 +49,7 @@
           ++ nixDevPkgs
           ++ [
             nixosRebuildWrapper
+            inspectWrapper
           ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"

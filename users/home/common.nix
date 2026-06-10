@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   inputs,
   config,
@@ -6,6 +7,25 @@
 }:
 let
   unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
+
+  flakeLock = builtins.fromJSON (builtins.readFile ../../flake.lock);
+  rootInputs = flakeLock.nodes.root.inputs;
+
+  paths = lib.mapAttrs (
+    name: nodeName:
+    let
+      node = flakeLock.nodes.${nodeName}.original or { };
+    in
+    if node ? owner && node ? repo then
+      "inputs/${node.owner}/${node.repo}" + lib.optionalString (node ? ref) "/${node.ref}"
+    else
+      "inputs/${name}"
+  ) rootInputs;
+
+  homeInputFiles = lib.mapAttrs' (name: _: {
+    name = paths.${name};
+    value.source = inputs.${name};
+  }) rootInputs;
 in
 {
   imports = [
@@ -23,11 +43,8 @@ in
       npm-check-updates
     ];
 
-    file = {
-      "NixOS/nixpkgs".source = inputs.nixpkgs;
-      "nix-community/home-manager".source = inputs.home-manager;
-      "AvengeMedia/DankMaterialShell".source = inputs.dms;
-    };
+    # Link every root flake input under ~/inputs for quick inspection and reuse.
+    file = homeInputFiles;
 
     sessionVariables = {
       TERMINFO = "/run/current-system/sw/share/terminfo";
