@@ -22,6 +22,11 @@ let
 
   activeBuilders = builtins.filter (name: name != config.networking.hostName) remoteBuilders;
 
+  configuredBuilders = builtins.filter (name: name != config.networking.hostName) [
+    "yifuwuqi"
+    "yitaishi"
+  ];
+
   buildMachines = map (name: {
     hostName = name;
     sshUser = "nix-builder";
@@ -49,7 +54,7 @@ let
         StrictHostKeyChecking accept-new
         ConnectTimeout 3
         ConnectionAttempts 1
-    '') activeBuilders
+    '') configuredBuilders
   );
 in
 {

@@ -56,13 +56,7 @@ steps:
     image: bash
     depends_on: [flake-check, generate-hosts]
     commands:
-      - |
-        set -euo pipefail
-        thefiles='--override-input thefiles github:categoricalcat/the.files'
-        while read -r h; do
-          echo "=== Building $h ==="
-          nix build --refresh $thefiles --print-build-logs ".#nixosConfigurations.$h.config.system.build.toplevel" --out-link "result-$h"
-        done < .hosts
+      - ci/build.sh
 
   - name: push
     image: bash
@@ -72,6 +66,7 @@ steps:
       - |
         set -euo pipefail
         while read -r h; do
+          echo
           echo "=== Pushing $h ==="
           attic push "$ATTIC_CACHE_NAME" "result-$h"
         done < .hosts
