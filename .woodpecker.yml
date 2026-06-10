@@ -13,7 +13,6 @@ when:
 steps:
   - name: notify-pending
     image: bash
-    depends_on: [ clone ]
     commands:
       - ci/github-status.sh pending
     environment:
@@ -22,7 +21,6 @@ steps:
 
   - name: generate-hosts
     image: bash
-    depends_on: [ clone ]
     commands:
       - |
         set -euo pipefail
@@ -33,7 +31,6 @@ steps:
 
   - name: fmt
     image: bash
-    depends_on: [ clone ]
     commands:
       - nix fmt -- --ci
 
@@ -95,7 +92,6 @@ steps:
 
   - name: notify-failure
     image: bash
-    depends_on: [ clone ]
     when:
       - status: [failure]
     commands:
