@@ -42,7 +42,12 @@
       ];
 
       defaultShell = pkgs.mkShell {
-        packages = rustPkgs ++ nixDevPkgs ++ [ nixosRebuildWrapper ];
+        packages =
+          rustPkgs
+          ++ nixDevPkgs
+          ++ [
+            nixosRebuildWrapper
+          ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
         '';
