@@ -21,8 +21,22 @@
         exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
       '';
 
+      nixDevPkgs = with pkgs; [
+        statix # Lints and suggestions for Nix
+        deadnix # Nix dead code locator
+        nixpkgs-hammering # Linter for Nixpkgs packages
+        nil # Nix language server
+        nixd # Nix language server (with statix/deadnix support)
+        nixfmt # Official RFC-166 Nix formatter
+        nh # Nix Helper - nicer CLI for nixos-rebuild
+        direnv # Environment switcher for shell
+        nix-update # Swiss-knife for updating nix packages
+        nix-init # Generator for Nix packages from URLs
+        comma # Run software without installing it (, <pkg>)
+      ];
+
       defaultShell = pkgs.mkShell {
-        packages = rustPkgs ++ [ nixosRebuildWrapper ];
+        packages = rustPkgs ++ nixDevPkgs ++ [ nixosRebuildWrapper ];
         shellHook = ''
           export RUST_SRC_PATH="${unstablePkgs.rustPlatform.rustLibSrc}"
         '';

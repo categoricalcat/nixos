@@ -5,9 +5,9 @@ let
   unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = with unstable; [
     emacs-nox
-    unstable.cursor-cli
+    cursor-cli
 
     gcc
     gnumake
@@ -24,19 +24,25 @@ in
     wget
 
     # Development tools
-    deadnix
+    deadnix # Nix dead code locator
     dig
     fd
     gh
     git
     k6
-    nil
-    nixd
-    nixfmt
+    nil # Nix language server
+    nixd # Nix language server (with statix/deadnix support)
+    nixfmt # Official RFC-166 Nix formatter
+    nixpkgs-hammering # Linter for Nixpkgs packages
+    nh # Nix Helper - nicer CLI for nixos-rebuild
+    direnv # Environment switcher for shell
+    nix-update # Swiss-knife for updating nix packages
+    nix-init # Generator for Nix packages from URLs
+    comma # Run software without installing it (, <pkg>)
     nftables
     rclone
     sops
-    statix
+    statix # Lints and suggestions for Nix
     tree
 
     # Shell and related tools

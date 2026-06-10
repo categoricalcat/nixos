@@ -13,6 +13,7 @@ when:
 steps:
   - name: notify-pending
     image: bash
+    depends_on: [ clone ]
     commands:
       - ci/github-status.sh pending
     environment:
@@ -21,6 +22,7 @@ steps:
 
   - name: generate-hosts
     image: bash
+    depends_on: [ clone ]
     commands:
       - |
         set -euo pipefail
@@ -31,16 +33,31 @@ steps:
 
   - name: fmt
     image: bash
+    depends_on: [ clone ]
     commands:
       - nix fmt -- --ci
 
+  - name: statix
+    image: bash
+    depends_on: [ fmt ]
+    commands:
+      - nix run nixpkgs#statix -- check .
+
+  - name: deadnix
+    image: bash
+    depends_on: [ statix ]
+    commands:
+      - nix run nixpkgs#deadnix -- --fail .
+
   - name: flake-check
     image: bash
+    depends_on: [ deadnix ]
     commands:
       - nix flake check --print-build-logs --show-trace
 
   - name: build
     image: bash
+    depends_on: [ flake-check, generate-hosts ]
     commands:
       - |
         set -euo pipefail
@@ -52,6 +69,7 @@ steps:
 
   - name: push
     image: bash
+    depends_on: [ build ]
     commands:
       - attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
       - |
@@ -66,6 +84,7 @@ steps:
 
   - name: notify-success
     image: bash
+    depends_on: [ push ]
     when:
       - status: [success]
     commands:
@@ -76,6 +95,7 @@ steps:
 
   - name: notify-failure
     image: bash
+    depends_on: [ clone ]
     when:
       - status: [failure]
     commands:

@@ -71,25 +71,25 @@ in
     };
   };
 
-  home.activation.makeDmsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    # settings.json
-    target_settings="$HOME/.config/DankMaterialShell/settings.json"
-    if [ -L "$target_settings" ]; then
-      store_path=$(readlink -f "$target_settings")
-      rm -f "$target_settings"
-      cp "$store_path" "$target_settings"
-      chmod u+w "$target_settings"
-    fi
+  # home.activation.makeDmsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+  #   # settings.json
+  #   target_settings="$HOME/.config/DankMaterialShell/settings.json"
+  #   if [ -L "$target_settings" ]; then
+  #     store_path=$(readlink -f "$target_settings")
+  #     rm -f "$target_settings"
+  #     cp "$store_path" "$target_settings"
+  #     chmod u+w "$target_settings"
+  #   fi
 
-    # session.json
-    target_session="$HOME/.local/state/DankMaterialShell/session.json"
-    if [ -L "$target_session" ]; then
-      store_path=$(readlink -f "$target_session")
-      rm -f "$target_session"
-      cp "$store_path" "$target_session"
-      chmod u+w "$target_session"
-    fi
-  '';
+  #   # session.json
+  #   target_session="$HOME/.local/state/DankMaterialShell/session.json"
+  #   if [ -L "$target_session" ]; then
+  #     store_path=$(readlink -f "$target_session")
+  #     rm -f "$target_session"
+  #     cp "$store_path" "$target_session"
+  #     chmod u+w "$target_session"
+  #   fi
+  # '';
 }
 
 # systemd.user.services.dms = {

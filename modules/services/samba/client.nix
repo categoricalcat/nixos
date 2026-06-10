@@ -19,6 +19,7 @@ let
     "gid=yi"
     "file_mode=0664"
     "dir_mode=0775"
+    "mfsymlinks"
     "x-systemd.after=sops-install-secrets.service"
     "x-systemd.requires=sops-install-secrets.service"
     "x-systemd.automount"
