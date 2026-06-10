@@ -22,9 +22,7 @@ let
   );
 in
 ''
-  # NixOS specific identity
   IdentityFile ${keys.paths.userGitSshKey "~"}
 
-  # Dynamically generated mesh hosts
   ${dynamicSshConfig}
 ''
