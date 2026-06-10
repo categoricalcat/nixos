@@ -61,6 +61,7 @@ in
     environment = {
       WOODPECKER_SERVER = "${internalHost}:${toString services.woodpecker.grpcPort}";
       WOODPECKER_BACKEND = "local";
+      WOODPECKER_HEALTHCHECK_ADDR = ":${toString services.woodpecker.healthPort}";
       WOODPECKER_MAX_WORKFLOWS = "2";
       ATTIC_INTERNAL_URL = "http://${internalHost}:${toString services.attic.port}";
       ATTIC_CACHE_NAME = services.attic.cacheName;

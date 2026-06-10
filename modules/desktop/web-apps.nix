@@ -16,24 +16,6 @@ let
       isolate ? false,
       comment ? "Web Application",
     }:
-    let
-      # If isolated, use a dedicated user data directory and basic password store
-      # We use a wrapper script to avoid Desktop Entry quoting issues with $HOME
-      execCmd =
-        if isolate then
-          let
-            script = pkgs.writeShellScript "launch-${icon}-isolated" ''
-              exec ${pkgs.google-chrome}/bin/google-chrome-stable \
-                --user-data-dir="$HOME/.config/google-chrome-${icon}" \
-                --password-store=basic \
-                --app="${url}" \
-                --class="${name}"
-            '';
-          in
-          "${script}"
-        else
-          "${pkgs.google-chrome}/bin/google-chrome-stable --app=${url} --class=${name}";
-    in
     {
       inherit
         name
@@ -41,7 +23,19 @@ let
         categories
         comment
         ;
-      exec = execCmd;
+
+      exec =
+        let
+          userDataDirArg = pkgs.lib.optionalString isolate ''--user-data-dir="$HOME/.config/google-chrome-${icon}"'';
+        in
+        toString (
+          pkgs.writeShellScript "launch-${icon}" ''
+            exec ${pkgs.google-chrome}/bin/google-chrome-stable ${userDataDirArg} \
+              --app="${url}" \
+              --class="${name}"
+          ''
+        );
+
       terminal = false;
       settings = {
         StartupWMClass = name;

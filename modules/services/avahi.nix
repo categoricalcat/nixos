@@ -50,18 +50,6 @@ _: {
         </service-group>
       '';
 
-      web_3000 = ''
-        <?xml version="1.0" standalone='no'?>
-        <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
-        <service-group>
-          <name replace-wildcards="yes">%h 3000 Server</name>
-          <service>
-            <type>_http._tcp</type>
-            <port>3000</port>
-          </service>
-        </service-group>
-      '';
-
       cockpit = ''
         <?xml version="1.0" standalone='no'?>
         <!DOCTYPE service-group SYSTEM "avahi-service.dtd">

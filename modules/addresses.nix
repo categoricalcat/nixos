@@ -173,6 +173,7 @@ in
           domain = "ci.fufu.land";
           httpPort = 18201;
           grpcPort = 18202;
+          healthPort = 18204;
         };
         attic = {
           domain = "cache.fufu.land";
