@@ -47,7 +47,7 @@ in
 
     # Shell and related tools
     shellcheck
-
+    bubblewrap
     bat
     brotli
     ethtool
