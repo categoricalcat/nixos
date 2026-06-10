@@ -28,15 +28,19 @@ in
     }
   ];
 
-  sops.secrets."woodpecker/agent-secret" = { };
-  sops.secrets."woodpecker/forgejo-client" = { };
-  sops.secrets."woodpecker/forgejo-secret" = { };
+  sops = {
+    secrets = {
+      "woodpecker/agent-secret" = { };
+      "woodpecker/forgejo-client" = { };
+      "woodpecker/forgejo-secret" = { };
+    };
 
-  sops.templates."woodpecker.env".content = ''
-    WOODPECKER_AGENT_SECRET=${config.sops.placeholder."woodpecker/agent-secret"}
-    WOODPECKER_FORGEJO_CLIENT=${config.sops.placeholder."woodpecker/forgejo-client"}
-    WOODPECKER_FORGEJO_SECRET=${config.sops.placeholder."woodpecker/forgejo-secret"}
-  '';
+    templates."woodpecker.env".content = ''
+      WOODPECKER_AGENT_SECRET=${config.sops.placeholder."woodpecker/agent-secret"}
+      WOODPECKER_FORGEJO_CLIENT=${config.sops.placeholder."woodpecker/forgejo-client"}
+      WOODPECKER_FORGEJO_SECRET=${config.sops.placeholder."woodpecker/forgejo-secret"}
+    '';
+  };
 
   services.woodpecker-server = {
     enable = true;

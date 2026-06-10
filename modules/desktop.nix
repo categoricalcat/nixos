@@ -23,8 +23,8 @@ let
   kb = keyboardProfiles.${config.desktop.keyboard};
 in
 {
-  options = {
-    desktop.environment = lib.mkOption {
+  options.desktop = {
+    environment = lib.mkOption {
       type = lib.types.enum [
         "gnome"
         "hyprland"
@@ -35,7 +35,7 @@ in
       description = "Desktop environment to use";
     };
 
-    desktop.greeter = lib.mkOption {
+    greeter = lib.mkOption {
       type = lib.types.enum [
         "tuigreet"
         "dms"
@@ -54,7 +54,7 @@ in
       description = "Greeter to use";
     };
 
-    desktop.shell = lib.mkOption {
+    shell = lib.mkOption {
       type = lib.types.enum [
         "dms"
         "noctalia"
@@ -64,13 +64,13 @@ in
       description = "Desktop shell to run on top of the compositor";
     };
 
-    desktop.greeting = lib.mkOption {
+    greeting = lib.mkOption {
       type = lib.types.str;
       default = "turmoil accompanies every great change";
       description = "Greeting text for greeters and display managers that support one.";
     };
 
-    desktop.monitors = lib.mkOption {
+    monitors = lib.mkOption {
       type = lib.types.listOf (
         lib.types.submodule {
           options = {
@@ -127,7 +127,7 @@ in
       '';
     };
 
-    desktop.keyboard = lib.mkOption {
+    keyboard = lib.mkOption {
       type = lib.types.enum [
         "us"
         "br"
@@ -154,20 +154,31 @@ in
   ];
 
   config = {
-    # Base audio — all desktop hosts get PipeWire
-    services.pulseaudio.enable = false;
-    security.rtkit.enable = true;
-    services.pipewire = {
-      enable = true;
-      alsa.enable = true;
-      alsa.support32Bit = true;
-      pulse.enable = true;
+    services = {
+      # Base audio — all desktop hosts get PipeWire
+      pulseaudio.enable = false;
+      pipewire = {
+        enable = true;
+        alsa.enable = true;
+        alsa.support32Bit = true;
+        pulse.enable = true;
+      };
+
+      xserver = {
+        xkb = {
+          inherit (kb) layout variant;
+        };
+        # Critical for window managers to autostart Fcitx5
+        desktopManager.runXdgAutostartIfNone = true;
+      };
+
+      libinput.enable = true;
+      gnome.gnome-keyring.enable = true;
     };
 
+    security.rtkit.enable = true;
+
     console.keyMap = kb.keyMap;
-    services.xserver.xkb = {
-      inherit (kb) layout variant;
-    };
 
     programs = {
       xwayland.enable = true;
@@ -212,12 +223,6 @@ in
         };
       };
     };
-
-    # Critical for window managers to autostart Fcitx5
-    services.xserver.desktopManager.runXdgAutostartIfNone = true;
-
-    services.libinput.enable = true;
-    services.gnome.gnome-keyring.enable = true;
 
     xdg.mime = {
       enable = true;

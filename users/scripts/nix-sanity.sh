@@ -23,13 +23,15 @@ if $quiet; then
   rebuild_flags=()
 else
   check_flags=(-v)
-  rebuild_flags=(--print-build-logs --show-trace)
+  rebuild_flags=(--print-build-logs --show-trace -v)
 fi
 
 HOST_NAME=${HOST:-$(hostname)}
 
 sudo nix fmt
+statix -- check .
+deadnix -- --fail .
 ./users/scripts/setup-sops.sh
 git add .
 nix flake check "${check_flags[@]}"
-sudo nixos-rebuild --flake ".#$HOST_NAME" --upgrade "${rebuild_flags[@]}" "$action"
+sudo nixos-rebuild --flake ".#$HOST_NAME" "${rebuild_flags[@]}" "$action"

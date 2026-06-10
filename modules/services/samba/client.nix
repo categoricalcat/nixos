@@ -39,41 +39,43 @@ in
   boot.supportedFilesystems = [ "cifs" ];
 
   # Tailscale Samba mounts — only on hosts with Tailscale enabled
-  fileSystems."/mnt/smb/share" = lib.mkIf hasTailscale {
-    device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/share";
-    fsType = "cifs";
-    options = mountCommonOptions ++ [
-      "x-systemd.after=tailscaled.service"
-      "x-systemd.requires=tailscaled.service"
-    ];
-  };
+  fileSystems = {
+    "/mnt/smb/share" = lib.mkIf hasTailscale {
+      device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/share";
+      fsType = "cifs";
+      options = mountCommonOptions ++ [
+        "x-systemd.after=tailscaled.service"
+        "x-systemd.requires=tailscaled.service"
+      ];
+    };
 
-  fileSystems."/mnt/smb/the.files" = lib.mkIf hasTailscale {
-    device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/the.files";
-    fsType = "cifs";
-    options = mountCommonOptions ++ [
-      "x-systemd.after=tailscaled.service"
-      "x-systemd.requires=tailscaled.service"
-    ];
-  };
+    "/mnt/smb/the.files" = lib.mkIf hasTailscale {
+      device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/the.files";
+      fsType = "cifs";
+      options = mountCommonOptions ++ [
+        "x-systemd.after=tailscaled.service"
+        "x-systemd.requires=tailscaled.service"
+      ];
+    };
 
-  # Netbird Samba mounts — only on hosts with Netbird enabled
-  fileSystems."/mnt/smb/nb/share" = lib.mkIf hasNetbird {
-    device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/share";
-    fsType = "cifs";
-    options = mountCommonOptions ++ [
-      "x-systemd.after=netbird.service"
-      "x-systemd.requires=netbird.service"
-    ];
-  };
+    # Netbird Samba mounts — only on hosts with Netbird enabled
+    "/mnt/smb/nb/share" = lib.mkIf hasNetbird {
+      device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/share";
+      fsType = "cifs";
+      options = mountCommonOptions ++ [
+        "x-systemd.after=netbird.service"
+        "x-systemd.requires=netbird.service"
+      ];
+    };
 
-  fileSystems."/mnt/smb/nb/the.files" = lib.mkIf hasNetbird {
-    device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/the.files";
-    fsType = "cifs";
-    options = mountCommonOptions ++ [
-      "x-systemd.after=netbird.service"
-      "x-systemd.requires=netbird.service"
-    ];
+    "/mnt/smb/nb/the.files" = lib.mkIf hasNetbird {
+      device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/the.files";
+      fsType = "cifs";
+      options = mountCommonOptions ++ [
+        "x-systemd.after=netbird.service"
+        "x-systemd.requires=netbird.service"
+      ];
+    };
   };
 
   systemd.services.cifs-lazy-umount = lib.mkIf (hasTailscale || hasNetbird) {

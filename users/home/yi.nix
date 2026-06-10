@@ -29,27 +29,29 @@ in
     ../programs/niri.nix
   ];
 
-  home.username = "yi";
-  home.homeDirectory = homeDirectory;
+  home = {
+    username = "yi";
+    inherit homeDirectory;
 
-  home.packages =
-    with pkgs;
-    with haskellPackages;
-    [
-      bun
-      nodejs
+    packages =
+      with pkgs;
+      with haskellPackages;
+      [
+        bun
+        nodejs
 
-      sshfs
-      ghc
-      cabal-install
-      haskell-language-server
-      stack
-      ghcid
-    ]
-    ++ lib.optionals (desktopEnvironment != null) [
-      smile
-      wtype
-      ksnip
-      wl-clipboard
-    ];
+        sshfs
+        ghc
+        cabal-install
+        haskell-language-server
+        stack
+        ghcid
+      ]
+      ++ lib.optionals (desktopEnvironment != null) [
+        smile
+        wtype
+        ksnip
+        wl-clipboard
+      ];
+  };
 }

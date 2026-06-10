@@ -58,39 +58,41 @@ in
     mode = "0400";
   };
 
-  desktop.environment = desktopEnvironment;
-  desktop.shell = desktopShell;
-  desktop.greeter = greeter;
-  desktop.keyboard = "us";
-  desktop.monitors = [
-    {
-      name = "GSM-0x000083cb";
-      mode = "2560x1080@74.991";
-      position = {
-        x = 0;
-        y = 2160;
-      };
-      scale = 1.0;
-    }
-    {
-      name = "AUS-S2LMQS085997";
-      mode = "1920x1080@239.760";
-      position = {
-        x = 2560;
-        y = 2160;
-      };
-      scale = 1.0;
-    }
-    {
-      name = "GSM-0x01010101";
-      mode = "3840x2160@120.000";
-      position = {
-        x = 640;
-        y = 0;
-      };
-      scale = 1.0;
-    }
-  ];
+  desktop = {
+    environment = desktopEnvironment;
+    shell = desktopShell;
+    inherit greeter;
+    keyboard = "us";
+    monitors = [
+      {
+        name = "GSM-0x000083cb";
+        mode = "2560x1080@74.991";
+        position = {
+          x = 0;
+          y = 2160;
+        };
+        scale = 1.0;
+      }
+      {
+        name = "AUS-S2LMQS085997";
+        mode = "1920x1080@239.760";
+        position = {
+          x = 2560;
+          y = 2160;
+        };
+        scale = 1.0;
+      }
+      {
+        name = "GSM-0x01010101";
+        mode = "3840x2160@120.000";
+        position = {
+          x = 640;
+          y = 0;
+        };
+        scale = 1.0;
+      }
+    ];
+  };
 
   environment.systemPackages = [ pkgs.xclip ];
 

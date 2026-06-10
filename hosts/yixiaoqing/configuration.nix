@@ -42,8 +42,6 @@ in
     ../../modules/services/netbird.nix
   ];
 
-  security.fido2.enable = true;
-
   system.stateVersion = global.version;
 
   home-manager = mkHome {
@@ -51,24 +49,24 @@ in
     stateVersion = global.homeVersion;
   };
 
-  desktop.environment = desktopEnvironment;
-  desktop.shell = desktopShell;
-  desktop.greeter = greeter;
-  desktop.keyboard = "br";
-  desktop.monitors = [
-    {
-      name = "eDP-1";
-      mode = "2880x1800@60";
-      scale = 1.5;
-      transform = "normal";
-      position = {
-        x = 1280;
-        y = 0;
-      };
-    }
-  ];
-
-  security.polkit.enable = true;
+  desktop = {
+    environment = desktopEnvironment;
+    shell = desktopShell;
+    inherit greeter;
+    keyboard = "br";
+    monitors = [
+      {
+        name = "eDP-1";
+        mode = "2880x1800@60";
+        scale = 1.5;
+        transform = "normal";
+        position = {
+          x = 1280;
+          y = 0;
+        };
+      }
+    ];
+  };
 
   nixpkgs.config = {
     cudaSupport = false;
@@ -89,10 +87,16 @@ in
   };
 
   services.fprintd.enable = true;
-  security.pam.services.login.fprintAuth = lib.mkDefault true;
-  security.pam.services.gdm-fingerprint.fprintAuth = true;
-  security.pam.services.sudo.fprintAuth = true;
-  security.pam.services.polkit-1.u2fAuth = true;
+  security = {
+    fido2.enable = true;
+    polkit.enable = true;
+    pam.services = {
+      login.fprintAuth = lib.mkDefault true;
+      gdm-fingerprint.fprintAuth = true;
+      sudo.fprintAuth = true;
+      polkit-1.u2fAuth = true;
+    };
+  };
 
   hardware = {
     enableRedistributableFirmware = true;

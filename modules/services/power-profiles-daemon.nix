@@ -4,8 +4,16 @@
 }:
 
 {
-  services.power-profiles-daemon.enable = true;
-  services.tlp.enable = false;
+  services = {
+    power-profiles-daemon.enable = true;
+    tlp.enable = false;
+
+    # Automatically switch power profiles on AC/Battery
+    udev.extraRules = ''
+      SUBSYSTEM=="power_supply", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set performance"
+      SUBSYSTEM=="power_supply", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
+    '';
+  };
 
   systemd.services.battery-charge-threshold = {
     description = "Set ThinkPad Battery Charge Thresholds";
@@ -26,9 +34,4 @@
     };
   };
 
-  # Automatically switch power profiles on AC/Battery
-  services.udev.extraRules = ''
-    SUBSYSTEM=="power_supply", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set performance"
-    SUBSYSTEM=="power_supply", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
-  '';
 }

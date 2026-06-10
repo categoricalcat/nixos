@@ -15,12 +15,17 @@ in
     loader = {
       timeout = 1;
       systemd-boot.configurationLimit = 10;
+      systemd-boot.enable = lib.mkForce false;
       grub.enable = false;
     };
 
     lanzaboote = {
       enable = true;
       pkiBundle = "/var/lib/sbctl";
+    };
+
+    initrd.systemd.settings.Manager = {
+      DefaultTimeoutStopSec = "10s";
     };
 
     kernelModules = lib.mkAfter [
@@ -36,12 +41,6 @@ in
     extraModprobeConfig = ''
       options snd_usb_audio implicit_fb=1
     '';
-  };
-
-  boot.loader.systemd-boot.enable = lib.mkForce false;
-
-  boot.initrd.systemd.settings.Manager = {
-    DefaultTimeoutStopSec = "10s";
   };
 
   environment.systemPackages = [ pkgs.sbctl ];

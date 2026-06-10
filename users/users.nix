@@ -74,40 +74,45 @@ in
     };
   };
 
-  sops.secrets."passwords/yi" = {
-    mode = "0600";
-    owner = "yi";
-    group = "yi";
-  };
-  sops.secrets."passwords/workd" = {
-    mode = "0600";
-    owner = "workd";
-    group = "workd";
-  };
-
-  programs.mtr.enable = true;
-  programs.trippy.enable = true;
-
-  programs.zsh = {
-    enable = true;
+  sops.secrets = {
+    "passwords/yi" = {
+      mode = "0600";
+      owner = "yi";
+      group = "yi";
+    };
+    "passwords/workd" = {
+      mode = "0600";
+      owner = "workd";
+      group = "workd";
+    };
   };
 
-  environment.systemPackages = [
-    (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
-    (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
-    (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
-
-  ];
-
-  environment.variables = {
-    ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";
+  programs = {
+    mtr.enable = true;
+    trippy.enable = true;
+    zsh = {
+      enable = true;
+    };
   };
 
-  environment.pathsToLink = [ "/share/zsh" ];
+  environment = {
+    systemPackages = [
+      (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
+      (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
+      (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
 
-  environment.etc."nixos".source =
-    pkgs.runCommandLocal "etc-nixos" { }
-      "ln -s ${lib.escapeShellArg "${config.users.users.yi.home}/the.files/nixos"} $out";
+    ];
+
+    variables = {
+      ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";
+    };
+
+    pathsToLink = [ "/share/zsh" ];
+
+    etc."nixos".source =
+      pkgs.runCommandLocal "etc-nixos" { }
+        "ln -s ${lib.escapeShellArg "${config.users.users.yi.home}/the.files/nixos"} $out";
+  };
 
   # services.emacs = {
   #   enable = true;

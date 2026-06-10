@@ -42,9 +42,11 @@ in
     };
   };
 
-  users.users.adguardhome.extraGroups = [ "nginx" ];
-  users.users.adguardhome.isSystemUser = true;
-  users.users.adguardhome.group = "nginx";
+  users.users.adguardhome = {
+    extraGroups = [ "nginx" ];
+    isSystemUser = true;
+    group = "nginx";
+  };
 
   services.nginx = {
     enable = true;

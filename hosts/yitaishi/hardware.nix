@@ -13,37 +13,18 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  boot.initrd.availableKernelModules = [
-    "xhci_pci"
-    "nvme"
-    "ahci"
-    "usbhid"
-    "usb_storage"
-    "sd_mod"
-  ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-amd" ];
-  boot.extraModulePackages = [ ];
-
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/2e6f5a45-d509-48fb-ac15-47788d92fd95";
-    fsType = "btrfs";
-    options = [ "subvol=@" ];
-  };
-
-  fileSystems."/home" = {
-    device = "/dev/disk/by-uuid/2e6f5a45-d509-48fb-ac15-47788d92fd95";
-    fsType = "btrfs";
-    options = [ "subvol=@home" ];
-  };
-
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/AAEB-5303";
-    fsType = "vfat";
-    options = [
-      "fmask=0077"
-      "dmask=0077"
+  boot = {
+    initrd.availableKernelModules = [
+      "xhci_pci"
+      "nvme"
+      "ahci"
+      "usbhid"
+      "usb_storage"
+      "sd_mod"
     ];
+    initrd.kernelModules = [ ];
+    kernelModules = [ "kvm-amd" ];
+    extraModulePackages = [ ];
   };
 
   swapDevices = [
@@ -53,35 +34,58 @@
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  fileSystems."/mnt/sda1" = {
-    device = "/dev/disk/by-uuid/2325B2053D2BBAD3";
-    fsType = "ntfs3";
-    options = [
-      "rw"
-      "uid=1000"
-      "gid=1000"
-      "dmask=007"
-      "fmask=007"
-      "exec"
-      "nofail"
-      "x-systemd.automount"
-      "noauto"
-    ];
-  };
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-uuid/2e6f5a45-d509-48fb-ac15-47788d92fd95";
+      fsType = "btrfs";
+      options = [ "subvol=@" ];
+    };
 
-  fileSystems."/mnt/nvme1n1p1" = {
-    device = "/dev/disk/by-uuid/641C61911C615F54";
-    fsType = "ntfs3";
-    options = [
-      "rw"
-      "uid=1000"
-      "gid=1000"
-      "dmask=007"
-      "fmask=007"
-      "exec"
-      "nofail"
-      "x-systemd.automount"
-      "noauto"
-    ];
+    "/home" = {
+      device = "/dev/disk/by-uuid/2e6f5a45-d509-48fb-ac15-47788d92fd95";
+      fsType = "btrfs";
+      options = [ "subvol=@home" ];
+    };
+
+    "/boot" = {
+      device = "/dev/disk/by-uuid/AAEB-5303";
+      fsType = "vfat";
+      options = [
+        "fmask=0077"
+        "dmask=0077"
+      ];
+    };
+
+    "/mnt/sda1" = {
+      device = "/dev/disk/by-uuid/2325B2053D2BBAD3";
+      fsType = "ntfs3";
+      options = [
+        "rw"
+        "uid=1000"
+        "gid=1000"
+        "dmask=007"
+        "fmask=007"
+        "exec"
+        "nofail"
+        "x-systemd.automount"
+        "noauto"
+      ];
+    };
+
+    "/mnt/nvme1n1p1" = {
+      device = "/dev/disk/by-uuid/641C61911C615F54";
+      fsType = "ntfs3";
+      options = [
+        "rw"
+        "uid=1000"
+        "gid=1000"
+        "dmask=007"
+        "fmask=007"
+        "exec"
+        "nofail"
+        "x-systemd.automount"
+        "noauto"
+      ];
+    };
   };
 }
