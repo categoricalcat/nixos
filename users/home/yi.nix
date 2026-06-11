@@ -15,7 +15,7 @@ in
     ../programs/opencode.nix
   ]
   ++ lib.optionals (desktopEnvironment != null) [
-    ../programs/alacritty.nix
+    ../programs/kitty.nix
     ../programs/mprisence.nix
     ../../modules/desktop/web-apps.nix
   ]
