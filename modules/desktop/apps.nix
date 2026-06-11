@@ -25,7 +25,15 @@ in
     nautilus
     unstable.vial
     unstable.obsidian
-    unstable.obs-studio
+    unstable.mangohud
+    (unstable.wrapOBS {
+      plugins = with unstable.obs-studio-plugins; [
+        obs-vkcapture
+        obs-vaapi
+        obs-gstreamer
+      ];
+    })
+    unstable.obs-studio-plugins.obs-vkcapture
     # unstable.nextcloud-client
   ];
 

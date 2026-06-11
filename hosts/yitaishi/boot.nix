@@ -27,6 +27,7 @@ in
     initrd.systemd.settings.Manager = {
       DefaultTimeoutStopSec = "10s";
     };
+    initrd.systemd.tpm2.enable = false;
 
     kernelModules = lib.mkAfter [
       "fuse"

@@ -44,6 +44,7 @@ in
   ];
 
   security.fido2.enable = true;
+  systemd.tpm2.enable = false;
 
   system.stateVersion = version;
 
@@ -134,5 +135,11 @@ in
 
     # Swap individual pages instead of clustering reads around zram.
     "vm.page-cluster" = 0;
+
+    # Network tuning for better latency and throughput (streaming/gaming)
+    "net.core.default_qdisc" = "cake";
+    "net.ipv4.tcp_congestion_control" = "bbr";
   };
+
+  boot.kernelModules = [ "tcp_bbr" ];
 }

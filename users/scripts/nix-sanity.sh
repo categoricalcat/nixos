@@ -29,7 +29,7 @@ fi
 HOST_NAME=${HOST:-$(hostname)}
 
 sudo nix fmt
-statix -- check .
+statix check .
 deadnix -- --fail .
 ./users/scripts/setup-sops.sh
 git add .

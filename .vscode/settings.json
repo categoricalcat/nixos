@@ -18,5 +18,8 @@
   "files.associations": {
     "*.nix": "nix",
     "flake.lock": "json"
-  }
+  },
+  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
+  "nixEnvSelector.useFlakes": true,
+  "nixEnvSelector.flakeShell": "default"
 }
