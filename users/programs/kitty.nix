@@ -1,5 +1,4 @@
 {
-  lib,
   pkgs,
   inputs,
   ...
@@ -25,8 +24,6 @@ in
       remember_window_size = "no";
       initial_window_width = "80c";
       initial_window_height = "24c";
-      window_padding_width = 10;
-      background_opacity = lib.mkDefault "0.85";
       scrollback_lines = 10000;
       shell = "${zellijStart}/bin/zellij-start";
     };

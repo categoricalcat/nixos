@@ -9,7 +9,8 @@
 
 let
   desktopEnvironment = "niri";
-  desktopShell = "dms";
+  desktopShell = "noctalia";
+  # desktopShell = "dms";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
@@ -45,7 +46,7 @@ in
   system.stateVersion = global.version;
 
   home-manager = mkHome {
-    inherit inputs desktopEnvironment;
+    inherit inputs desktopEnvironment desktopShell;
     stateVersion = global.homeVersion;
   };
 
