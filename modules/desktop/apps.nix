@@ -14,6 +14,7 @@ in
     unstable.antigravity
     unstable.onlyoffice-desktopeditors
     discord
+    unstable.vesktop
 
     unstable.qbz
 
