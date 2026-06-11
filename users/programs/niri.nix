@@ -26,6 +26,7 @@ in
     ${builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl"}
     ${outputsKdl}
     binds {
+      Mod+T { spawn "kitty"; }
       Mod+Period { spawn "smile"; }
       Print { spawn "ksnip" "-r"; }
       F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }

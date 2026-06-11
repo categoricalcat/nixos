@@ -308,6 +308,7 @@ in
         custom-keybindings = [
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/"
         ];
       };
 
@@ -321,6 +322,12 @@ in
         binding = "Print";
         command = "ksnip -r";
         name = "Ksnip Screenshot";
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
+        binding = "<Super>t";
+        command = "kitty";
+        name = "Kitty Terminal";
       };
 
     };
