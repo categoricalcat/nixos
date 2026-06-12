@@ -25,13 +25,13 @@ jobs:
           echo "hosts=$hosts" >> "$GITHUB_OUTPUT"
 
   buildepush:
-    needs: [check, setup-matrix]
+    needs: [check, set-hosts]
     runs-on: native
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        host: ${{ fromJSON(needs.setup-matrix.outputs.hosts) }}
+        host: ${{ fromJSON(needs.set-hosts.outputs.hosts) }}
     steps:
       - uses: actions/checkout@main
       - run: ci/build.sh ${{ matrix.host }}
