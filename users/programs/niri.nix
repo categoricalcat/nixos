@@ -22,14 +22,23 @@ let
   outputsKdl = lib.concatStringsSep "\n" (map generateOutput cfg);
 in
 {
-  xdg.configFile."niri/config.kdl".text = ''
-    ${builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl"}
-    ${outputsKdl}
-    binds {
-      Mod+T { spawn "kitty"; }
-      Mod+Period { spawn "smile"; }
-      Print { spawn "ksnip" "-r"; }
-      F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    }
-  '';
+  xdg.configFile."niri/config.kdl".text =
+    let
+      baseKdl = builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl";
+      patchedKdl = lib.concatStringsSep "\n" (
+        lib.filter (line: !(lib.hasInfix "Mod+T" line && lib.hasInfix "alacritty" line)) (
+          lib.splitString "\n" baseKdl
+        )
+      );
+    in
+    ''
+      ${patchedKdl}
+      ${outputsKdl}
+      binds {
+        Mod+T { spawn "kitty"; }
+        Mod+Period { spawn "smile"; }
+        Print { spawn "ksnip" "-r"; }
+        F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+      }
+    '';
 }

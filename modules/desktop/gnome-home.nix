@@ -115,6 +115,7 @@ in
       };
 
       "org/gnome/desktop/wm/keybindings" = {
+        close = [ "<Super>q" ];
         switch-windows = [ "<Alt>Tab" ];
         switch-windows-backward = [ "<Shift><Alt>Tab" ];
         switch-applications = [ "<Super>Tab" ];
