@@ -33,6 +33,7 @@ in
     ../programs/git.nix
     ../programs/tui.nix
     ../programs/ssh
+    ../programs/neovim.nix
   ];
 
   home = {

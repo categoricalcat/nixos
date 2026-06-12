@@ -106,6 +106,8 @@
     nixpkgs-small.url = "github:NixOS/nixpkgs/nixos-26.05-small";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    attic.url = "github:zhaofengli/attic";
+    nixvim.url = "github:nix-community/nixvim";
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
@@ -176,6 +178,5 @@
       url = "github:categoricalcat/the.files";
     };
 
-    attic.url = "github:zhaofengli/attic";
   };
 }

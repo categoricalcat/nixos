@@ -26,15 +26,23 @@ in
     let
       baseKdl = builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl";
       patchedKdl = lib.concatStringsSep "\n" (
-        lib.filter (line: !(lib.hasInfix "Mod+T" line && lib.hasInfix "alacritty" line)) (
-          lib.splitString "\n" baseKdl
-        )
+        lib.filter (
+          line:
+          !(lib.hasInfix "Mod+T" line && lib.hasInfix "alacritty" line)
+          && !(lib.hasInfix "Mod+Space" line && lib.hasInfix "spotlight" line)
+        ) (lib.splitString "\n" baseKdl)
       );
+      launcherBind =
+        if osConfig.desktop.shell == "noctalia" then
+          ''Mod+Space hotkey-overlay-title="Run an Application" { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }''
+        else
+          ''Mod+Space hotkey-overlay-title="Run an Application" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }'';
     in
     ''
       ${patchedKdl}
       ${outputsKdl}
       binds {
+        ${launcherBind}
         Mod+T { spawn "kitty"; }
         Mod+Period { spawn "smile"; }
         Print { spawn "ksnip" "-r"; }
