@@ -3,8 +3,7 @@
 # Bootstrap (once, via git.fufu.land UI):
 #   1. Create admin user, then set service.DISABLE_REGISTRATION = true and redeploy
 #   2. New Migration -> mirror https://github.com/categoricalcat/nixos (read-only)
-#   3. Site Administration -> Applications -> OAuth2 for Woodpecker
-#      redirect: https://ci.fufu.land/authorize
+#   3. Site Administration -> Actions -> Runners -> Create new runner
 { config, allAddresses, ... }:
 
 let
@@ -38,7 +37,7 @@ in
       };
       # Flip to true after creating the admin account.
       service.DISABLE_REGISTRATION = false;
-      actions.ENABLED = false;
+      actions.ENABLED = true;
       webhook.ALLOWED_HOST_LIST = "external,loopback," + builtins.concatStringsSep "," trustedCidrs;
       "repository.mirror".ENABLED = true;
     };

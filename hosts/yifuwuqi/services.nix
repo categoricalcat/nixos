@@ -24,7 +24,7 @@ in
     # ../../modules/services/omada-controller.nix
     ../../modules/services/github-runner.nix
     ../../modules/services/forgejo.nix
-    ../../modules/services/woodpecker.nix
+    ../../modules/services/forgejo-runner.nix
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud

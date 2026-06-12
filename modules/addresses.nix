@@ -169,12 +169,6 @@ in
           domain = "git.fufu.land";
           httpPort = 18200;
         };
-        woodpecker = {
-          domain = "ci.fufu.land";
-          httpPort = 18201;
-          grpcPort = 18202;
-          healthPort = 18204;
-        };
         attic = {
           domain = "cache.fufu.land";
           port = 18203;

@@ -4,9 +4,9 @@ This page walks you through the first-time setup of the self-hosted CI and binar
 pipeline on a fresh NixOS server. By the end you will have:
 
 - A Forgejo mirror synced from a GitHub repository
-- Woodpecker CI building every `nixosConfigurations` on push
+- Forgejo Actions building every `nixosConfigurations` on push
 - An Attic binary cache storing build results
-- A GitHub Actions trigger that connects GitHub pushes → Forgejo → Woodpecker
+- A GitHub Actions trigger that connects GitHub pushes → Forgejo
 
 **Prerequisites:**
 - A GitHub repository with your NixOS flake
@@ -23,7 +23,7 @@ say "update the address" or "change the public key", here is where each value li
 |---|---|
 | Domains, ports, Attic cache name | `modules/addresses.nix` (under `hosts.yifuwuqi.services`) |
 | Forgejo configuration | `modules/services/forgejo.nix` |
-| Woodpecker server/agent | `modules/services/woodpecker.nix` |
+| Forgejo Actions runner | `modules/services/forgejo-runner.nix` |
 | Attic server | `modules/services/atticd.nix` |
 | Attic watch-store push | `modules/services/attic-watch-store.nix` |
 | Reverse proxy (nginx) | `modules/services/nginx-proxy.nix` |
@@ -34,7 +34,6 @@ After deployment the endpoints resolve as:
 | Endpoint | Service |
 |---|---|
 | `git.fufu.land` | Forgejo mirror |
-| `ci.fufu.land` | Woodpecker |
 | `cache.fufu.land/yi` | Attic cache |
 
 ## Secret Inventory
@@ -46,31 +45,21 @@ SOPS secrets in `secrets/secrets.yaml`:
 | `tokens/github-runner-nixos` | Registers the self-hosted GitHub runner | GitHub Repo Settings -> Actions -> Runners -> New self-hosted runner |
 | `tokens/attic-server-jwt-env` | Attic server JWT signing secret env file | See [Generate SOPS Secrets](#generate-sops-secrets) |
 | `tokens/attic-push-token` | Token used by `attic-watch-store` | See [Attic Bootstrap](#attic-bootstrap) |
-| `woodpecker/agent-secret` | Shared Woodpecker server/agent secret | `openssl rand -hex 32` |
-| `woodpecker/forgejo-client` | Forgejo OAuth client id for Woodpecker | See [Forgejo Bootstrap](#forgejo-bootstrap) |
-| `woodpecker/forgejo-secret` | Forgejo OAuth client secret for Woodpecker | See [Forgejo Bootstrap](#forgejo-bootstrap) |
+| `tokens/forgejo-runner` | Forgejo runner registration token | Forgejo Admin -> Actions -> Runners |
 
 GitHub Actions repository secrets:
 
 | Secret | Purpose | How to obtain |
 | --- | --- | --- |
 | `FORGEJO_TOKEN` | Lets the trigger workflow sync/read the Forgejo mirror | See [Trigger Tokens](#trigger-tokens) |
-| `WOODPECKER_TOKEN` | Lets the trigger workflow start a Woodpecker pipeline | See [Trigger Tokens](#trigger-tokens) |
 
-Woodpecker repository secrets:
+Forgejo repository secrets:
 
 | Secret | Purpose | How to obtain |
 | --- | --- | --- |
 | `attic_token` | Push token for Attic cache `yi` | Same as SOPS `tokens/attic-push-token` |
-| `github_status_token` | Token used by `ci/github-status.sh` to set GitHub commit status | See [Woodpecker Bootstrap](#woodpecker-bootstrap) |
 
 ## Generate SOPS Secrets
-
-Generate the Woodpecker shared secret:
-
-```bash
-openssl rand -hex 32
-```
 
 Generate the Attic server JWT env value:
 
@@ -91,12 +80,7 @@ Store the generated values as:
 tokens:
     attic-server-jwt-env: |
         ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="..."
-woodpecker:
-    agent-secret: "..."
 ```
-
-`woodpecker/forgejo-client` and `woodpecker/forgejo-secret` can start as
-temporary placeholders. Replace them after creating the Forgejo OAuth app.
 
 ## GitHub Runner Token
 
@@ -117,16 +101,14 @@ Deploy `yifuwuqi` and `yirukou` after SOPS contains at least:
 
 - `tokens/github-runner-nixos`
 - `tokens/attic-server-jwt-env`
-- `woodpecker/agent-secret`
-- placeholder `woodpecker/forgejo-client`
-- placeholder `woodpecker/forgejo-secret`
+- `tokens/forgejo-runner`
 
 Expected state after the first switch:
 
 - Forgejo starts.
 - Attic starts.
 - The GitHub runner starts.
-- Woodpecker may not be usable until the real Forgejo OAuth values are added.
+- Forgejo Actions may not be usable until the runner is registered.
 
 ## Forgejo Bootstrap
 
@@ -134,12 +116,7 @@ Open `git.fufu.land`.
 
 1. Create the first admin user.
 2. Create a read-only pull mirror from `https://github.com/categoricalcat/nixos`.
-3. Create a Forgejo OAuth app for Woodpecker:
-   - Redirect URL: `https://ci.fufu.land/authorize`
-4. Put the OAuth client id and secret in SOPS:
-   - `woodpecker/forgejo-client`
-   - `woodpecker/forgejo-secret`
-5. Redeploy `yifuwuqi`.
+3. Redeploy `yifuwuqi`.
 
 After the admin user exists, flip `service.DISABLE_REGISTRATION = true` in
 `modules/services/forgejo.nix` in a later config change.
@@ -169,34 +146,18 @@ Then:
 3. Replace the placeholder key in `modules/nix-settings.nix`.
 4. Redeploy every host that should pull from `cache.fufu.land/yi`.
 
-## Woodpecker Bootstrap
-
-Open `ci.fufu.land`.
-
-1. Log in via Forgejo OAuth.
-2. Enable repository `categoricalcat/nixos`.
-3. Add Woodpecker repository secrets:
-   - `attic_token`: same value as SOPS `tokens/attic-push-token`
-   - `github_status_token`: GitHub token allowed to write commit statuses
-
-For `github_status_token`, use a fine-grained GitHub PAT (**Developer Settings -> Personal access tokens**) restricted to your repository with **Commit statuses: Read and write** permission. *(Fallback: A classic token with `repo:status`)*.
-
 ## Trigger Tokens
 
 Create a Forgejo access token from the Forgejo user settings. It needs repository
 API access to force mirror sync and read the mirrored branch. Add it to GitHub
 Actions repository secrets as `FORGEJO_TOKEN`.
 
-Create a Woodpecker user/API token after logging into Woodpecker. It needs access
-to look up the repo and trigger a pipeline. Add it to GitHub Actions repository
-secrets as `WOODPECKER_TOKEN`.
-
 ## Verification
 
 Check services on `yifuwuqi`:
 
 ```bash
-systemctl status forgejo woodpecker-server woodpecker-agent-local atticd attic-watch-store github-runner-nixos
+systemctl status forgejo gitea-actions-runner-yifuwuqi atticd attic-watch-store github-runner-nixos
 ```
 
 Check the cache endpoint from a mesh host:
@@ -208,11 +169,10 @@ curl -I https://cache.fufu.land/yi/nix-cache-info
 Push test:
 
 1. Push to `develop`.
-2. GitHub Actions `trigger woodpecker` passes.
+2. GitHub Actions trigger passes.
 3. Forgejo mirror branch reaches the same commit SHA.
-4. Woodpecker builds all hosts.
+4. Forgejo Actions builds all hosts.
 5. `attic cache info yi` shows objects.
-6. GitHub commit gets `ci/woodpecker` status.
 
 ## Forking This Setup
 
@@ -224,7 +184,7 @@ If you are adapting this repo for your own domains and secrets, replace every oc
 | Attic cache name | `yi` | your cache name |
 | GitHub repo | `categoricalcat/nixos` | your repo |
 | Attic JWT key | (generate) | `openssl genrsa -traditional 4096 \| base64 -w0` |
-| Woodpecker agent secret | (generate) | `openssl rand -hex 32` |
+| Forgejo runner token | (fetch from UI) | Forgejo Admin -> Actions -> Runners |
 | GitHub runner token | (fetch from UI) | Settings → Actions → Runners |
 
 Search in these files for `fufu.land`, `categoricalcat`, and `yi`:
@@ -237,12 +197,9 @@ grep -rn 'fufu\.land\|categoricalcat' modules/ docs/ .github/ ci/
 
 - Attic config check fails: ensure `services.atticd.settings.chunking` exists in
   `modules/services/atticd.nix`.
-- GitHub trigger cannot reach Forgejo or Woodpecker: the runner must be on
-  `yifuwuqi`. The variables `FORGEJO_INTERNAL_URL`, `WOODPECKER_INTERNAL_URL`,
-  and `GITHUB_REPO` are injected by running `setup-ci-env` in the workflow.
+- GitHub trigger cannot reach Forgejo: the runner must be on
+  `yifuwuqi`. The variables `FORGEJO_INTERNAL_URL`, and `GITHUB_REPO` are injected by running `setup-ci-env` in the workflow.
   This script is generated by `modules/services/github-runner.nix` and adds
   the correct values from the address registry to `$GITHUB_ENV`.
-- GitHub status is missing: check the Woodpecker `github_status_token` repo
-  secret and the `GITHUB_REPO` environment passed to the Woodpecker agent.
 - Cache pulls fail: the public key in `modules/nix-settings.nix` may still be
   the placeholder, or the client host may not have been redeployed.

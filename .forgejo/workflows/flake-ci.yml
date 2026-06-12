@@ -1,0 +1,58 @@
+name: flake ci
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: native
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: fmt
+        run: nix fmt -- --ci
+
+      - name: statix
+        run: nix develop --command statix check .
+
+      - name: deadnix
+        run: nix develop --command deadnix --fail .
+
+      - name: flake-check
+        run: nix flake check --print-build-logs --show-trace
+
+  setup-matrix:
+    runs-on: native
+    outputs:
+      hosts: ${{ steps.set-hosts.outputs.hosts }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-hosts
+        run: |
+          hosts=$(nix eval --json '.#nixosConfigurations' --apply 'builtins.attrNames')
+          echo "hosts=$hosts" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [check, setup-matrix]
+    runs-on: native
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        host: ${{ fromJSON(needs.setup-matrix.outputs.hosts) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build ${{ matrix.host }}
+        run: ci/build.sh ${{ matrix.host }}
+
+      - name: push
+        env:
+          ATTIC_TOKEN: ${{ secrets.attic_token }}
+        run: |
+          attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
+          echo "=== Pushing ${{ matrix.host }} ==="
+          attic push "$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"

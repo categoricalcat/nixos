@@ -28,7 +28,7 @@ in
       scrollback_lines = 100000;
       shell = "${zellijStart}/bin/zellij-start";
       window_padding_width = 2;
-      font_family = "family='${themeAssets.fonts.monospace.name}' weight=regular";
+      font_family = "family='${themeAssets.fonts.monospace.name}' style=Regular";
     };
     keybindings = {
       "ctrl+shift+t" = "new_os_window";

@@ -11,7 +11,7 @@ to build their system closures; it may offload derivation work to configured rem
 builders (`yitaishi`). Built paths flow back over SSH — no separate binary cache service
 needed for day-to-day switching.
 
-For the CI path that mirrors GitHub into Forgejo, builds with Woodpecker, and
+For the CI path that mirrors GitHub into Forgejo, builds with Forgejo Actions, and
 pushes results to Attic, see [CI and Binary Cache](ci-cache.md).
 
 ## Add A New Host — Step By Step

@@ -13,8 +13,7 @@ else
   echo "yitaishi is offline. Proceeding without it."
 fi
 
-while read -r h; do
-  echo
-  echo "=== Building $h ==="
-  nix build --refresh $thefiles "${BUILDER_ARGS[@]}" --print-build-logs ".#nixosConfigurations.$h.config.system.build.toplevel" --out-link "result-$h"
-done < .hosts
+host="$1"
+echo
+echo "=== Building $host ==="
+nix build --refresh $thefiles "${BUILDER_ARGS[@]}" --print-build-logs ".#nixosConfigurations.$host.config.system.build.toplevel" --out-link "result-$host"

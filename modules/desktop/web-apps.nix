@@ -130,5 +130,15 @@ in
       ];
       comment = "Password Manager";
     };
+
+    f1tv = mkWebApp {
+      name = "F1 TV";
+      url = "https://f1tv.formula1.com/";
+      categories = [
+        "AudioVideo"
+        "Video"
+      ];
+      comment = "Formula 1 TV";
+    };
   };
 }

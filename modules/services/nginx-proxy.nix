@@ -156,17 +156,6 @@ in
         };
       };
 
-      # Woodpecker CI — proxied to yifuwuqi
-      "${yifuwuqiServices.woodpecker.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.woodpecker.httpPort}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-
       # Portainer container management UI — proxied to yifuwuqi
       "prtnr.fufu.land" = {
         useACMEHost = "fufu.land";
