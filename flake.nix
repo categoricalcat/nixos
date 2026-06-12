@@ -35,24 +35,6 @@
 
         flake = {
           nixosConfigurations = {
-            yichuang = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                home-manager-small.nixosModules.home-manager
-                sops-nix.nixosModules.sops
-                nixos-wsl.nixosModules.default
-                ./hosts/yichuang/configuration.nix
-              ];
-            };
-
-            yifuwuqi = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                sops-nix.nixosModules.sops
-                home-manager.nixosModules.home-manager
-                ./hosts/yifuwuqi/configuration.nix
-              ];
-            };
 
             yixiaoqing = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
@@ -81,6 +63,15 @@
               ];
             };
 
+            yifuwuqi = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                sops-nix.nixosModules.sops
+                home-manager.nixosModules.home-manager
+                ./hosts/yifuwuqi/configuration.nix
+              ];
+            };
+
             yirukou = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
               modules = [
@@ -89,6 +80,17 @@
                 ./hosts/yirukou/configuration.nix
               ];
             };
+
+            yichuang = nixpkgs-small.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                home-manager-small.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                nixos-wsl.nixosModules.default
+                ./hosts/yichuang/configuration.nix
+              ];
+            };
+
           };
         };
 
