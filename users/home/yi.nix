@@ -23,7 +23,7 @@ in
     ../programs/dms.nix
   ]
   ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "noctalia") [
-    ../programs/noctalia.nix
+    ../programs/noctalia
   ]
   ++ lib.optionals (desktopEnvironment == "niri") [
     ../programs/niri.nix

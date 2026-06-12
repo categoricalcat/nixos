@@ -1,0 +1,108 @@
+[backdrop]
+enabled = true
+
+[bar.main]
+background_opacity = 0.0
+capsule = true
+capsule_opacity = 0.33000000000000002
+capsule_padding = 10.0
+center = ["media", "clock"]
+contact_shadow = true
+end = [
+    "sysmon",
+    "battery",
+    "spacer",
+    "tray",
+    "notifications",
+    "network",
+    "bluetooth",
+    "brightness",
+    "control-center",
+]
+font_weight = 400
+margin_edge = 4
+margin_ends = 32
+padding = 16
+panel_overlap = 0
+position = "top"
+radius = 80
+scale = 0.90000000000000002
+start = ["launcher", "workspaces", "active_window"]
+thickness = 28
+
+[location]
+auto_locate = true
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = ["lockscreen-login-box@eDP-1"]
+
+[lockscreen_widgets.grid]
+cell_size = 16
+major_interval = 4
+visible = true
+
+[lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+box_height = 0.0
+box_width = 0.0
+cx = 960.0
+cy = 1077.0
+output = "eDP-1"
+rotation = 0.0
+type = "login_box"
+
+[lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+background_color = "surface_variant"
+background_opacity = 0.88
+background_radius = 12.0
+input_opacity = 1.0
+input_radius = 6.0
+show_login_button = true
+
+[notification]
+enable_daemon = true
+
+[osd]
+position = "top_right"
+
+[shell]
+avatar_path = "/home/yi/Downloads/IMG_20251007_211453_874.jpg"
+font_family = "Maple Mono NF CN"
+lang = "pt-BR"
+settings_show_advanced = true
+telemetry_enabled = true
+time_format = "{:%H:%M}"
+ui_scale = 1.0500000081956387
+
+[shell.animation]
+enabled = true
+speed = 1.5
+
+[shell.shadow]
+alpha = 1.0
+
+[theme]
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "m3-content"
+
+[wallpaper]
+directory = "/home/yi/Downloads"
+
+[wallpaper.default]
+path = "/home/yi/Downloads/alexander-x-THBzaggt-B4-unsplash (1).jpg"
+
+[wallpaper.last]
+path = "/home/yi/Downloads/alexander-x-THBzaggt-B4-unsplash (1).jpg"
+
+[wallpaper.monitors.eDP-1]
+path = "/home/yi/Downloads/alexander-x-THBzaggt-B4-unsplash (1).jpg"
+
+[weather]
+enabled = true
+unit = "celsius"
+
+[widget.workspaces]
+empty_color = "on_secondary"
+occupied_color = "tertiary"
