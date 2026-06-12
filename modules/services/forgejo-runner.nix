@@ -29,7 +29,7 @@ in
       enable = true;
       name = "yifuwuqi";
       url = "https://${services.forgejo.domain}";
-      tokenFile = config.sops.secrets."tokens/forgejo-runner".path;
+      token = "dummy";
       labels = [
         "native:host"
       ];
@@ -43,10 +43,19 @@ in
         gnugrep
         gnused
         jq
+        nodejs
         openssh
         config.nix.package
         inputs.attic.packages.${system}.attic-client
       ];
+      settings = {
+        runner.labels = [ "native:host" ];
+        server.connections.yifuwuqi = {
+          url = "https://${services.forgejo.domain}";
+          token_url = "file://${config.sops.secrets."tokens/forgejo-runner".path}";
+          uuid = "16b3b945-20fb-450e-91ab-4de05a421ac8";
+        };
+      };
     };
   };
 
@@ -66,6 +75,7 @@ in
       ProtectHome = lib.mkForce false;
       PrivateMounts = lib.mkForce false;
       MemoryDenyWriteExecute = lib.mkForce false;
+      ExecStartPre = lib.mkForce [ "" ];
     };
   };
 }

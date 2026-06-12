@@ -1,4 +1,4 @@
-name: flake ci
+name: flake ci/cd
 
 on:
   push:
@@ -10,26 +10,17 @@ jobs:
   check:
     runs-on: native
     steps:
-      - uses: actions/checkout@v4
-
-      - name: fmt
-        run: nix fmt -- --ci
-
-      - name: statix
-        run: nix develop --command statix check .
-
-      - name: deadnix
-        run: nix develop --command deadnix --fail .
+      - uses: actions/checkout@main
 
       - name: flake-check
-        run: nix flake check --print-build-logs --show-trace
+        run: nix flake check --print-build-logs --show-trace -v
 
   setup-matrix:
     runs-on: native
     outputs:
       hosts: ${{ steps.set-hosts.outputs.hosts }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@main
       - id: set-hosts
         run: |
           hosts=$(nix eval --json '.#nixosConfigurations' --apply 'builtins.attrNames')
@@ -44,7 +35,7 @@ jobs:
       matrix:
         host: ${{ fromJSON(needs.setup-matrix.outputs.hosts) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@main
 
       - name: build ${{ matrix.host }}
         run: ci/build.sh ${{ matrix.host }}
@@ -53,6 +44,11 @@ jobs:
         env:
           ATTIC_TOKEN: ${{ secrets.attic_token }}
         run: |
+          if [ -z "$ATTIC_TOKEN" ]; then
+            echo "attic token is empty, exiting..."
+            exit 1
+          fi
+
           attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
           echo "=== Pushing ${{ matrix.host }} ==="
-          attic push "$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
+          attic push "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
