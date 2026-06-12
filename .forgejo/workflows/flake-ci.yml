@@ -11,11 +11,9 @@ jobs:
     runs-on: native
     steps:
       - uses: actions/checkout@main
+      - run: nix flake check --print-build-logs --show-trace -v
 
-      - name: flake-check
-        run: nix flake check --print-build-logs --show-trace -v
-
-  setup-matrix:
+  set-hosts:
     runs-on: native
     outputs:
       hosts: ${{ steps.set-hosts.outputs.hosts }}
@@ -26,7 +24,7 @@ jobs:
           hosts=$(nix eval --json '.#nixosConfigurations' --apply 'builtins.attrNames')
           echo "hosts=$hosts" >> "$GITHUB_OUTPUT"
 
-  build:
+  buildepush:
     needs: [check, setup-matrix]
     runs-on: native
     strategy:
@@ -36,11 +34,8 @@ jobs:
         host: ${{ fromJSON(needs.setup-matrix.outputs.hosts) }}
     steps:
       - uses: actions/checkout@main
-
-      - name: build ${{ matrix.host }}
-        run: ci/build.sh ${{ matrix.host }}
-
-      - name: push
+      - run: ci/build.sh ${{ matrix.host }}
+      - name: attic push
         env:
           ATTIC_TOKEN: ${{ secrets.attic_token }}
         run: |
@@ -50,5 +45,5 @@ jobs:
           fi
 
           attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
-          echo "=== Pushing ${{ matrix.host }} ==="
           attic push "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
+          echo ">>= pushd ${{ matrix.host }} =<<"
