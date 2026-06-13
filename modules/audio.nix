@@ -118,6 +118,7 @@ in
     # Routing & monitoring
     unstable.qpwgraph
     unstable.pavucontrol
+    unstable.alsa-scarlett-gui
   ];
 
   environment.sessionVariables = {
