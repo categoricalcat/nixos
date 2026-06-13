@@ -213,6 +213,8 @@ in
         appicon-padding = 6;
         appicon-style = "NORMAL";
         dot-position = "BOTTOM";
+        group-apps-label-font-weight = "normal";
+        window-preview-title-font-weight = "normal";
         dot-style-focused = "DOTS";
         dot-style-unfocused = "DOTS";
         # extension-version = 72;
