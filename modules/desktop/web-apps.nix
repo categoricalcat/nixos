@@ -140,5 +140,15 @@ in
       ];
       comment = "Formula 1 TV";
     };
+
+    forgejo = mkWebApp {
+      name = "Forgejo.git";
+      url = "https://git.fufu.land";
+      categories = [
+        "Development"
+        "RevisionControl"
+      ];
+      comment = "Git Repository Hosting";
+    };
   };
 }
