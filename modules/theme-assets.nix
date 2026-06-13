@@ -14,7 +14,10 @@ in
   };
 
   icons = {
-    package = unstable.papirus-icon-theme;
+    package = unstable.catppuccin-papirus-folders.override {
+      accent = "pink";
+      flavor = "mocha";
+    };
     dark = "Papirus-Dark";
     light = "Papirus-Light";
   };
