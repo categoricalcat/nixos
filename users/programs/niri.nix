@@ -1,12 +1,23 @@
 {
   lib,
   osConfig,
-  inputs,
+  desktopShell ? osConfig.desktop.shell,
   ...
 }:
 
 let
-  cfg = osConfig.desktop.monitors;
+  monitors = osConfig.desktop.monitors;
+
+  generatedBinds =
+    lib.optionalString (desktopShell == "dms") ''
+      Mod+Space hotkey-overlay-title="Run an Application: dms" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
+    ''
+    + ''
+      Mod+T { spawn "kitty"; }
+      Mod+Period { spawn "smile"; }
+      Print { spawn "ksnip" "-r"; }
+      F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    '';
 
   generateOutput = m: ''
     output "${m.name}" {
@@ -19,37 +30,20 @@ let
     }
   '';
 
-  outputsKdl = lib.concatStringsSep "\n" (map generateOutput cfg);
+  outputsKdl = lib.concatMapStringsSep "\n" generateOutput monitors;
+
+  configKdl =
+    builtins.replaceStrings
+      [
+        "// @nix-generated-binds"
+        "// @nix-generated-outputs"
+      ]
+      [
+        generatedBinds
+        outputsKdl
+      ]
+      (builtins.readFile ./niri/config.kdl);
 in
 {
-  xdg.configFile."niri/config.kdl".text =
-    let
-      baseKdl = builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl";
-      patchedKdl =
-        builtins.replaceStrings
-          [ "binds {" ]
-          [
-            ''
-              binds {
-                ''${launcherBind}
-                Mod+T { spawn "kitty"; }
-                Mod+Period { spawn "smile"; }
-                Print { spawn "ksnip" "-r"; }
-                F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-            ''
-          ]
-          (
-            lib.concatStringsSep "\n" (
-              lib.filter (
-                line:
-                !(lib.hasInfix "Mod+T" line && lib.hasInfix "alacritty" line)
-                && !(lib.hasInfix "Mod+Space" line && lib.hasInfix "spotlight" line)
-              ) (lib.splitString "\n" baseKdl)
-            )
-          );
-    in
-    ''
-      ${patchedKdl}
-      ${outputsKdl}
-    '';
+  xdg.configFile."niri/config.kdl".text = configKdl;
 }
