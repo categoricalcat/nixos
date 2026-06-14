@@ -45,10 +45,7 @@ in
       npm-check-updates
     ];
 
-    # Link every root flake input under ~/inputs for quick inspection and reuse.
-    file = homeInputFiles // {
-      ".config/zsh".enable = lib.mkForce false;
-    };
+    file = homeInputFiles;
 
     sessionVariables = {
       TERMINFO = "/run/current-system/sw/share/terminfo";

@@ -14,6 +14,6 @@ else
 fi
 
 host="$1"
-echo
-echo "=== Building $host ==="
+echo "::group::nix build $host"
 nix build --refresh $thefiles "${BUILDER_ARGS[@]}" --print-build-logs ".#nixosConfigurations.$host.config.system.build.toplevel" --out-link "result-$host"
+echo "::endgroup::"

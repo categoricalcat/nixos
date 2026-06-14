@@ -11,7 +11,10 @@ jobs:
     runs-on: native
     steps:
       - uses: actions/checkout@main
-      - run: nix flake check --print-build-logs --show-trace -v
+      - run: |
+          echo "::group::nix flake check"
+          nix flake check --print-build-logs --show-trace
+          echo "::endgroup::"
 
   buildepush:
     needs: [check]
@@ -33,6 +36,7 @@ jobs:
             exit 1
           fi
 
+          echo "::group::attic push ${{ matrix.host }}"
           attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
           attic push "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
-          echo ">>= pushd ${{ matrix.host }} =<<"
+          echo "::endgroup::"

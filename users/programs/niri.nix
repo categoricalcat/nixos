@@ -2,6 +2,7 @@
   lib,
   osConfig,
   desktopShell ? osConfig.desktop.shell,
+  inputs,
   ...
 }:
 
@@ -42,11 +43,9 @@ let
         generatedBinds
         outputsKdl
       ]
-      (builtins.readFile ./niri/config.kdl);
+      (builtins.readFile "${inputs.thefiles}/.config/niri/config.kdl");
 in
 {
-  home.file.".config/niri".enable = lib.mkForce false;
-
   xdg.enable = true;
   xdg.configFile."niri/config.kdl".text = configKdl;
 }
