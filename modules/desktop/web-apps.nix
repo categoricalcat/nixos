@@ -150,5 +150,25 @@ in
       ];
       comment = "Git Repository Hosting";
     };
+
+    tiktok = mkWebApp {
+      name = "TikTok";
+      url = "https://www.tiktok.com";
+      categories = [
+        "Network"
+        "WebBrowser"
+      ];
+      comment = "TikTok Web";
+    };
+
+    instagram = mkWebApp {
+      name = "Instagram";
+      url = "https://www.instagram.com";
+      categories = [
+        "Network"
+        "WebBrowser"
+      ];
+      comment = "Instagram Web";
+    };
   };
 }
