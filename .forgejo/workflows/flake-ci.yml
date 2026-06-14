@@ -13,25 +13,14 @@ jobs:
       - uses: actions/checkout@main
       - run: nix flake check --print-build-logs --show-trace -v
 
-  set-hosts:
-    runs-on: native
-    outputs:
-      hosts: ${{ steps.set-hosts.outputs.hosts }}
-    steps:
-      - uses: actions/checkout@main
-      - id: set-hosts
-        run: |
-          hosts=$(nix eval --json '.#nixosConfigurations' --apply 'builtins.attrNames')
-          echo "hosts=$hosts" >> "$GITHUB_OUTPUT"
-
   buildepush:
-    needs: [check, set-hosts]
+    needs: [check]
     runs-on: native
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix:
-        host: ${{ fromJSON(needs.set-hosts.outputs.hosts) }}
+        host: [yixiaoqing, yitaishi, yifuwuqi, yirukou, yichuang]
     steps:
       - uses: actions/checkout@main
       - run: ci/build.sh ${{ matrix.host }}
