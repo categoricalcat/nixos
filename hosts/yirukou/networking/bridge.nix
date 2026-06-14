@@ -33,7 +33,7 @@ in
         matchConfig.Name = lan.interface;
         address = [
           lan.ipv4.address
-          "${addresses.network.sinkhole.ipv4.host}/${builtins.toString lan.ipv4.prefixLength}"
+          "${addresses.network.sinkhole.ipv4.host}/${toString lan.ipv4.prefixLength}"
         ];
         networkConfig = {
           DHCP = "no";

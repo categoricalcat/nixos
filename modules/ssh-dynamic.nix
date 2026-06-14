@@ -12,7 +12,7 @@ let
     lib.optionalString (ip != null && (host.ssh.listenPort or null) != null) ''
       Host ${host.hostName}.${alias.suffix}
           HostName ${ip}
-          Port ${builtins.toString host.ssh.listenPort}
+          Port ${toString host.ssh.listenPort}
     '';
 
   dynamicSshConfig = lib.concatStringsSep "\n" (

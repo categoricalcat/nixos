@@ -7,7 +7,7 @@
 
 let
   noctaliaPackage = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  noctaliaConfig = builtins.fromTOML (builtins.readFile ./config.toml);
+  noctaliaConfig = fromTOML (builtins.readFile ./config.toml);
 in
 {
   imports = [ inputs.noctalia.homeModules.default ];

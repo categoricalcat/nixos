@@ -33,7 +33,7 @@ let
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMmSvhc3u+aAXkWFSOOT+OPq0xbkRzmXAAHfuMjx+uk yi@nixos"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEnmvcucoKU8G0WLIV6NMsen1Es94bC/3yCRwOLEV2mP"
       ]
-      ++ builtins.filter (x: x != null) (builtins.map (k: k.sshPublicKey) (builtins.attrValues meshKeys));
+      ++ builtins.filter (x: x != null) (map (k: k.sshPublicKey) (builtins.attrValues meshKeys));
 
       meshKeys = {
         yifuwuqi = {
