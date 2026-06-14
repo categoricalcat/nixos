@@ -8,7 +8,7 @@ if [ ! -f "flake.nix" ]; then
 fi
 
 quiet=false
-action="dry-build"
+action="build"
 
 for arg in "$@"; do
   case "$arg" in
@@ -23,7 +23,7 @@ if $quiet; then
   rebuild_flags=()
 else
   check_flags=(-v)
-  rebuild_flags=(--print-build-logs --show-trace -v)
+  rebuild_flags=(-L -t -v)
 fi
 
 HOST_NAME=${HOST:-$(hostname)}
@@ -34,4 +34,4 @@ deadnix -- --fail .
 ./users/scripts/setup-sops.sh
 git add .
 nix flake check "${check_flags[@]}"
-sudo nixos-rebuild --flake ".#$HOST_NAME" "${rebuild_flags[@]}" "$action"
+nh os "$action" -H "$HOST_NAME" "${rebuild_flags[@]}" .

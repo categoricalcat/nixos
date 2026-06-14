@@ -100,7 +100,7 @@ in
       (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
       (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
       (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
-
+      (pkgs.writeShellScriptBin "nhos" (builtins.readFile ./scripts/nhos.sh))
     ];
 
     variables = {

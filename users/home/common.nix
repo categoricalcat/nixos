@@ -46,7 +46,9 @@ in
     ];
 
     # Link every root flake input under ~/inputs for quick inspection and reuse.
-    file = homeInputFiles;
+    file = homeInputFiles // {
+      ".config/zsh".enable = lib.mkForce false;
+    };
 
     sessionVariables = {
       TERMINFO = "/run/current-system/sw/share/terminfo";

@@ -91,10 +91,10 @@ in
         netbird = {
           interface = "wt0";
           ipv4 = rec {
-            cidr = "100.85.0.0/24";
-            host = "100.85.0.1";
-            prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            cidr = "100.42.0.0/16";
+            host = "100.42.0.2";
+            prefixLength = 16;
+            address = "${host}/${toString prefixLength}";
           };
         };
 
@@ -103,7 +103,7 @@ in
           ipv4 = rec {
             host = "10.42.0.2";
             prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
             gateway = "10.42.0.1";
           };
         };
@@ -122,13 +122,13 @@ in
           ipv6 = rec {
             host = "fd7a:115c:a1e0::8501:3aa9";
             prefixLength = 128;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
           ipv4 = rec {
             cidr = "100.64.0.0/10";
             host = "100.69.0.6";
             prefixLength = 32;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
         };
       };
@@ -158,6 +158,7 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
+          network.netbird.ipv4.host
           network.lan.ipv4.host
         ];
         listenWildcardIPv4 = null;
@@ -218,10 +219,10 @@ in
         netbird = {
           interface = "wt0";
           ipv4 = rec {
-            cidr = "100.85.0.0/24";
-            host = "100.85.0.3";
-            prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            cidr = "100.42.0.0/16";
+            host = "100.42.0.4";
+            prefixLength = 16;
+            address = "${host}/${toString prefixLength}";
           };
         };
 
@@ -230,7 +231,7 @@ in
           ipv4 = rec {
             host = "100.69.0.3";
             prefixLength = 32;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
         };
       };
@@ -239,6 +240,7 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
+          network.netbird.ipv4.host
         ];
         listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
@@ -259,10 +261,10 @@ in
         netbird = {
           interface = "wt0";
           ipv4 = rec {
-            cidr = "100.85.0.0/24";
-            host = "100.85.0.4";
-            prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            cidr = "100.42.0.0/16";
+            host = "100.42.0.3";
+            prefixLength = 16;
+            address = "${host}/${toString prefixLength}";
           };
         };
 
@@ -271,7 +273,7 @@ in
           ipv4 = rec {
             host = "100.69.0.4";
             prefixLength = 32;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
         };
       };
@@ -280,6 +282,7 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
+          network.netbird.ipv4.host
         ];
         listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
@@ -315,10 +318,10 @@ in
         netbird = {
           interface = "wt0";
           ipv4 = rec {
-            cidr = "100.85.0.0/24";
-            host = "100.85.0.2";
-            prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            cidr = "100.42.0.0/16";
+            host = "100.42.0.1";
+            prefixLength = 16;
+            address = "${host}/${toString prefixLength}";
           };
         };
 
@@ -338,7 +341,7 @@ in
           ipv4 = rec {
             host = "100.69.0.1";
             prefixLength = 32;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
         };
 
@@ -354,7 +357,7 @@ in
             cidr = "10.42.0.0/24";
             host = "10.42.0.1";
             prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
           dhcp.pool = rec {
             start = "10.42.0.100";
@@ -366,12 +369,12 @@ in
         untrusted = rec {
           parentInterface = "enp2s0";
           vlanId = 42;
-          interface = "${parentInterface}.${builtins.toString vlanId}";
+          interface = "${parentInterface}.${toString vlanId}";
           ipv4 = rec {
             cidr = "10.42.42.0/24";
             host = "10.42.42.1";
             prefixLength = 24;
-            address = "${host}/${builtins.toString prefixLength}";
+            address = "${host}/${toString prefixLength}";
           };
           dhcp.pool = rec {
             start = "10.42.42.100";
@@ -411,6 +414,7 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
+          network.netbird.ipv4.host
           network.lan.ipv4.host
         ];
         listenWildcardIPv4 = null;

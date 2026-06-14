@@ -45,5 +45,8 @@ let
       (builtins.readFile ./niri/config.kdl);
 in
 {
+  home.file.".config/niri".enable = lib.mkForce false;
+
+  xdg.enable = true;
   xdg.configFile."niri/config.kdl".text = configKdl;
 }

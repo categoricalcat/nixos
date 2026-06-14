@@ -9,6 +9,14 @@ _: {
           statix.enable = true;
           deadnix.enable = true;
 
+          nixf-diagnose = {
+            enable = true;
+            name = "nixf-diagnose";
+            description = "Run nixf-diagnose to catch semantic errors";
+            entry = "${pkgs.nixf-diagnose}/bin/nixf-diagnose";
+            files = "\\.nix$";
+          };
+
           flake-check = {
             enable = false;
             name = "nix flake check";
