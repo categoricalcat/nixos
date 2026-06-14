@@ -43,6 +43,7 @@ in
 
   services.openssh = {
     enable = true;
+    ports = [ addresses.ssh.listenPort ];
 
     hostKeys = [
       {
