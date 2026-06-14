@@ -27,7 +27,9 @@ let
   llama-rpc-server = lib.getExe' llama-cpp "llama-rpc-server";
 
   ai = import ./models.nix;
-  tailscaleDeps = lib.optional config.services.tailscale.enable "tailscaled.service";
+  vpnDeps =
+    lib.optional config.services.tailscale.enable "tailscaled.service"
+    ++ lib.optional config.services.netbird.enable "netbird.service";
   rpcEnabledFor = m: cfg.rpcPeers != [ ] && (m.rpc or true);
   deviceAllow = [ "/dev/kfd rw" ] ++ map (node: "${node} rw") cfg.drmDevices;
   rocmEnvironment =
@@ -230,8 +232,8 @@ in
         };
 
         systemd.services.llama-swap = {
-          after = [ "network-online.target" ] ++ tailscaleDeps;
-          wants = [ "network-online.target" ] ++ tailscaleDeps;
+          after = [ "network-online.target" ] ++ vpnDeps;
+          wants = [ "network-online.target" ] ++ vpnDeps;
 
           # Persistent HuggingFace cache + GPU access for the spawned
           # llama-server children. The debug probe stays in place because it
@@ -255,8 +257,8 @@ in
         systemd.services.llama-rpc-server = {
           description = "llama.cpp RPC worker";
           wantedBy = [ "multi-user.target" ];
-          after = [ "network-online.target" ] ++ tailscaleDeps;
-          wants = [ "network-online.target" ] ++ tailscaleDeps;
+          after = [ "network-online.target" ] ++ vpnDeps;
+          wants = [ "network-online.target" ] ++ vpnDeps;
 
           serviceConfig = rocmServiceConfig // {
             Type = "simple";

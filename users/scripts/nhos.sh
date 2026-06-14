@@ -36,4 +36,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-exec nh os "${args[@]}" -H "$TARGET_HOST" "git+ssh://${REMOTE}:${PORT}${FLAKE_DIR}"
+if [[ "$(hostname)" == yifuwuqi ]]; then
+  FLAKE_URI="$FLAKE_DIR"
+else
+  FLAKE_URI="git+ssh://${REMOTE}:${PORT}${FLAKE_DIR}"
+fi
+
+echo "nh os ${args[*]} -H $TARGET_HOST $FLAKE_URI"
+read -n 1 -s -r -p "Press any key to continue..."
+echo
+exec nh os "${args[@]}" -H "$TARGET_HOST" "$FLAKE_URI"

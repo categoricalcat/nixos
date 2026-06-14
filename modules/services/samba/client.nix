@@ -38,9 +38,26 @@ in
 
   boot.supportedFilesystems = [ "cifs" ];
 
-  # Tailscale Samba mounts — only on hosts with Tailscale enabled
   fileSystems = {
-    "/mnt/smb/share" = lib.mkIf hasTailscale {
+    "/mnt/smb/share" = lib.mkIf hasNetbird {
+      device = "//${addresses.hosts.yifuwuqi.network.vpn.ipv4.host}/share";
+      fsType = "cifs";
+      options = mountCommonOptions ++ [
+        "x-systemd.after=netbird.service"
+        "x-systemd.requires=netbird.service"
+      ];
+    };
+
+    "/mnt/smb/the.files" = lib.mkIf hasNetbird {
+      device = "//${addresses.hosts.yifuwuqi.network.vpn.ipv4.host}/the.files";
+      fsType = "cifs";
+      options = mountCommonOptions ++ [
+        "x-systemd.after=netbird.service"
+        "x-systemd.requires=netbird.service"
+      ];
+    };
+
+    "/mnt/smb/ts/share" = lib.mkIf hasTailscale {
       device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/share";
       fsType = "cifs";
       options = mountCommonOptions ++ [
@@ -49,31 +66,12 @@ in
       ];
     };
 
-    "/mnt/smb/the.files" = lib.mkIf hasTailscale {
+    "/mnt/smb/ts/the.files" = lib.mkIf hasTailscale {
       device = "//${addresses.hosts.yifuwuqi.network.tailscale.ipv4.host}/the.files";
       fsType = "cifs";
       options = mountCommonOptions ++ [
         "x-systemd.after=tailscaled.service"
         "x-systemd.requires=tailscaled.service"
-      ];
-    };
-
-    # Netbird Samba mounts — only on hosts with Netbird enabled
-    "/mnt/smb/nb/share" = lib.mkIf hasNetbird {
-      device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/share";
-      fsType = "cifs";
-      options = mountCommonOptions ++ [
-        "x-systemd.after=netbird.service"
-        "x-systemd.requires=netbird.service"
-      ];
-    };
-
-    "/mnt/smb/nb/the.files" = lib.mkIf hasNetbird {
-      device = "//${addresses.hosts.yifuwuqi.network.netbird.ipv4.host}/the.files";
-      fsType = "cifs";
-      options = mountCommonOptions ++ [
-        "x-systemd.after=netbird.service"
-        "x-systemd.requires=netbird.service"
       ];
     };
   };
@@ -84,13 +82,13 @@ in
     after =
       lib.optionals hasTailscale [
         "tailscaled.service"
-        "mnt-smb-share.mount"
-        "mnt-smb-the.files.mount"
+        "mnt-smb-ts-share.mount"
+        "mnt-smb-ts-the.files.mount"
       ]
       ++ lib.optionals hasNetbird [
         "netbird.service"
-        "mnt-smb-nb-share.mount"
-        "mnt-smb-nb-the.files.mount"
+        "mnt-smb-share.mount"
+        "mnt-smb-the.files.mount"
       ];
     serviceConfig = {
       Type = "oneshot";

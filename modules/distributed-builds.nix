@@ -46,7 +46,7 @@ let
   sshHostConfig = lib.concatStringsSep "\n" (
     map (name: ''
       Host ${name}
-        HostName ${allAddresses.hosts.${name}.network.tailscale.ipv4.host}
+        HostName ${allAddresses.hosts.${name}.network.vpn.ipv4.host}
         Port ${toString allAddresses.hosts.${name}.ssh.listenPort}
         User nix-builder
         IdentityFile ${builderPrivateKey}

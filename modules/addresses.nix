@@ -86,7 +86,7 @@ in
       }
       // sharedDnsUpstreams;
 
-      network = {
+      network = rec {
 
         netbird = {
           interface = "wt0";
@@ -97,6 +97,8 @@ in
             address = "${host}/${toString prefixLength}";
           };
         };
+
+        vpn = netbird;
 
         lan = {
           interface = "eno1";
@@ -215,7 +217,7 @@ in
     yixiaoqing = rec {
       hostName = "yixiaoqing";
 
-      network = {
+      network = rec {
         netbird = {
           interface = "wt0";
           ipv4 = rec {
@@ -225,6 +227,8 @@ in
             address = "${host}/${toString prefixLength}";
           };
         };
+
+        vpn = netbird;
 
         tailscale = {
           interface = "tailscale0";
@@ -257,7 +261,7 @@ in
     yitaishi = rec {
       hostName = "yitaishi";
 
-      network = {
+      network = rec {
         netbird = {
           interface = "wt0";
           ipv4 = rec {
@@ -267,6 +271,8 @@ in
             address = "${host}/${toString prefixLength}";
           };
         };
+
+        vpn = netbird;
 
         tailscale = {
           interface = "tailscale0";
@@ -314,7 +320,7 @@ in
       }
       // sharedDnsUpstreams;
 
-      network = {
+      network = rec {
         netbird = {
           interface = "wt0";
           ipv4 = rec {
@@ -324,6 +330,8 @@ in
             address = "${host}/${toString prefixLength}";
           };
         };
+
+        vpn = netbird;
 
         wan = {
           primary = {
@@ -453,7 +461,7 @@ in
       suffix = "vpn";
       path = [
         "network"
-        "tailscale"
+        "vpn"
         "ipv4"
         "host"
       ];

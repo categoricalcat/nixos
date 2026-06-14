@@ -174,8 +174,8 @@ in
     after = [
       "network-online.target"
     ]
-    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
-    #++ (lib.optional config.services.netbird.enable "netbird.service");
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
+    ++ (lib.optional config.services.netbird.enable "netbird.service");
 
     environment = {
       GOMEMLIMIT = "2560MiB";

@@ -20,7 +20,8 @@ in
       "network-online.target"
       "time-sync.target"
     ]
-    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
+    ++ (lib.optional config.services.netbird.enable "netbird.service");
 
     startLimitIntervalSec = 0;
     serviceConfig.RestartSec = "2s";
@@ -35,7 +36,7 @@ in
   };
 
   boot.kernel.sysctl = {
-    # Allow sshd to bind to Tailscale IP before tailscaled assigns it
+    # Allow sshd to bind to VPN IPs before tunnel interfaces assign them.
     "net.ipv4.ip_nonlocal_bind" = 1;
     "net.ipv6.ip_nonlocal_bind" = 1;
   };

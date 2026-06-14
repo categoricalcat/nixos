@@ -1,4 +1,5 @@
 {
+  addresses,
   config,
   pkgs,
   inputs,
@@ -21,9 +22,15 @@ in
   };
 
   config = lib.mkIf (cfg.settings != { }) {
-    networking.firewall.interfaces."tailscale0" = {
-      allowedTCPPorts = [ 4242 ];
-      allowedUDPPorts = [ 4242 ];
+    networking.firewall.interfaces = {
+      ${config.services.tailscale.interfaceName} = lib.mkIf config.services.tailscale.enable {
+        allowedTCPPorts = [ 4242 ];
+        allowedUDPPorts = [ 4242 ];
+      };
+      ${addresses.network.vpn.interface} = lib.mkIf config.services.netbird.enable {
+        allowedTCPPorts = [ 4242 ];
+        allowedUDPPorts = [ 4242 ];
+      };
     };
 
     home-manager.users.yi = {

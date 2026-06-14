@@ -11,6 +11,7 @@ let
     lan.interface
     untrusted.interface
     config.services.tailscale.interfaceName
+    addresses.network.vpn.interface
   ];
   wanInterfaces = [
     wan.primary.interface
@@ -78,6 +79,9 @@ in
           allowedUDPPorts = internalUdpPorts;
         };
         ${config.services.tailscale.interfaceName} = {
+          allowedTCPPorts = [ addresses.ssh.listenPort ];
+        };
+        ${addresses.network.vpn.interface} = {
           allowedTCPPorts = [ addresses.ssh.listenPort ];
         };
       };

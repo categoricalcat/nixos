@@ -17,6 +17,7 @@ _: {
 
     allowInterfaces = [
       "tailscale0"
+      "wt0"
       "eno1"
     ];
 

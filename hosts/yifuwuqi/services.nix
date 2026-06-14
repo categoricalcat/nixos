@@ -7,7 +7,7 @@
 }:
 
 let
-  yitaishiTs = allAddresses.hosts.yitaishi.network.tailscale.ipv4.host;
+  yitaishiVpn = allAddresses.hosts.yitaishi.network.vpn.ipv4.host;
 in
 {
   imports = [
@@ -77,7 +77,7 @@ in
       enable = true;
       rocmTargets = [ "gfx1035" ];
       rocmOverrideGfx = "10.3.0";
-      rpcPeers = [ "${yitaishiTs}:50052" ];
+      rpcPeers = [ "${yitaishiVpn}:50052" ];
       tensorSplit = "1,0";
     };
 

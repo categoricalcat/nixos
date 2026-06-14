@@ -146,7 +146,7 @@ in
     left = {
       hostname = "${allAddresses.hosts.yitaishi.hostName}.vpn";
       activate_on_startup = true;
-      ips = [ allAddresses.hosts.yitaishi.network.tailscale.ipv4.host ];
+      ips = [ allAddresses.hosts.yitaishi.network.vpn.ipv4.host ];
     };
     authorized_fingerprints = {
       # "yitaishi-fingerprint" = "yitaishi";

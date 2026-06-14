@@ -11,7 +11,7 @@ let
   trustedProxyCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
     allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
-    allAddresses.hosts.yifuwuqi.network.netbird.ipv4.cidr
+    allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr
   ];
   restrictedProxyConfig = ''
     ${builtins.concatStringsSep "\n" (map (cidr: "allow ${cidr};") trustedProxyCidrs)}
@@ -68,13 +68,13 @@ in
         };
       };
 
-      "${addresses.network.tailscale.ipv4.host}" = {
-        serverName = "${addresses.network.tailscale.ipv4.host}";
+      "${addresses.network.vpn.ipv4.host}" = {
+        serverName = "${addresses.network.vpn.ipv4.host}";
         forceSSL = false;
         locations."/" = {
           extraConfig = ''
             add_header Content-Type text/plain;
-            return 200 "${addresses.network.tailscale.ipv4.host} ok";
+            return 200 "${addresses.network.vpn.ipv4.host} ok";
           '';
         };
       };
