@@ -1,5 +1,4 @@
 secrets/secrets.yaml
-secrets/key.txt
 result
 docs/book/
 .pre-commit-config.yaml
