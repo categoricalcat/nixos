@@ -42,11 +42,6 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                (_: {
-                  nixpkgs.overlays = [
-                    (_final: prev: { dgop = inputs.dgop.packages.${prev.stdenv.hostPlatform.system}.default; })
-                  ];
-                })
                 ./hosts/yixiaoqing/configuration.nix
               ];
             };
@@ -107,7 +102,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     flake-parts.url = "github:hercules-ci/flake-parts";
     attic.url = "github:zhaofengli/attic";
-    nixvim.url = "github:nix-community/nixvim";
+    nixvim.url = "github:nix-community/nixvim/nixos-26.05";
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
@@ -154,14 +149,9 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
-    dgop = {
-      url = "github:AvengeMedia/dgop";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
-
     dms = {
-      url = "github:AvengeMedia/DankMaterialShell/stable";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:AvengeMedia/DankMaterialShell/master";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     noctalia = {

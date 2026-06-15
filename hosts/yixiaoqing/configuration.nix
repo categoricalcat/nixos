@@ -9,7 +9,7 @@
 
 let
   desktopEnvironment = "niri";
-  desktopShell = "noctalia";
+  desktopShell = "dms";
   # desktopShell = "dms";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;

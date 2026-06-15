@@ -23,6 +23,7 @@
       lualine.enable = true;
       telescope.enable = true;
       treesitter.enable = true;
+      web-devicons.enable = true;
 
       lsp = {
         enable = true;
