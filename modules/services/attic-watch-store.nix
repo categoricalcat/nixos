@@ -47,7 +47,7 @@ in
       export HOME="/var/lib/attic-watch-store"
       ATTIC_TOKEN=$(< "$CREDENTIALS_DIRECTORY/attic-push-token")
       attic login ${attic.cacheName} ${atticEndpoint} "$ATTIC_TOKEN"
-      exec attic watch-store ${attic.cacheName}:${attic.cacheName}
+      exec attic watch-store ${attic.cacheName}:${attic.cacheName} --ignore-upstream-cache-filter
     '';
   };
 }

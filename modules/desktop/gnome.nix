@@ -24,7 +24,7 @@
       };
 
       gnome = {
-        core-apps.enable = true;
+        core-apps.enable = false;
         core-developer-tools.enable = false;
         games.enable = false;
       };
@@ -72,6 +72,16 @@
       dconf2nix
       dconf-editor
 
+      # Core GNOME Apps we want to keep
+      nautilus
+      loupe
+      gnome-system-monitor
+      gnome-calculator
+      gnome-weather
+      gnome-calendar
+      showtime # GNOME Video player
+      decibels # GNOME Audio player
+
       gnomeExtensions.appindicator
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.dash-to-panel
@@ -79,7 +89,6 @@
       gnomeExtensions.kimpanel
       gnomeExtensions.pip-on-top
       gnomeExtensions.vitals
-      gnome-weather
       gnomeExtensions.weather-oclock
       gnomeExtensions.vertical-workspaces
       gnomeExtensions.mpris-label

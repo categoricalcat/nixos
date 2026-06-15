@@ -44,6 +44,10 @@ in
     environmentFile = config.sops.secrets."tokens/attic-server-jwt-env".path;
     settings = {
       listen = "[::]:${toString attic.port}";
+      garbage-collection = {
+        interval = "3 days";
+        default-retention-period = "15 days";
+      };
       chunking = {
         nar-size-threshold = 64 * 1024;
         min-size = 16 * 1024;
