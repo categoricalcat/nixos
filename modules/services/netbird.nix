@@ -8,11 +8,10 @@ in
     package = unstable.netbird;
   };
 
-  networking.firewall.trustedInterfaces = [ "wt+" ];
+  networking.firewall.trustedInterfaces = [ "wt0" ];
 
-  # SMB ports on Netbird
   networking.firewall.extraInputRules = ''
-    iifname "wt*" tcp dport { 139, 445 } accept
-    iifname "wt*" udp dport { 137, 138 } accept
+    iifname "wt0" tcp dport { 139, 445 } accept
+    iifname "wt0" udp dport { 137, 138 } accept
   '';
 }

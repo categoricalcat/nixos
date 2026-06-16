@@ -10,9 +10,18 @@
 let
   unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
   attic = allAddresses.hosts.yifuwuqi.services.attic;
+
 in
 {
+  environment.etc = lib.mapAttrs' (name: value: {
+    name = "nix/inputs/${name}";
+    value.source = value.outPath;
+  }) (lib.filterAttrs (name: _: name != "self") inputs);
+
   nix = {
+    registry = lib.mapAttrs (_: flake: { inherit flake; }) inputs;
+    nixPath = [ "/etc/nix/inputs" ];
+
     package = unstable.nix;
 
     gc = {
