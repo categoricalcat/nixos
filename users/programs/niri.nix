@@ -37,17 +37,17 @@ let
 
   outputsKdl = lib.concatMapStringsSep "\n" generateOutput monitors;
 
-  configKdl = pkgs.runCommand "niri-config.kdl" { } ''
-    cp ${inputs.thefiles}/.config/niri/config.kdl "$out"
-    chmod +w "$out"
-    printf '\ninclude "nix-generated-binds.kdl"\ninclude "nix-generated-outputs.kdl"\n' >> "$out"
+  niriConfigDir = pkgs.runCommand "niri-config" { } ''
+    cp -r ${inputs.thefiles}/.config/niri "$out"
+    chmod -R +w "$out"
+    printf '\ninclude "nix-generated-binds.kdl"\ninclude "nix-generated-outputs.kdl"\n' >> "$out/config.kdl"
   '';
 in
 {
   xdg.enable = true;
+  home.file.".config/niri".source = lib.mkForce niriConfigDir;
   xdg.configFile = {
     "niri/nix-generated-binds.kdl".text = generatedBinds;
     "niri/nix-generated-outputs.kdl".text = outputsKdl;
-    "niri/config.kdl".source = configKdl;
   };
 }
