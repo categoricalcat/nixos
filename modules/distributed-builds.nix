@@ -7,64 +7,67 @@
 
 let
   keys = import ../secrets/keys.nix;
-  builderPrivateKey = keys.paths.sshHostKey;
+  hostName = config.networking.hostName;
+  inherit (allAddresses) hosts;
 
-  authorizedClientKeys = lib.pipe keys.hosts [
-    (lib.filterAttrs (name: host: host.sshPublicKey != null && name != config.networking.hostName))
-    (lib.mapAttrsToList (_: host: host.sshPublicKey))
+  localBuild = hosts.${hostName}.nixBuild;
+  builderNames = lib.pipe hosts [
+    (lib.filterAttrs (
+      name: host: name != hostName && host.nixBuild.enable && host.nixBuild.remoteBuilder
+    ))
+    builtins.attrNames
   ];
 
-  # Explicitly define the builders we want to use, skipping the current host if it is one.
-  remoteBuilders = [
-    "yifuwuqi"
-    # "yitaishi"
+  clientNames = lib.pipe hosts [
+    (lib.filterAttrs (name: host: name != hostName && host.nixBuild.enable))
+    builtins.attrNames
   ];
 
-  activeBuilders = builtins.filter (name: name != config.networking.hostName) remoteBuilders;
-
-  configuredBuilders = builtins.filter (name: name != config.networking.hostName) [
-    "yifuwuqi"
-    "yitaishi"
-  ];
-
-  buildMachines = map (name: {
-    hostName = name;
-    sshUser = "nix-builder";
-    sshKey = builderPrivateKey;
-    protocol = "ssh-ng";
-    maxJobs = allAddresses.hosts.${name}.nixBuild.maxJobs;
-    speedFactor = allAddresses.hosts.${name}.nixBuild.speedFactor;
-    supportedFeatures = [
-      "nixos-test"
-      "benchmark"
-      "big-parallel"
-      "kvm"
-    ];
-    systems = allAddresses.hosts.${name}.nixBuild.systems;
-  }) activeBuilders;
+  buildMachines = map (
+    name:
+    let
+      remoteBuild = hosts.${name}.nixBuild;
+      relativeSpeed = remoteBuild.speedFactor / localBuild.speedFactor;
+      finalSpeed = if relativeSpeed < 1 then 1 else relativeSpeed;
+    in
+    {
+      hostName = name;
+      sshUser = "nix-builder";
+      sshKey = keys.paths.sshHostKey;
+      protocol = "ssh-ng";
+      inherit (remoteBuild) maxJobs;
+      speedFactor = finalSpeed;
+      supportedFeatures = [
+        "nixos-test"
+        "benchmark"
+        "big-parallel"
+        "kvm"
+      ];
+      inherit (remoteBuild) systems;
+    }
+  ) builderNames;
 
   sshHostConfig = lib.concatStringsSep "\n" (
     map (name: ''
       Host ${name}
-        HostName ${allAddresses.hosts.${name}.network.vpn.ipv4.host}
-        Port ${toString allAddresses.hosts.${name}.ssh.listenPort}
+        HostName ${hosts.${name}.network.vpn.ipv4.host}
+        Port ${toString hosts.${name}.ssh.listenPort}
         User nix-builder
-        IdentityFile ${builderPrivateKey}
+        IdentityFile ${keys.paths.sshHostKey}
         IdentitiesOnly yes
         StrictHostKeyChecking accept-new
         ConnectTimeout 3
         ConnectionAttempts 1
-    '') configuredBuilders
+    '') builderNames
   );
 in
 {
-  users.users.nix-builder.openssh.authorizedKeys.keys = authorizedClientKeys;
-
   nix = {
-    distributedBuilds = true;
+    distributedBuilds = builderNames != [ ];
     inherit buildMachines;
 
     settings = {
+      max-jobs = localBuild.maxJobs;
       builders-use-substitutes = true;
       connect-timeout = 5;
       fallback = true;
@@ -72,4 +75,8 @@ in
   };
 
   programs.ssh.extraConfig = lib.mkAfter sshHostConfig;
+
+  users.users.nix-builder.openssh.authorizedKeys.keys = lib.optionals localBuild.remoteBuilder (
+    map (name: keys.hosts.${name}.sshPublicKey) clientNames
+  );
 }

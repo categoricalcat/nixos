@@ -184,7 +184,7 @@ in
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
-        speedFactor = 80;
+        speedFactor = 240;
       };
 
       containers = rec {
@@ -255,6 +255,7 @@ in
         remoteBuilder = false;
         systems = [ "x86_64-linux" ];
         maxJobs = 8;
+        speedFactor = 180;
       };
     };
 
@@ -299,7 +300,7 @@ in
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
-        speedFactor = 100;
+        speedFactor = 360;
       };
     };
 
@@ -434,6 +435,7 @@ in
         remoteBuilder = false;
         systems = [ "x86_64-linux" ];
         maxJobs = 1;
+        speedFactor = 60;
       };
     };
   };
