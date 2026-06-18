@@ -11,15 +11,15 @@ let
 in
 {
 
-  systemd.user.services.swww = {
+  systemd.user.services.awww = {
     Unit = {
-      Description = "swww wallpaper daemon";
+      Description = "awww wallpaper daemon";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
 
     Service = {
-      ExecStart = "${pkgs.swww}/bin/swww-daemon";
+      ExecStart = "${pkgs.awww}/bin/awww-daemon";
       Restart = "on-failure";
       RestartSec = 1;
     };
@@ -28,6 +28,9 @@ in
       WantedBy = [ "graphical-session.target" ];
     };
   };
+
+  # Prevent fcitx5 Qt plugin from crashing quickshell (SIGSEGV in FcitxCandidateWindow)
+  systemd.user.services.dms.Service.Environment = [ "QT_IM_MODULE=" ];
 
   imports = [
     inputs.dms.homeModules.dank-material-shell
@@ -44,6 +47,8 @@ in
     enableAudioWavelength = true; # Audio visualizer (cava)
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
+
+    quickshell.package = pkgs.quickshell;
 
     settings = dmsSettings // {
       currentThemeName = lib.mkForce "dynamic";
@@ -65,25 +70,25 @@ in
     };
   };
 
-  home.activation.makeDmsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    # settings.json
-    target_settings="$HOME/.config/DankMaterialShell/settings.json"
-    if [ -L "$target_settings" ]; then
-      store_path=$(readlink -f "$target_settings")
-      rm -f "$target_settings"
-      cp "$store_path" "$target_settings"
-      chmod u+w "$target_settings"
-    fi
+  # home.activation.makeDmsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+  #   # settings.json
+  #   target_settings="$HOME/.config/DankMaterialShell/settings.json"
+  #   if [ -L "$target_settings" ]; then
+  #     store_path=$(readlink -f "$target_settings")
+  #     rm -f "$target_settings"
+  #     cp "$store_path" "$target_settings"
+  #     chmod u+w "$target_settings"
+  #   fi
 
-    # session.json
-    target_session="$HOME/.local/state/DankMaterialShell/session.json"
-    if [ -L "$target_session" ]; then
-      store_path=$(readlink -f "$target_session")
-      rm -f "$target_session"
-      cp "$store_path" "$target_session"
-      chmod u+w "$target_session"
-    fi
-  '';
+  #   # session.json
+  #   target_session="$HOME/.local/state/DankMaterialShell/session.json"
+  #   if [ -L "$target_session" ]; then
+  #     store_path=$(readlink -f "$target_session")
+  #     rm -f "$target_session"
+  #     cp "$store_path" "$target_session"
+  #     chmod u+w "$target_session"
+  #   fi
+  # '';
 }
 
 # systemd.user.services.dms = {

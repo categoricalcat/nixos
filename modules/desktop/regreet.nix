@@ -31,7 +31,7 @@ in
 
       theme = {
         package = pkgs.adw-gtk3;
-        name = "adw-gtk3";
+        name = if isDark then "adw-gtk3-dark" else "adw-gtk3";
       };
 
       iconTheme = {

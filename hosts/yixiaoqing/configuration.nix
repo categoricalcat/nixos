@@ -3,12 +3,15 @@
   inputs,
   lib,
   global,
+  allAddresses,
   ...
 }:
 
 let
   desktopEnvironment = "niri";
-  greeter = "ly";
+  desktopShell = "dms";
+  # desktopShell = "dms";
+  greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -21,52 +24,50 @@ in
     ./addresses.nix
     ../../secrets/sops.nix
     ../../users/users.nix
-    ../../modules/common.nix
-    ../../modules/nix-settings.nix
-    ../../modules/distributed-builds.nix
-    ../../modules/boot-common.nix
-    ../../modules/networking/ipv6.nix
-    ../../modules/services/samba/client.nix
-    ../../modules/packages.nix
-    ../../modules/locale.nix
-    ../../modules/fonts.nix
-    ../../modules/desktop.nix
-    # ../../modules/services/zerotier.nix
-    ../../modules/services/tailscale.nix
-    # ../../modules/services/power-profiles-daemon.nix
-    ../../modules/services/tlp.nix
-    ../../modules/services/openssh.nix
-
     ../../modules/fido2.nix
+    ../../modules/fonts.nix
+    ../../modules/common.nix
+    ../../modules/locale.nix
+    ../../modules/desktop.nix
+    ../../modules/packages.nix
+    ../../modules/boot-common.nix
+    ../../modules/nix-settings.nix
+    ../../modules/services/tlp.nix
+    ../../modules/networking/ipv6.nix
+    ../../modules/services/openssh.nix
+    ../../modules/distributed-builds.nix
+    ../../modules/services/lan-mouse.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/services/samba/client.nix
+    # ../../modules/services/power-profiles-daemon.nix
+    ../../modules/services/netbird.nix
   ];
-
-  security.fido2.enable = true;
 
   system.stateVersion = global.version;
 
-  home-manager =
-    lib.recursiveUpdate
-      (mkHome {
-        inherit inputs desktopEnvironment;
-        stateVersion = global.homeVersion;
-      })
-      {
-        users.workd = {
-          imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = global.homeVersion;
-        };
-      };
-
-  desktop.environment = desktopEnvironment;
-  desktop.greeter = greeter;
-
-  console.keyMap = "br-abnt2";
-  services.xserver.xkb = {
-    layout = "br";
-    variant = "thinkpad";
+  home-manager = mkHome {
+    inherit inputs desktopEnvironment desktopShell;
+    stateVersion = global.homeVersion;
   };
 
-  security.polkit.enable = true;
+  desktop = {
+    environment = desktopEnvironment;
+    shell = desktopShell;
+    inherit greeter;
+    keyboard = "br";
+    monitors = [
+      {
+        name = "eDP-1";
+        mode = "2880x1800@60";
+        scale = 1.5;
+        transform = "normal";
+        position = {
+          x = 1280;
+          y = 0;
+        };
+      }
+    ];
+  };
 
   nixpkgs.config = {
     cudaSupport = false;
@@ -87,10 +88,16 @@ in
   };
 
   services.fprintd.enable = true;
-  security.pam.services.login.fprintAuth = lib.mkDefault true;
-  security.pam.services.gdm-fingerprint.fprintAuth = true;
-  security.pam.services.sudo.fprintAuth = true;
-  security.pam.services.polkit-1.u2fAuth = true;
+  security = {
+    fido2.enable = true;
+    polkit.enable = true;
+    pam.services = {
+      login.fprintAuth = lib.mkDefault true;
+      gdm-fingerprint.fprintAuth = true;
+      sudo.fprintAuth = true;
+      polkit-1.u2fAuth = true;
+    };
+  };
 
   hardware = {
     enableRedistributableFirmware = true;
@@ -122,9 +129,27 @@ in
   };
 
   boot.kernel.sysctl = {
+    # Prefer compressed zram swap on this workstation.
     "vm.swappiness" = 100;
+
+    # Avoid aggressive watermark boosting that can over-reclaim with zram.
     "vm.watermark_boost_factor" = 0;
+
+    # Keep the kernel's free-memory watermark scaling conservative.
     "vm.watermark_scale_factor" = 100;
+
+    # Swap individual pages instead of clustering reads around zram.
     "vm.page-cluster" = 0;
+  };
+
+  services.lan-mouse.settings = {
+    left = {
+      hostname = "${allAddresses.hosts.yitaishi.hostName}.vpn";
+      activate_on_startup = true;
+      ips = [ allAddresses.hosts.yitaishi.network.vpn.ipv4.host ];
+    };
+    authorized_fingerprints = {
+      # "yitaishi-fingerprint" = "yitaishi";
+    };
   };
 }

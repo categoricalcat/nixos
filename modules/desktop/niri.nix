@@ -10,10 +10,9 @@
   config = lib.mkIf (config.desktop.environment == "niri") {
     environment.systemPackages = with pkgs; [
       gnome-screenshot
-      swww
+      awww
       xwayland-satellite
       inputs.niri-float-sticky.packages.${pkgs.stdenv.hostPlatform.system}.default
-      # inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.quickshell
     ];
 
     programs.niri.enable = true;
@@ -22,6 +21,7 @@
 
     xdg.portal = {
       enable = true;
+      xdgOpenUsePortal = true;
       extraPortals = [
         pkgs.xdg-desktop-portal-gtk
         pkgs.xdg-desktop-portal-gnome
@@ -37,8 +37,16 @@
             "gnome"
             "gtk"
           ];
+          "org.freedesktop.impl.portal.Access" = [ "gtk" ];
+          "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+          "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
+          "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
         };
       };
+    };
+
+    systemd.user.services.xdg-desktop-portal-gnome.environment = {
+      XDG_CURRENT_DESKTOP = "GNOME";
     };
   };
 }

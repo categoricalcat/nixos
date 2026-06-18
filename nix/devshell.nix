@@ -1,6 +1,9 @@
 _: {
   perSystem =
-    { pkgs, config, ... }:
+    {
+      pkgs,
+      ...
+    }:
     let
       rustPkgs = with pkgs; [
         cargo
@@ -8,13 +11,40 @@ _: {
         rustfmt
         clippy
         rust-analyzer
+        nix-tree
+        nix-inspect
+      ];
+
+      nixosRebuildWrapper = pkgs.writeShellScriptBin "nixos-rebuild" ''
+        exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
+      '';
+
+      inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./inspect.sh);
+
+      nixDevPkgs = with pkgs; [
+        statix # Lints and suggestions for Nix
+        deadnix # Nix dead code locator
+        nixpkgs-hammering # Linter for Nixpkgs packages
+        nil # Nix language server
+        nixd # Nix language server (with statix/deadnix support)
+        nixfmt # Official RFC-166 Nix formatter
+        nh # Nix Helper - nicer CLI for nixos-rebuild
+        direnv # Environment switcher for shell
+        nix-update # Swiss-knife for updating nix packages
+        nix-init # Generator for Nix packages from URLs
+        comma # Run software without installing it (, <pkg>)
       ];
 
       defaultShell = pkgs.mkShell {
-        packages = rustPkgs;
+        packages =
+          rustPkgs
+          ++ nixDevPkgs
+          ++ [
+            nixosRebuildWrapper
+            inspectWrapper
+          ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
-          ${config.pre-commit.devShell.shellHook or ""}
         '';
       };
 
@@ -54,7 +84,7 @@ _: {
       devShells.default = defaultShell;
       devShells.sandbox = sandboxShell;
 
-      #packages.default = defaultShell;
-      #packages.sandbox = sandboxShell;
+      packages.default = defaultShell;
+      packages.sandbox = sandboxShell;
     };
 }

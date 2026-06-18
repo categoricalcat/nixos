@@ -1,14 +1,13 @@
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 let
-  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
   ai = import ../../modules/services/ai/models.nix;
 in
 {
   programs.opencode = {
     enable = true;
-    package = unstable.opencode;
+    package = pkgs.opencode;
 
-    rules = builtins.readFile ./opencode-rules.md;
+    context = builtins.readFile ./opencode-rules.md;
 
     settings = {
       model = "deepseek/deepseek-v4-flash";

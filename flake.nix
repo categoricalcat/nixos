@@ -9,14 +9,12 @@
       nixos-wsl,
       flake-parts,
       home-manager,
-      nixpkgs-small,
-      home-manager-small,
       ...
     }:
     let
       global = {
-        version = "25.11";
-        homeVersion = "25.11";
+        version = "26.05";
+        homeVersion = "26.05";
       };
     in
     # https://flake.parts/module-arguments.html
@@ -35,24 +33,6 @@
 
         flake = {
           nixosConfigurations = {
-            yichuang = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                home-manager-small.nixosModules.home-manager
-                sops-nix.nixosModules.sops
-                nixos-wsl.nixosModules.default
-                ./hosts/yichuang/configuration.nix
-              ];
-            };
-
-            yifuwuqi = nixpkgs-small.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                sops-nix.nixosModules.sops
-                home-manager-small.nixosModules.home-manager
-                ./hosts/yifuwuqi/configuration.nix
-              ];
-            };
 
             yixiaoqing = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
@@ -60,11 +40,6 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                (_: {
-                  nixpkgs.overlays = [
-                    (_final: prev: { dgop = inputs.dgop.packages.${prev.stdenv.hostPlatform.system}.default; })
-                  ];
-                })
                 ./hosts/yixiaoqing/configuration.nix
               ];
             };
@@ -76,9 +51,39 @@
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
                 inputs.lanzaboote.nixosModules.lanzaboote
+                inputs.musnix.nixosModules.musnix
                 ./hosts/yitaishi/configuration.nix
               ];
             };
+
+            yifuwuqi = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                sops-nix.nixosModules.sops
+                home-manager.nixosModules.home-manager
+                ./hosts/yifuwuqi/configuration.nix
+              ];
+            };
+
+            yirukou = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                home-manager.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                ./hosts/yirukou/configuration.nix
+              ];
+            };
+
+            yichuang = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs global; };
+              modules = [
+                home-manager.nixosModules.home-manager
+                sops-nix.nixosModules.sops
+                nixos-wsl.nixosModules.default
+                ./hosts/yichuang/configuration.nix
+              ];
+            };
+
           };
         };
 
@@ -90,10 +95,10 @@
     );
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-small.url = "github:NixOS/nixpkgs/nixos-25.11-small";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    attic.url = "github:zhaofengli/attic";
+    nixvim.url = "github:nix-community/nixvim";
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
@@ -111,22 +116,17 @@
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    home-manager-small = {
-      url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs-small";
-    };
-
     stylix = {
-      url = "github:nix-community/stylix/release-25.11";
+      url = "github:nix-community/stylix/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/v1.0.0";
+      url = "github:nix-community/lanzaboote/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -135,13 +135,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dgop = {
-      url = "github:AvengeMedia/dgop";
+    musnix = {
+      url = "github:musnix/musnix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     dms = {
-      url = "github:AvengeMedia/DankMaterialShell";
+      url = "github:AvengeMedia/DankMaterialShell/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -151,8 +156,8 @@
     };
 
     thefiles = {
-      url = "git+https://github.com/categoricalcat/the.files.git?submodules=1";
-      flake = false;
+      url = "github:categoricalcat/the.files";
     };
+
   };
 }

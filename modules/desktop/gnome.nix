@@ -19,15 +19,28 @@
       displayManager = {
         gdm = {
           enable = config.desktop.greeter == "gdm";
-          wayland = true;
           banner = config.desktop.greeting;
         };
       };
 
       gnome = {
-        core-apps.enable = true;
+        core-apps.enable = false;
         core-developer-tools.enable = false;
         games.enable = false;
+      };
+
+      geoclue2 = {
+        enable = true;
+        appConfig."gnome-shell" = {
+          isAllowed = true;
+          isSystem = true;
+          users = [ "1000" ];
+        };
+        appConfig."org.gnome.Weather" = {
+          isAllowed = true;
+          isSystem = true;
+          users = [ "1000" ];
+        };
       };
     };
 
@@ -55,26 +68,32 @@
       gnome-user-docs
     ];
 
-    environment.sessionVariables = {
-      GNOME_SHELL_SLOWDOWN_FACTOR = "0.3";
-      QT_IM_MODULE = "fcitx";
-      QT_IM_MODULES = "wayland;fcitx";
-    };
-
     environment.systemPackages = with pkgs; [
       dconf2nix
       dconf-editor
+
+      # Core GNOME Apps we want to keep
+      nautilus
+      loupe
+      gnome-system-monitor
+      gnome-calculator
+      gnome-weather
+      gnome-calendar
+      showtime # GNOME Video player
+      decibels # GNOME Audio player
 
       gnomeExtensions.appindicator
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.dash-to-panel
       gnomeExtensions.gtile
       gnomeExtensions.kimpanel
-      gnomeExtensions.media-controls
       gnomeExtensions.pip-on-top
-      gnomeExtensions.vertical-workspaces
       gnomeExtensions.vitals
       gnomeExtensions.weather-oclock
+      gnomeExtensions.vertical-workspaces
+      gnomeExtensions.mpris-label
+      gnomeExtensions.tiling-assistant
+      gnomeExtensions.impatience
     ];
 
     home-manager.sharedModules = [ ./gnome-home.nix ];

@@ -1,8 +1,8 @@
-{ pkgs, inputs, ... }:
-let
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
+{ pkgs, ... }:
 {
+  musnix.enable = true;
+  musnix.rtirq.enable = true;
+
   security.rtkit.enable = true;
   services.pulseaudio.enable = false;
 
@@ -17,6 +17,7 @@ in
       "context.properties" = {
         "default.clock.rate" = 96000;
         "default.clock.allowed-rates" = [
+          44100
           48000
           96000
           192000
@@ -26,29 +27,103 @@ in
         "default.clock.max-quantum" = 1024;
       };
     };
+
+    extraConfig.client."99-qbz-bitperfect-audio" = {
+      "stream.rules" = [
+        {
+          matches = [
+            { "application.process.binary" = "qbz"; }
+            { "application.name" = "PipeWire ALSA [qbz]"; }
+          ];
+          actions = {
+            update-props = {
+              "resample.disable" = true;
+              "channelmix.disable" = true;
+            };
+          };
+        }
+      ];
+    };
+
+    wireplumber.extraConfig."99-qbz-dac-audio" = {
+      "monitor.alsa.rules" = [
+        {
+          matches = [
+            {
+              "node.name" = "alsa_output.usb-Feixiang_USB_HIFI_Audio-01.pro-output-0";
+              "media.class" = "Audio/Sink";
+            }
+          ];
+          actions = {
+            update-props = {
+              "audio.allowed-rates" = [
+                44100
+                48000
+                88200
+                96000
+                176400
+                192000
+              ];
+              "resample.disable" = true;
+              "channelmix.disable" = true;
+            };
+          };
+        }
+      ];
+    };
+
+    wireplumber.extraConfig."99-disable-suspend" = {
+      "monitor.alsa.rules" = [
+        {
+          matches = [
+            { "node.name" = "~alsa_input.*"; }
+            { "node.name" = "~alsa_output.*"; }
+          ];
+          actions = {
+            update-props = {
+              "session.suspend-timeout-seconds" = 0;
+            };
+          };
+        }
+      ];
+    };
   };
 
   environment.systemPackages = [
     # DAW
-    unstable.reaper
-    unstable.ardour
-    unstable.bitwig-studio
+    pkgs.reaper
+    pkgs.ardour
+    pkgs.bitwig-studio
 
     # Guitar amp simulators
-    unstable.guitarix
-    unstable.tonelib-gfx
-    unstable.neural-amp-modeler-lv2
+    pkgs.guitarix
+    pkgs.tonelib-gfx
+    pkgs.neural-amp-modeler-lv2
 
     # Audio plugins (LV2/VST)
-    unstable.lsp-plugins
-    unstable.calf
-    unstable.drumgizmo
-    unstable.x42-avldrums
+    pkgs.lsp-plugins
+    pkgs.kapitonov-plugins-pack
+    pkgs.reaper-reapack-extension
+    pkgs.calf
+    pkgs.zam-plugins
+    pkgs.dragonfly-reverb
+    pkgs.chow-tape-model
+    pkgs.x42-plugins
+    pkgs.drumgizmo
+    pkgs.x42-avldrums
 
     # Routing & monitoring
-    unstable.qpwgraph
-    unstable.pavucontrol
+    pkgs.qpwgraph
+    pkgs.pavucontrol
+    pkgs.alsa-scarlett-gui
   ];
+
+  environment.sessionVariables = {
+    LV2_PATH = "/run/current-system/sw/lib/lv2:$HOME/.lv2";
+    VST_PATH = "/run/current-system/sw/lib/vst:$HOME/.vst";
+    VST3_PATH = "/run/current-system/sw/lib/vst3:$HOME/.vst3";
+    LADSPA_PATH = "/run/current-system/sw/lib/ladspa:$HOME/.ladspa";
+  };
 
   security.pam.loginLimits = [
     {
@@ -56,6 +131,12 @@ in
       item = "rtprio";
       type = "-";
       value = "95";
+    }
+    {
+      domain = "@audio";
+      item = "nice";
+      type = "-";
+      value = "-11";
     }
     {
       domain = "@audio";

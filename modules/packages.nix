@@ -1,54 +1,50 @@
 # System packages configuration module
 
-{ pkgs, inputs, ... }:
-let
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
+{ pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
     emacs-nox
-    unstable.cursor-cli
+    cursor-cli
 
     gcc
     gnumake
     killall
     zsh
     cloudflared
-    zerotierone
 
     # System utilities
     # rocmSupport=true patches in the rpath so btop dlopens librocm_smi64
     # and shows the AMD iGPU. Without it, btop builds CPU-only.
-    (btop.override { rocmSupport = true; })
     amdgpu_top
     curl
     stow
-    tmux
     wget
 
     # Development tools
-    deadnix
+    deadnix # Nix dead code locator
     dig
-    direnv
     fd
     gh
     git
     k6
-    nil
-    nix-direnv
-    nixfmt
+    nil # Nix language server
+    nixd # Nix language server (with statix/deadnix support)
+    nixfmt # Official RFC-166 Nix formatter
+    nixpkgs-hammering # Linter for Nixpkgs packages
+    nh # Nix Helper - nicer CLI for nixos-rebuild
+    direnv # Environment switcher for shell
+    nix-update # Swiss-knife for updating nix packages
+    nix-init # Generator for Nix packages from URLs
+    comma # Run software without installing it (, <pkg>)
     nftables
     rclone
     sops
-    statix
+    statix # Lints and suggestions for Nix
     tree
 
     # Shell and related tools
     shellcheck
-    fzf
-    starship
-    zoxide
-
+    bubblewrap
     bat
     brotli
     ethtool
@@ -64,7 +60,7 @@ in
     systemd
     tcpdump
     traceroute
-    # unstable.bitwarden-cli
-    wireguard-tools
+    # pkgs.bitwarden-cli
+    ripgrep
   ];
 }

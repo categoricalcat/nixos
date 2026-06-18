@@ -1,5 +1,6 @@
 {
   desktopEnvironment ? null,
+  desktopShell ? if desktopEnvironment == "niri" then "dms" else "none",
   inputs,
   stateVersion,
 }:
@@ -9,11 +10,21 @@
   overwriteBackup = true;
   backupFileExtension = "bkp";
   extraSpecialArgs = {
-    inherit desktopEnvironment inputs stateVersion;
+    inherit
+      desktopEnvironment
+      desktopShell
+      inputs
+      stateVersion
+      ;
   };
 
   users.yi = {
     imports = [ ../users/home/yi.nix ];
+    home.stateVersion = stateVersion;
+  };
+
+  users.workd = {
+    imports = [ ../users/home/workd.nix ];
     home.stateVersion = stateVersion;
   };
 }

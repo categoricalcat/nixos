@@ -15,14 +15,14 @@
       at-spi2-core
       libdrm
       mesa
-      xorg.libX11
-      xorg.libXcomposite
-      xorg.libXdamage
-      xorg.libXext
-      xorg.libXfixes
-      xorg.libXrandr
-      xorg.libxcb
-      xorg.libxshmfence
+      libx11
+      libxcomposite
+      libxdamage
+      libxext
+      libxfixes
+      libxrandr
+      libxcb
+      libxshmfence
       libGL
       libgbm
       expat

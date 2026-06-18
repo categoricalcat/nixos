@@ -2,13 +2,11 @@
   config,
   lib,
   pkgs,
-  inputs,
   allAddresses,
   ...
 }:
 
 let
-  unstable = import ../../nixpkgs-unstable.nix { inherit inputs pkgs; };
   inherit (config.services.nextcloud) datadir;
   occ = lib.getExe config.services.nextcloud.occ;
   jq = lib.getExe pkgs.jq;
@@ -28,7 +26,7 @@ in
 {
   services.nextcloud = {
     enable = true;
-    package = unstable.nextcloud33;
+    package = pkgs.nextcloud33;
     hostName = "${config.networking.hostName}.yun";
     home = "/srv/nextcloud";
 
@@ -124,6 +122,13 @@ in
 
   sops.secrets."passwords/nextcloud" = {
     owner = "nextcloud";
+    group = "nextcloud";
+  };
+
+  # Ensure the nextcloud user and group exist so sops-install-secrets doesn't fail
+  users.groups.nextcloud = { };
+  users.users.nextcloud = {
+    isSystemUser = true;
     group = "nextcloud";
   };
 }

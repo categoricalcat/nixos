@@ -1,11 +1,17 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  ...
+}:
 
 {
+  boot.kernelPackages = pkgs.linuxPackages_zen;
 
   boot = {
     loader = {
       timeout = 1;
       systemd-boot.configurationLimit = 10;
+      systemd-boot.enable = lib.mkForce false;
       grub.enable = false;
     };
 
@@ -14,7 +20,10 @@
       pkiBundle = "/var/lib/sbctl";
     };
 
-    initrd.kernelModules = [ "amdgpu" ];
+    initrd.systemd.settings.Manager = {
+      DefaultTimeoutStopSec = "10s";
+    };
+    initrd.systemd.tpm2.enable = false;
 
     kernelModules = lib.mkAfter [
       "fuse"
@@ -23,12 +32,13 @@
     ];
 
     kernelParams = [
-      "amdgpu.ppfeaturemask=0xffffffff"
       "amd_pstate=active"
     ];
-  };
 
-  boot.loader.systemd-boot.enable = lib.mkForce false;
+    extraModprobeConfig = ''
+      options snd_usb_audio implicit_fb=1
+    '';
+  };
 
   environment.systemPackages = [ pkgs.sbctl ];
 }

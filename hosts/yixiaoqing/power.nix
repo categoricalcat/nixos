@@ -2,22 +2,25 @@
 
 {
 
-  services.system76-scheduler.settings.cfsProfiles.enable = true;
-  services.thermald.enable = true;
-  services.upower.enable = true;
+  services = {
+    system76-scheduler.settings.cfsProfiles.enable = true;
+    thermald.enable = true;
+    upower.enable = true;
 
-  services.thinkfan.enable = true;
-  boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1";
+    thinkfan.enable = true;
 
-  services.logind = {
-    settings = {
-      Login = {
-        HandleLidSwitch = "suspend-then-hibernate";
-        HandleLidSwitchDocked = "suspend-then-hibernate";
-        HandleLidSwitchExternalPower = "suspend-then-hibernate";
+    logind = {
+      settings = {
+        Login = {
+          HandleLidSwitch = "suspend-then-hibernate";
+          HandleLidSwitchDocked = "suspend-then-hibernate";
+          HandleLidSwitchExternalPower = "suspend-then-hibernate";
+        };
       };
     };
   };
+
+  boot.extraModprobeConfig = "options thinkpad_acpi fan_control=1";
 
   powerManagement = {
     enable = true;

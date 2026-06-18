@@ -2,6 +2,7 @@
   pkgs,
   lib,
   desktopEnvironment ? null,
+  desktopShell ? null,
   ...
 }:
 let
@@ -14,30 +15,43 @@ in
     ../programs/opencode.nix
   ]
   ++ lib.optionals (desktopEnvironment != null) [
-    ../programs/alacritty.nix
+    ../programs/kitty.nix
     ../programs/mprisence.nix
-    ../programs/fcitx5.nix
     ../../modules/desktop/web-apps.nix
   ]
-  ++ lib.optionals (desktopEnvironment == "niri") [
+  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "dms") [
     ../programs/dms.nix
+  ]
+  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "noctalia") [
+    ../programs/noctalia
+  ]
+  ++ lib.optionals (desktopEnvironment == "niri") [
+    ../programs/niri.nix
   ];
 
-  home.username = "yi";
-  home.homeDirectory = homeDirectory;
+  home = {
+    username = "yi";
+    inherit homeDirectory;
 
-  home.packages =
-    with pkgs;
-    with haskellPackages;
-    [
-      bun
-      nodejs
+    packages =
+      with pkgs;
+      with haskellPackages;
+      [
+        bun
+        nodejs
 
-      sshfs
-      ghc
-      cabal-install
-      haskell-language-server
-      stack
-      ghcid
-    ];
+        sshfs
+        ghc
+        cabal-install
+        haskell-language-server
+        stack
+        ghcid
+      ]
+      ++ lib.optionals (desktopEnvironment != null) [
+        smile
+        wtype
+        ksnip
+        wl-clipboard
+      ];
+  };
 }

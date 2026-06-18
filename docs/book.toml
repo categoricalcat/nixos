@@ -1,0 +1,8 @@
+[book]
+title = "yi NixOS Infrastructure"
+authors = ["yi"]
+language = "en"
+src = "src"
+
+[output.html]
+git-repository-url = "https://github.com/categoricalcat/nixos"

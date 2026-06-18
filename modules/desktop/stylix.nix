@@ -64,17 +64,17 @@ in
     };
 
     # Wayland/Electron ozone for Wayland sessions
-    environment.sessionVariables = {
-      NIXOS_OZONE_WL = "1";
-      ELECTRON_OZONE_PLATFORM_HINT = "wayland";
-      QT_QPA_PLATFORM = "wayland";
-      # Remove QT_QPA_PLATFORMTHEME here to avoid conflicting env.variables
+    environment = {
+      sessionVariables = {
+        NIXOS_OZONE_WL = "1";
+        ELECTRON_OZONE_PLATFORM_HINT = "wayland";
+        QT_QPA_PLATFORM = "wayland";
+        # Remove QT_QPA_PLATFORMTHEME here to avoid conflicting env.variables
+      };
+      variables.QT_QPA_PLATFORMTHEME = lib.mkForce "qt6ct";
+      systemPackages = with pkgs; [
+        qt6Packages.qt6ct
+      ];
     };
-
-    environment.variables.QT_QPA_PLATFORMTHEME = lib.mkForce "qt6ct";
-
-    environment.systemPackages = with pkgs; [
-      qt6Packages.qt6ct
-    ];
   };
 }

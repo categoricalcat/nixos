@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  osConfig,
+  ...
+}:
 
 let
   panelElements = [
@@ -21,14 +26,15 @@ let
       element = "taskbar";
       visible = true;
       position = "stackedTL";
+
     }
     {
-      element = "centerBox";
+      element = "dateMenu";
       visible = true;
       position = "centerMonitor";
     }
     {
-      element = "dateMenu";
+      element = "centerBox";
       visible = true;
       position = "centerMonitor";
     }
@@ -48,6 +54,11 @@ let
       position = "stackedBR";
     }
   ];
+
+  xkb = osConfig.services.xserver.xkb;
+  kbLayout = xkb.layout or "us";
+  kbVariant = xkb.variant or "";
+  kbSourceId = if kbVariant != "" then "${kbLayout}+${kbVariant}" else kbLayout;
 in
 
 {
@@ -56,28 +67,34 @@ in
     settings = {
       "org/gnome/shell" = {
         disable-user-extensions = false;
+        disable-extension-version-validation = true;
         enabled-extensions = with pkgs.gnomeExtensions; [
           appindicator.extensionUuid
           clipboard-indicator.extensionUuid
           dash-to-panel.extensionUuid
           gtile.extensionUuid
           kimpanel.extensionUuid
-          media-controls.extensionUuid
           pip-on-top.extensionUuid
-          vertical-workspaces.extensionUuid
           vitals.extensionUuid
           weather-oclock.extensionUuid
+          user-themes.extensionUuid
+          vertical-workspaces.extensionUuid
+          mpris-label.extensionUuid
+          tiling-assistant.extensionUuid
+          impatience.extensionUuid
+          valent.extensionUuid
         ];
 
         favorite-apps = [
           "google-chrome.desktop"
           "org.gnome.Nautilus.desktop"
-          "Alacritty.desktop"
+          "kitty.desktop"
         ];
       };
 
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
+        accent-color = "pink";
         show-battery-percentage = true;
         clock-format = "24h";
         clock-show-date = true;
@@ -86,8 +103,23 @@ in
         enable-animations = true;
       };
 
+      "org/gnome/desktop/input-sources".sources = [
+        (lib.hm.gvariant.mkTuple [
+          "xkb"
+          kbSourceId
+        ])
+      ];
+
       "org/gnome/desktop/wm/preferences" = {
         button-layout = "appmenu:minimize,maximize,close";
+      };
+
+      "org/gnome/desktop/wm/keybindings" = {
+        close = [ "<Super>q" ];
+        switch-windows = [ "<Alt>Tab" ];
+        switch-windows-backward = [ "<Shift><Alt>Tab" ];
+        switch-applications = [ "<Super>Tab" ];
+        switch-applications-backward = [ "<Shift><Super>Tab" ];
       };
 
       "org/gnome/settings-daemon/plugins/xsettings" = {
@@ -110,11 +142,13 @@ in
       };
 
       "org/gnome/shell/extensions/vertical-workspaces" = {
-        animation-speed-factor = 30;
+        animation-speed-factor = 50;
         ws-max-spacing = 16;
-        ws-thumbnail-scale = 16;
-        secondary-ws-thumbnail-scale = 16;
         ws-switcher-mode = 1;
+      };
+
+      "org/gnome/shell/keybindings" = {
+        show-screenshot-ui = [ "<Shift><Super>s" ];
       };
 
       # Input and touchpad
@@ -129,6 +163,18 @@ in
         night-light-enabled = false;
         night-light-schedule-automatic = true;
         night-light-temperature = lib.hm.gvariant.mkUint32 3700;
+      };
+
+      "org/gnome/desktop/session" = lib.mkIf (osConfig.networking.hostName == "yitaishi") {
+        idle-delay = lib.hm.gvariant.mkUint32 0;
+      };
+
+      "org/gnome/settings-daemon/plugins/power" = lib.mkIf (osConfig.networking.hostName == "yitaishi") {
+        idle-dim = false;
+        sleep-inactive-ac-timeout = 0;
+        sleep-inactive-ac-type = "nothing";
+        sleep-inactive-battery-timeout = 0;
+        sleep-inactive-battery-type = "nothing";
       };
 
       "org/gnome/shell/extensions/dash-to-panel" = {
@@ -167,6 +213,8 @@ in
         appicon-padding = 6;
         appicon-style = "NORMAL";
         dot-position = "BOTTOM";
+        group-apps-label-font-weight = "normal";
+        window-preview-title-font-weight = "normal";
         dot-style-focused = "DOTS";
         dot-style-unfocused = "DOTS";
         # extension-version = 72;
@@ -178,22 +226,27 @@ in
         leftbox-padding = 4;
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
-        panel-anchors = ''{"AUS-S2LMQS085997":"MIDDLE","GSM-0x000083cb":"MIDDLE"}'';
-        panel-element-positions = builtins.toJSON {
-          "AUS-S2LMQS085997" = panelElements;
-          "GSM-0x000083cb" = panelElements;
-        };
+        panel-anchors = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: "MIDDLE")
+        );
+        panel-element-positions = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: panelElements)
+        );
         panel-element-positions-monitors-sync = true;
-        panel-lengths = ''{"AUS-S2LMQS085997":100,"GSM-0x000083cb":100}'';
-        panel-positions = ''{"AUS-S2LMQS085997":"TOP","GSM-0x000083cb":"TOP"}'';
+        panel-lengths = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: 100)
+        );
+        panel-positions = builtins.toJSON (
+          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: "TOP")
+        );
         panel-side-margins = 4;
         panel-side-padding = 4;
-        panel-sizes = ''{"AUS-S2LMQS085997":28,"GSM-0x000083cb":28}'';
+        panel-sizes = builtins.toJSON (lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: 28));
         panel-top-bottom-padding = 0;
         panel-top-bottom-margins = 0;
         peek-mode = true;
         prefs-opened = false;
-        show-appmenu = false;
+        show-appmenu = true;
         show-apps-icon-side-padding = 4;
         show-favorites = true;
         show-favorites-all-monitors = true;
@@ -215,31 +268,12 @@ in
         window-preview-title-position = "TOP";
       };
 
-      "org/gnome/shell/extensions/mediacontrols" = {
-        elements-order = [
-          "ICON"
-          "LABEL"
-          "CONTROLS"
-        ];
-        extension-index = lib.hm.gvariant.mkUint32 0;
-        extension-position = "Center";
-        labels-order = [
-          "TITLE"
-          "-"
-          "ARTIST"
-        ];
-        scroll-labels = true;
-        show-control-icons = true;
-        show-label = true;
-        show-player-icon = true;
-      };
-
       "org/gnome/shell/extensions/vitals" = {
         alphabetize = false;
         fixed-widths = true;
         hide-icons = false;
         hot-sensors = [
-          "__temperature_max__"
+          "__temperature_avg__"
           "_processor_usage_"
           "_memory_usage_"
         ];
@@ -255,10 +289,56 @@ in
         toggle-menu = [ "<Super>v" ];
       };
 
+      "org/gnome/system/location" = {
+        enabled = true;
+        max-accuracy-level = "exact";
+        automatic-location = true;
+      };
+
+      "org/gnome/shell/weather" = {
+        automatic-location = osConfig.networking.hostName != "yitaishi";
+      };
+
+      "org/gnome/shell/extensions/mpris-label" = {
+        extension-place = "center";
+        max-string-length = 14;
+        left-padding = 0;
+        right-padding = 0;
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys" = {
+        mic-mute = [ "F12" ];
+        custom-keybindings = [
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/"
+        ];
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+        binding = "<Super>period";
+        command = "smile";
+        name = "Smile Emoji Picker";
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
+        binding = "Print";
+        command = "ksnip -r";
+        name = "Ksnip Screenshot";
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
+        binding = "<Super>t";
+        command = "kitty";
+        name = "Kitty Terminal";
+      };
+
     };
   };
 
   stylix.targets.gtk.extraCss = ''
-    headerbar { min-height: 28px; padding: 2px 4px; }
+    headerbar { min-height: 28px; padding: 2px 4px; border-radius: 8px; }
   '';
+
+  gtk.enable = true;
 }

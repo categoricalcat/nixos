@@ -9,8 +9,8 @@
       "https://localhost:9090"
       "http://yifuwuqi.local:9090"
       "https://yifuwuqi.local:9090"
-      "http://${addresses.network.tailscale.ipv4.host}:9090"
-      "https://${addresses.network.tailscale.ipv4.host}:9090"
+      "http://${addresses.network.vpn.ipv4.host}:9090"
+      "https://${addresses.network.vpn.ipv4.host}:9090"
     ];
     settings = {
       WebService = {

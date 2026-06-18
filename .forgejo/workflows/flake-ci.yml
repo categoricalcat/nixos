@@ -1,0 +1,44 @@
+name: flake ci/cd
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: native
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@main
+      - run: |
+          echo "::group::nix flake check"
+          nix flake check --print-build-logs --show-trace -v
+          echo "::endgroup::"
+
+  buildepush:
+    needs: [check]
+    runs-on: native
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        host: [yixiaoqing, yitaishi, yifuwuqi, yirukou, yichuang]
+    steps:
+      - uses: actions/checkout@main
+      - run: ci/build.sh ${{ matrix.host }}
+      - name: attic push
+        env:
+          ATTIC_TOKEN: ${{ secrets.attic_token }}
+        run: |
+          if [ -z "$ATTIC_TOKEN" ]; then
+            echo "attic token is empty, exiting..."
+            exit 1
+          fi
+
+          echo "::group::attic push ${{ matrix.host }}"
+          attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
+          attic push "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
+          echo "::endgroup::"

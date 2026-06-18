@@ -1,13 +1,34 @@
 {
   addresses,
+  allAddresses,
   config,
   lib,
+  pkgs,
   ...
 }:
+
+let
+  yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
+
+  mkRewrite =
+    host: alias:
+    let
+      answer = lib.attrByPath alias.path null host;
+    in
+    lib.optional (answer != null) {
+      domain = "${host.hostName}.${alias.suffix}";
+      inherit answer;
+      enabled = true;
+    };
+  hostRewrites = lib.concatMap (
+    host: lib.concatMap (alias: mkRewrite host alias) allAddresses.aliases
+  ) (builtins.attrValues allAddresses.hosts);
+in
 {
   # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file
   services.adguardhome = {
     enable = true;
+    package = pkgs.adguardhome;
     host = "0.0.0.0";
     port = 3333;
     mutableSettings = false;
@@ -19,12 +40,9 @@
       };
 
       dns = {
-        bind_hosts = [
-          "127.0.0.1"
-          addresses.network.lan.ipv4.host
-        ]
-        ++ (lib.optional config.services.tailscale.enable addresses.network.tailscale.ipv4.host);
-        #        ++ (lib.optional config.services.zerotierone.enable addresses.network.zerotier.ipv4.host);
+        # Wildcard so plain DNS / DoT / DoQ / DoH stay reachable on the dynamic fallback WAN IP.
+        # Plain DNS on port 53 is gated to internal interfaces by the host firewall.
+        bind_hosts = [ "0.0.0.0" ];
 
         upstream_dns =
           addresses.dns.quad9
@@ -59,7 +77,9 @@
         serve_http3 = true;
 
         cache_enabled = true;
-        cache_size = 5000000;
+        cache_size = 20000000;
+        cache_ttl_min = 300;
+        cache_ttl_max = 86400;
         cache_optimistic = true;
       };
 
@@ -72,45 +92,16 @@
         rewrites = [
           {
             domain = "*.fufu.land";
-            answer = addresses.network.lan.ipv4.host;
+            answer = yirukouLan;
             enabled = true;
           }
           {
             domain = "fufu.land";
-            answer = addresses.network.lan.ipv4.host;
+            answer = yirukouLan;
             enabled = true;
           }
-          {
-            domain = "${addresses.hostName}.${addresses.dns.domain}";
-            answer = addresses.network.tailscale.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "wg.localto.net";
-            answer = "192.168.0.42";
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}.lan";
-            answer = addresses.network.lan.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}";
-            answer = addresses.network.lan.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}.zero";
-            answer = addresses.network.zerotier.ipv4.host;
-            enabled = true;
-          }
-          {
-            domain = "${addresses.hostName}.ts";
-            answer = addresses.network.tailscale.ipv4.host;
-            enabled = true;
-          }
-        ];
+        ]
+        ++ hostRewrites;
       };
 
       filters = [
@@ -138,7 +129,7 @@
 
       user_rules = [ "||api.miwifi.com^" ];
 
-      tls = {
+      tls = lib.mkIf (config.security.acme.certs ? "fufu.land") {
         enabled = true;
         server_name = "dns.fufu.land";
         port_https = 3443;
@@ -157,19 +148,19 @@
 
       log = {
         enabled = true;
-        file = "syslog";
+        file = "";
       };
 
       querylog = {
         enabled = true;
         file_enabled = true;
-        interval = "2160h";
+        interval = "720h";
         size_memory = 10485760; # 10MiB
       };
 
       statistics = {
         enabled = true;
-        interval = "336h";
+        interval = "720h";
       };
     };
   };
@@ -181,7 +172,11 @@
     after = [
       "network-online.target"
     ]
-    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
-    #++ (lib.optional config.services.zerotierone.enable "zerotierone.service");
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
+    ++ (lib.optional config.services.netbird.enable "netbird.service");
+
+    environment = {
+      GOMEMLIMIT = "2560MiB";
+    };
   };
 }

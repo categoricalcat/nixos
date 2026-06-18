@@ -66,6 +66,7 @@ in
             energy_perf_bias = "performance";
             min_perf_pct = 100;
           };
+          # Keep the performance profile aligned with the zram-first VM policy.
           sysctl."vm.swappiness" = 100;
         };
         yitaishi-balanced.main.include = "yitaishi-performance";
@@ -82,11 +83,6 @@ in
       HandleSuspendKey = "ignore";
       HandleHibernateKey = "ignore";
     };
-
-    udev.extraRules = ''
-      ACTION=="add|change", SUBSYSTEM=="usb", TEST=="power/control", ATTR{power/control}="on"
-      ACTION=="add|change", SUBSYSTEM=="pci", TEST=="power/control", ATTR{power/control}="on"
-    '';
   };
 
   powerManagement = {

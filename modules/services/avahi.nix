@@ -16,8 +16,8 @@ _: {
     };
 
     allowInterfaces = [
-      "wg0"
       "tailscale0"
+      "wt0"
       "eno1"
     ];
 
@@ -51,18 +51,6 @@ _: {
         </service-group>
       '';
 
-      web_3000 = ''
-        <?xml version="1.0" standalone='no'?>
-        <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
-        <service-group>
-          <name replace-wildcards="yes">%h 3000 Server</name>
-          <service>
-            <type>_http._tcp</type>
-            <port>3000</port>
-          </service>
-        </service-group>
-      '';
-
       cockpit = ''
         <?xml version="1.0" standalone='no'?>
         <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
@@ -87,17 +75,6 @@ _: {
         </service-group>
       '';
 
-      wg_vpn = ''
-        <?xml version="1.0" standalone='no'?>
-        <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
-        <service-group>
-          <name replace-wildcards="yes">%h WG UI</name>
-          <service>
-            <type>_http._tcp</type>
-            <port>51821</port>
-          </service>
-        </service-group>
-      '';
     };
   };
 }

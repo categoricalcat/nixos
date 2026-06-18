@@ -3,7 +3,7 @@
 
   services.openvscode-server = {
     enable = true;
-    inherit (addresses.network.tailscale.ipv4) host;
+    inherit (addresses.network.vpn.ipv4) host;
     port = 4444;
     user = "yi";
     group = "yi";

@@ -13,27 +13,31 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  boot.initrd.availableKernelModules = [
-    "nvme"
-    "xhci_pci"
-  ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-amd" ];
-  boot.extraModulePackages = [ ];
-
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/f4da9378-1ca6-4261-94c9-05446f4a89b5";
-    fsType = "ext4";
-    options = [
-      "noatime"
-      "nodiratime"
+  boot = {
+    initrd.availableKernelModules = [
+      "nvme"
+      "xhci_pci"
     ];
+    initrd.kernelModules = [ ];
+    kernelModules = [ "kvm-amd" ];
+    extraModulePackages = [ ];
   };
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/E9B8-1C69";
-    fsType = "vfat";
-    options = [ "umask=0077" ];
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-uuid/f4da9378-1ca6-4261-94c9-05446f4a89b5";
+      fsType = "ext4";
+      options = [
+        "noatime"
+        "nodiratime"
+      ];
+    };
+
+    "/boot" = {
+      device = "/dev/disk/by-uuid/E9B8-1C69";
+      fsType = "vfat";
+      options = [ "umask=0077" ];
+    };
   };
 
   # Using zram for swap instead of physical partition

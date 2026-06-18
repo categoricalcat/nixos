@@ -15,27 +15,6 @@ in
   # both `searx-init.service` (envsubst) and `searx.service`, so this unit must
   # finish before either of them, otherwise EnvironmentFile= fails on first
   # boot and `searx-init` never writes /run/searx/settings.yml.
-  systemd.services.searx-secret-init = {
-    description = "Generate runtime SearXNG secret_key";
-    wantedBy = [
-      "searx-init.service"
-      "searx.service"
-    ];
-    before = [
-      "searx-init.service"
-      "searx.service"
-    ];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      install -d -m 0750 -o root -g searx ${secretDir}
-      umask 077
-      printf 'SEARXNG_SECRET=%s\n' \
-        "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
-        > ${secretEnv}
-      chown root:searx ${secretEnv}
-      chmod 0440 ${secretEnv}
-    '';
-  };
 
   services.searx = {
     enable = true;
@@ -54,8 +33,9 @@ in
       };
 
       server = {
-        # Keep raw SearXNG local; public access goes through nginx.
-        bind_address = "127.0.0.1";
+        # Public access still goes through nginx on yirukou, but the backend
+        # must be reachable from the router over LAN and directly via Tailscale.
+        bind_address = "0.0.0.0";
         port = 8888;
         # `searx-init.service` runs envsubst over this YAML and loads
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
@@ -151,58 +131,87 @@ in
     };
   };
 
-  # Block dependent services until Tor's SOCKS port actually proxies
-  # outbound traffic (i.e., bootstrap is done and a circuit is built).
-  # systemd alone considers `tor.service` active the moment the daemon
-  # launches, which is too early -- a TCP connect to 9050 succeeds long
-  # before Tor can route a request, so SearXNG's own startup probe
-  # (when `using_tor_proxy = true` is set) crashes with "Invalid network
-  # configuration". The full HTTPS-through-SOCKS check below covers both
-  # reachability AND bootstrap.
-  systemd.services.wait-for-tor = {
-    description = "Wait for Tor SOCKS to be usable";
-    after = [ "tor.service" ];
-    wants = [ "tor.service" ];
-    before = [ "searx.service" ];
-    wantedBy = [ "searx.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      TimeoutStartSec = "180s";
-      ExecStart = pkgs.writeShellScript "wait-for-tor" ''
-        set -eu
-        attempts=60
-        for i in $(seq 1 $attempts); do
-          if ${pkgs.curl}/bin/curl --silent --fail --max-time 5 \
-              --socks5-hostname 127.0.0.1:9050 \
-              https://check.torproject.org/api/ip > /dev/null 2>&1; then
-            echo "Tor SOCKS ready after $i attempt(s)"
-            exit 0
-          fi
-          sleep 2
-        done
-        echo "Tor SOCKS not ready after $attempts attempts" >&2
-        exit 1
+  systemd.services = {
+    searx-secret-init = {
+      description = "Generate runtime SearXNG secret_key";
+      wantedBy = [
+        "searx-init.service"
+        "searx.service"
+      ];
+      before = [
+        "searx-init.service"
+        "searx.service"
+      ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        install -d -m 0750 -o root -g searx ${secretDir}
+        umask 077
+        printf 'SEARXNG_SECRET=%s\n' \
+          "$(${pkgs.openssl}/bin/openssl rand -hex 32)" \
+          > ${secretEnv}
+        chown root:searx ${secretEnv}
+        chmod 0440 ${secretEnv}
       '';
     };
-  };
 
-  # Wait for live network + a bootstrapped Tor before contacting upstream
-  # search engines. Ordering against searx-secret-init is handled by that
-  # unit's `before`/`wantedBy` above. `tor.service` is pulled in
-  # transitively via `wait-for-tor.service`, so it's not listed directly
-  # here. SyslogLevel=err lifts captured stderr above the host's
-  # MaxLevelStore=notice journald cap so SearXNG's own errors survive to
-  # disk.
-  systemd.services.searx = {
-    wants = [
-      "network-online.target"
-      "wait-for-tor.service"
-    ];
-    after = [
-      "network-online.target"
-      "wait-for-tor.service"
-    ];
-    serviceConfig.SyslogLevel = "err";
+    # Block dependent services until Tor's SOCKS port actually proxies
+    # outbound traffic (i.e., bootstrap is done and a circuit is built).
+    # systemd alone considers `tor.service` active the moment the daemon
+    # launches, which is too early -- a TCP connect to 9050 succeeds long
+    # before Tor can route a request, so SearXNG's own startup probe
+    # (when `using_tor_proxy = true` is set) crashes with "Invalid network
+    # configuration". The full HTTPS-through-SOCKS check below covers both
+    # reachability AND bootstrap.
+    wait-for-tor = {
+      description = "Wait for Tor SOCKS to be usable";
+      after = [
+        "tor.service"
+        "network-online.target"
+      ];
+      wants = [
+        "tor.service"
+        "network-online.target"
+      ];
+      before = [ "searx.service" ];
+      wantedBy = [ "searx.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        TimeoutStartSec = "180s";
+        ExecStart = pkgs.writeShellScript "wait-for-tor" ''
+          set -eu
+          attempts=25
+          for i in $(seq 1 $attempts); do
+            if ${pkgs.curl}/bin/curl --silent --fail --max-time 15 \
+                --socks5-hostname 127.0.0.1:9050 \
+                https://check.torproject.org/api/ip > /dev/null 2>&1; then
+              echo "Tor SOCKS ready after $i attempt(s)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Tor SOCKS not ready after $attempts attempts" >&2
+          exit 1
+        '';
+      };
+    };
+
+    # Wait for live network + a bootstrapped Tor before contacting upstream
+    # search engines. Ordering against searx-secret-init is handled by that
+    # unit's `before`/`wantedBy` above. `tor.service` is pulled in
+    # transitively via `wait-for-tor.service`, so it's not listed directly
+    # here. SyslogLevel=err ensures SearXNG's own errors are clearly
+    # distinguished in the journal.
+    searx = {
+      wants = [
+        "network-online.target"
+        "wait-for-tor.service"
+      ];
+      after = [
+        "network-online.target"
+        "wait-for-tor.service"
+      ];
+      serviceConfig.SyslogLevel = "err";
+    };
   };
 }

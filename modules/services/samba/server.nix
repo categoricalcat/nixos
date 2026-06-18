@@ -3,7 +3,8 @@ _:
 let
   addresses = import ../../addresses.nix;
   tailscaleCidr = addresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr;
-  zeroCidr = addresses.hosts.yifuwuqi.network.zerotier.ipv4.cidr;
+  vpnCidr = addresses.hosts.yifuwuqi.network.vpn.ipv4.cidr;
+  lanCidr = addresses.hosts.yirukou.network.lan.ipv4.cidr;
 in
 {
   services.samba = {
@@ -12,7 +13,7 @@ in
 
     settings = {
       global = {
-        "hosts allow" = "${tailscaleCidr} ${zeroCidr} 127.0.0.1 localhost ::1";
+        "hosts allow" = "${lanCidr} ${tailscaleCidr} ${vpnCidr} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
         "load printers" = "no";
         "printing" = "bsd";
@@ -48,6 +49,7 @@ in
 
   fileSystems."/srv/shares/the.files" = {
     device = "/home/yi/the.files";
+    fsType = "none";
     options = [ "bind" ];
   };
 

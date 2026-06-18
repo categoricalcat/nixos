@@ -9,6 +9,7 @@
 
 let
   desktopEnvironment = "gnome";
+  desktopShell = "none";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
   inherit (global) version;
@@ -16,61 +17,41 @@ in
 {
   imports = [
     ./boot.nix
-    ./hardware.nix
-    ./gaming.nix
-    ./networking.nix
     ./power.nix
-    ./addresses.nix
+    ./gaming.nix
+    ./hardware.nix
+    ./graphics.nix
     ./services.nix
-    ../../secrets/sops.nix
+    ./addresses.nix
+    ./networking.nix
     ../../users/users.nix
-    ../../modules/common.nix
-    ../../modules/hardware/fanatec
-    ../../modules/nix-settings.nix
-    ../../modules/distributed-builds.nix
-    ../../modules/boot-common.nix
-    ../../modules/networking/ipv6.nix
-    ../../modules/services/samba/client.nix
-    ../../modules/packages.nix
-    ../../modules/locale.nix
+    ../../secrets/sops.nix
     ../../modules/fonts.nix
-    ../../modules/desktop.nix
-    ../../modules/services/openssh.nix
-    ../../modules/services/tailscale.nix
     ../../modules/fido2.nix
     ../../modules/audio.nix
+    ../../modules/common.nix
+    ../../modules/locale.nix
+    ../../modules/packages.nix
+    ../../modules/desktop.nix
+    ../../modules/boot-common.nix
+    ../../modules/hardware/fanatec
+    ../../modules/nix-settings.nix
+    ../../modules/networking/ipv6.nix
+    ../../modules/services/openssh.nix
+    ../../modules/distributed-builds.nix
+    ../../modules/services/tailscale.nix
+    ../../modules/services/samba/client.nix
   ];
 
   security.fido2.enable = true;
+  systemd.tpm2.enable = false;
 
   system.stateVersion = version;
 
-  home-manager =
-    lib.recursiveUpdate
-      (mkHome {
-        inherit inputs desktopEnvironment;
-        stateVersion = global.homeVersion;
-      })
-      {
-        users.yi.dconf.settings = {
-          "org/gnome/desktop/session" = {
-            idle-delay = inputs.home-manager.lib.hm.gvariant.mkUint32 0;
-          };
-
-          "org/gnome/settings-daemon/plugins/power" = {
-            idle-dim = false;
-            sleep-inactive-ac-timeout = 0;
-            sleep-inactive-ac-type = "nothing";
-            sleep-inactive-battery-timeout = 0;
-            sleep-inactive-battery-type = "nothing";
-          };
-        };
-
-        users.workd = {
-          imports = [ ../../users/home/workd.nix ];
-          home.stateVersion = global.homeVersion;
-        };
-      };
+  home-manager = mkHome {
+    inherit inputs desktopEnvironment;
+    stateVersion = global.homeVersion;
+  };
 
   sops.secrets."tokens/deepseek" = {
     owner = config.users.users.yi.name;
@@ -78,13 +59,40 @@ in
     mode = "0400";
   };
 
-  desktop.environment = desktopEnvironment;
-  desktop.greeter = greeter;
-
-  console.keyMap = "us-acentos";
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "intl";
+  desktop = {
+    environment = desktopEnvironment;
+    shell = desktopShell;
+    inherit greeter;
+    keyboard = "us";
+    monitors = [
+      {
+        name = "GSM-0x000083cb";
+        mode = "2560x1080@74.991";
+        position = {
+          x = 0;
+          y = 2160;
+        };
+        scale = 1.0;
+      }
+      {
+        name = "AUS-S2LMQS085997";
+        mode = "1920x1080@239.760";
+        position = {
+          x = 2560;
+          y = 2160;
+        };
+        scale = 1.0;
+      }
+      {
+        name = "GSM-0x01010101";
+        mode = "3840x2160@120.000";
+        position = {
+          x = 640;
+          y = 0;
+        };
+        scale = 1.0;
+      }
+    ];
   };
 
   environment.systemPackages = [ pkgs.xclip ];
@@ -117,9 +125,21 @@ in
   };
 
   boot.kernel.sysctl = {
-    "vm.swappiness" = 100;
+    "vm.swappiness" = lib.mkForce 1;
+
+    # Avoid aggressive watermark boosting that can over-reclaim with zram.
     "vm.watermark_boost_factor" = 0;
+
+    # Keep the kernel's free-memory watermark scaling conservative.
     "vm.watermark_scale_factor" = 100;
+
+    # Swap individual pages instead of clustering reads around zram.
     "vm.page-cluster" = 0;
+
+    # Network tuning for better latency and throughput (streaming/gaming)
+    "net.core.default_qdisc" = "cake";
+    "net.ipv4.tcp_congestion_control" = "bbr";
   };
+
+  boot.kernelModules = [ "tcp_bbr" ];
 }
