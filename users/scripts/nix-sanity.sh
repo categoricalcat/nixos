@@ -9,10 +9,12 @@ fi
 
 quiet=false
 action="build"
+check=true
 
 for arg in "$@"; do
   case "$arg" in
     --quiet) quiet=true ;;
+    --no-check|-nc) check=false ;;
     switch)  action="switch" ;;
     *)       echo "Unknown argument: $arg" >&2; exit 1 ;;
   esac
@@ -30,8 +32,11 @@ HOST_NAME=${HOST:-$(hostname)}
 
 sudo nix fmt
 statix check .
-deadnix -- --fail .
+deadnix --fail .
 ./users/scripts/setup-sops.sh
 git add .
-nix flake check "${check_flags[@]}"
+if $check; then
+  nix flake check "${check_flags[@]}"
+fi
+
 nh os "$action" -H "$HOST_NAME" "${rebuild_flags[@]}" .

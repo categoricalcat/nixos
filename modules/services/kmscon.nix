@@ -12,22 +12,16 @@ let
 in
 {
   config = lib.mkIf cfg.enable {
+    hardware.graphics.enable = true;
+    fonts.packages = [ themeAssets.fonts.monospace.package ];
     services.kmscon = {
-      # Enable hardware rendering for better performance
-      hwRender = true;
-
       # Configure fonts using your existing theme-assets
-      fonts = [
-        {
-          name = themeAssets.fonts.monospace.name;
-          package = themeAssets.fonts.monospace.package;
-        }
-      ];
-
-      # Any extra options (like setting custom font sizes or configuring behavior)
-      extraConfig = ''
-        font-size=16
-      '';
+      config = {
+        # Enable hardware rendering for better performance
+        hwaccel = true;
+        font-name = themeAssets.fonts.monospace.name;
+        font-size = 16;
+      };
     };
   };
 }
