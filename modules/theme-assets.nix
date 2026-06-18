@@ -1,20 +1,17 @@
 {
-  inputs,
   pkgs,
+  ...
 }:
 
-let
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
 {
   cursor = {
-    package = unstable.bibata-cursors;
+    package = pkgs.bibata-cursors;
     name = "Bibata-Modern-Amber-Right";
     size = 28;
   };
 
   icons = {
-    package = unstable.catppuccin-papirus-folders.override {
+    package = pkgs.catppuccin-papirus-folders.override {
       accent = "pink";
       flavor = "mocha";
     };
@@ -24,12 +21,12 @@ in
 
   fonts = rec {
     mapleMono = {
-      package = unstable.maple-mono.NF-CN-unhinted;
+      package = pkgs.maple-mono.NF-CN-unhinted;
       name = "Maple Mono NF CN";
     };
 
     emoji = {
-      package = unstable.noto-fonts-color-emoji;
+      package = pkgs.noto-fonts-color-emoji;
       name = "Noto Color Emoji";
     };
 
@@ -38,7 +35,7 @@ in
         "Lexend"
         "Roboto Serif"
       ];
-      package = unstable.google-fonts.override {
+      package = pkgs.google-fonts.override {
         fonts = names;
       };
     };
@@ -76,9 +73,9 @@ in
     packages = [
       mapleMono.package
       emoji.package
-      unstable.noto-fonts
-      unstable.noto-fonts-cjk-sans
-      unstable.noto-fonts-cjk-serif
+      pkgs.noto-fonts
+      pkgs.noto-fonts-cjk-sans
+      pkgs.noto-fonts-cjk-serif
       googleFonts.package
     ];
 

@@ -1,11 +1,8 @@
-{ pkgs, inputs, ... }:
-let
-  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
+{ pkgs, ... }:
 {
   services.netbird = {
     enable = true;
-    package = unstable.netbird;
+    package = pkgs.netbird;
   };
 
   networking.firewall.trustedInterfaces = [ "wt0" ];

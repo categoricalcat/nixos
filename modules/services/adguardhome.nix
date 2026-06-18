@@ -2,14 +2,12 @@
   addresses,
   allAddresses,
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 
 let
-  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
 
   mkRewrite =
@@ -30,7 +28,7 @@ in
   # https://github.com/AdguardTeam/AdGuardHome/wiki/Configuration#configuration-file
   services.adguardhome = {
     enable = true;
-    package = unstable.adguardhome;
+    package = pkgs.adguardhome;
     host = "0.0.0.0";
     port = 3333;
     mutableSettings = false;

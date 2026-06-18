@@ -8,7 +8,6 @@
 let
   themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
-  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
 
@@ -49,7 +48,7 @@ in
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
 
-    quickshell.package = unstable.quickshell;
+    quickshell.package = pkgs.quickshell;
 
     settings = dmsSettings // {
       currentThemeName = lib.mkForce "dynamic";

@@ -1,27 +1,22 @@
-{ inputs, ... }: {
+_: {
   perSystem =
     { pkgs, ... }:
-    let
-      unstable = import ../modules/nixpkgs-unstable.nix {
-        inherit inputs pkgs;
-      };
-    in
     {
       treefmt = {
         projectRootFile = "flake.nix";
-        package = unstable.treefmt;
+        package = pkgs.treefmt;
         programs = {
           nixfmt = {
             enable = true;
-            package = unstable.nixfmt;
+            package = pkgs.nixfmt;
           };
           statix = {
             enable = true;
-            package = unstable.statix;
+            package = pkgs.statix;
           };
           deadnix = {
             enable = true;
-            package = unstable.deadnix;
+            package = pkgs.deadnix;
           };
         };
       };

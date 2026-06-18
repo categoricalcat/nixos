@@ -1,28 +1,24 @@
 {
-  inputs,
   pkgs,
   lib,
   ...
 }:
 
-let
-  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
 {
   hardware = {
     graphics = {
       enable = true;
       enable32Bit = true;
-      package = unstable.mesa;
-      package32 = unstable.pkgsi686Linux.mesa;
+      package = pkgs.mesa;
+      package32 = pkgs.pkgsi686Linux.mesa;
 
-      extraPackages = with unstable.rocmPackages; [
+      extraPackages = with pkgs.rocmPackages; [
         clr
         clr.icd
       ];
     };
 
-    firmware = lib.mkBefore [ unstable.linux-firmware ];
+    firmware = lib.mkBefore [ pkgs.linux-firmware ];
 
     amdgpu = {
       initrd.enable = true;

@@ -1,18 +1,16 @@
 {
   addresses,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 
 let
-  unstable = import ../../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
   inherit (addresses.network) lan untrusted;
   dnsServers = lib.concatStringsSep ", " addresses.dns.lanServers;
 in
 {
-  services.kea.package = unstable.kea;
+  services.kea.package = pkgs.kea;
 
   services.kea.dhcp4 = {
     enable = true;

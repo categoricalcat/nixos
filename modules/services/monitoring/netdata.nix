@@ -1,6 +1,5 @@
 {
   pkgs,
-  inputs,
   lib,
   config,
   allAddresses,
@@ -8,7 +7,6 @@
 }:
 
 let
-  unstable = import ../../nixpkgs-unstable.nix { inherit inputs pkgs; };
   inherit (config.yi.netdata) childMode;
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
   yifuwuqiLan = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
@@ -28,7 +26,7 @@ in
   config = {
     services.netdata = {
       enable = true;
-      package = unstable.netdata.override { withCloudUi = true; };
+      package = pkgs.netdata.override { withCloudUi = true; };
       config = {
         global = {
           "memory mode" = "dbengine";

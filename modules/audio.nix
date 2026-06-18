@@ -1,7 +1,4 @@
-{ pkgs, inputs, ... }:
-let
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
+{ pkgs, ... }:
 {
   musnix.enable = true;
   musnix.rtirq.enable = true;
@@ -94,31 +91,31 @@ in
 
   environment.systemPackages = [
     # DAW
-    unstable.reaper
-    unstable.ardour
-    unstable.bitwig-studio
+    pkgs.reaper
+    pkgs.ardour
+    pkgs.bitwig-studio
 
     # Guitar amp simulators
-    unstable.guitarix
-    unstable.tonelib-gfx
-    unstable.neural-amp-modeler-lv2
+    pkgs.guitarix
+    pkgs.tonelib-gfx
+    pkgs.neural-amp-modeler-lv2
 
     # Audio plugins (LV2/VST)
-    unstable.lsp-plugins
-    unstable.kapitonov-plugins-pack
-    unstable.reaper-reapack-extension
-    unstable.calf
-    unstable.zam-plugins
-    unstable.dragonfly-reverb
-    unstable.chow-tape-model
-    unstable.x42-plugins
-    unstable.drumgizmo
-    unstable.x42-avldrums
+    pkgs.lsp-plugins
+    pkgs.kapitonov-plugins-pack
+    pkgs.reaper-reapack-extension
+    pkgs.calf
+    pkgs.zam-plugins
+    pkgs.dragonfly-reverb
+    pkgs.chow-tape-model
+    pkgs.x42-plugins
+    pkgs.drumgizmo
+    pkgs.x42-avldrums
 
     # Routing & monitoring
-    unstable.qpwgraph
-    unstable.pavucontrol
-    unstable.alsa-scarlett-gui
+    pkgs.qpwgraph
+    pkgs.pavucontrol
+    pkgs.alsa-scarlett-gui
   ];
 
   environment.sessionVariables = {

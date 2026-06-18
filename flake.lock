@@ -125,15 +125,15 @@
       "inputs": {
         "flake-compat": "flake-compat_2",
         "nixpkgs": [
-          "nixpkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1781790842,
-        "narHash": "sha256-RpYoMji6bWMeF1pyAVqJ5MCkKzXzBxKpwXVyDHLymPU=",
+        "lastModified": 1781812193,
+        "narHash": "sha256-weT8fUMhPSlCywTPsJKUGc8HW7f5qvDxXS6wox+TAUk=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "097290f7da2bac6da3299c7dfe35e4e0ad52d689",
+        "rev": "5adc0c464a82fc475f65a0a1f438d5d79998db81",
         "type": "github"
       },
       "original": {
@@ -443,32 +443,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781805210,
-        "narHash": "sha256-7jQebx0jH9e+pXO8LzuLSNBgt0q0qFtVbPHio3LOHj4=",
+        "lastModified": 1781810163,
+        "narHash": "sha256-dk8lIk0UnO8GD3e7e3HM1vSYXpbEDmhy67w7KztfdCg=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "a786067676c8f4d4c705e2681448eaaa12679634",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "ref": "master",
-        "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "home-manager-small": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs-small"
-        ]
-      },
-      "locked": {
-        "lastModified": 1781805210,
-        "narHash": "sha256-7jQebx0jH9e+pXO8LzuLSNBgt0q0qFtVbPHio3LOHj4=",
-        "owner": "nix-community",
-        "repo": "home-manager",
-        "rev": "a786067676c8f4d4c705e2681448eaaa12679634",
+        "rev": "c8f0b8ed441c95bfeaf33555e7631044bb09f384",
         "type": "github"
       },
       "original": {
@@ -505,7 +484,7 @@
     "musnix": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
@@ -617,22 +596,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-small": {
-      "locked": {
-        "lastModified": 1781577229,
-        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1780902259,
@@ -645,22 +608,6 @@
       "original": {
         "owner": "NixOS",
         "ref": "nixos-26.05",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-unstable": {
-      "locked": {
-        "lastModified": 1781577229,
-        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -720,15 +667,15 @@
     "noctalia": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-unstable"
+          "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1781793161,
-        "narHash": "sha256-pKDbrGfaEYVc8UF3KjOV453DCxITa2K+XDV7cWjKd2o=",
+        "lastModified": 1781819536,
+        "narHash": "sha256-v7TwET8a1wtdae/1D+ewIEauTh39hT3zBONv6XkRHe8=",
         "owner": "noctalia-dev",
         "repo": "noctalia-shell",
-        "rev": "44d74a6dffcc57999963f4322a47febd167c4a92",
+        "rev": "7bc707b611fcb88401f64a52f483f389e2771f43",
         "type": "github"
       },
       "original": {
@@ -792,14 +739,11 @@
         "flake-parts": "flake-parts_2",
         "git-hooks": "git-hooks",
         "home-manager": "home-manager",
-        "home-manager-small": "home-manager-small",
         "lanzaboote": "lanzaboote",
         "musnix": "musnix",
         "niri-float-sticky": "niri-float-sticky",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
-        "nixpkgs-small": "nixpkgs-small",
-        "nixpkgs-unstable": "nixpkgs-unstable",
         "nixvim": "nixvim",
         "noctalia": "noctalia",
         "sops-nix": "sops-nix",
@@ -859,7 +803,7 @@
         "flake-parts": "flake-parts_4",
         "gnome-shell": "gnome-shell",
         "nixpkgs": [
-          "nixpkgs-unstable"
+          "nixpkgs"
         ],
         "nur": "nur",
         "systems": "systems_3",

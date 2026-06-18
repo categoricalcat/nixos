@@ -1,41 +1,38 @@
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 
-let
-  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
 {
   environment.systemPackages = with pkgs; [
     floorp-bin # the good
     google-chrome # the bad
     emacs-gtk
 
-    unstable.vscode-fhs
-    unstable.code-cursor-fhs
-    unstable.antigravity
-    unstable.onlyoffice-desktopeditors
+    pkgs.vscode-fhs
+    pkgs.code-cursor-fhs
+    pkgs.antigravity
+    pkgs.onlyoffice-desktopeditors
     discord
-    unstable.vesktop
+    pkgs.vesktop
 
-    unstable.qbz
+    pkgs.qbz
 
     wl-clipboard
 
-    # (unstable.bitwarden-desktop.override { electron_39 = electron; })
+    # (pkgs.bitwarden-desktop.override { electron_39 = electron; })
     prismlauncher
     gimp
     nautilus
-    unstable.vial
-    unstable.obsidian
-    unstable.mangohud
-    (unstable.wrapOBS {
-      plugins = with unstable.obs-studio-plugins; [
+    pkgs.vial
+    pkgs.obsidian
+    pkgs.mangohud
+    (pkgs.wrapOBS {
+      plugins = with pkgs.obs-studio-plugins; [
         obs-vkcapture
         obs-vaapi
         obs-gstreamer
       ];
     })
-    unstable.obs-studio-plugins.obs-vkcapture
-    # unstable.nextcloud-client
+    pkgs.obs-studio-plugins.obs-vkcapture
+    # pkgs.nextcloud-client
   ];
 
   services.udev.packages = [

@@ -4,7 +4,6 @@
   ...
 }:
 let
-  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
   themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
   zellijStart = pkgs.writeShellScriptBin "zellij-start" ''
     if [ -n "$ZELLIJ" ]; then
@@ -20,7 +19,7 @@ in
 {
   programs.kitty = {
     enable = true;
-    package = unstable.kitty;
+    package = pkgs.kitty;
     settings = {
       remember_window_size = "no";
       initial_window_width = "90c";
@@ -37,5 +36,5 @@ in
     shellIntegration.enableZshIntegration = true;
   };
 
-  home.packages = [ unstable.alacritty ];
+  home.packages = [ pkgs.alacritty ];
 }

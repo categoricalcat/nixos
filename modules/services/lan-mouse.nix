@@ -2,13 +2,11 @@
   addresses,
   config,
   pkgs,
-  inputs,
   lib,
   ...
 }:
 
 let
-  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
   tomlFormat = pkgs.formats.toml { };
   cfg = config.services.lan-mouse;
 in
@@ -34,7 +32,7 @@ in
     };
 
     home-manager.users.yi = {
-      home.packages = [ unstable.lan-mouse ];
+      home.packages = [ pkgs.lan-mouse ];
 
       xdg.configFile."lan-mouse/config.toml".source = tomlFormat.generate "lan-mouse-config" (
         lib.recursiveUpdate { port = 4242; } cfg.settings
@@ -48,7 +46,7 @@ in
         };
 
         Service = {
-          ExecStart = "${unstable.lan-mouse}/bin/lan-mouse daemon";
+          ExecStart = "${pkgs.lan-mouse}/bin/lan-mouse daemon";
           Restart = "on-failure";
           RestartSec = 5;
         };

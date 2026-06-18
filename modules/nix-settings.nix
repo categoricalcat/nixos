@@ -8,7 +8,6 @@
 }:
 
 let
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
   attic = allAddresses.hosts.yifuwuqi.services.attic;
 
 in
@@ -22,7 +21,7 @@ in
     registry = lib.mapAttrs (_: flake: { inherit flake; }) inputs;
     nixPath = [ "/etc/nix/inputs" ];
 
-    package = unstable.nix;
+    package = pkgs.nix;
 
     gc = {
       automatic = true;

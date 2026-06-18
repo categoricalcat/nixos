@@ -4,10 +4,6 @@
   config,
   ...
 }:
-let
-  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
-
-in
 {
   imports = [
     inputs.thefiles.homeModules.default
@@ -19,7 +15,7 @@ in
 
   home = {
     packages = with pkgs; [
-      unstable.zed-editor
+      pkgs.zed-editor
       pnpm
       eslint
       typescript
@@ -37,7 +33,7 @@ in
 
     zsh = {
       enable = true;
-      package = unstable.zsh;
+      package = pkgs.zsh;
       enableCompletion = true;
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;

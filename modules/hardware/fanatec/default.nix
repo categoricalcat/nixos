@@ -14,8 +14,7 @@ let
   profileDir = "${fanatecDir}/profiles";
   seedDir = ../../../hosts/yitaishi/fanatec;
   hid-fanatecff =
-    config.boot.kernelPackages.callPackage
-      "${inputs.nixpkgs-unstable}/pkgs/os-specific/linux/hid-fanatecff"
+    config.boot.kernelPackages.callPackage "${inputs.nixpkgs}/pkgs/os-specific/linux/hid-fanatecff"
       { };
 in
 {

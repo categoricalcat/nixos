@@ -1,18 +1,10 @@
-{ inputs, ... }:
-{
+_: {
   perSystem =
     {
       pkgs,
       ...
     }:
     let
-      _pkgs = pkgs;
-    in
-    let
-      pkgs = import ../modules/nixpkgs-unstable.nix {
-        inherit inputs;
-        pkgs = _pkgs;
-      };
       rustPkgs = with pkgs; [
         cargo
         rustc

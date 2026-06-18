@@ -3,12 +3,10 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
 let
-  unstable = import ../nixpkgs-unstable.nix { inherit inputs pkgs; };
   cfg = config.yi.tailscale;
   isServer = cfg.routingMode == "server" || cfg.routingMode == "both";
 in
@@ -76,7 +74,7 @@ in
     {
       services.tailscale = {
         enable = lib.mkDefault true;
-        package = unstable.tailscale;
+        package = pkgs.tailscale;
         useRoutingFeatures = if isServer then "server" else "client";
         extraUpFlags = runtimeFlags;
         extraSetFlags = runtimeFlags;

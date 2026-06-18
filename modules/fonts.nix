@@ -8,7 +8,6 @@
 
 let
   themeAssets = import ./theme-assets.nix { inherit inputs pkgs; };
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
 in
 {
   environment.variables = {
@@ -38,7 +37,7 @@ in
     packages =
       themeAssets.fonts.packages
       ++ lib.optionals (options ? desktop) (
-        with unstable;
+        with pkgs;
         [
           dejavu_fonts
           freefont_ttf

@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
@@ -10,12 +9,10 @@ let
   cfg = config.services.llama-swap-amdgpu;
   enabled = cfg.enable || cfg.rpcServer.enable;
 
-  unstable = import ../../nixpkgs-unstable.nix { inherit inputs pkgs; };
-
   # Per-package override so the unstable helper stays generic; avoids the
   # global `nixpkgs.config.rocmSupport = true` that ollama-amdgpu had to set.
   llama-cpp =
-    (unstable.llama-cpp.override {
+    (pkgs.llama-cpp.override {
       rocmSupport = true;
       rpcSupport = true;
       rocmGpuTargets = cfg.rocmTargets;
@@ -223,7 +220,7 @@ in
       (lib.mkIf cfg.enable {
         services.llama-swap = {
           enable = true;
-          package = unstable.llama-swap;
+          package = pkgs.llama-swap;
           inherit (cfg) port;
           settings = {
             healthCheckTimeout = 120;

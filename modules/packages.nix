@@ -1,11 +1,8 @@
 # System packages configuration module
 
-{ pkgs, inputs, ... }:
-let
-  unstable = import ./nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
+{ pkgs, ... }:
 {
-  environment.systemPackages = with unstable; [
+  environment.systemPackages = with pkgs; [
     emacs-nox
     cursor-cli
 
@@ -63,7 +60,7 @@ in
     systemd
     tcpdump
     traceroute
-    # unstable.bitwarden-cli
+    # pkgs.bitwarden-cli
     ripgrep
   ];
 }

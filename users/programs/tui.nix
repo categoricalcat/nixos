@@ -1,78 +1,75 @@
-{ pkgs, inputs, ... }:
-let
-  unstable = import ../../modules/nixpkgs-unstable.nix { inherit inputs pkgs; };
-in
+{ pkgs, ... }:
 {
   programs = {
     mcfly = {
       enable = true;
-      package = unstable.mcfly;
+      package = pkgs.mcfly;
     };
 
     atuin = {
       enable = true;
-      package = unstable.atuin;
+      package = pkgs.atuin;
     };
 
     yazi = {
       enable = true;
-      package = unstable.yazi;
+      package = pkgs.yazi;
     };
 
     broot = {
       enable = true;
-      package = unstable.broot;
+      package = pkgs.broot;
     };
 
     lazygit = {
       enable = true;
-      package = unstable.lazygit;
+      package = pkgs.lazygit;
     };
 
     gitui = {
       enable = true;
-      package = unstable.gitui;
+      package = pkgs.gitui;
     };
 
     bottom = {
       enable = true;
-      package = unstable.bottom;
+      package = pkgs.bottom;
     };
 
     zellij = {
       enable = true;
-      package = unstable.zellij;
+      package = pkgs.zellij;
     };
 
     btop = {
       enable = true;
-      package = unstable.btop.override { rocmSupport = true; };
+      package = pkgs.btop.override { rocmSupport = true; };
     };
 
     tmux = {
       enable = true;
-      package = unstable.tmux;
+      package = pkgs.tmux;
     };
 
     fzf = {
       enable = true;
-      package = unstable.fzf;
+      package = pkgs.fzf;
     };
 
     zoxide = {
       enable = true;
-      package = unstable.zoxide;
+      package = pkgs.zoxide;
     };
 
     direnv = {
       enable = true;
-      package = unstable.direnv;
+      package = pkgs.direnv;
       nix-direnv.enable = true;
-      nix-direnv.package = unstable.nix-direnv;
+      nix-direnv.package = pkgs.nix-direnv;
     };
   };
 
   home.packages = [
-    unstable.starship
+    pkgs.starship
   ];
 }
