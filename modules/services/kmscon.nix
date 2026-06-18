@@ -19,8 +19,8 @@ in
       config = {
         # Enable hardware rendering for better performance
         hwaccel = true;
-        font-name = themeAssets.fonts.monospace.name;
-        font-size = 16;
+        font-name = lib.mkDefault themeAssets.fonts.monospace.name;
+        font-size = lib.mkDefault 16;
       };
     };
   };
