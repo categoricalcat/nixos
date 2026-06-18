@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@main
       - run: |
           echo "::group::nix flake check"
-          nix flake check --print-build-logs --show-trace
+          nix flake check --print-build-logs --show-trace -v
           echo "::endgroup::"
 
   buildepush:
