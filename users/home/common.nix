@@ -26,6 +26,8 @@
       TERMINFO = "/run/current-system/sw/share/terminfo";
       TERMINFO_DIRS = "${config.home.profileDirectory}/share/terminfo:/run/current-system/sw/share/terminfo";
     };
+
+    file.".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
   };
 
   programs = {

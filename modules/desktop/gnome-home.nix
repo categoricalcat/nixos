@@ -1,6 +1,5 @@
 {
   lib,
-  pkgs,
   osConfig,
   ...
 }:
@@ -68,22 +67,9 @@ in
       "org/gnome/shell" = {
         disable-user-extensions = false;
         disable-extension-version-validation = true;
-        enabled-extensions = with pkgs.gnomeExtensions; [
-          appindicator.extensionUuid
-          clipboard-indicator.extensionUuid
-          dash-to-panel.extensionUuid
-          gtile.extensionUuid
-          kimpanel.extensionUuid
-          pip-on-top.extensionUuid
-          vitals.extensionUuid
-          weather-oclock.extensionUuid
-          user-themes.extensionUuid
-          vertical-workspaces.extensionUuid
-          mpris-label.extensionUuid
-          tiling-assistant.extensionUuid
-          impatience.extensionUuid
-          valent.extensionUuid
-        ];
+        enabled-extensions = map (p: p.extensionUuid) (
+          builtins.filter (p: p ? extensionUuid) osConfig.environment.systemPackages
+        );
 
         favorite-apps = [
           "google-chrome.desktop"
@@ -145,6 +131,56 @@ in
         animation-speed-factor = 50;
         ws-max-spacing = 16;
         ws-switcher-mode = 1;
+      };
+
+      "org/gnome/shell/extensions/paperwm" = {
+        horizontal-margin = 0;
+        vertical-margin = 0;
+        vertical-margin-bottom = 0;
+        window-gap = 0;
+        animation-time = 0.0;
+        selection-border-size = 1;
+        selection-border-radius-top = 4;
+        selection-border-radius-bottom = 4;
+      };
+
+      "org/gnome/shell/extensions/paperwm/keybindings" = {
+        # switch-left = [
+        #   "<Super>Left"
+        #   "<Super>b"
+        # ];
+        # switch-right = [
+        #   "<Super>Right"
+        #   "<Super>f"
+        # ];
+        switch-right = [
+          "<Super>Up"
+          "<Super>p"
+        ];
+        switch-left = [
+          "<Super>Down"
+          "<Super>n"
+        ];
+        move-left = [
+          "<Super><Ctrl>Left"
+          "<Super><Shift>b"
+        ];
+        move-right = [
+          "<Super><Ctrl>Right"
+          "<Super><Shift>f"
+        ];
+        move-up = [
+          "<Super><Ctrl>Up"
+          "<Super><Shift>p"
+        ];
+        move-down = [
+          "<Super><Ctrl>Down"
+          "<Super><Shift>n"
+        ];
+        toggle-maximize-width = [ "<Super>m" ];
+        paper-toggle-fullscreen = [ "<Super><Shift>m" ];
+        new-window = [ "<Super>Return" ];
+        take-window = [ ];
       };
 
       "org/gnome/shell/keybindings" = {
@@ -227,21 +263,23 @@ in
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
         panel-anchors = builtins.toJSON (
-          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: "MIDDLE")
+          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: "MIDDLE")
         );
         panel-element-positions = builtins.toJSON (
-          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: panelElements)
+          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: panelElements)
         );
         panel-element-positions-monitors-sync = true;
         panel-lengths = builtins.toJSON (
-          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: 100)
+          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: 100)
         );
         panel-positions = builtins.toJSON (
-          lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: "TOP")
+          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: "TOP")
         );
         panel-side-margins = 4;
         panel-side-padding = 4;
-        panel-sizes = builtins.toJSON (lib.genAttrs (map (m: m.name) osConfig.desktop.monitors) (_m: 28));
+        panel-sizes = builtins.toJSON (
+          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: 28)
+        );
         panel-top-bottom-padding = 0;
         panel-top-bottom-margins = 0;
         peek-mode = true;

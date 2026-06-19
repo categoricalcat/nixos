@@ -17,7 +17,7 @@ let
       layout = "br";
       variant = "thinkpad";
       keyMap = "br-abnt2";
-      fcitxLayout = "br";
+      fcitxLayout = "br-thinkpad";
     };
   };
   kb = keyboardProfiles.${config.desktop.keyboard};

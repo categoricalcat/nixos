@@ -8,8 +8,7 @@
 }:
 
 let
-  desktopEnvironment = "niri";
-  desktopShell = "dms";
+  desktopEnvironment = "gnome";
   # desktopShell = "dms";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
@@ -46,13 +45,14 @@ in
   system.stateVersion = global.version;
 
   home-manager = mkHome {
-    inherit inputs desktopEnvironment desktopShell;
+    inherit inputs desktopEnvironment;
+    # inherit desktopShell;
     stateVersion = global.homeVersion;
   };
 
   desktop = {
     environment = desktopEnvironment;
-    shell = desktopShell;
+    # shell = desktopShell;
     inherit greeter;
     keyboard = "br";
     monitors = [

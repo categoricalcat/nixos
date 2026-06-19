@@ -97,21 +97,6 @@ in
 
   environment.systemPackages = [ pkgs.xclip ];
 
-  # services.xserver.resolutions = [
-  #   {
-  #     x = 3840;
-  #     y = 2160;
-  #   }
-  #   {
-  #     x = 2560;
-  #     y = 1440;
-  #   }
-  #   {
-  #     x = 1920;
-  #     y = 1080;
-  #   }
-  # ];
-
   security.polkit.enable = true;
 
   hardware = {

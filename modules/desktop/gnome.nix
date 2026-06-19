@@ -42,6 +42,8 @@
           users = [ "1000" ];
         };
       };
+
+      input-remapper.enable = true;
     };
 
     xdg.portal = {
@@ -85,15 +87,17 @@
       gnomeExtensions.appindicator
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.dash-to-panel
-      gnomeExtensions.gtile
+      # gnomeExtensions.gtile
       gnomeExtensions.kimpanel
       gnomeExtensions.pip-on-top
       gnomeExtensions.vitals
       gnomeExtensions.weather-oclock
-      gnomeExtensions.vertical-workspaces
+      # gnomeExtensions.vertical-workspaces
       gnomeExtensions.mpris-label
-      gnomeExtensions.tiling-assistant
+      # gnomeExtensions.tiling-assistant
       gnomeExtensions.impatience
+      gnomeExtensions.paperwm
+      gnomeExtensions.user-themes
     ];
 
     home-manager.sharedModules = [ ./gnome-home.nix ];
