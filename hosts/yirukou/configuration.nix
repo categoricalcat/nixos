@@ -18,7 +18,6 @@ in
     ../../secrets/sops.nix
     ../../modules/common.nix
     ../../modules/locale.nix
-    ../../modules/server-mode.nix
     ../../modules/nix-settings.nix
     ../../modules/distributed-builds.nix
     ../../modules/server-settings.nix

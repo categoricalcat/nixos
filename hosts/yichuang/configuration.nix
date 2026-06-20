@@ -16,7 +16,6 @@ in
     ../../modules/common.nix
     ../../modules/nix-settings.nix
     ../../modules/packages.nix
-    ../../modules/server-mode.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     # ../modules/desktop.nix

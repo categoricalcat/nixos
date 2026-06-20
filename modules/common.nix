@@ -5,6 +5,7 @@
 
   imports = [
     ./nix-ld.nix
+    ./server-mode.nix
     ./services/chrony.nix
     ./services/kmscon.nix
   ];

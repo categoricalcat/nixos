@@ -30,7 +30,6 @@ in
     ../../modules/packages.nix
     ../../modules/services/mariadb.nix
     ../../modules/server-settings.nix
-    ../../modules/server-mode.nix
     ../../modules/nix-access-tokens.nix
     ../../modules/virtualisation/podman.nix
     ../../secrets/sops.nix
