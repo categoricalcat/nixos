@@ -27,13 +27,9 @@ let
 
   users = {
     yi = rec {
-      sshAuthorizedKeys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMFdaKOm9/19z4mhVMClEPewSLIzDDpHDNKLrernUrEK fufud@fuyidong"
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFkKk0FdFj+g/+uJgJiF5ukH8Oazzx0p2Ae0jb8aUVB9 fufud@fuchuang"
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMmSvhc3u+aAXkWFSOOT+OPq0xbkRzmXAAHfuMjx+uk yi@nixos"
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEnmvcucoKU8G0WLIV6NMsen1Es94bC/3yCRwOLEV2mP"
-      ]
-      ++ builtins.filter (x: x != null) (map (k: k.sshPublicKey) (builtins.attrValues meshKeys));
+      sshAuthorizedKeys = builtins.filter (x: x != null) (
+        map (k: k.sshPublicKey) (builtins.attrValues meshKeys)
+      );
 
       meshKeys = {
         yifuwuqi = {
