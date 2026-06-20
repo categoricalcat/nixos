@@ -1,13 +1,32 @@
 ---
 name: nixos
-description: NixOS configuration, modules, options, and flake management. Read local source code from /etc/nix/inputs before searching online.
+description: NixOS configuration, modules, options, and flake management. Read local source code from /etc/nix/inputs before searching online. Always verify which host you are on.
 ---
 
 # NixOS AI Skill
 
 When reasoning about NixOS configurations, modules, or options, you must strictly follow these instructions:
 
-1. **Read Local Source Code First**: Always search for and read the source code in the local flake inputs folder, which is located at `/etc/nix/inputs`.
-2. **Understand the Local Inputs**: The `/etc/nix/inputs` directory contains the exact source code for the flake inputs (such as `nixpkgs`, `home-manager`, `stylix`, etc.) that are mapped and currently in use by the system.
-3. **Fallback to Online Sources**: If the relevant source code or documentation is not found in `/etc/nix/inputs`, only then should you search for the source code online.
-4. **Do Not Make Assumptions**: Never make assumptions about NixOS options, module structures, function signatures, or implementation details. Always verify the truth by reading the actual source code.
+## 1. Identify the Current Host
+
+Before running any command or making configuration changes, **always verify which host you are on** by running `hostname`. Do not assume you know which host you are operating on — the workspace may be accessed remotely (e.g. via SSH) and the host may differ from what you expect.
+
+Each host's configuration lives under `hosts/<hostname>/configuration.nix` in the flake. Make sure any NixOS commands (e.g. `nixos-rebuild`, reading hardware config, checking services) target the **correct host**.
+
+If you are connected remotely and need to modify a *different* host's configuration, clearly state which host you are editing for and do **not** run deployment commands meant for a different host.
+
+## 2. Read Local Source Code First
+
+Always search for and read the source code in the local flake inputs folder, which is located at `/etc/nix/inputs`.
+
+## 3. Understand the Local Inputs
+
+The `/etc/nix/inputs` directory contains the exact source code for the flake inputs (such as `nixpkgs`, `home-manager`, `stylix`, etc.) that are mapped and currently in use by the system.
+
+## 4. Fallback to Online Sources
+
+If the relevant source code or documentation is not found in `/etc/nix/inputs`, only then should you search for the source code online.
+
+## 5. Do Not Make Assumptions
+
+Never make assumptions about NixOS options, module structures, function signatures, or implementation details. Always verify the truth by reading the actual source code.

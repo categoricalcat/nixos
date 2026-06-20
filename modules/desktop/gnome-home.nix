@@ -1,4 +1,5 @@
 {
+  pkgs,
   lib,
   osConfig,
   ...
@@ -54,10 +55,9 @@ let
     }
   ];
 
-  xkb = osConfig.services.xserver.xkb;
-  kbLayout = xkb.layout or "us";
-  kbVariant = xkb.variant or "";
-  kbSourceId = if kbVariant != "" then "${kbLayout}+${kbVariant}" else kbLayout;
+  hasPaperWM = builtins.any (
+    p: (p.extensionUuid or "") == pkgs.gnomeExtensions.paperwm.extensionUuid
+  ) osConfig.environment.systemPackages;
 in
 
 {
@@ -89,13 +89,6 @@ in
         enable-animations = true;
       };
 
-      "org/gnome/desktop/input-sources".sources = [
-        (lib.hm.gvariant.mkTuple [
-          "xkb"
-          kbSourceId
-        ])
-      ];
-
       "org/gnome/desktop/wm/preferences" = {
         button-layout = "appmenu:minimize,maximize,close";
       };
@@ -108,19 +101,10 @@ in
         switch-applications-backward = [ "<Shift><Super>Tab" ];
       };
 
-      "org/gnome/settings-daemon/plugins/xsettings" = {
-        overrides = lib.hm.gvariant.mkArray "{sv}" [
-          (lib.hm.gvariant.mkDictionaryEntry [
-            "Gtk/IMModule"
-            (lib.hm.gvariant.mkVariant "fcitx")
-          ])
-        ];
-      };
-
       "org/gnome/mutter" = {
         workspaces-only-on-primary = false;
         center-new-windows = true;
-        dynamic-workspaces = false;
+        dynamic-workspaces = hasPaperWM;
         experimental-features = [
           "scale-monitor-framebuffer"
           "xwayland-native-scaling"

@@ -28,6 +28,7 @@
     };
 
     file.".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
+    file.".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
   };
 
   programs = {

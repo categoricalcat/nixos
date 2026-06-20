@@ -28,6 +28,7 @@ in
       shell = "${zellijStart}/bin/zellij-start";
       window_padding_width = 2;
       font_family = "family='${themeAssets.fonts.monospace.name}' style=Light";
+      confirm_os_window_close = 0;
     };
     keybindings = {
       "ctrl+shift+t" = "new_os_window";

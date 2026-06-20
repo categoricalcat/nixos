@@ -9,7 +9,7 @@
 
 let
   desktopEnvironment = "gnome";
-  # desktopShell = "dms";
+  desktopShell = "none";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in
@@ -45,14 +45,14 @@ in
   system.stateVersion = global.version;
 
   home-manager = mkHome {
-    inherit inputs desktopEnvironment;
-    # inherit desktopShell;
+    inherit inputs desktopEnvironment desktopShell;
+    keyboardProfile = "br-thinkpad";
     stateVersion = global.homeVersion;
   };
 
   desktop = {
     environment = desktopEnvironment;
-    # shell = desktopShell;
+    shell = desktopShell;
     inherit greeter;
     keyboard = "br";
     monitors = [

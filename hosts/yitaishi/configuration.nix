@@ -50,6 +50,7 @@ in
 
   home-manager = mkHome {
     inherit inputs desktopEnvironment;
+    keyboardProfile = "us-intl";
     stateVersion = global.homeVersion;
   };
 

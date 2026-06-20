@@ -39,6 +39,9 @@
     zellij = {
       enable = true;
       package = pkgs.zellij;
+      settings = {
+        on_force_close = "quit";
+      };
     };
 
     btop = {

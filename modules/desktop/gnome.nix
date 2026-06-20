@@ -96,7 +96,7 @@
       gnomeExtensions.mpris-label
       # gnomeExtensions.tiling-assistant
       gnomeExtensions.impatience
-      gnomeExtensions.paperwm
+      # gnomeExtensions.paperwm
       gnomeExtensions.user-themes
     ];
 
