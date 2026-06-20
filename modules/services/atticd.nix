@@ -45,8 +45,8 @@ in
     settings = {
       listen = "[::]:${toString attic.port}";
       garbage-collection = {
-        interval = "3 days";
-        default-retention-period = "15 days";
+        interval = "2 days";
+        default-retention-period = "12 days";
       };
       chunking = {
         nar-size-threshold = 64 * 1024;
