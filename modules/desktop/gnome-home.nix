@@ -108,6 +108,8 @@ in
         experimental-features = [
           "scale-monitor-framebuffer"
           "xwayland-native-scaling"
+          "kms-modifiers"
+          "variable-refresh-rate"
         ];
       };
 

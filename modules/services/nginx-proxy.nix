@@ -120,6 +120,16 @@ in
         };
       };
 
+      # Grafana dashboards — yifuwuqi observability stack
+      "${yifuwuqiServices.grafana.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.grafana.port}";
+          proxyWebsockets = true;
+        };
+      };
+
       # SearXNG private metasearch — proxied to yifuwuqi
       "search.fufu.land" = {
         useACMEHost = "fufu.land";

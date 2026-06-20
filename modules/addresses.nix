@@ -75,6 +75,42 @@ let
 
 in
 {
+  monitoring = {
+    centralHost = "yifuwuqi";
+    proxyHost = "yirukou";
+    scrapeHosts = [
+      "yifuwuqi"
+      "yirukou"
+    ];
+    logHosts = [
+      "yifuwuqi"
+      "yirukou"
+    ];
+    exporters = {
+      node = {
+        hosts = "scrapeHosts";
+        settings.enabledCollectors = [ "systemd" ];
+      };
+
+      systemd.hosts = "scrapeHosts";
+
+      smartctl = {
+        hosts = "scrapeHosts";
+        scrapeInterval = "60s";
+        settings.maxInterval = "5m";
+      };
+
+      nginx = {
+        hosts = "proxyHost";
+        settings.scrapeUri = "http://127.0.0.1/nginx_status";
+      };
+
+      fail2ban = {
+        hosts = "centralHost";
+        settings.exitOnError = false;
+      };
+    };
+  };
 
   hosts = {
     yifuwuqi = rec {
@@ -168,6 +204,16 @@ in
       };
 
       services = {
+        grafana = {
+          domain = "grafana.fufu.land";
+          port = 3000;
+        };
+        prometheus = {
+          port = 9090;
+        };
+        loki = {
+          port = 3100;
+        };
         forgejo = {
           domain = "git.fufu.land";
           httpPort = 18200;

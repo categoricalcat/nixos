@@ -1,7 +1,12 @@
-{ pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
 
 let
   inherit (pkgs.lib.strings) toLower replaceStrings;
+  chrome = config.programs.google-chrome.finalPackage;
 
   mkWebApp =
     {
@@ -30,7 +35,7 @@ let
         in
         toString (
           pkgs.writeShellScript "launch-${icon}" ''
-            exec ${pkgs.google-chrome}/bin/google-chrome-stable ${userDataDirArg} \
+            exec ${chrome}/bin/google-chrome-stable ${userDataDirArg} \
               --app="${url}" \
               --class="${name}"
           ''
@@ -43,6 +48,14 @@ let
     };
 in
 {
+  programs.google-chrome = {
+    enable = true;
+    commandLineArgs = [
+      "--enable-zero-copy"
+      "--enable-features=AcceleratedVideoDecodeLinuxZeroCopyGL,UseMultiPlaneFormatForHardwareVideo,WaylandOverlayDelegation"
+    ];
+  };
+
   xdg.desktopEntries = {
     youtube = mkWebApp {
       name = "YouTube";

@@ -29,6 +29,11 @@ in
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
     ../../modules/services/monitoring/netdata.nix
+    ../../modules/services/monitoring/exporters.nix
+    ../../modules/services/monitoring/prometheus.nix
+    ../../modules/services/monitoring/loki.nix
+    ../../modules/services/monitoring/promtail.nix
+    ../../modules/services/monitoring/grafana.nix
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
     ../../modules/services/opencode.nix

@@ -1,19 +1,19 @@
 # Monitoring
 
-The monitoring stack currently uses Netdata. The other monitoring modules are
-placeholders for a future Prometheus/Grafana/Loki stack.
+The monitoring stack runs Netdata for realtime host debugging and a
+Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
 
 ## Current Status
 
 | Module | Status | Role |
 | --- | --- | --- |
 | `netdata.nix` | Implemented | Per-second host metrics and web UI. |
-| `prometheus.nix` | Placeholder | Future time-series metrics server. |
-| `grafana.nix` | Placeholder | Future dashboards. |
-| `loki.nix` | Placeholder | Future log aggregation server. |
-| `promtail.nix` | Placeholder | Future journald shipper. |
+| `prometheus.nix` | Implemented | Central time-series metrics server on `yifuwuqi`. |
+| `grafana.nix` | Implemented | Dashboards and provisioned Prometheus/Loki datasources. |
+| `loki.nix` | Implemented | Central log aggregation server on `yifuwuqi`. |
+| `promtail.nix` | Implemented | Vector-based journald shipper. |
 | `alertmanager.nix` | Placeholder | Future alert routing. |
-| `exporters.nix` | Placeholder | Future node, nginx, mysqld, fail2ban, smartctl exporters. |
+| `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, and fail2ban exporters. |
 
 ## Topology
 
@@ -29,6 +29,17 @@ Current deployment:
 - LAN IPs come from `modules/addresses.nix`, not hardcoded literals.
 - `netdata.fufu.land` is served by `nginx` on `yirukou` and proxies to
   `http://10.42.0.2:19999`.
+
+Prometheus/Grafana/Loki deployment:
+
+- Central host, proxy host, scrape hosts, and log hosts are defined in
+  `modules/addresses.nix` under `monitoring`.
+- The central host runs Prometheus, Loki, Grafana, local exporters, and Vector.
+- The proxy host runs nginx, exporters, and Vector.
+- Prometheus scrape jobs are generated from `exporter-metadata.nix`.
+- Vector on each log host pushes journald logs to Loki with a `host` label.
+- `grafana.fufu.land` is served by nginx on the proxy host and proxies to the
+  central host's Grafana endpoint.
 
 ## Access Control
 
@@ -60,9 +71,26 @@ Child mode binds the web UI to localhost only. Parent mode binds to all
 interfaces but only allows direct web connections from localhost and
 `10.42.0.*`; public browser access goes through nginx and basic auth.
 
+Prometheus/Grafana/Loki is configured with:
+
+- Prometheus retention: 30 days.
+- Loki retention: 7 days.
+- Grafana datasource provisioning for Prometheus and Loki.
+- Grafana uses anonymous Viewer access; only the required `secret_key` is a
+  SOPS secret referenced through Grafana's file provider.
+- Remote exporter ports are opened on the LAN interface for scrape hosts.
+- Promtail is not used; local nixpkgs removed it after EOL, so Vector ships
+  journald logs via structured Nix settings.
+
 ## Source Files
 
 - `modules/services/monitoring/netdata.nix`
+- `modules/services/monitoring/exporter-metadata.nix`
+- `modules/services/monitoring/prometheus.nix`
+- `modules/services/monitoring/grafana.nix`
+- `modules/services/monitoring/loki.nix`
+- `modules/services/monitoring/promtail.nix`
+- `modules/services/monitoring/exporters.nix`
 - `hosts/yirukou/services.nix`
 - `hosts/yifuwuqi/services.nix`
 - `modules/services/nginx-proxy.nix`
