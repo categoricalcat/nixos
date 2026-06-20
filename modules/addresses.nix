@@ -206,7 +206,7 @@ in
       services = {
         grafana = {
           domain = "grafana.fufu.land";
-          port = 3000;
+          port = 3030;
         };
         prometheus = {
           port = 9090;

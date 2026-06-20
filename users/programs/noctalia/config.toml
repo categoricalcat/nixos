@@ -4,7 +4,7 @@ enabled = true
 [bar.main]
 background_opacity = 0.0
 capsule = true
-capsule_opacity = 0.33000000000000002
+capsule_opacity = 0.33
 capsule_padding = 10.0
 center = ["media", "clock"]
 contact_shadow = true
