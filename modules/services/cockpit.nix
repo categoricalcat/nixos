@@ -1,16 +1,21 @@
 { pkgs, addresses, ... }:
 
+let
+  cockpit = addresses.services.cockpit;
+  port = toString cockpit.port;
+in
 {
   services.cockpit = {
     enable = true;
-    port = 9090;
+    inherit (cockpit) port;
     allowed-origins = [
-      "http://localhost:9090"
-      "https://localhost:9090"
-      "http://yifuwuqi.local:9090"
-      "https://yifuwuqi.local:9090"
-      "http://${addresses.network.vpn.ipv4.host}:9090"
-      "https://${addresses.network.vpn.ipv4.host}:9090"
+      "http://localhost:${port}"
+      "https://localhost:${port}"
+      "http://${addresses.hostName}.local:${port}"
+      "https://${addresses.hostName}.local:${port}"
+      "http://${addresses.network.vpn.ipv4.host}:${port}"
+      "https://${addresses.network.vpn.ipv4.host}:${port}"
+      "https://${cockpit.domain}"
     ];
     settings = {
       WebService = {

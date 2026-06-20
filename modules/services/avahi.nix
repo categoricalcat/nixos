@@ -1,4 +1,5 @@
-_: {
+{ addresses, ... }:
+{
 
   services.avahi = {
     enable = true; # For zero-config service discovery
@@ -58,7 +59,7 @@ _: {
           <name replace-wildcards="yes">%h Cockpit</name>
           <service>
             <type>_cockpit._tcp</type>
-            <port>9090</port>
+            <port>${toString addresses.services.cockpit.port}</port>
           </service>
         </service-group>
       '';

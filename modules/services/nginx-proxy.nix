@@ -130,6 +130,17 @@ in
         };
       };
 
+      # Cockpit host management — proxied to yifuwuqi
+      "${yifuwuqiServices.cockpit.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.cockpit.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+
       # SearXNG private metasearch — proxied to yifuwuqi
       "search.fufu.land" = {
         useACMEHost = "fufu.land";

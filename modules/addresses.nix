@@ -211,6 +211,10 @@ in
         prometheus = {
           port = 9090;
         };
+        cockpit = {
+          domain = "cockpit.fufu.land";
+          port = 9091;
+        };
         loki = {
           port = 3100;
         };

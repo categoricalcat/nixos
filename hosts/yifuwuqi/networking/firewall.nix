@@ -48,7 +48,6 @@ in
     nftables = {
       enable = true;
       tables = {
-        # Smarter Container Isolation
         # Allows tunnel containers to talk to the host (e.g., database)
         # but blocks access to the rest of the internal LAN/VPN network.
         container-isolation = {
@@ -68,8 +67,6 @@ in
             }
           '';
         };
-
-        # sinkhole table defined in ../../modules/networking/sinkhole.nix
       };
     };
 
