@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   inputs,
   allAddresses,
   ...
@@ -20,8 +19,6 @@ in
   nix = {
     registry = lib.mapAttrs (_: flake: { inherit flake; }) inputs;
     nixPath = [ "/etc/nix/inputs" ];
-
-    package = pkgs.nix;
 
     gc = {
       automatic = true;

@@ -15,7 +15,6 @@
 
   home = {
     packages = with pkgs; [
-      pkgs.zed-editor
       pnpm
       eslint
       typescript

@@ -5,33 +5,35 @@
     floorp-bin # the good
     emacs-gtk
 
-    pkgs.vscode-fhs
-    pkgs.code-cursor-fhs
-    pkgs.antigravity
-    pkgs.onlyoffice-desktopeditors
+    vscode-fhs
+    code-cursor-fhs
+    antigravity
+    onlyoffice-desktopeditors
     discord
-    pkgs.vesktop
+    vesktop
 
-    pkgs.qbz
+    qbz
 
     wl-clipboard
 
-    # (pkgs.bitwarden-desktop.override { electron_39 = electron; })
+    # (bitwarden-desktop.override { electron_39 = electron; })
     prismlauncher
     gimp
     nautilus
-    pkgs.vial
-    pkgs.obsidian
-    pkgs.mangohud
-    (pkgs.wrapOBS {
-      plugins = with pkgs.obs-studio-plugins; [
+    zed-editor
+
+    vial
+    obsidian
+    mangohud
+    (wrapOBS {
+      plugins = with obs-studio-plugins; [
         obs-vkcapture
         obs-vaapi
         obs-gstreamer
       ];
     })
-    pkgs.obs-studio-plugins.obs-vkcapture
-    # pkgs.nextcloud-client
+    obs-studio-plugins.obs-vkcapture
+    # nextcloud-client
   ];
 
   services.udev.packages = [

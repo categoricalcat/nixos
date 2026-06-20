@@ -8,7 +8,7 @@
 let
   sessionCommand =
     if config.desktop.environment == "gnome" then
-      "gnome-session"
+      "GNOME"
     else if config.desktop.environment == "niri" then
       "niri-session"
     else

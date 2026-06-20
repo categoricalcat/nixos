@@ -1,14 +1,15 @@
-{ lib, ... }:
+{ pkgs, lib, ... }:
 
 {
+  _module.args.allAddresses = import ./addresses.nix;
+
   imports = [
-    ./lix.nix
     ./nix-ld.nix
     ./services/chrony.nix
-    # ./services/kmscon.nix
+    ./services/kmscon.nix
   ];
 
-  _module.args.allAddresses = import ./addresses.nix;
-  environment.defaultPackages = lib.mkForce [ ];
+  nix.package = lib.mkForce pkgs.lix;
   nixpkgs.config.allowUnfree = true;
+  environment.defaultPackages = lib.mkForce [ ];
 }
