@@ -3,7 +3,7 @@
 let
   resolvFallbackNameservers = map (
     server: lib.removeSuffix "]" (lib.removePrefix "[" (lib.removeSuffix ":53" server))
-  ) (addresses.dns.fallbackServers or [ ]);
+  ) addresses.dns.fallbackServers;
 in
 {
   # Interface roles, VLANs, and DHCP ranges live in modules/addresses.nix.

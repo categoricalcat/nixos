@@ -9,10 +9,6 @@ let
     if [ -n "$ZELLIJ" ]; then
       exec ''${SHELL:-zsh}
     fi
-    target_dir=$(${pkgs.zoxide}/bin/zoxide query -i || echo "")
-    if [ -n "$target_dir" ]; then
-      cd "$target_dir"
-    fi
     exec ${pkgs.zellij}/bin/zellij
   '';
 in
@@ -37,5 +33,5 @@ in
     shellIntegration.enableZshIntegration = true;
   };
 
-  home.packages = [ pkgs.alacritty ];
+  programs.alacritty.enable = true;
 }

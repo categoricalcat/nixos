@@ -5,16 +5,6 @@
   ...
 }:
 
-let
-  sessionCommand =
-    if config.desktop.environment == "gnome" then
-      "GNOME"
-    else if config.desktop.environment == "niri" then
-      "niri-session"
-    else
-      config.desktop.environment;
-in
-
 {
   config = lib.mkIf (config.desktop.greeter == "tuigreet") {
     services.greetd = {
@@ -22,17 +12,22 @@ in
       settings = {
         default_session = {
           # Customized tuigreet command
-          command = lib.concatStringsSep " " [
-            "${pkgs.tuigreet}/bin/tuigreet"
-            "--time"
-            "--asterisks"
-            "--user-menu"
-            "--cmd ${lib.escapeShellArg sessionCommand}"
-            "--greeting ${lib.escapeShellArg config.desktop.greeting}"
-            "--theme ${lib.escapeShellArg "border=magenta;text=magenta;prompt=magenta;time=magenta;action=magenta;button=magenta;container=black;input=white"}"
-            "--remember"
-            "--remember-session"
-          ];
+          command =
+            let
+              sessions = "${config.services.displayManager.sessionData.desktops}/share";
+            in
+            lib.concatStringsSep " " [
+              "${pkgs.tuigreet}/bin/tuigreet"
+              "--time"
+              "--asterisks"
+              "--user-menu"
+              "--sessions ${sessions}/wayland-sessions"
+              "--xsessions ${sessions}/xsessions"
+              "--greeting ${lib.escapeShellArg config.desktop.greeting}"
+              "--theme ${lib.escapeShellArg "border=magenta;text=magenta;prompt=magenta;time=magenta;action=magenta;button=magenta;container=black;input=white"}"
+              "--remember"
+              "--remember-session"
+            ];
           user = "greeter";
         };
       };

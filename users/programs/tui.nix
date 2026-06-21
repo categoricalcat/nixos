@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 {
   programs = {
     mcfly = {
@@ -41,6 +46,11 @@
       package = pkgs.zellij;
       settings = {
         on_force_close = "quit";
+        # theme = "stylix";
+        mouse_mode = true;
+        copy_on_select = true;
+        default_mode = "locked";
+        show_startup_tips = false;
       };
     };
 
@@ -70,9 +80,13 @@
       nix-direnv.enable = true;
       nix-direnv.package = pkgs.nix-direnv;
     };
+
+    starship = {
+      enable = true;
+      settings = fromTOML (builtins.readFile "${inputs.thefiles}/.config/starship.toml");
+    };
   };
 
-  home.packages = [
-    pkgs.starship
-  ];
+  # TODO: need to migrate home config to thefiles at some point
+  home.file.".config/starship.toml".enable = lib.mkForce false;
 }
