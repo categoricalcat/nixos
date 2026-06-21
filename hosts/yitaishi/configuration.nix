@@ -39,7 +39,7 @@ in
     ../../modules/networking/ipv6.nix
     ../../modules/services/openssh.nix
     ../../modules/distributed-builds.nix
-    ../../modules/services/tailscale.nix
+    # ../../modules/services/tailscale.nix
     ../../modules/services/samba/client.nix
   ];
 

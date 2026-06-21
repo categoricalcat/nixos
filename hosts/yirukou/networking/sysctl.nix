@@ -12,7 +12,7 @@ _:
     # Enable IPv4 forwarding on all interfaces, including future router ports.
     "net.ipv4.conf.all.forwarding" = 1;
 
-    # Loose RPF works with Tailscale, WAN failover, and future fwmark/PBR.
+    # Loose RPF works with WAN failover, and future fwmark/PBR.
     # nftables bogon and state rules are the router's security boundary.
     "net.ipv4.conf.all.rp_filter" = 2;
 

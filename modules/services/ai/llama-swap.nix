@@ -25,8 +25,8 @@ let
 
   ai = import ./models.nix;
   vpnDeps =
-    lib.optional config.services.tailscale.enable "tailscaled.service"
-    ++ lib.optional config.services.netbird.enable "netbird.service";
+    # lib.optional config.services.tailscale.enable "tailscaled.service" ++
+    lib.optional config.services.netbird.enable "netbird.service";
   rpcEnabledFor = m: cfg.rpcPeers != [ ] && (m.rpc or true);
   deviceAllow = [ "/dev/kfd rw" ] ++ map (node: "${node} rw") cfg.drmDevices;
   rocmEnvironment =

@@ -20,7 +20,7 @@ in
     ../../modules/services/ai/llama-swap.nix
     # ../../modules/services/playit-agent.nix
     # ../../modules/services/localtonet.nix
-    ../../modules/services/tailscale.nix
+    # ../../modules/services/tailscale.nix
     # ../../modules/services/omada-controller.nix
     ../../modules/services/github-runner.nix
     ../../modules/services/forgejo.nix
@@ -40,18 +40,17 @@ in
     ../../modules/services/atticd.nix
     ../../modules/services/attic-watch-store.nix
   ];
-
-  yi.tailscale = {
-    routingMode = "client";
-    # Servers must NOT use an exit node. With one set, tailscaled installs
-    # `default dev tailscale0` (and, with --exit-node-allow-lan-access=false,
-    # captures RFC1918 subnets too) into route table 52. Replies to LAN
-    # traffic - both 192.168.0.0/24 via enp4s0 and 10.42.0.0/24 via eno1 -
-    # then leave through tailscale0 instead of the interface they arrived
-    # on, so on-LAN peers see 100% packet loss to this host.
-    exitNodeHost = null;
-    acceptRoutes = false;
-  };
+  # yi.tailscale = {
+  #   routingMode = "client";
+  #   # Servers must NOT use an exit node. With one set, tailscaled installs
+  #   # `default dev tailscale0` (and, with --exit-node-allow-lan-access=false,
+  #   # captures RFC1918 subnets too) into route table 52. Replies to LAN
+  #   # traffic - both 192.168.0.0/24 via enp4s0 and 10.42.0.0/24 via eno1 -
+  #   # then leave through tailscale0 instead of the interface they arrived
+  #   # on, so on-LAN peers see 100% packet loss to this host.
+  #   exitNodeHost = null;
+  #   acceptRoutes = false;
+  # };
 
   security.pam = {
     services.sshd.googleAuthenticator.enable = true;

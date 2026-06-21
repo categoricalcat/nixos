@@ -11,7 +11,7 @@ let
   forgejoServer = config.services.forgejo.settings.server;
   trustedCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
-    allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
+    # allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
     allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr
   ];
 in

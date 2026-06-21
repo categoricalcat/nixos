@@ -6,7 +6,7 @@
 {
   imports = [
     ../../modules/services/ai/llama-swap.nix
-    ../../modules/services/tailscale.nix
+    # ../../modules/services/tailscale.nix
     ../../modules/services/netbird.nix
     ../../modules/services/lan-mouse.nix
   ];

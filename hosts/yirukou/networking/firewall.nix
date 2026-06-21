@@ -10,7 +10,7 @@ let
   internalInterfaces = [
     lan.interface
     untrusted.interface
-    config.services.tailscale.interfaceName
+    # config.services.tailscale.interfaceName
     addresses.network.vpn.interface
   ];
   wanInterfaces = [
@@ -78,9 +78,9 @@ in
           allowedTCPPorts = internalTcpPorts;
           allowedUDPPorts = internalUdpPorts;
         };
-        ${config.services.tailscale.interfaceName} = {
-          allowedTCPPorts = [ addresses.ssh.listenPort ];
-        };
+        # ${config.services.tailscale.interfaceName} = {
+        #   allowedTCPPorts = [ addresses.ssh.listenPort ];
+        # };
         ${addresses.network.vpn.interface} = {
           allowedTCPPorts = [ addresses.ssh.listenPort ];
         };
@@ -96,8 +96,8 @@ in
       extraForwardRules = ''
         iifname { ${wanSet} } ct state invalid drop comment "drop invalid wan forward"
         iifname { ${internalSet} } oifname { ${wanSet} } accept comment "internal to wan"
-        iifname "${config.services.tailscale.interfaceName}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "tailscale to lan subnet"
-        iifname "${lan.interface}" oifname "${config.services.tailscale.interfaceName}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to tailscale subnet clients"
+        # iifname "${config.services.tailscale.interfaceName}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "tailscale to lan subnet"
+        # iifname "${lan.interface}" oifname "${config.services.tailscale.interfaceName}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to tailscale subnet clients"
       '';
     };
 

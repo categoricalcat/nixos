@@ -10,7 +10,7 @@ let
   yifuwuqiServices = allAddresses.hosts.yifuwuqi.services;
   trustedProxyCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
-    allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
+    # allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
     allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr
   ];
   restrictedProxyConfig = ''

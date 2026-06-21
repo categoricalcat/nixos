@@ -17,7 +17,7 @@
     };
 
     allowInterfaces = [
-      "tailscale0"
+      # "tailscale0"
       "wt0"
       "eno1"
     ];

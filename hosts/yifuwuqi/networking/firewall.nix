@@ -36,7 +36,7 @@ in
       ];
 
       trustedInterfaces = [
-        "tailscale0"
+        # "tailscale0"
         "eno1"
         "enp4s0"
       ];
