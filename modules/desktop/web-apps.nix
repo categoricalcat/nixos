@@ -12,7 +12,6 @@ let
     {
       name,
       url,
-      # Convert "YouTube Music" -> "youtube-music" to match icon theme files
       icon ? toLower (replaceStrings [ " " ] [ "-" ] name),
       categories ? [
         "Network"
@@ -20,43 +19,34 @@ let
       ],
       isolate ? false,
       comment ? "Web Application",
+      domains ? [ ],
     }:
+    let
+      userDataDirArg = pkgs.lib.optionalString isolate ''--user-data-dir="$HOME/.config/google-chrome-${icon}"'';
+      launcher = pkgs.writeShellScript "launch-${icon}" ''
+        exec ${chrome}/bin/google-chrome-stable ${userDataDirArg} \
+          --app="''${1:-${url}}" \
+          --class="${name}"
+      '';
+    in
     {
       inherit
         name
         icon
         categories
         comment
+        domains
+        launcher
         ;
 
-      exec =
-        let
-          userDataDirArg = pkgs.lib.optionalString isolate ''--user-data-dir="$HOME/.config/google-chrome-${icon}"'';
-        in
-        toString (
-          pkgs.writeShellScript "launch-${icon}" ''
-            exec ${chrome}/bin/google-chrome-stable ${userDataDirArg} \
-              --app="${url}" \
-              --class="${name}"
-          ''
-        );
-
+      exec = "${launcher} %U";
       terminal = false;
       settings = {
         StartupWMClass = name;
       };
     };
-in
-{
-  programs.google-chrome = {
-    enable = true;
-    commandLineArgs = [
-      "--enable-zero-copy"
-      "--enable-features=AcceleratedVideoDecodeLinuxZeroCopyGL,UseMultiPlaneFormatForHardwareVideo,WaylandOverlayDelegation"
-    ];
-  };
 
-  xdg.desktopEntries = {
+  webApps = {
     youtube = mkWebApp {
       name = "YouTube";
       url = "https://youtube.com";
@@ -65,6 +55,11 @@ in
         "Video"
       ];
       comment = "Watch YouTube Videos";
+      domains = [
+        "youtube.com"
+        "www.youtube.com"
+        "youtu.be"
+      ];
     };
 
     youtube-music = mkWebApp {
@@ -76,6 +71,7 @@ in
         "Player"
       ];
       comment = "Listen to YouTube Music";
+      domains = [ "music.youtube.com" ];
     };
 
     whatsapp = mkWebApp {
@@ -87,6 +83,7 @@ in
         "Chat"
       ];
       comment = "WhatsApp Web Client";
+      domains = [ "web.whatsapp.com" ];
     };
 
     nix-search = mkWebApp {
@@ -97,6 +94,7 @@ in
         "Documentation"
       ];
       comment = "Search Nix Packages";
+      domains = [ "search.nixos.org" ];
     };
 
     deepseek = mkWebApp {
@@ -104,6 +102,7 @@ in
       url = "https://chat.deepseek.com/";
       categories = [ "Network" ];
       comment = "DeepSeek AI Chat";
+      domains = [ "chat.deepseek.com" ];
     };
 
     gemini = mkWebApp {
@@ -111,6 +110,7 @@ in
       url = "https://gemini.google.com/";
       categories = [ "Network" ];
       comment = "Google Gemini AI";
+      domains = [ "gemini.google.com" ];
     };
 
     my-nixos = mkWebApp {
@@ -121,6 +121,10 @@ in
         "Documentation"
       ];
       comment = "NixOS Options and Packages Reference";
+      domains = [
+        "mynixos.com"
+        "www.mynixos.com"
+      ];
     };
 
     github = mkWebApp {
@@ -131,6 +135,10 @@ in
         "RevisionControl"
       ];
       comment = "GitHub Repository Hosting";
+      domains = [
+        "github.com"
+        "www.github.com"
+      ];
     };
 
     bitwarden-web = mkWebApp {
@@ -142,6 +150,7 @@ in
         "Security"
       ];
       comment = "Password Manager";
+      domains = [ "vault.bitwarden.com" ];
     };
 
     f1tv = mkWebApp {
@@ -152,6 +161,7 @@ in
         "Video"
       ];
       comment = "Formula 1 TV";
+      domains = [ "f1tv.formula1.com" ];
     };
 
     forgejo = mkWebApp {
@@ -162,6 +172,7 @@ in
         "RevisionControl"
       ];
       comment = "Git Repository Hosting";
+      domains = [ "git.fufu.land" ];
     };
 
     tiktok = mkWebApp {
@@ -172,6 +183,10 @@ in
         "WebBrowser"
       ];
       comment = "TikTok Web";
+      domains = [
+        "tiktok.com"
+        "www.tiktok.com"
+      ];
     };
 
     instagram = mkWebApp {
@@ -182,6 +197,69 @@ in
         "WebBrowser"
       ];
       comment = "Instagram Web";
+      domains = [
+        "instagram.com"
+        "www.instagram.com"
+      ];
+    };
+  };
+
+  # Build case branches from webApps that have domains
+  routerCases =
+    let
+      appsWithDomains = pkgs.lib.filterAttrs (_: app: app.domains != [ ]) webApps;
+    in
+    pkgs.lib.concatStringsSep "\n" (
+      pkgs.lib.mapAttrsToList (
+        _: app: "  ${pkgs.lib.concatStringsSep "|" app.domains}) exec ${app.launcher} \"$1\" ;;"
+      ) appsWithDomains
+    );
+
+  urlRouter = pkgs.writeShellScriptBin "url-router" ''
+    d="''${1#*://}"; d="''${d%%/*}"
+    case "$d" in
+    ${routerCases}
+    *) exec ${chrome}/bin/google-chrome-stable "$1" ;;
+    esac
+  '';
+
+  # Strip internal attrs (domains, launcher) before passing to desktopEntries
+  desktopEntries = builtins.mapAttrs (
+    _: app:
+    removeAttrs app [
+      "domains"
+      "launcher"
+    ]
+  ) webApps;
+in
+{
+  programs.google-chrome = {
+    enable = true;
+    commandLineArgs = [
+      "--enable-zero-copy"
+      "--enable-features=AcceleratedVideoDecodeLinuxZeroCopyGL,UseMultiPlaneFormatForHardwareVideo,WaylandOverlayDelegation"
+    ];
+  };
+
+  xdg.desktopEntries = desktopEntries // {
+    url-router = {
+      name = "URL Router";
+      exec = "${urlRouter}/bin/url-router %U";
+      terminal = false;
+      categories = [ "Network" ];
+      mimeType = [
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+      ];
+    };
+  };
+
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "x-scheme-handler/http" = [ "url-router.desktop" ];
+      "x-scheme-handler/https" = [ "url-router.desktop" ];
+      "text/html" = [ "url-router.desktop" ];
     };
   };
 }

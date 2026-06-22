@@ -9,6 +9,8 @@ let
   dynamicSshConfig = import ../../../modules/ssh-dynamic.nix { inherit lib allAddresses keys; };
 in
 {
+  services.ssh-agent.enable = true;
+
   programs.keychain = {
     enable = true;
     enableZshIntegration = true;

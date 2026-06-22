@@ -20,17 +20,17 @@ in
   };
 
   # Make Noctalia settings mutable at runtime (same pattern as DMS)
-  home.activation.makeNoctaliaMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    for file in config.toml; do
-      target="$HOME/.config/noctalia/$file"
-      if [ -L "$target" ]; then
-        store_path=$(readlink -f "$target")
-        rm -f "$target"
-        cp "$store_path" "$target"
-        chmod u+w "$target"
-      fi
-    done
-  '';
+  # home.activation.makeNoctaliaMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+  #   for file in config.toml; do
+  #     target="$HOME/.config/noctalia/$file"
+  #     if [ -L "$target" ]; then
+  #       store_path=$(readlink -f "$target")
+  #       rm -f "$target"
+  #       cp "$store_path" "$target"
+  #       chmod u+w "$target"
+  #     fi
+  #   done
+  # ';
 
   xdg.configFile."autostart/noctalia-shell.desktop".text = ''
     [Desktop Entry]

@@ -8,8 +8,8 @@
 }:
 
 let
-  desktopEnvironment = "gnome";
-  desktopShell = "none";
+  desktopEnvironment = "niri";
+  desktopShell = "noctalia";
   greeter = "tuigreet";
   mkHome = import ../../modules/home-manager.nix;
 in

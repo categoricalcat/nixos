@@ -1,11 +1,31 @@
 # Locale and internationalization configuration module
 
-_:
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}:
 
 {
+  environment.systemPackages = lib.mkIf (!config.serverMode.headless) (
+    with pkgs;
+    [
+      hunspell
+      hunspellDicts.pt_BR
+      hunspellDicts.en_US
+      hunspellDicts.en_GB-ise
+    ]
+  );
+
   # Time zone
   time.timeZone = "America/Sao_Paulo";
   environment.sessionVariables.TZ = "America/Sao_Paulo";
+
+  # Spellchecking dictionaries path
+  environment.sessionVariables.DICPATH = lib.mkIf (
+    !config.serverMode.headless
+  ) "/run/current-system/sw/share/hunspell:/run/current-system/sw/share/myspell";
 
   i18n = {
     defaultLocale = "pt_BR.UTF-8";

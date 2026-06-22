@@ -43,6 +43,14 @@ in
         EnumerateSkipFirst = false;
       };
 
+      globalOptions.Behavior = {
+        WaylandIMModuleWarning = "False";
+      };
+
+      addons = {
+        pinyin.globalSection.CloudPinyinEnabled = "True";
+      };
+
       inputMethod = {
         "Groups/0" = {
           Name = "Default";

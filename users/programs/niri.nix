@@ -16,6 +16,9 @@ let
   + lib.optionalString (desktopShell == "dms") ''
     Mod+Space hotkey-overlay-title="Run an Application: dms" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
   ''
+  + lib.optionalString (desktopShell == "noctalia") ''
+    Mod+Space hotkey-overlay-title="Run an Application: noctalia" { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+  ''
   + ''
       Mod+T { spawn "kitty"; }
       Mod+Period { spawn "smile"; }

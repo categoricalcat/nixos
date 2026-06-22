@@ -185,18 +185,6 @@ in
       dconf.enable = true;
     };
 
-    xdg.mime = {
-      enable = true;
-      defaultApplications = {
-        "x-scheme-handler/http" = [ "floorp.desktop" ];
-        "x-scheme-handler/https" = [ "floorp.desktop" ];
-        "text/html" = [ "floorp.desktop" ];
-        "application/pdf" = [
-          "floorp.desktop"
-        ];
-      };
-    };
-
     environment.systemPackages = lib.optionals (config.desktop.environment != "gnome") [
       pkgs.polkit_gnome
     ];
