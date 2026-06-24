@@ -1,4 +1,4 @@
-name: flake ci/cd
+name: Continuous Integration for 伊的flake~
 
 on:
   push:
@@ -29,6 +29,8 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - run: ci/build.sh ${{ matrix.host }}
+
+
       - name: attic push
         env:
           ATTIC_TOKEN: ${{ secrets.attic_token }}
@@ -41,5 +43,7 @@ jobs:
 
           echo "::group::attic push ${{ matrix.host }}"
           attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
-          attic push "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
+          attic push --ignore-upstream-cache-filter -j 10 "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
           echo "::endgroup::"
+
+

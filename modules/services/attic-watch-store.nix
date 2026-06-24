@@ -37,6 +37,8 @@ in
     path = [ atticClient ];
     serviceConfig = {
       Type = "simple";
+      User = "nix-builder";
+      Group = "nogroup";
       Restart = "on-failure";
       RestartSec = 10;
       StateDirectory = "attic-watch-store";
@@ -47,7 +49,7 @@ in
       export HOME="/var/lib/attic-watch-store"
       ATTIC_TOKEN=$(< "$CREDENTIALS_DIRECTORY/attic-push-token")
       attic login ${attic.cacheName} ${atticEndpoint} "$ATTIC_TOKEN"
-      exec attic watch-store ${attic.cacheName}:${attic.cacheName} --ignore-upstream-cache-filter
+      exec attic watch-store -j 10 ${attic.cacheName}:${attic.cacheName} --ignore-upstream-cache-filter
     '';
   };
 }
