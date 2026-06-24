@@ -28,53 +28,57 @@ in
     enable = true;
     type = "fcitx5";
 
-    fcitx5.waylandFrontend = true;
+    fcitx5 = {
+      waylandFrontend = true;
 
-    fcitx5.addons = with pkgs; [
-      qt6Packages.fcitx5-chinese-addons
-      fcitx5-gtk
-    ];
+      addons = with pkgs; [
+        qt6Packages.fcitx5-chinese-addons
+        fcitx5-gtk
+      ];
 
-    fcitx5.settings = {
-      globalOptions."Hotkey/TriggerKeys" = {
-        "0" = "Control+Shift+space";
-      };
+      settings = {
+        globalOptions = {
+          "Hotkey/TriggerKeys" = {
+            "0" = "Control+Shift+space";
+          };
 
-      globalOptions.Hotkey = {
-        EnumerateForwardKeys = "";
-        EnumerateBackwardKeys = "";
-        EnumerateGroupForwardKeys = "";
-        EnumerateGroupBackwardKeys = "";
-        EnumerateSkipFirst = false;
-      };
+          Hotkey = {
+            EnumerateForwardKeys = "";
+            EnumerateBackwardKeys = "";
+            EnumerateGroupForwardKeys = "";
+            EnumerateGroupBackwardKeys = "";
+            EnumerateSkipFirst = false;
+          };
 
-      globalOptions.Behavior = {
-        WaylandIMModuleWarning = "False";
-      };
-
-      addons = {
-        pinyin.globalSection.CloudPinyinEnabled = "True";
-      };
-
-      inputMethod = {
-        "Groups/0" = {
-          Name = "Default";
-          "Default Layout" = kb.fcitxLayout;
-          DefaultIM = "keyboard-${kb.fcitxLayout}";
+          Behavior = {
+            WaylandIMModuleWarning = "False";
+          };
         };
-        "Groups/0/Items/0" = {
-          Name = "keyboard-${kb.fcitxLayout}";
-          Layout = kb.fcitxLayout;
+
+        addons = {
+          pinyin.globalSection.CloudPinyinEnabled = "True";
         };
-        "Groups/0/Items/1" = {
-          Name = "keyboard-br";
-          Layout = kb.fcitxLayout;
+
+        inputMethod = {
+          "Groups/0" = {
+            Name = "Default";
+            "Default Layout" = kb.fcitxLayout;
+            DefaultIM = "keyboard-${kb.fcitxLayout}";
+          };
+          "Groups/0/Items/0" = {
+            Name = "keyboard-${kb.fcitxLayout}";
+            Layout = kb.fcitxLayout;
+          };
+          "Groups/0/Items/1" = {
+            Name = "keyboard-br";
+            Layout = kb.fcitxLayout;
+          };
+          "Groups/0/Items/2" = {
+            Name = "pinyin";
+            Layout = "";
+          };
+          GroupOrder."0" = "Default";
         };
-        "Groups/0/Items/2" = {
-          Name = "pinyin";
-          Layout = "";
-        };
-        GroupOrder."0" = "Default";
       };
     };
   };

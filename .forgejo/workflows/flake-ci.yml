@@ -9,7 +9,7 @@ on:
 jobs:
   check:
     runs-on: native
-    timeout-minutes: 360
+    timeout-minutes: 500
     steps:
       - uses: actions/checkout@main
       - run: |
@@ -20,7 +20,7 @@ jobs:
   buildepush:
     needs: [check]
     runs-on: native
-    timeout-minutes: 360
+    timeout-minutes: 500
     strategy:
       fail-fast: false
       max-parallel: 1
