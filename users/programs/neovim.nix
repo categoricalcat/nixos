@@ -7,6 +7,7 @@
   programs.nixvim = {
     enable = true;
     defaultEditor = true;
+    nixpkgs.source = inputs.nixpkgs;
     package = pkgs.neovim-unwrapped;
 
     opts = {
@@ -33,7 +34,8 @@
           denols.enable = true;
           hls = {
             enable = true;
-            installGhc = true;
+            installGhc = false;
+            package = pkgs.haskell-language-server;
           };
           rust_analyzer = {
             enable = true;

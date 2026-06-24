@@ -102,6 +102,7 @@ in
       };
 
       "org/gnome/mutter" = {
+        # workspaces-only-on-primary = true; # Option 2: Native GNOME behavior (Primary monitor gets multiple workspaces, secondary static)
         workspaces-only-on-primary = false;
         center-new-windows = true;
         dynamic-workspaces = hasPaperWM;

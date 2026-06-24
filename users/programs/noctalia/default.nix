@@ -37,7 +37,7 @@ in
     Type=Application
     Name=Noctalia Shell
     Comment=Wayland desktop shell
-    Exec=env QT_IM_MODULE= ${lib.getExe noctaliaPackage}
+    Exec=${lib.getExe noctaliaPackage}
     Terminal=false
     X-GNOME-Autostart-enabled=true
   '';

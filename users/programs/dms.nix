@@ -29,9 +29,6 @@ in
     };
   };
 
-  # Prevent fcitx5 Qt plugin from crashing quickshell (SIGSEGV in FcitxCandidateWindow)
-  systemd.user.services.dms.Service.Environment = [ "QT_IM_MODULE=" ];
-
   imports = [
     inputs.dms.homeModules.dank-material-shell
   ];

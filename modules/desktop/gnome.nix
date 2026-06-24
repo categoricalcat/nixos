@@ -96,6 +96,7 @@
       gnomeExtensions.mpris-label
       # gnomeExtensions.tiling-assistant
       gnomeExtensions.impatience
+      gnomeExtensions.switch-workspaces-on-active-monitor
       # gnomeExtensions.paperwm
       gnomeExtensions.user-themes
     ];
