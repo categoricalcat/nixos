@@ -45,8 +45,22 @@
       };
     };
 
-    systemd.user.services.xdg-desktop-portal-gnome.environment = {
-      XDG_CURRENT_DESKTOP = "GNOME";
+    systemd.user.services = {
+      xdg-desktop-portal = {
+        after = [ "xdg-desktop-autostart.target" ];
+      };
+      xdg-desktop-portal-gtk = {
+        after = [ "xdg-desktop-autostart.target" ];
+      };
+      xdg-desktop-portal-gnome = {
+        environment = {
+          XDG_CURRENT_DESKTOP = "GNOME";
+        };
+        after = [ "xdg-desktop-autostart.target" ];
+      };
+      niri-flake-polkit = {
+        after = [ "xdg-desktop-autostart.target" ];
+      };
     };
   };
 }

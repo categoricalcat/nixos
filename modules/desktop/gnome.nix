@@ -46,61 +46,43 @@
       input-remapper.enable = true;
     };
 
-    xdg.portal = {
-      enable = true;
-      extraPortals = [
-        pkgs.xdg-desktop-portal-gnome
-        pkgs.xdg-desktop-portal-gtk
-      ];
-      config = {
-        common = {
-          default = [
-            "gnome"
-            "gtk"
-          ];
-          "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
-          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
-          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
-        };
-      };
-    };
-
     environment.gnome.excludePackages = with pkgs; [
       gnome-tour
       gnome-user-docs
     ];
 
+    home-manager.sharedModules = [ ./gnome-home.nix ];
+
     environment.systemPackages = with pkgs; [
       dconf2nix
       dconf-editor
 
-      # Core GNOME Apps we want to keep
-      nautilus
       loupe
-      gnome-system-monitor
-      gnome-calculator
+      nautilus
+      showtime
+      decibels
       gnome-weather
       gnome-calendar
-      showtime # GNOME Video player
-      decibels # GNOME Audio player
+      gnome-calculator
+      gnome-disk-utility
+      gnome-system-monitor
 
-      gnomeExtensions.appindicator
-      gnomeExtensions.clipboard-indicator
-      gnomeExtensions.dash-to-panel
+      gnomeExtensions.vitals
       # gnomeExtensions.gtile
       gnomeExtensions.kimpanel
-      gnomeExtensions.pip-on-top
-      gnomeExtensions.vitals
-      gnomeExtensions.weather-oclock
-      # gnomeExtensions.vertical-workspaces
-      gnomeExtensions.mpris-label
-      # gnomeExtensions.tiling-assistant
-      gnomeExtensions.impatience
-      gnomeExtensions.switch-workspaces-on-active-monitor
       # gnomeExtensions.paperwm
+      gnomeExtensions.pip-on-top
+      gnomeExtensions.impatience
       gnomeExtensions.user-themes
+      gnomeExtensions.mpris-label
+      gnomeExtensions.appindicator
+      gnomeExtensions.dash-to-panel
+      gnomeExtensions.weather-oclock
+      # gnomeExtensions.tiling-assistant
+      gnomeExtensions.clipboard-indicator
+      # gnomeExtensions.vertical-workspaces
+      gnomeExtensions.switch-workspaces-on-active-monitor
     ];
 
-    home-manager.sharedModules = [ ./gnome-home.nix ];
   };
 }
