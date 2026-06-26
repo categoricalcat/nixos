@@ -117,7 +117,10 @@ in
       hostName = "yifuwuqi";
 
       dns = {
-        systemNameservers = [ "127.0.0.1" ];
+        systemNameservers = [
+          "10.42.0.1"
+          "127.0.0.1"
+        ];
         domain = "vpn";
       }
       // sharedDnsUpstreams;

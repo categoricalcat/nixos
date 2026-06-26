@@ -22,7 +22,7 @@ let
   + ''
       Mod+T { spawn "kitty"; }
       Mod+Period { spawn "smile"; }
-      Print { spawn "ksnip" "-r"; }
+      Print { screenshot; }
       F12 { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
     }
   '';

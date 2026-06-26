@@ -11,7 +11,8 @@
   ];
 
   services.resolved = {
-    enable = false;
+    enable = true;
+    settings.Resolve.DNSStubListener = "no";
   };
 
   networking = {
