@@ -11,20 +11,17 @@ in
 {
   services.ssh-agent.enable = true;
 
-  programs.keychain = {
-    enable = true;
-    enableZshIntegration = true;
-    keys = [
-      "id_ed25519"
-      "id_git_ed25519"
-    ];
-  };
-
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
     settings = {
-      "*" = { };
+      "*" = {
+        AddKeysToAgent = "yes";
+        IdentityFile = [
+          "~/.ssh/id_ed25519"
+          "~/.ssh/id_git_ed25519"
+        ];
+      };
     };
 
     extraConfig = builtins.readFile "${inputs.thefiles}/.ssh/config" + ''
