@@ -13,6 +13,7 @@
     # vesktop # uses insecure pnpm_10_29_2 at build time
 
     qbz
+    dbeaver-bin
 
     wl-clipboard
 

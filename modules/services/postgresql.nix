@@ -13,11 +13,27 @@ in
     inherit package;
     inherit dataDir;
     ensureDatabases = databaseNames;
-    ensureUsers = map (name: {
-      inherit name;
-      ensureDBOwnership = true;
-    }) databaseNames;
+    ensureUsers =
+      map (name: {
+        inherit name;
+        ensureDBOwnership = true;
+      }) databaseNames
+      ++ [
+        {
+          name = "yi";
+          ensureDBOwnership = false;
+          ensureClauses.superuser = true;
+        }
+      ];
+
+    enableTCPIP = true;
+    authentication = ''
+      # type database DBuser auth-method
+      host   all      all    ${allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr} trust
+    '';
   };
+
+  networking.firewall.allowedTCPPorts = [ 5432 ];
 
   systemd.tmpfiles.rules = [
     "d ${postgres.dataRoot} 0750 postgres postgres -"
