@@ -7,7 +7,9 @@
 { config, allAddresses, ... }:
 
 let
-  forgejo = allAddresses.hosts.yifuwuqi.services.forgejo;
+  services = allAddresses.hosts.yifuwuqi.services;
+  inherit (services) forgejo;
+  postgres = services.postgresql;
   forgejoServer = config.services.forgejo.settings.server;
   trustedCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
@@ -25,7 +27,13 @@ in
 
   services.forgejo = {
     enable = true;
-    database.type = "sqlite3";
+    database = {
+      type = "postgres";
+      createDatabase = false;
+      socket = postgres.socketDir;
+      name = postgres.databases.forgejo;
+      user = postgres.databases.forgejo;
+    };
     lfs.enable = true;
     settings = {
       server = {
@@ -44,4 +52,9 @@ in
   };
 
   networking.firewall.allowedTCPPorts = [ forgejoServer.HTTP_PORT ];
+
+  systemd.services.forgejo = {
+    after = [ "postgresql.service" ];
+    requires = [ "postgresql.service" ];
+  };
 }

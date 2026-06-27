@@ -1,7 +1,6 @@
 {
   allAddresses,
   config,
-  pkgs,
   ...
 }:
 
@@ -10,6 +9,7 @@ let
   centralHost = allAddresses.hosts.${monitoring.centralHost};
   inherit (centralHost) services;
   inherit (services) grafana prometheus loki;
+  postgres = services.postgresql;
 in
 {
   sops.secrets."services/grafana/secret-key" = {
@@ -47,6 +47,13 @@ in
         cookie_secure = true;
         disable_gravatar = true;
       };
+
+      database = {
+        type = "postgres";
+        host = postgres.socketDir;
+        name = postgres.databases.grafana;
+        user = postgres.databases.grafana;
+      };
     };
 
     provision = {
@@ -77,52 +84,13 @@ in
     };
   };
 
-  systemd.services.grafana-datasource-repair = {
-    description = "One-time Grafana datasource UID repair";
-    before = [ "grafana.service" ];
-    wantedBy = [ "grafana.service" ];
-    path = [ pkgs.sqlite ];
-    serviceConfig = {
-      Type = "oneshot";
-      User = "grafana";
-      Group = "grafana";
-    };
-    script = ''
-      set -eu
-
-      db="/var/lib/grafana/data/grafana.db"
-      marker="/var/lib/grafana/data/.datasource-repair-v1.done"
-      backup="/var/lib/grafana/data/grafana.db.pre-datasource-repair"
-
-      mkdir -p /var/lib/grafana/data
-
-      if [ -e "$marker" ]; then
-        exit 0
-      fi
-
-      if [ ! -f "$db" ]; then
-        touch "$marker"
-        exit 0
-      fi
-
-      if [ ! -f "$backup" ]; then
-        cp "$db" "$backup"
-      fi
-
-      sqlite3 "$db" "DELETE FROM data_source WHERE org_id = 1 AND name IN ('Prometheus', 'Loki');"
-      touch "$marker"
-    '';
-  };
-
   systemd.services.grafana = {
     wants = [
-      "grafana-datasource-repair.service"
       "sops-install-secrets.service"
       "prometheus.service"
       "loki.service"
     ];
     after = [
-      "grafana-datasource-repair.service"
       "sops-install-secrets.service"
       "prometheus.service"
       "loki.service"

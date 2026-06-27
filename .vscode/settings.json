@@ -14,12 +14,8 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "jnoortheen.nix-ide"
   },
-  "nixEnvSelector.suggestion": false,
   "files.associations": {
     "*.nix": "nix",
     "flake.lock": "json"
-  },
-  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
-  "nixEnvSelector.useFlakes": true,
-  "nixEnvSelector.flakeShell": "default"
+  }
 }

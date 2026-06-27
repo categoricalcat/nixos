@@ -20,7 +20,9 @@
 
 let
   system = pkgs.stdenv.hostPlatform.system;
-  attic = allAddresses.hosts.yifuwuqi.services.attic;
+  services = allAddresses.hosts.yifuwuqi.services;
+  inherit (services) attic;
+  postgres = services.postgresql;
 in
 {
   assertions = [
@@ -44,6 +46,7 @@ in
     environmentFile = config.sops.secrets."tokens/attic-server-jwt-env".path;
     settings = {
       listen = "[::]:${toString attic.port}";
+      database.url = postgres.urls.atticd;
       garbage-collection = {
         interval = "2 days";
         default-retention-period = "12 days";

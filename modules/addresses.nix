@@ -221,6 +221,17 @@ in
         loki = {
           port = 3100;
         };
+        postgresql = rec {
+          packageAttr = "postgresql_18";
+          socketDir = "/run/postgresql";
+          dataRoot = "/persist/postgresql";
+          databases = {
+            forgejo = "forgejo";
+            atticd = "atticd";
+            grafana = "grafana";
+          };
+          urls.atticd = "postgresql:///${databases.atticd}?host=${socketDir}";
+        };
         forgejo = {
           domain = "git.fufu.land";
           httpPort = 18200;

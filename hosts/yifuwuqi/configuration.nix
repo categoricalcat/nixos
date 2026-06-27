@@ -28,7 +28,7 @@ in
     ../../modules/locale.nix
     ../../modules/fonts.nix
     ../../modules/packages.nix
-    ../../modules/services/mariadb.nix
+    ../../modules/services/postgresql.nix
     ../../modules/server-settings.nix
     ../../modules/nix-access-tokens.nix
     ../../modules/virtualisation/podman.nix

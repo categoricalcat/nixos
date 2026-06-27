@@ -33,5 +33,11 @@ in
     shellIntegration.enableZshIntegration = true;
   };
 
-  programs.alacritty.enable = true;
+  # fallbackie
+  programs.ghostty = {
+    enable = true;
+    settings = {
+      command = "${pkgs.fish}/bin/fish";
+    };
+  };
 }
