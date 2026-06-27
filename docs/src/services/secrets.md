@@ -148,6 +148,8 @@ Database data can be dropped or recreated without rotating these secrets. Losing
 database data may still require service bootstrap again: Forgejo admin/mirrors,
 Attic cache/tokens, or non-declarative Grafana state.
 
+> **Note on Forgejo Runners:** If you wipe the Forgejo database, you must also delete the runner's local state file (`sudo rm /var/lib/gitea-runner-yifuwuqi/.runner`) before restarting the runner, otherwise it will try to authenticate using its stale state and fail.
+
 ## Get Service Secrets
 
 Edit the encrypted payload with:
@@ -189,6 +191,8 @@ printf 'ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="%s"\n' \
 
 Attic push token:
 
+Attic push token (requires Attic bootstrap first, see below):
+
 ```bash
 cd /tmp
 sudo atticd-atticadm make-token \
@@ -202,6 +206,37 @@ Shared/WebDAV htpasswd line:
 ```bash
 nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"
 ```
+
+### Attic Bootstrap (After Database Resets)
+
+When resetting the database, the Attic caches are destroyed. You must manually recreate the admin token, cache, and push tokens before `attic-watch-store` or CI can push:
+
+1. **Generate a new admin token:**
+
+   ```bash
+   sudo atticd-atticadm make-token --sub "*" --validity "10 years" \
+     --pull "*" --push "*" --create-cache "*" --configure-cache "*" \
+     --configure-cache-retention "*" --destroy-cache "*"
+   ```
+
+2. **Drop into a shell with the attic client:**
+   ```bash
+   nix shell github:zhaofengli/attic#attic
+   ```
+3. **Log in locally to the Attic server:**
+   ```bash
+   attic login yi http://127.0.0.1:18203 <admin-token-from-step-1>
+   ```
+4. **Recreate the cache:**
+   ```bash
+   attic cache create yi --public --priority 38
+   ```
+5. **Update the system's trusted public keys:**
+   ```bash
+   attic cache info yi
+   ```
+   Take the public key from the output and update `trusted-public-keys` in `modules/nix-settings.nix`.
+6. **Generate the new push token** for SOPS (using the command in the table above).
 
 ## Rekey Safely
 

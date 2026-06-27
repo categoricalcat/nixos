@@ -53,7 +53,7 @@ in
         server.connections.yifuwuqi = {
           url = "https://${services.forgejo.domain}";
           token_url = "file://${config.sops.secrets."tokens/forgejo-runner".path}";
-          uuid = "16b3b945-20fb-450e-91ab-4de05a421ac8";
+          uuid = "e6b2db5f-d74b-41bc-866e-1f530f4a26c4";
         };
       };
     };

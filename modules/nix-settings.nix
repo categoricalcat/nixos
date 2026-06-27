@@ -48,7 +48,7 @@ in
       ];
       trusted-public-keys = [
         # Replace after bootstrap: attic cache info <cache-name>
-        "${attic.cacheName}:jxjweC50pjTzEjmGv2uoxeTBTep9gfVnv8IaGgCKYE8="
+        "${attic.cacheName}:wLUC4OacKKUxGtnXwIxTFGBlLwvJ9IU4BNP5OBDQO60="
         "nixos-rocm.cachix.org-1:VEpsf7pRIijjd8csKjFNBGzkBqOmw8H9PRmgAq14LnE"
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
