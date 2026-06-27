@@ -1,10 +1,7 @@
-{
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 {
   # https://wiki.nixos.org/wiki/Category:Gaming
-  programs.gamemode.enable = true; # for performance mode
+  programs.gamemode.enable = true;
 
   programs.steam = {
     enable = true; # install steam
@@ -13,7 +10,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    heroic # install heroic launcher
+    # heroic # install heroic launcher  # uses insecure pnpm at build time
     lutris # install lutris launcher
     protonup-qt # GUI for installing custom Proton versions like GE_Proton
   ];

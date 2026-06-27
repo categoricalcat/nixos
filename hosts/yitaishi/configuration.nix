@@ -30,6 +30,7 @@ in
     ../../modules/fido2.nix
     ../../modules/audio.nix
     ../../modules/common.nix
+    ../../modules/gaming.nix
     ../../modules/locale.nix
     ../../modules/packages.nix
     ../../modules/desktop.nix

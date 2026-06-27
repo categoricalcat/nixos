@@ -84,6 +84,12 @@ in
         ${addresses.network.vpn.interface} = {
           allowedTCPPorts = [ addresses.ssh.listenPort ];
         };
+        ${wan.primary.interface} = {
+          allowedUDPPorts = [ 51820 ];
+        };
+        ${wan.fallback.interface} = {
+          allowedUDPPorts = [ 51820 ];
+        };
       };
       extraInputRules = ''
         iifname { ${wanSet} } ct state invalid drop comment "drop invalid wan input"
@@ -98,6 +104,9 @@ in
         iifname { ${internalSet} } oifname { ${wanSet} } accept comment "internal to wan"
         # iifname "${config.services.tailscale.interfaceName}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "tailscale to lan subnet"
         # iifname "${lan.interface}" oifname "${config.services.tailscale.interfaceName}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to tailscale subnet clients"
+
+        iifname "${addresses.network.vpn.interface}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "netbird to lan subnet"
+        iifname "${lan.interface}" oifname "${addresses.network.vpn.interface}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to netbird clients"
       '';
     };
 

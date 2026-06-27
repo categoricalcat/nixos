@@ -100,9 +100,11 @@
     pkgs.guitarix
     pkgs.gxplugins-lv2
     pkgs.tonelib-gfx
+    pkgs.tonelib-metal
     pkgs.neural-amp-modeler-lv2
     pkgs.caps
     pkgs.ir-lv2
+    pkgs.chow-centaur
 
     # Effects (LV2/VST/LADSPA)
     pkgs.lsp-plugins

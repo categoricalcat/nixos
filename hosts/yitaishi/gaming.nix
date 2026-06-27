@@ -35,49 +35,35 @@ in
     }
   ];
 
-  # https://wiki.nixos.org/wiki/Category:Gaming
   programs = {
-    gamemode = {
-      enable = true;
-      settings = {
-        custom = {
-          start = "${pkgs.writeShellScript "gamemode-start" ''
-            ${lib.concatMapStringsSep "\n" (
-              svc: "/run/wrappers/bin/sudo ${systemctl} stop ${svc} || true"
-            ) servicesToToggle}
-            ${lib.concatMapStringsSep "\n" (
-              ext: "/run/current-system/sw/bin/gnome-extensions disable ${ext} || true"
-            ) extensionsToToggle}
-          ''}";
-          end = "${pkgs.writeShellScript "gamemode-end" ''
-            ${lib.concatMapStringsSep "\n" (
-              svc: "/run/wrappers/bin/sudo ${systemctl} start ${svc} || true"
-            ) servicesToToggle}
-            ${lib.concatMapStringsSep "\n" (
-              ext: "/run/current-system/sw/bin/gnome-extensions enable ${ext} || true"
-            ) extensionsToToggle}
-          ''}";
-        };
+    gamemode.settings = {
+      custom = {
+        start = "${pkgs.writeShellScript "gamemode-start" ''
+          ${lib.concatMapStringsSep "\n" (
+            svc: "/run/wrappers/bin/sudo ${systemctl} stop ${svc} || true"
+          ) servicesToToggle}
+          ${lib.concatMapStringsSep "\n" (
+            ext: "/run/current-system/sw/bin/gnome-extensions disable ${ext} || true"
+          ) extensionsToToggle}
+        ''}";
+        end = "${pkgs.writeShellScript "gamemode-end" ''
+          ${lib.concatMapStringsSep "\n" (
+            svc: "/run/wrappers/bin/sudo ${systemctl} start ${svc} || true"
+          ) servicesToToggle}
+          ${lib.concatMapStringsSep "\n" (
+            ext: "/run/current-system/sw/bin/gnome-extensions enable ${ext} || true"
+          ) extensionsToToggle}
+        ''}";
       };
     };
 
-    steam = {
-      enable = true; # install steam
-      gamescopeSession.enable = true; # Enable gamescope micro-compositor for better AMD performance
-      remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-      dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-    };
+    # Enable gamescope micro-compositor for better AMD performance
+    steam.gamescopeSession.enable = true;
 
     # CoolerControl
     # A modern GUI daemon for viewing and controlling system temperatures and cooling devices.
     coolercontrol.enable = true;
   };
-
-  environment.systemPackages = with pkgs; [
-    # heroic # install heroic launcher  # uses insecure pnpm_10_29_2 at build time
-    lutris # install lutris launcher
-    protonup-qt # GUI for installing custom Proton versions like GE_Proton
-  ];
 
   # Linux AMDGPU Controller (LACT)
   # A daemon and GUI for managing AMD Radeon GPUs on Linux.

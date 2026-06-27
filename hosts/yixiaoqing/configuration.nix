@@ -18,7 +18,6 @@ in
     ./boot.nix
     ./hardware.nix
     ./power.nix
-    ./gaming.nix
     ./networking.nix
     ./addresses.nix
     ../../secrets/sops.nix
@@ -26,6 +25,7 @@ in
     ../../modules/fido2.nix
     ../../modules/fonts.nix
     ../../modules/common.nix
+    ../../modules/gaming.nix
     ../../modules/locale.nix
     ../../modules/desktop.nix
     ../../modules/packages.nix
