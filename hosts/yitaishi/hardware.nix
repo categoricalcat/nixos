@@ -56,24 +56,36 @@
       ];
     };
 
-    "/mnt/sda1" = {
-      device = "/dev/disk/by-uuid/2325B2053D2BBAD3";
-      fsType = "ntfs3";
+    "/mnt/slowass" = {
+      device = "/dev/disk/by-uuid/d299df65-38d5-4f53-9c10-4913453b4b26";
+      fsType = "xfs";
       options = [
         "rw"
-        "uid=1000"
-        "gid=1000"
-        "dmask=007"
-        "fmask=007"
-        "exec"
         "nofail"
-        "x-systemd.automount"
         "noauto"
+        "x-systemd.automount"
+        "x-systemd.device-timeout=5s"
+        "x-systemd.mount-timeout=10s"
+        "x-systemd.idle-timeout=600"
       ];
     };
 
-    "/mnt/nvme1n1p1" = {
-      device = "/dev/disk/by-uuid/641C61911C615F54";
+    "/mnt/jooj" = {
+      device = "/dev/disk/by-uuid/40e16750-ff60-4120-8a55-cc8faeb01210";
+      fsType = "xfs";
+      options = [
+        "rw"
+        "nofail"
+        "noauto"
+        "x-systemd.automount"
+        "x-systemd.device-timeout=5s"
+        "x-systemd.mount-timeout=10s"
+        "x-systemd.idle-timeout=600"
+      ];
+    };
+
+    "/mnt/windows" = {
+      device = "/dev/disk/by-uuid/8EBEC4C9BEC4AB53";
       fsType = "ntfs3";
       options = [
         "rw"
@@ -83,8 +95,11 @@
         "fmask=007"
         "exec"
         "nofail"
-        "x-systemd.automount"
         "noauto"
+        "x-systemd.automount"
+        "x-systemd.device-timeout=5s"
+        "x-systemd.mount-timeout=10s"
+        "x-systemd.idle-timeout=600"
       ];
     };
   };

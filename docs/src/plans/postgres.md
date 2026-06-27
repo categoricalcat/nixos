@@ -1,13 +1,32 @@
 # Centralize Service Databases on PostgreSQL (yifuwuqi)
 
-Replace per-service SQLite/MariaDB with one PostgreSQL instance on `yifuwuqi`, connected via the local Unix socket `/run/postgresql` using peer auth (system user == DB role == DB name, `ensureDBOwnership`). No passwords, no TCP for now.
+Replace per-service SQLite/MariaDB with one PostgreSQL instance on `yifuwuqi`, connected via the local Unix socket `/run/postgresql` using peer auth (system user == DB role == DB name, `ensureDBOwnership`). No passwords, no TCP for now. Only the active SQL services migrate; non-relational stores (Redis, time-series, MongoDB) are inventoried below but stay local.
 
 ## Decisions (confirmed)
 
+- **Scope**: document *every* service that uses any database (see inventory below), but only migrate the **active SQL** services (Forgejo, Atticd, Grafana) onto the central Postgres. Disabled/unused services and non-relational stores are documented, not migrated.
 - **Forgejo**: start fresh on empty Postgres (re-bootstrap). The pgloader data-migration path is documented as an alternative, not the default.
 - **Container access**: deferred. Unix-socket peer auth only (no `enableTCPIP`, no `pg_hba` password rules, no firewall changes).
-- **Nextcloud**: switch its config to `pgsql` now but leave it disabled (import stays commented).
+- **Nextcloud**: disabled (import commented), so left untouched -- no config change now. The `pgsql` target is documented for when it is re-enabled.
 - **Persistence**: DB data lives under `/persist` per repo convention.
+
+## Database inventory
+
+Every service on `yifuwuqi` that touches any database, with its current backend and disposition. Only the active SQL services migrate to the central Postgres.
+
+| Service | Module / import | State | Backend (now) | Disposition |
+| --- | --- | --- | --- | --- |
+| Forgejo | `modules/services/forgejo.nix` | enabled | SQLite (`database.type = "sqlite3"`) | Migrate -> central Postgres |
+| Atticd | `modules/services/atticd.nix` | enabled | SQLite (`/var/lib/atticd/server.db`, module default) | Migrate -> central Postgres |
+| Grafana | `modules/services/monitoring/grafana.nix` | enabled | SQLite (`/var/lib/grafana/data/grafana.db`) | Migrate -> central Postgres |
+| SearXNG | `modules/services/searxng.nix` | enabled | Redis/Valkey (`redisCreateLocally = true`) | Stays local (key-value; not PG-compatible) |
+| Loki | `modules/services/monitoring/loki.nix` | enabled | Embedded TSDB + filesystem object store | Stays local (not relational) |
+| Prometheus | `modules/services/monitoring/prometheus.nix` | enabled | Embedded TSDB | Stays local (not relational) |
+| Nextcloud | `modules/services/nextcloud` (import commented) | disabled | MySQL/MariaDB (`dbtype = "mysql"`) | Not migrated now; switch to `pgsql` + provision when re-enabled |
+| Omada Controller | `modules/services/omada-controller.nix` (import commented) | disabled | Embedded MongoDB (OCI container) | Not migrated (NoSQL, container access deferred) |
+| MariaDB server | `modules/services/mariadb.nix` (imported in `hosts/yifuwuqi/configuration.nix`) | enabled, zero databases | MySQL server | Remove (unused; consolidating on Postgres) |
+
+SearXNG's only SQLite touch is the "Tracker URL remover" plugin's per-result cache, which is already disabled (`searxng.nix`), so nothing else needs handling.
 
 ## Corrections vs the original draft
 
@@ -24,7 +43,6 @@ flowchart LR
   forgejo[forgejo svc] -->|peer auth| sock["/run/postgresql"]
   atticd[atticd svc] -->|peer auth| sock
   grafana[grafana svc] -->|peer auth| sock
-  nextcloud["nextcloud (disabled)"] -.->|peer auth| sock
   sock --> pg[(PostgreSQL)]
   pg --> data["dataDir: /persist/postgresql/&lt;schema&gt;"]
 ```
@@ -33,7 +51,7 @@ flowchart LR
 
 ### 1. NEW `modules/services/postgresql.nix`
 
-Central enable + persistence + provision the DBs that do NOT self-provision (atticd, grafana). Forgejo and Nextcloud add their own DB/role entries (lists merge).
+Central enable + persistence + provision the DBs that do NOT self-provision (atticd, grafana). Forgejo self-provisions its own `forgejo` DB/role once `database.type = "postgres"` (lists merge).
 
 ```nix
 { config, pkgs, ... }:
@@ -62,7 +80,7 @@ in
 }
 ```
 
-Notes: peer auth is the default for socket connections, so no custom `authentication`/`identMap`. `/persist` already exists on this host (keys live there).
+Notes: peer auth is the default for socket connections, so no custom `authentication`/`identMap`. `/persist` already exists on this host (keys live there). Verify atticd's peer mapping: it runs `DynamicUser = true` with a fixed `User = "atticd"` (attic `atticd.nix:212-213`), so its socket connection presents OS user `atticd` and peer-maps to role `atticd`.
 
 ### 2. MODIFY `modules/services/forgejo.nix`
 
@@ -94,13 +112,17 @@ database = {
 - Remove the now-obsolete `systemd.services.grafana-datasource-repair` block (lines ~80-115) and drop its two references from `systemd.services.grafana.wants`/`after` (lines ~117-130). Provisioned datasources re-apply on start.
 - Fallback if socket peer auth misbehaves: use TCP `localhost` + a sops password (note only; not the default path).
 
-### 5. MODIFY `modules/services/nextcloud/default.nix`
+### 5. DEFERRED: `modules/services/nextcloud/default.nix` (disabled, not migrated now)
 
-- `config.dbtype = "mysql"` -> `"pgsql"` (line 39). `database.createLocally = true` already set; `dbhost` then defaults to `/run/postgresql`. Module self-provisions the `nextcloud` DB/role when enabled. Stays disabled (no import change).
+Nextcloud's import is commented in `hosts/yifuwuqi/services.nix` (line 30), so nothing is live and no change is made now. When it is re-enabled later:
+
+- `config.dbtype = "mysql"` -> `"pgsql"` (line 39). `database.createLocally = true` is already set; `dbhost` then defaults to `/run/postgresql` and the module self-provisions the `nextcloud` DB/role.
+- Required because MariaDB is being removed (step 6) -- leaving `mysql` would have no server to connect to.
 
 ### 6. MODIFY `hosts/yifuwuqi/configuration.nix`
 
-- Replace import `../../modules/services/mariadb.nix` (line 31) with `../../modules/services/postgresql.nix`. MariaDB then has zero consumers; optionally delete `modules/services/mariadb.nix`.
+- Replace import `../../modules/services/mariadb.nix` (line 31) with `../../modules/services/postgresql.nix`. MariaDB currently has zero databases/consumers; optionally delete `modules/services/mariadb.nix`.
+- Caveat: removing MariaDB means the disabled Nextcloud (still configured `mysql`) must be switched to `pgsql` before it is re-enabled (see step 5).
 
 ## Manual Bootstrap (fresh start)
 
@@ -121,7 +143,10 @@ Stop forgejo, then `pgloader sqlite:///var/lib/forgejo/data/forgejo.db postgresq
 - `nixos-rebuild build --flake .#yifuwuqi` (or `dry-activate`) evaluates/builds.
 - After switch: `systemctl status postgresql`; `sudo -u postgres psql -l` shows `forgejo`, `atticd`, `grafana`; data dir physically at `/persist/postgresql/<schema>`.
 - `forgejo`, `atticd`, `grafana` services active and connected (check journals); Forgejo UI reachable; `attic` push works after bootstrap.
+- Non-migrated stores unaffected: `searx`/`redis`(`valkey`), `loki`, and `prometheus` still active; no new Postgres role expected for them.
 
 ### Old state cleanup (optional)
 
-Leftover SQLite files (`/var/lib/forgejo/data/forgejo.db`, `/var/lib/atticd/server.db`, `/var/lib/grafana/data/grafana.db`) and the unused MariaDB store can be removed after verification.
+Leftover SQLite files (`/var/lib/forgejo/data/forgejo.db`, `/var/lib/atticd/server.db`, `/var/lib/grafana/data/grafana.db`) and the unused MariaDB store (`/var/lib/mysql`) can be removed after verification.
+
+Left in place by design: SearXNG's Redis/Valkey, Loki's TSDB + chunk store, and Prometheus's TSDB are non-relational and remain local (see inventory).
