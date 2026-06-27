@@ -10,7 +10,7 @@
     antigravity
     onlyoffice-desktopeditors
     discord
-    vesktop
+    # vesktop # uses insecure pnpm_10_29_2 at build time
 
     qbz
 

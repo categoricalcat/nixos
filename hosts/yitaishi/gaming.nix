@@ -74,7 +74,7 @@ in
   };
 
   environment.systemPackages = with pkgs; [
-    heroic # install heroic launcher
+    # heroic # install heroic launcher  # uses insecure pnpm_10_29_2 at build time
     lutris # install lutris launcher
     protonup-qt # GUI for installing custom Proton versions like GE_Proton
   ];
