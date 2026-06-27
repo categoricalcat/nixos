@@ -92,25 +92,62 @@
   environment.systemPackages = [
     # DAW
     pkgs.reaper
+    pkgs.reaper-reapack-extension
     pkgs.ardour
     pkgs.bitwig-studio
 
-    # Guitar amp simulators
+    # Amp & cabinet simulators
     pkgs.guitarix
+    pkgs.gxplugins-lv2
     pkgs.tonelib-gfx
     pkgs.neural-amp-modeler-lv2
+    pkgs.caps
+    pkgs.ir-lv2
 
-    # Audio plugins (LV2/VST)
+    # Effects (LV2/VST/LADSPA)
     pkgs.lsp-plugins
     pkgs.kapitonov-plugins-pack
-    pkgs.reaper-reapack-extension
     pkgs.calf
     pkgs.zam-plugins
     pkgs.dragonfly-reverb
     pkgs.chow-tape-model
     pkgs.x42-plugins
+    pkgs.rkrlv2
+    pkgs.mod-distortion
+    pkgs.swh_lv2
+    pkgs.mda_lv2
+    pkgs.tap-plugins
+    pkgs.airwindows-lv2
+    pkgs.infamousplugins
+    pkgs.fomp
+    pkgs.eq10q
+    pkgs.fil-plugins
+    pkgs.fverb
+    pkgs.wolf-shaper
+    pkgs.noise-repellent
+
+    # Drums
     pkgs.drumgizmo
     pkgs.x42-avldrums
+    pkgs.hydrogen
+    pkgs.geonkick
+    pkgs.drumkv1
+
+    # Bass / synths / samplers
+    pkgs.surge-xt
+    pkgs.vital
+    pkgs.helm
+    pkgs.odin2
+    pkgs.sfizz
+    pkgs.samplv1
+    pkgs.synthv1
+    pkgs.padthv1
+    pkgs.setbfree
+    pkgs.x42-gmsynth
+
+    # Plugin hosts (standalone + plugin)
+    pkgs.carla
+    pkgs.jalv
 
     # Routing & monitoring
     pkgs.qpwgraph
@@ -123,6 +160,7 @@
     VST_PATH = "/run/current-system/sw/lib/vst:$HOME/.vst";
     VST3_PATH = "/run/current-system/sw/lib/vst3:$HOME/.vst3";
     LADSPA_PATH = "/run/current-system/sw/lib/ladspa:$HOME/.ladspa";
+    CLAP_PATH = "/run/current-system/sw/lib/clap:$HOME/.clap";
   };
 
   security.pam.loginLimits = [
