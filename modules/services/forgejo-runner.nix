@@ -50,6 +50,7 @@ in
       ];
       settings = {
         runner.labels = [ "native:host" ];
+        runner.timeout = "12h";
         server.connections.yifuwuqi = {
           url = "https://${services.forgejo.domain}";
           token_url = "file://${config.sops.secrets."tokens/forgejo-runner".path}";

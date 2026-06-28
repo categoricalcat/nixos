@@ -46,6 +46,7 @@ in
       # Flip to true after creating the admin account.
       service.DISABLE_REGISTRATION = false;
       actions.ENABLED = true;
+      actions.ENDLESS_TASK_TIMEOUT = "12h";
       webhook.ALLOWED_HOST_LIST = "external,loopback," + builtins.concatStringsSep "," trustedCidrs;
       "repository.mirror".ENABLED = true;
     };
