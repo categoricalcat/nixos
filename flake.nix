@@ -19,9 +19,7 @@
     in
     # https://flake.parts/module-arguments.html
     flake-parts.lib.mkFlake { inherit inputs; } (
-      {
-        ...
-      }:
+      { self, ... }:
       {
         imports = [
           inputs.treefmt-nix.flakeModule
@@ -32,7 +30,7 @@
         ];
 
         flake = {
-          homeConfigurations."yi@generic" = home-manager.lib.homeManagerConfiguration {
+          homeConfigurations.yijia = home-manager.lib.homeManagerConfiguration {
             pkgs = import nixpkgs {
               system = "x86_64-linux";
               config.allowUnfree = true;
@@ -104,6 +102,10 @@
             };
 
           };
+        };
+
+        perSystem = _: {
+          checks.yijia = self.homeConfigurations.yijia.activationPackage;
         };
 
         systems = [
