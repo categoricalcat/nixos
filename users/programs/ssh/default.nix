@@ -1,6 +1,5 @@
 {
   lib,
-  inputs,
   ...
 }:
 let
@@ -24,7 +23,7 @@ in
       };
     };
 
-    extraConfig = builtins.readFile "${inputs.thefiles}/.ssh/config" + ''
+    extraConfig = builtins.readFile ../../assets/dotfiles/ssh/config + ''
       ${dynamicSshConfig}
     '';
   };

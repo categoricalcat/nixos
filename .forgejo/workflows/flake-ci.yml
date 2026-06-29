@@ -16,6 +16,10 @@ jobs:
           echo "::group::nix flake check"
           nix flake check --print-build-logs --show-trace -v
           echo "::endgroup::"
+      - run: |
+          echo "::group::nix build yi@generic"
+          nix build --print-build-logs '.#homeConfigurations."yi@generic".activationPackage' --out-link result-yi-generic
+          echo "::endgroup::"
 
   buildepush:
     needs: [check]

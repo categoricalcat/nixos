@@ -3,7 +3,6 @@
   allAddresses,
   config,
   lib,
-  inputs,
   ...
 }:
 let
@@ -112,7 +111,7 @@ in
     '';
   };
 
-  programs.ssh.extraConfig = builtins.readFile "${inputs.thefiles}/.ssh/config" + ''
+  programs.ssh.extraConfig = builtins.readFile ../../users/assets/dotfiles/ssh/config + ''
     ${dynamicSshConfig}
   '';
 }

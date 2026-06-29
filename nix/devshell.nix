@@ -16,7 +16,7 @@ _: {
       ];
 
       nixosRebuildWrapper = pkgs.writeShellScriptBin "nixos-rebuild" ''
-        exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild --override-input thefiles git+file:///home/yi/the.files "$@"
+        exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild "$@"
       '';
 
       inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./inspect.sh);

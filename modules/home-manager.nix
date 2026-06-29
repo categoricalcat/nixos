@@ -3,6 +3,7 @@
   desktopShell ? if desktopEnvironment == "niri" then "dms" else "none",
   keyboardProfile ? "us-intl",
   inputs,
+  monitors ? [ ],
   stateVersion,
 }:
 {
@@ -16,6 +17,7 @@
       desktopShell
       inputs
       keyboardProfile
+      monitors
       stateVersion
       ;
   };

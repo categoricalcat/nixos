@@ -1,0 +1,132 @@
+# A vibrant rainbow theme!
+
+format = """
+[道 ](fg:#E84855)\
+$os\
+$username$hostname\
+$directory\
+$git_branch\
+$git_status\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+$scala\
+$docker_context\
+$time\
+$line_break\
+$character
+"""
+
+# Disable the blank line at the start of the prompt
+# add_newline = false
+
+[username]
+show_always = true
+style_user = "fg:#E84855"
+style_root = "fg:#E84855"
+format = '[$user]($style)'
+disabled = false
+
+[os]
+style = "fg:#E84855"
+disabled = true # Disabled by default
+
+[hostname]
+ssh_only = false
+style = "fg:#E84855"
+format = "[@$hostname ]($style)"
+
+[directory]
+style = "fg:#F9A03F"
+format = "[$path ]($style)"
+truncation_length = 3
+truncation_symbol = "径 "
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[cpp]
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[docker_context]
+style = "fg:#2D82B7"
+format = '[$context ]($style)'
+
+[elixir]
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[elm]
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[git_branch]
+symbol = "支 "
+style = "fg:#F3DE2C"
+format = '[$symbol$branch ]($style)'
+
+[git_status]
+style = "fg:#F3DE2C"
+format = '[($all_status$ahead_behind )]($style)'
+
+[golang]
+style = "fg:#7AC74F"
+format = '[$symbol ($version) ]($style)'
+
+[gradle]
+style = "fg:#7AC74F"
+format = '[$symbol ($version) ]($style)'
+
+[haskell]
+style = "fg:#7AC74F"
+format = '[$symbol ($version) ]($style)'
+
+[java]
+style = "fg:#7AC74F"
+format = '[$symbol ($version) ]($style)'
+
+[julia]
+style = "fg:#7AC74F"
+format = '[$symbol ($version) ]($style)'
+
+[nodejs]
+format = '[($version) ](fg:#7AC74F)'
+
+[nim]
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[rust]  
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[scala]
+style = "fg:#7AC74F"
+format = '[($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "fg:#9C59D1"
+format = '[爱 $time]($style)'
+
+[character]
+# 入: enter/input; 死: error;
+success_symbol = "[入](fg:#E84855)"
+error_symbol = "[死](fg:#777777)"

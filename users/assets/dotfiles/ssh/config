@@ -1,0 +1,48 @@
+Host *
+    AddKeysToAgent 900
+
+    ControlMaster no
+    ControlPath none
+    ControlPersist no
+
+    IPQoS lowdelay throughput
+    
+    RequestTTY yes
+
+    ServerAliveInterval 60
+    ServerAliveCountMax 5
+
+    Ciphers aes128-gcm@openssh.com,aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr
+    MACs umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+
+    Compression no
+
+    KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+
+    StrictHostKeyChecking accept-new
+
+    ConnectTimeout 10
+
+    TCPKeepAlive yes
+
+    ForwardAgent no
+    ForwardX11 no
+
+    IdentityFile ~/.ssh/id_ed25519
+    ExitOnForwardFailure yes
+
+Host ssh.fufu.land
+    HostName ssh.fufu.land
+    User yi
+    ProxyCommand cloudflared access ssh --hostname %h
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    Compression yes
+
+Host ssh.workd.land
+    HostName ssh.fufu.land
+    User workd
+    ProxyCommand cloudflared access ssh --hostname %h
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    Compression yes

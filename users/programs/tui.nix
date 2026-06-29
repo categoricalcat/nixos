@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  inputs,
   ...
 }:
 {
@@ -51,6 +50,14 @@
         copy_on_select = true;
         default_mode = "locked";
         show_startup_tips = false;
+        pane_frames = false;
+        ui = {
+          pane_frames = {
+            rounded_corners = false;
+            hide_session_name = true;
+          };
+        };
+        # default_layout = "compact";
       };
     };
 
@@ -83,10 +90,9 @@
 
     starship = {
       enable = true;
-      settings = fromTOML (builtins.readFile "${inputs.thefiles}/.config/starship.toml");
+      settings = fromTOML (builtins.readFile ../assets/dotfiles/starship.toml);
     };
   };
 
-  # TODO: need to migrate home config to thefiles at some point
   home.file.".config/starship.toml".enable = lib.mkForce false;
 }

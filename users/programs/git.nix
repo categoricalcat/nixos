@@ -1,4 +1,4 @@
-{ config, inputs, ... }:
+{ config, ... }:
 let
   keys = import ../../secrets/keys.nix;
 in
@@ -8,7 +8,7 @@ in
   home.file.".gitconfig" = {
     text = ''
       [include]
-      	path = ${inputs.thefiles}/.gitconfig
+      	path = ${../assets/dotfiles/gitconfig}
 
       [user]
       	signingkey = ${keys.paths.gitSigningKey config.home.homeDirectory}

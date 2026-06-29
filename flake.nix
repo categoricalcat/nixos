@@ -32,6 +32,25 @@
         ];
 
         flake = {
+          homeConfigurations."yi@generic" = home-manager.lib.homeManagerConfiguration {
+            pkgs = import nixpkgs {
+              system = "x86_64-linux";
+              config.allowUnfree = true;
+            };
+            extraSpecialArgs = {
+              inherit inputs;
+              stateVersion = global.homeVersion;
+              desktopEnvironment = "niri";
+              desktopShell = "dms";
+              monitors = [ ];
+              keyboardProfile = "us-intl";
+            };
+            modules = [
+              ./users/home/yi.nix
+              { home.stateVersion = global.homeVersion; }
+            ];
+          };
+
           nixosConfigurations = {
 
             yixiaoqing = nixpkgs.lib.nixosSystem {
@@ -156,10 +175,6 @@
     niri-float-sticky = {
       url = "github:probeldev/niri-float-sticky";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    thefiles = {
-      url = "github:categoricalcat/the.files";
     };
 
   };

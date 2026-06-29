@@ -11,6 +11,18 @@ let
   desktopEnvironment = "niri";
   desktopShell = "dms";
   greeter = "tuigreet";
+  monitors = [
+    {
+      name = "eDP-1";
+      mode = "2880x1800@60";
+      scale = 1.5;
+      transform = "normal";
+      position = {
+        x = 1280;
+        y = 0;
+      };
+    }
+  ];
   mkHome = import ../../modules/home-manager.nix;
 in
 {
@@ -45,7 +57,12 @@ in
   system.stateVersion = global.version;
 
   home-manager = mkHome {
-    inherit inputs desktopEnvironment desktopShell;
+    inherit
+      inputs
+      desktopEnvironment
+      desktopShell
+      monitors
+      ;
     keyboardProfile = "br-thinkpad";
     stateVersion = global.homeVersion;
   };
@@ -55,18 +72,7 @@ in
     shell = desktopShell;
     inherit greeter;
     keyboard = "br";
-    monitors = [
-      {
-        name = "eDP-1";
-        mode = "2880x1800@60";
-        scale = 1.5;
-        transform = "normal";
-        position = {
-          x = 1280;
-          y = 0;
-        };
-      }
-    ];
+    inherit monitors;
   };
 
   nixpkgs.config = {

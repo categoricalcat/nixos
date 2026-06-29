@@ -1,0 +1,148 @@
+[user]
+	name = categoricalcat
+	email = catufuzgu@gmail.com
+
+[init]
+	defaultBranch = main
+
+[core]
+	sshCommand = ssh -T
+	editor = emacs
+	autocrlf = input
+
+[alias]
+	# Basic shortcuts
+	a = add
+	aa = add --all
+	ap = add --patch
+
+	# Commit shortcuts
+	c = commit -v
+	ca = commit -v -a
+	cam = commit -a -m
+	cm = commit -m
+	amend = commit --amend
+
+	# Branch shortcuts
+	b = branch
+	ba = branch -a
+	bd = branch -d
+	bD = branch -D
+
+	# Checkout shortcuts
+	co = checkout
+	cb = checkout -b
+
+	# Status and diff
+	s = status -s
+	st = status
+	d = diff
+	dc = diff --cached
+
+	# Log shortcuts
+	l = log --oneline --decorate --graph
+	la = log --oneline --decorate --graph --all
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
+
+	# Push and pull
+	p = push
+	pl = pull
+	f = fetch
+
+	# Merge and rebase
+	m = merge
+	rb = rebase
+	rbi = rebase -i
+
+	# Remote
+	r = remote
+	rv = remote -v
+
+	# Stash
+	ss = stash save
+	sp = stash pop
+	sl = stash list
+
+	# Quick actions
+	unstage = reset HEAD --
+	last = log -1 HEAD
+	undo = reset --soft HEAD^
+
+	# Show current branch
+	current = rev-parse --abbrev-ref HEAD
+
+[color]
+	ui = auto
+	branch = auto
+	diff = auto
+	status = auto
+
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+	added = green
+	changed = yellow
+	untracked = cyan
+
+[push]
+	default = current
+	autoSetupRemote = true
+
+[pull]
+	rebase = false
+	twohead = ort
+	ff = only
+
+[merge]
+	conflictStyle = zdiff3
+
+[diff]
+	algorithm = histogram
+	submodule = log
+
+[rerere]
+	enabled = true
+	autoUpdate = true
+
+[help]
+	autocorrect = 1
+
+[credential]
+	helper = cache --timeout=3600
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+
+[submodule]
+	recurse = true
+	fetchJobs = 4
+
+[status]
+	submoduleSummary = true
+
+[fetch]
+	recurseSubmodules = on-demand
+
+[commit]
+	gpgsign = true
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	program = ssh-keygen
+
+[user]
+	signingkey = ~/.ssh/id_ed25519.pub
+
+[safe]
+	directory = /etc/nixos
