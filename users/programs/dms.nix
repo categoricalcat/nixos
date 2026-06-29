@@ -7,6 +7,7 @@
 
 let
   themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
+  colors = import ../../modules/theme.nix;
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
 in
 {
@@ -49,6 +50,7 @@ in
 
     settings = dmsSettings // {
       currentThemeName = lib.mkForce "dynamic";
+      lockScreenInactiveColor = lib.mkForce "#${colors.base00}";
       currentThemeCategory = lib.mkForce "dynamic";
       customThemeFile = lib.mkForce "";
       iconTheme = lib.mkForce themeAssets.icons.dark;

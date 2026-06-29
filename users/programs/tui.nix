@@ -3,6 +3,30 @@
   lib,
   ...
 }:
+let
+  colors = import ../../modules/theme.nix;
+  starshipToml =
+    builtins.replaceStrings
+      [
+        "@base03@"
+        "@base08@"
+        "@base09@"
+        "@base0A@"
+        "@base0B@"
+        "@base0D@"
+        "@base0E@"
+      ]
+      [
+        colors.base03
+        colors.base08
+        colors.base09
+        colors.base0A
+        colors.base0B
+        colors.base0D
+        colors.base0E
+      ]
+      (builtins.readFile ../assets/dotfiles/starship.toml);
+in
 {
   programs = {
     mcfly = {
@@ -90,7 +114,7 @@
 
     starship = {
       enable = true;
-      settings = fromTOML (builtins.readFile ../assets/dotfiles/starship.toml);
+      settings = builtins.fromTOML starshipToml;
     };
   };
 

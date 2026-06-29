@@ -77,6 +77,7 @@
               specialArgs = { inherit inputs global; };
               modules = [
                 sops-nix.nixosModules.sops
+                stylix.nixosModules.stylix
                 home-manager.nixosModules.home-manager
                 ./hosts/yifuwuqi/configuration.nix
               ];

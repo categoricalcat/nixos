@@ -29,7 +29,7 @@ environment {
 }
 
 overview {
-    backdrop-color "#010101" 
+    backdrop-color "#@base00@" 
 }
 
 input { 
@@ -172,13 +172,13 @@ layout {
         // - CSS-like notation: "rgb(255, 127, 0)", rgba(), hsl() and a few others.
 
         // Color of the ring on the active monitor.
-        active-color "#b4befe99"
+        active-color "#@base07@"
 
         // Color of the ring on inactive monitors.
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#45475a"
+        inactive-color "#@base03@"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
@@ -203,11 +203,11 @@ layout {
         off
 
         width 1
-        active-color "#b4befe"
-        inactive-color "#45475a"
+        active-color "#@base07@"
+        inactive-color "#@base03@"
 
         // Color of the border around windows that request your attention.
-        urgent-color "#f38ba8"
+        urgent-color "#@base08@"
 
         // Gradients can use a few different interpolation color spaces.
         // For example, this is a pastel rainbow gradient via in="oklch longer hue".
@@ -251,7 +251,7 @@ layout {
         offset x=0 y=5
 
         // You can also change the shadow color and opacity.
-        color "#1e1e2ecc"
+        color "#@base00@"
     }
 
     // Struts shrink the area occupied by windows, similarly to layer-shell panels.

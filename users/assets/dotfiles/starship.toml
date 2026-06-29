@@ -1,7 +1,7 @@
 # A vibrant rainbow theme!
 
 format = """
-[道 ](fg:#E84855)\
+[道 ](fg:#@base08@)\
 $os\
 $username$hostname\
 $directory\
@@ -30,22 +30,22 @@ $character
 
 [username]
 show_always = true
-style_user = "fg:#E84855"
-style_root = "fg:#E84855"
+style_user = "fg:#@base08@"
+style_root = "fg:#@base08@"
 format = '[$user]($style)'
 disabled = false
 
 [os]
-style = "fg:#E84855"
+style = "fg:#@base08@"
 disabled = true # Disabled by default
 
 [hostname]
 ssh_only = false
-style = "fg:#E84855"
+style = "fg:#@base08@"
 format = "[@$hostname ]($style)"
 
 [directory]
-style = "fg:#F9A03F"
+style = "fg:#@base09@"
 format = "[$path ]($style)"
 truncation_length = 3
 truncation_symbol = "径 "
@@ -57,76 +57,76 @@ truncation_symbol = "径 "
 "Pictures" = " "
 
 [c]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [cpp]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [docker_context]
-style = "fg:#2D82B7"
+style = "fg:#@base0D@"
 format = '[$context ]($style)'
 
 [elixir]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [elm]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [git_branch]
 symbol = "支 "
-style = "fg:#F3DE2C"
+style = "fg:#@base0A@"
 format = '[$symbol$branch ]($style)'
 
 [git_status]
-style = "fg:#F3DE2C"
+style = "fg:#@base0A@"
 format = '[($all_status$ahead_behind )]($style)'
 
 [golang]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[$symbol ($version) ]($style)'
 
 [gradle]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[$symbol ($version) ]($style)'
 
 [haskell]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[$symbol ($version) ]($style)'
 
 [java]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[$symbol ($version) ]($style)'
 
 [julia]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[$symbol ($version) ]($style)'
 
 [nodejs]
-format = '[($version) ](fg:#7AC74F)'
+format = '[($version) ](fg:#@base0B@)'
 
 [nim]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [rust]  
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [scala]
-style = "fg:#7AC74F"
+style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
 [time]
 disabled = false
 time_format = "%R" # Hour:Minute Format
-style = "fg:#9C59D1"
+style = "fg:#@base0E@"
 format = '[爱 $time]($style)'
 
 [character]
 # 入: enter/input; 死: error;
-success_symbol = "[入](fg:#E84855)"
-error_symbol = "[死](fg:#777777)"
+success_symbol = "[入](fg:#@base08@)"
+error_symbol = "[死](fg:#@base03@)"

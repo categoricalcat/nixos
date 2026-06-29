@@ -1,7 +1,94 @@
-_:
+{ lib, ... }:
 let
-  # Hatsune Miku Teal (#86cecb)
+  c = import ../../modules/colors.nix { };
+  # Hatsune Miku Teal (#86cecb) - intentional exception to the base16 palette
   mikuColor = "#86cecb";
+  keyModules = [
+    {
+      type = "os";
+      key = "OS";
+    }
+    {
+      type = "host";
+      key = "Host";
+    }
+    {
+      type = "kernel";
+      key = "Kernel";
+    }
+    {
+      type = "uptime";
+      key = "Uptime";
+    }
+    {
+      type = "packages";
+      key = "Packages";
+    }
+    {
+      type = "shell";
+      key = "Shell";
+    }
+    {
+      type = "de";
+      key = "DE";
+    }
+    {
+      type = "wm";
+      key = "WM";
+    }
+    {
+      type = "lm";
+      key = "LM";
+    }
+    {
+      type = "terminal";
+      key = "Terminal";
+    }
+    {
+      type = "display";
+      key = "Display";
+    }
+    {
+      type = "font";
+      key = "Font";
+    }
+    {
+      type = "icons";
+      key = "Icons";
+    }
+    {
+      type = "cpu";
+      key = "CPU";
+    }
+    {
+      type = "gpu";
+      key = "GPU";
+    }
+    {
+      type = "memory";
+      key = "Memory";
+    }
+    {
+      type = "swap";
+      key = "Swap";
+    }
+    {
+      type = "disk";
+      key = "Disk";
+    }
+    {
+      type = "localip";
+      key = "Local IP";
+    }
+    {
+      type = "battery";
+      key = "Battery";
+    }
+    {
+      type = "locale";
+      key = "Locale";
+    }
+  ];
 in
 {
   programs.fastfetch = {
@@ -47,117 +134,15 @@ in
         separator = " ➜ ";
         color = {
           keys = mikuColor;
-          title = "38;2;203;166;247"; # Mocha Mauve (base0E)
+          title = c.ansiFg c.base.base0E; # Mocha Mauve (base0E)
         };
       };
       modules = [
         "title"
         "separator"
-        {
-          type = "os";
-          key = "OS";
-          keyColor = "38;2;241;127;127"; # H=0°
-        }
-        {
-          type = "host";
-          key = "Host";
-          keyColor = "38;2;241;155;127"; # H=15°
-        }
-        {
-          type = "kernel";
-          key = "Kernel";
-          keyColor = "38;2;241;184;127"; # H=30°
-        }
-        {
-          type = "uptime";
-          key = "Uptime";
-          keyColor = "38;2;241;212;127"; # H=45°
-        }
-        {
-          type = "packages";
-          key = "Packages";
-          keyColor = "38;2;241;241;127"; # H=60°
-        }
-        {
-          type = "shell";
-          key = "Shell";
-          keyColor = "38;2;212;241;127"; # H=75°
-        }
-        {
-          type = "de";
-          key = "DE";
-          keyColor = "38;2;184;241;127"; # H=90°
-        }
-        {
-          type = "wm";
-          key = "WM";
-          keyColor = "38;2;155;241;127"; # H=105°
-        }
-        {
-          type = "lm";
-          key = "LM";
-          keyColor = "38;2;127;241;127"; # H=120°
-        }
-        {
-          type = "terminal";
-          key = "Terminal";
-          keyColor = "38;2;127;241;155"; # H=135°
-        }
-        {
-          type = "display";
-          key = "Display";
-          keyColor = "38;2;127;241;184"; # H=150°
-        }
-        {
-          type = "font";
-          key = "Font";
-          keyColor = "38;2;127;241;212"; # H=165°
-        }
-        {
-          type = "icons";
-          key = "Icons";
-          keyColor = "38;2;127;241;241"; # H=180°
-        }
-        {
-          type = "cpu";
-          key = "CPU";
-          keyColor = "38;2;127;212;241"; # H=195°
-        }
-        {
-          type = "gpu";
-          key = "GPU";
-          keyColor = "38;2;127;184;241"; # H=210°
-        }
-        {
-          type = "memory";
-          key = "Memory";
-          keyColor = "38;2;127;155;241"; # H=225°
-        }
-        {
-          type = "swap";
-          key = "Swap";
-          keyColor = "38;2;127;127;241"; # H=240°
-        }
-        {
-          type = "disk";
-          key = "Disk";
-          keyColor = "38;2;155;127;241"; # H=255°
-        }
-        {
-          type = "localip";
-          key = "Local IP";
-          keyColor = "38;2;184;127;241"; # H=270°
-        }
-        {
-          type = "battery";
-          key = "Battery";
-          keyColor = "38;2;212;127;241"; # H=285°
-        }
-        {
-          type = "locale";
-          key = "Locale";
-          keyColor = "38;2;241;127;241"; # H=300°
-        }
+      ]
+      ++ (lib.imap0 (i: m: m // { keyColor = builtins.elemAt c.hueWheel i; }) keyModules)
+      ++ [
         "break"
         "colors"
       ];

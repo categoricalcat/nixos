@@ -10,6 +10,11 @@
     nixpkgs.source = inputs.nixpkgs;
     package = pkgs.neovim-unwrapped;
 
+    colorschemes.catppuccin = {
+      enable = true;
+      settings.flavour = "mocha";
+    };
+
     opts = {
       number = true;
       relativenumber = true;
@@ -20,14 +25,43 @@
       vim-rsi # Provides Readline / Emacs bindings
     ];
 
+    extraPackages = with pkgs; [
+      gcc
+      tree-sitter
+    ];
+
     plugins = {
       lualine.enable = true;
       telescope.enable = true;
-      treesitter.enable = true;
+      treesitter = {
+        enable = true;
+        settings = {
+          highlight.enable = true;
+          ensure_installed = [
+            "nix"
+            "lua"
+            "bash"
+            "vim"
+            "vimdoc"
+            "javascript"
+            "typescript"
+            "rust"
+            "haskell"
+            "json"
+          ];
+        };
+      };
       web-devicons.enable = true;
 
       lsp = {
         enable = true;
+        keymaps = {
+          lspBuf = {
+            "K" = "hover";
+            "gd" = "definition";
+            "gr" = "references";
+          };
+        };
         servers = {
           nixd.enable = true;
           ts_ls.enable = true;

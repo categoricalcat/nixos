@@ -4,6 +4,15 @@
   config,
   ...
 }:
+let
+  zshColors = import ../../modules/theme.nix;
+  zshDir = pkgs.runCommand "zsh-config" { } ''
+    cp -r ${../assets/dotfiles/zsh} "$out"
+    chmod -R +w "$out"
+    substituteInPlace "$out/completion.zsh" \
+      --replace-fail '@base03@' '${zshColors.base03}'
+  '';
+in
 {
   imports = [
     ../programs/git.nix
@@ -29,7 +38,7 @@
       ".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
       ".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
       ".config/zsh" = {
-        source = ../assets/dotfiles/zsh;
+        source = zshDir;
         recursive = true;
         force = true;
       };

@@ -84,11 +84,11 @@ in
         @define-color window_fg_color #${colors.base05};
         @define-color view_bg_color #${colors.base01};
         @define-color view_fg_color #${colors.base05};
-        @define-color headerbar_bg_color rgba(10, 10, 16, 0.86);
+        @define-color headerbar_bg_color #${colors.base00};
         @define-color headerbar_fg_color #${colors.base05};
         @define-color sidebar_bg_color #${colors.base01};
         @define-color sidebar_fg_color #${colors.base05};
-        @define-color card_bg_color rgba(20, 20, 31, 0.88);
+        @define-color card_bg_color #${colors.base01};
         @define-color card_fg_color #${colors.base05};
         @define-color popover_bg_color #${colors.base01};
         @define-color popover_fg_color #${colors.base05};
@@ -102,7 +102,7 @@ in
 
         box,
         grid {
-          background-color: rgba(10, 10, 16, 0.78);
+          background-color: #${colors.base00};
           border-radius: 16px;
         }
 

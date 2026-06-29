@@ -6,6 +6,7 @@
 }:
 
 let
+  colors = import ../theme.nix;
   panelElements = [
     {
       element = "showAppsButton";
@@ -281,7 +282,7 @@ in
         show-window-previews-timeout = 150;
         status-icon-padding = 4;
         taskbar-position = "LEFTPANEL_FIXEDCENTER";
-        trans-gradient-bottom-color = "#ffffff";
+        trans-gradient-bottom-color = "#${colors.base05}";
         trans-panel-opacity = 0.2;
         trans-use-border = false;
         trans-use-custom-bg = false;

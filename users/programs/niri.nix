@@ -8,6 +8,7 @@
 }:
 
 let
+  colors = import ../../modules/theme.nix;
   generatedBinds = ''
     binds {
   ''
@@ -43,6 +44,11 @@ let
   niriConfigDir = pkgs.runCommand "niri-config" { } ''
     cp -r ${../assets/dotfiles/niri} "$out"
     chmod -R +w "$out"
+    substituteInPlace "$out/config.kdl" \
+      --replace-fail '@base00@' '${colors.base00}' \
+      --replace-fail '@base03@' '${colors.base03}' \
+      --replace-fail '@base07@' '${colors.base07}' \
+      --replace-fail '@base08@' '${colors.base08}'
     cp ${generatedBindsFile} "$out/nix-generated-binds.kdl"
     cp ${outputsKdlFile} "$out/nix-generated-outputs.kdl"
     printf '\ninclude "nix-generated-binds.kdl"\ninclude "nix-generated-outputs.kdl"\n' >> "$out/config.kdl"
