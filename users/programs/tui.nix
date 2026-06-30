@@ -1,6 +1,5 @@
 {
   pkgs,
-  lib,
   ...
 }:
 let
@@ -114,9 +113,8 @@ in
 
     starship = {
       enable = true;
-      settings = builtins.fromTOML starshipToml;
+      settings = fromTOML starshipToml;
     };
   };
 
-  home.file.".config/starship.toml".enable = lib.mkForce false;
 }
