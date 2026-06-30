@@ -5,3 +5,4 @@ docs/book/
 .cursor/plans
 .sops.yaml
 .direnv
+.agents

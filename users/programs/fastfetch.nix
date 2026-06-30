@@ -1,8 +1,6 @@
 { lib, ... }:
 let
   c = import ../../modules/colors.nix { };
-  # Hatsune Miku Teal (#86cecb) - intentional exception to the base16 palette
-  mikuColor = "#86cecb";
   keyModules = [
     {
       type = "os";
@@ -89,6 +87,19 @@ let
       key = "Locale";
     }
   ];
+
+  themeColors = with c.base; [
+    base08 # red
+    base09 # peach
+    base0A # yellow
+    base0B # green
+    base0C # teal
+    base0D # blue
+    base0E # mauve
+    base0F # pink
+  ];
+
+  smoothThemeGradient = c.makeGradient themeColors (builtins.length keyModules);
 in
 {
   programs.fastfetch = {
@@ -127,13 +138,13 @@ in
           ⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦'';
         padding.right = 0;
         color = {
-          "1" = mikuColor;
+          "1" = "#${c.base.base0C}";
         };
       };
       display = {
         separator = " ➜ ";
         color = {
-          keys = mikuColor;
+          keys = c.ansiFg c.base.base0F; # Pink (base0F) as fallback
           title = c.ansiFg c.base.base0E; # Mocha Mauve (base0E)
         };
       };
@@ -141,7 +152,13 @@ in
         "title"
         "separator"
       ]
-      ++ (lib.imap0 (i: m: m // { keyColor = builtins.elemAt c.hueWheel i; }) keyModules)
+      ++ (lib.imap0 (
+        i: m:
+        m
+        // {
+          keyColor = builtins.elemAt smoothThemeGradient i;
+        }
+      ) keyModules)
       ++ [
         "break"
         "colors"

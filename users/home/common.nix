@@ -27,6 +27,7 @@ in
       eslint
       typescript
       npm-check-updates
+      rtk
     ];
 
     sessionVariables = {

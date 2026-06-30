@@ -64,11 +64,11 @@
             yitaishi = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
               modules = [
-                home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                inputs.lanzaboote.nixosModules.lanzaboote
                 inputs.musnix.nixosModules.musnix
+                home-manager.nixosModules.home-manager
+                inputs.lanzaboote.nixosModules.lanzaboote
                 ./hosts/yitaishi/configuration.nix
               ];
             };
@@ -86,8 +86,8 @@
             yirukou = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
               modules = [
-                home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
+                home-manager.nixosModules.home-manager
                 ./hosts/yirukou/configuration.nix
               ];
             };
@@ -95,9 +95,9 @@
             yichuang = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs global; };
               modules = [
-                home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 nixos-wsl.nixosModules.default
+                home-manager.nixosModules.home-manager
                 ./hosts/yichuang/configuration.nix
               ];
             };

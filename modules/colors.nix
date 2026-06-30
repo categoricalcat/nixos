@@ -92,12 +92,39 @@ let
         b = 241;
       }
     ];
+  mixRgb = c1: c2: t: {
+    r = c1.r + (c2.r - c1.r) * t / 100;
+    g = c1.g + (c2.g - c1.g) * t / 100;
+    b = c1.b + (c2.b - c1.b) * t / 100;
+  };
+
+  makeGradient =
+    hexColors: n:
+    let
+      rgbs = map toRgb hexColors;
+      S = builtins.length rgbs - 1;
+    in
+    if S <= 0 then
+      builtins.genList (_x: ansiFg (builtins.elemAt hexColors 0)) n
+    else
+      builtins.genList (
+        i:
+        let
+          segment = (i * S) / (n - 1);
+          t = ((i * S * 100) / (n - 1)) - (segment * 100);
+          c1 = el rgbs segment;
+          c2 = if segment + 1 < builtins.length rgbs then el rgbs (segment + 1) else c1;
+          c = mixRgb c1 c2 t;
+        in
+        "38;2;${toString c.r};${toString c.g};${toString c.b}"
+      ) n;
 in
 {
   inherit
     base
     toRgb
     ansiFg
+    makeGradient
     ;
   hueWheel = map (c: "38;2;${toString c.r};${toString c.g};${toString c.b}") wheel;
 }
