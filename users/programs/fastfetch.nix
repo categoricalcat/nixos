@@ -93,8 +93,8 @@ let
     base09 # peach
     base0A # yellow
     base0B # green
-    base0C # teal
-    base0D # blue
+    base0D # teal
+    base0C # blue
     base0E # mauve
     base0F # pink
   ];
@@ -138,7 +138,7 @@ in
           ⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦'';
         padding.right = 0;
         color = {
-          "1" = "#${c.base.base0C}";
+          "1" = "#${c.base.base0D}";
         };
       };
       display = {

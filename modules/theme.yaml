@@ -1,20 +1,51 @@
-# modified to taste, based on Catppuccin Mocha
-# https://github.com/catppuccin/base16
+# inspired by Catppuccin Mocha https://github.com/catppuccin/base16
 scheme: "yimoka"
 author: "Ísis"
+
+# default background
 base00: "09090b" # base
-base01: "1a161d" # mantle
-base02: "23202c" # surface0
-base03: "302c3a" # surface1
-base04: "3c3847" # surface2
+
+# lighter background (status bars, line numbers, folding marks)
+base01: "16141f" # mantle
+
+# selection background
+base02: "313244" # surface0
+
+# comments, invisibles, line highlighting
+base03: "2e2b3b" # surface1
+
+# dark foreground (status bars)
+base04: "464356" # surface2
+
+# default foreground, caret, delimiters, operators
 base05: "fcfcfc" # text
+
+# bright/emphasized foreground (bold terminal text, highlighted UI, boot/initrd splash)
 base06: "abd9ed" # sky blue / lavender
+
+# lightest background or bright white (high-contrast elements, terminal bright white)
 base07: "f5a9b8" # pink
+
+# variables, xml tags, markup link text, markup lists, diff deleted
 base08: "e8557a" # red
+
+# integers, booleans, constants, xml attributes, markup link url
 base09: "e89d7d" # peach
+
+# classes, markup bold, search text background
 base0A: "faea99" # yellow
+
+# strings, inherited class, markup code, diff inserted
 base0B: "99e69d" # green
-base0C: "86cecb" # miku-ish teal
-base0D: "a3b1f5" # blue / indigo
-base0E: "ba99e6" # mauve
-base0F: "f7bbc7" # pink
+
+# support, regex, escape characters, markup quotes
+base0C: "b3beff" # blue / indigo
+
+# functions, methods, attribute ids, headings
+base0D: "88ddd7" # miku-ish teal
+
+# keywords, storage, selector, markup italic, diff changed
+base0E: "c8a5f3" # mauve
+
+# deprecated, opening/closing embedded language tags
+base0F: "ffb5d6" # pink
