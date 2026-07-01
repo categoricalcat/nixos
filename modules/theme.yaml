@@ -8,9 +8,8 @@ base02: "23202c" # surface0
 base03: "302c3a" # surface1
 base04: "3c3847" # surface2
 base05: "fcfcfc" # text
-#base06: "eba0ac" # maroon / dusty rose
-base06: "f5a9b8" # pink
-base07: "abd9ed" # sky blue / lavender
+base06: "abd9ed" # sky blue / lavender
+base07: "f5a9b8" # pink
 base08: "e8557a" # red
 base09: "e89d7d" # peach
 base0A: "faea99" # yellow
@@ -18,4 +17,4 @@ base0B: "99e69d" # green
 base0C: "86cecb" # miku-ish teal
 base0D: "a3b1f5" # blue / indigo
 base0E: "ba99e6" # mauve
-base0F: "f5a9b8" # pink
+base0F: "f7bbc7" # pink
