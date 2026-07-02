@@ -6,16 +6,16 @@ author: "Ísis"
 base00: "09090b" # base
 
 # lighter background (status bars, line numbers, folding marks)
-base01: "16141f" # mantle
+base01: "17141f" # mantle
 
 # selection background
-base02: "313244" # surface0
+base02: "24212c" # surface0
 
 # comments, invisibles, line highlighting
-base03: "2e2b3b" # surface1
+base03: "2f2b3b" # surface1
 
 # dark foreground (status bars)
-base04: "464356" # surface2
+base04: "3c3847" # surface2
 
 # default foreground, caret, delimiters, operators
 base05: "fcfcfc" # text

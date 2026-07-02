@@ -2,6 +2,7 @@
 let
   c = import ../../modules/colors.nix { };
   keyModules = [
+    # ── System ──
     {
       type = "os";
       key = "OS";
@@ -9,6 +10,11 @@ let
     {
       type = "host";
       key = "Host";
+    }
+    {
+      type = "command";
+      key = "Age";
+      text = "birth=$(stat -c %W /); now=$(date +%s); echo $(( (now - birth) / 86400 )) days";
     }
     {
       type = "kernel";
@@ -19,13 +25,30 @@ let
       key = "Uptime";
     }
     {
+      type = "command";
+      key = "Time";
+      text = "date +'%A, %-d %B %Y %H:%M:%S'";
+    }
+    {
+      type = "processes";
+      key = "Processes";
+    }
+    {
       type = "packages";
       key = "Packages";
     }
+
+    # ── Shell & Terminal ──
     {
       type = "shell";
       key = "Shell";
     }
+    {
+      type = "terminal";
+      key = "Terminal";
+    }
+
+    # ── Desktop ──
     {
       type = "de";
       key = "DE";
@@ -39,12 +62,16 @@ let
       key = "LM";
     }
     {
-      type = "terminal";
-      key = "Terminal";
+      type = "theme";
+      key = "Theme";
     }
     {
-      type = "display";
-      key = "Display";
+      type = "wmtheme";
+      key = "WM Theme";
+    }
+    {
+      type = "cursor";
+      key = "Cursor";
     }
     {
       type = "font";
@@ -54,6 +81,8 @@ let
       type = "icons";
       key = "Icons";
     }
+
+    # ── Hardware ──
     {
       type = "cpu";
       key = "CPU";
@@ -63,8 +92,16 @@ let
       key = "GPU";
     }
     {
+      type = "vulkan";
+      key = "Vulkan";
+    }
+    {
       type = "memory";
       key = "Memory";
+    }
+    {
+      type = "physicalmemory";
+      key = "RAM";
     }
     {
       type = "swap";
@@ -74,17 +111,45 @@ let
       type = "disk";
       key = "Disk";
     }
+
+    # ── Peripherals ──
     {
-      type = "localip";
-      key = "Local IP";
+      type = "display";
+      key = "Display";
+    }
+    {
+      type = "brightness";
+      key = "Brightness";
+    }
+    {
+      type = "sound";
+      key = "Sound";
+    }
+    {
+      type = "gamepad";
+      key = "Gamepad";
+    }
+    {
+      type = "poweradapter";
+      key = "Power";
     }
     {
       type = "battery";
       key = "Battery";
     }
     {
+      type = "bluetoothradio";
+      key = "BT Radio";
+    }
+
+    # ── Misc ──
+    {
       type = "locale";
       key = "Locale";
+    }
+    {
+      type = "player";
+      key = "Player";
     }
   ];
 
