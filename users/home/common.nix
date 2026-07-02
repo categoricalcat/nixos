@@ -37,7 +37,10 @@ in
 
     file = {
       ".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
+      ".gemini/config/skills/code-quality/SKILL.md".source =
+        ../../modules/services/ai/code-quality-skill.md;
       ".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
+      ".cursor/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
       ".config/zsh" = {
         source = zshDir;
         recursive = true;

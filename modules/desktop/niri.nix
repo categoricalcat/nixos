@@ -7,6 +7,8 @@
 }:
 
 {
+  imports = [ inputs.niri.nixosModules.niri ];
+
   config = lib.mkIf (config.desktop.environment == "niri") {
     environment.systemPackages = with pkgs; [
       gnome-screenshot
@@ -16,6 +18,9 @@
     ];
 
     programs.niri.enable = true;
+
+    # Keep the existing polkit-gnome agent (modules/desktop.nix); disable niri-flake's KDE agent.
+    systemd.user.services.niri-flake-polkit.enable = false;
 
     services.accounts-daemon.enable = true;
 
@@ -56,9 +61,6 @@
         environment = {
           XDG_CURRENT_DESKTOP = "GNOME";
         };
-        after = [ "xdg-desktop-autostart.target" ];
-      };
-      niri-flake-polkit = {
         after = [ "xdg-desktop-autostart.target" ];
       };
     };

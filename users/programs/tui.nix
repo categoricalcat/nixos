@@ -97,6 +97,7 @@ in
     fzf = {
       enable = true;
       package = pkgs.fzf;
+      historyWidget.command = "";
     };
 
     zoxide = {

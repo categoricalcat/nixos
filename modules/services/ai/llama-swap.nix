@@ -19,6 +19,11 @@ let
     }).overrideAttrs
       (old: {
         cmakeFlags = (old.cmakeFlags or [ ]) ++ lib.optional cfg.uma "-DGGML_HIP_UMA=ON";
+        postInstall =
+          builtins.replaceStrings
+            [ "cp bin/rpc-server $out/bin/llama-rpc-server" ]
+            [ "ln -s $out/bin/ggml-rpc-server $out/bin/llama-rpc-server" ]
+            old.postInstall;
       });
   llama-server = lib.getExe' llama-cpp "llama-server";
   llama-rpc-server = lib.getExe' llama-cpp "llama-rpc-server";

@@ -45,6 +45,7 @@
             };
             modules = [
               ./users/home/yi.nix
+              inputs.niri.homeModules.config
               { home.stateVersion = global.homeVersion; }
             ];
           };
@@ -172,6 +173,11 @@
 
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    niri = {
+      url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
