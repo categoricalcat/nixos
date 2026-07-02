@@ -84,8 +84,8 @@ alpha = 1.0
 
 [theme]
 mode = "dark"
-source = "wallpaper"
-wallpaper_scheme = "m3-content"
+source = "custom"
+custom_palette = "yimoka"
 
 [wallpaper]
 directory = "/home/yi/Downloads"

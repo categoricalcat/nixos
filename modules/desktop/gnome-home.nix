@@ -81,7 +81,7 @@ in
 
       "org/gnome/desktop/interface" = {
         color-scheme = "prefer-dark";
-        accent-color = "pink";
+        accent-color = "teal";
         show-battery-percentage = true;
         clock-format = "24h";
         clock-show-date = true;
