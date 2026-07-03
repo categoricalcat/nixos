@@ -15,6 +15,18 @@
           command =
             let
               sessions = "${config.services.displayManager.sessionData.desktops}/share";
+              themeString = lib.concatStringsSep ";" [
+                "border=lightmagenta"
+                "text=white"
+                "prompt=lightcyan"
+                "time=lightblue"
+                "action=yellow"
+                "button=lightyellow"
+                "container=black"
+                "input=lightblue"
+                "greet=lightblue"
+                "title=lightblue"
+              ];
             in
             lib.concatStringsSep " " [
               "${pkgs.tuigreet}/bin/tuigreet"
@@ -24,9 +36,13 @@
               "--sessions ${sessions}/wayland-sessions"
               "--xsessions ${sessions}/xsessions"
               "--greeting ${lib.escapeShellArg config.desktop.greeting}"
-              "--theme ${lib.escapeShellArg "border=magenta;text=magenta;prompt=magenta;time=magenta;action=magenta;button=magenta;container=black;input=white"}"
+              "--theme ${lib.escapeShellArg themeString}"
               "--remember"
               "--remember-session"
+              "--container-padding 2"
+              "--window-padding 1"
+              "--power-shutdown 'systemctl poweroff'"
+              "--power-reboot 'systemctl reboot'"
             ];
           user = "greeter";
         };

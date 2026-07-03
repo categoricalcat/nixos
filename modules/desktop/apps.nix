@@ -26,6 +26,8 @@
     vial
     obsidian
     mangohud
+    multiviewer-for-f1
+    scrcpy
     (wrapOBS {
       plugins = with obs-studio-plugins; [
         obs-vkcapture

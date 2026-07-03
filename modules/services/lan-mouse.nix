@@ -17,6 +17,11 @@ in
       default = { };
       description = "lan-mouse configuration settings";
     };
+    autostart = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to start the lan-mouse daemon automatically with the graphical session.";
+    };
   };
 
   config = lib.mkIf (cfg.settings != { }) {
@@ -51,7 +56,7 @@ in
           RestartSec = 5;
         };
 
-        Install = {
+        Install = lib.mkIf cfg.autostart {
           WantedBy = [ "graphical-session.target" ];
         };
       };
