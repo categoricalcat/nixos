@@ -5,28 +5,55 @@
 }:
 
 let
+  inherit (pkgs) lib;
   inherit (pkgs.lib.strings) toLower replaceStrings;
   chrome = config.programs.google-chrome.finalPackage;
+  chromeFeatures = [
+    "AcceleratedVideoDecodeLinuxZeroCopyGL"
+    "AcceleratedVideoEncoder"
+    "UseMultiPlaneFormatForHardwareVideo"
+    "WaylandOverlayDelegation"
+  ];
 
   mkWebApp =
     {
       name,
       url,
       icon ? toLower (replaceStrings [ " " ] [ "-" ] name),
+      startupWMClass ? name,
       categories ? [
         "Network"
         "WebBrowser"
       ],
       isolate ? false,
+      profile ? null,
+      extraArgs ? [ ],
       comment ? "Web Application",
-      domains ? [ ],
+      routePatterns ? [ ],
+      mimeTypes ? [ ],
     }:
     let
-      userDataDirArg = pkgs.lib.optionalString isolate ''--user-data-dir="$HOME/.config/google-chrome-${icon}"'';
+      profileName =
+        if profile != null then
+          profile
+        else if isolate then
+          icon
+        else
+          "webapps";
+      launcherArgs = lib.concatStringsSep " " (
+        map lib.escapeShellArg (
+          [
+            "--no-first-run"
+            "--no-default-browser-check"
+          ]
+          ++ extraArgs
+        )
+      );
       launcher = pkgs.writeShellScript "launch-${icon}" ''
-        exec ${chrome}/bin/google-chrome-stable ${userDataDirArg} \
+        exec ${chrome}/bin/google-chrome-stable ${launcherArgs} \
+          "--user-data-dir=$HOME/.config/google-chrome-${profileName}" \
           --app="''${1:-${url}}" \
-          --class="${name}"
+          --class=${lib.escapeShellArg startupWMClass}
       '';
     in
     {
@@ -35,14 +62,15 @@ let
         icon
         categories
         comment
-        domains
+        routePatterns
         launcher
         ;
 
       exec = "${launcher} %U";
       terminal = false;
+      mimeType = mimeTypes;
       settings = {
-        StartupWMClass = name;
+        StartupWMClass = startupWMClass;
       };
     };
 
@@ -55,7 +83,8 @@ let
         "Video"
       ];
       comment = "Watch YouTube Videos";
-      domains = [
+      routePatterns = [
+        "m.youtube.com"
         "youtube.com"
         "www.youtube.com"
         "youtu.be"
@@ -71,7 +100,7 @@ let
         "Player"
       ];
       comment = "Listen to YouTube Music";
-      domains = [ "music.youtube.com" ];
+      routePatterns = [ "music.youtube.com" ];
     };
 
     whatsapp = mkWebApp {
@@ -83,7 +112,7 @@ let
         "Chat"
       ];
       comment = "WhatsApp Web Client";
-      domains = [ "web.whatsapp.com" ];
+      routePatterns = [ "web.whatsapp.com" ];
     };
 
     nix-search = mkWebApp {
@@ -94,7 +123,7 @@ let
         "Documentation"
       ];
       comment = "Search Nix Packages";
-      domains = [ "search.nixos.org" ];
+      routePatterns = [ "search.nixos.org" ];
     };
 
     deepseek = mkWebApp {
@@ -102,7 +131,7 @@ let
       url = "https://chat.deepseek.com/";
       categories = [ "Network" ];
       comment = "DeepSeek AI Chat";
-      domains = [ "chat.deepseek.com" ];
+      routePatterns = [ "chat.deepseek.com" ];
     };
 
     gemini = mkWebApp {
@@ -110,7 +139,7 @@ let
       url = "https://gemini.google.com/";
       categories = [ "Network" ];
       comment = "Google Gemini AI";
-      domains = [ "gemini.google.com" ];
+      routePatterns = [ "gemini.google.com" ];
     };
 
     my-nixos = mkWebApp {
@@ -121,9 +150,9 @@ let
         "Documentation"
       ];
       comment = "NixOS Options and Packages Reference";
-      domains = [
+      routePatterns = [
+        "*.mynixos.com"
         "mynixos.com"
-        "www.mynixos.com"
       ];
     };
 
@@ -135,9 +164,9 @@ let
         "RevisionControl"
       ];
       comment = "GitHub Repository Hosting";
-      domains = [
+      routePatterns = [
+        "*.github.com"
         "github.com"
-        "www.github.com"
       ];
     };
 
@@ -150,7 +179,7 @@ let
         "Security"
       ];
       comment = "Password Manager";
-      domains = [ "vault.bitwarden.com" ];
+      routePatterns = [ "vault.bitwarden.com" ];
     };
 
     f1tv = mkWebApp {
@@ -161,7 +190,7 @@ let
         "Video"
       ];
       comment = "Formula 1 TV";
-      domains = [ "f1tv.formula1.com" ];
+      routePatterns = [ "f1tv.formula1.com" ];
     };
 
     forgejo = mkWebApp {
@@ -172,7 +201,7 @@ let
         "RevisionControl"
       ];
       comment = "Git Repository Hosting";
-      domains = [ "git.fufu.land" ];
+      routePatterns = [ "git.fufu.land" ];
     };
 
     tiktok = mkWebApp {
@@ -183,9 +212,9 @@ let
         "WebBrowser"
       ];
       comment = "TikTok Web";
-      domains = [
+      routePatterns = [
+        "*.tiktok.com"
         "tiktok.com"
-        "www.tiktok.com"
       ];
     };
 
@@ -197,37 +226,41 @@ let
         "WebBrowser"
       ];
       comment = "Instagram Web";
-      domains = [
+      routePatterns = [
+        "*.instagram.com"
         "instagram.com"
-        "www.instagram.com"
       ];
     };
   };
 
-  # Build case branches from webApps that have domains
+  # Build case branches from webApps that have route patterns.
   routerCases =
     let
-      appsWithDomains = pkgs.lib.filterAttrs (_: app: app.domains != [ ]) webApps;
+      appsWithRoutePatterns = lib.filterAttrs (_: app: app.routePatterns != [ ]) webApps;
     in
-    pkgs.lib.concatStringsSep "\n" (
-      pkgs.lib.mapAttrsToList (
-        _: app: "  ${pkgs.lib.concatStringsSep "|" app.domains}) exec ${app.launcher} \"$1\" ;;"
-      ) appsWithDomains
+    lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (
+        _: app: "  ${lib.concatStringsSep "|" app.routePatterns}) exec ${app.launcher} \"$1\" ;;"
+      ) appsWithRoutePatterns
     );
 
   urlRouter = pkgs.writeShellScriptBin "url-router" ''
-    d="''${1#*://}"; d="''${d%%/*}"
-    case "$d" in
+    url="''${1:-}"
+    host="''${url#*://}"
+    host="''${host%%/*}"
+    host="''${host%%:*}"
+    host="''${host,,}"
+    case "$host" in
     ${routerCases}
     *) exec ${chrome}/bin/google-chrome-stable "$1" ;;
     esac
   '';
 
-  # Strip internal attrs (domains, launcher) before passing to desktopEntries
+  # Strip internal attrs before passing to desktopEntries.
   desktopEntries = builtins.mapAttrs (
     _: app:
     removeAttrs app [
-      "domains"
+      "routePatterns"
       "launcher"
     ]
   ) webApps;
@@ -237,7 +270,8 @@ in
     enable = true;
     commandLineArgs = [
       "--enable-zero-copy"
-      "--enable-features=AcceleratedVideoDecodeLinuxZeroCopyGL,UseMultiPlaneFormatForHardwareVideo,WaylandOverlayDelegation"
+      "--ozone-platform-hint=auto"
+      "--enable-features=${lib.concatStringsSep "," chromeFeatures}"
     ];
   };
 
