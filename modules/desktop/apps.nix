@@ -3,7 +3,6 @@
 {
   environment.systemPackages = with pkgs; [
     floorp-bin # the good
-    emacs-gtk
 
     vscode-fhs
     code-cursor-fhs

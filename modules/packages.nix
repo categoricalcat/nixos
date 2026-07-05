@@ -3,7 +3,6 @@
 { pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
-    emacs-nox
     cursor-cli
 
     gcc

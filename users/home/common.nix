@@ -19,6 +19,7 @@ in
     ../programs/tui.nix
     ../programs/ssh
     ../programs/neovim.nix
+    ../programs/emacs.nix
   ];
 
   home = {

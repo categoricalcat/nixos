@@ -16,7 +16,7 @@ in
     enable = true;
     package = noctaliaPackage;
 
-    settings = noctaliaConfig;
+    settings = lib.mkDefault noctaliaConfig;
 
     customPalettes.yimoka =
       let
