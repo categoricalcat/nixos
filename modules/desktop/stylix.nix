@@ -39,6 +39,8 @@ in
       base16Scheme = import ../theme.nix;
 
       targets = {
+        chromium.enable = false;
+
         gtk = {
           enable = true;
         };

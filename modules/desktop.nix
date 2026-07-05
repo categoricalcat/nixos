@@ -183,11 +183,6 @@ in
     programs = {
       xwayland.enable = true;
       dconf.enable = true;
-      chromium = {
-        # Writes Google Chrome policies under /etc/opt/chrome/policies/managed.
-        enable = true;
-        extraOpts.HardwareAccelerationModeEnabled = true;
-      };
     };
 
     environment.systemPackages = lib.optionals (config.desktop.environment != "gnome") [
