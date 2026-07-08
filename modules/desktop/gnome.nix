@@ -43,7 +43,9 @@
         };
       };
 
-      input-remapper.enable = true;
+      input-remapper = {
+        enable = false;
+      };
     };
 
     environment.gnome.excludePackages = with pkgs; [

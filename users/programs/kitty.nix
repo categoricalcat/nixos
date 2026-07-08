@@ -1,16 +1,12 @@
 {
   pkgs,
   inputs,
+  config,
+  lib,
   ...
 }:
 let
   themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
-  zellijStart = pkgs.writeShellScriptBin "zellij-start" ''
-    if [ -n "$ZELLIJ" ]; then
-      exec ''${SHELL:-zsh}
-    fi
-    exec ${pkgs.zellij}/bin/zellij
-  '';
 in
 {
   programs.kitty = {
@@ -21,13 +17,14 @@ in
       initial_window_width = "90c";
       initial_window_height = "34c";
       scrollback_lines = 100000;
-      shell = "${zellijStart}/bin/zellij-start";
+      shell = "${lib.getExe config.programs.zellij.package} attach -c default";
       window_padding_width = 2;
       font_family = "family='${themeAssets.fonts.monospace.name}' style=Light";
       confirm_os_window_close = 0;
     };
     keybindings = {
-      "ctrl+shift+t" = "new_os_window";
+      "ctrl+shift+t" = "launch --type=os-window ${lib.getExe config.programs.zellij.package}";
+      "ctrl+shift+a" = "launch --type=window ${lib.getExe config.programs.zellij.package}";
       "f11" = "toggle_fullscreen";
     };
     shellIntegration.enableZshIntegration = true;

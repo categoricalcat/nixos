@@ -6,7 +6,7 @@
   fprintd,
 }:
 
-buildGoModule rec {
+buildGoModule {
   pname = "tpm-fido2";
   version = "unstable-2024-04-12";
 

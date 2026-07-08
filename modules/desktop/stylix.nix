@@ -78,5 +78,11 @@ in
         qt6Packages.qt6ct
       ];
     };
+
+    home-manager.sharedModules = [
+      {
+        home.pointerCursor.enable = true;
+      }
+    ];
   };
 }
