@@ -41,6 +41,9 @@ in
           "dialout"
           "networkmanager"
           "systemd-journal"
+          "tss"
+          "plugdev"
+          "adbusers"
         ];
       };
 
@@ -113,10 +116,4 @@ in
         "ln -s ${lib.escapeShellArg "${config.users.users.yi.home}/the.files/nixos"} $out";
   };
 
-  # services.emacs = {
-  #   enable = true;
-  #   install = true;
-  #   defaultEditor = true;
-  #   startWithGraphical = false;
-  # };
 }

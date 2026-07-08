@@ -57,18 +57,45 @@ in
       };
     };
 
-    # Enable gamescope micro-compositor for better AMD performance
     steam.gamescopeSession.enable = true;
 
-    # CoolerControl
-    # A modern GUI daemon for viewing and controlling system temperatures and cooling devices.
     coolercontrol.enable = true;
   };
 
-  # Linux AMDGPU Controller (LACT)
-  # A daemon and GUI for managing AMD Radeon GPUs on Linux.
   services.lact.enable = true;
 
-  # AMDGPU overdrive is enabled in ./graphics.nix so LACT can control voltage,
-  # clocks, and power limits.
+  services.wivrn = {
+    enable = true;
+    openFirewall = true;
+
+    autoStart = false;
+
+    highPriority = true;
+
+    steam = {
+      enable = true;
+      importOXRRuntimes = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    (makeDesktopItem {
+      name = "wivrn-server-toggle";
+      desktopName = "Toggle WiVRn Server";
+      exec = "${writeShellScript "toggle-wivrn" ''
+        if ${systemd}/bin/systemctl --user is-active --quiet wivrn.service; then
+          ${systemd}/bin/systemctl --user stop wivrn.service
+          ${libnotify}/bin/notify-send "WiVRn" "Server stopped"
+        else
+          ${systemd}/bin/systemctl --user start wivrn.service
+          ${libnotify}/bin/notify-send "WiVRn" "Server started"
+        fi
+      ''}";
+      icon = "io.github.wivrn.wivrn";
+      categories = [
+        "Utility"
+        "Network"
+      ];
+    })
+  ];
 }

@@ -66,7 +66,7 @@ let
         launcher
         ;
 
-      exec = "${launcher} %U";
+      exec = "${launcher} %u";
       terminal = false;
       mimeType = mimeTypes;
       settings = {
@@ -231,30 +231,21 @@ let
         "instagram.com"
       ];
     };
+
+    mercado-livre = mkWebApp {
+      name = "Mercado Livre";
+      url = "https://www.mercadolivre.com.br";
+      categories = [
+        "Network"
+        "WebBrowser"
+      ];
+      comment = "Mercado Livre Web";
+      routePatterns = [
+        "*.mercadolivre.com.br"
+        "mercadolivre.com.br"
+      ];
+    };
   };
-
-  # Build case branches from webApps that have route patterns.
-  routerCases =
-    let
-      appsWithRoutePatterns = lib.filterAttrs (_: app: app.routePatterns != [ ]) webApps;
-    in
-    lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (
-        _: app: "  ${lib.concatStringsSep "|" app.routePatterns}) exec ${app.launcher} \"$1\" ;;"
-      ) appsWithRoutePatterns
-    );
-
-  urlRouter = pkgs.writeShellScriptBin "url-router" ''
-    url="''${1:-}"
-    host="''${url#*://}"
-    host="''${host%%/*}"
-    host="''${host%%:*}"
-    host="''${host,,}"
-    case "$host" in
-    ${routerCases}
-    *) exec ${chrome}/bin/google-chrome-stable "$1" ;;
-    esac
-  '';
 
   # Strip internal attrs before passing to desktopEntries.
   desktopEntries = builtins.mapAttrs (
@@ -275,25 +266,14 @@ in
     ];
   };
 
-  xdg.desktopEntries = desktopEntries // {
-    url-router = {
-      name = "URL Router";
-      exec = "${urlRouter}/bin/url-router %U";
-      terminal = false;
-      categories = [ "Network" ];
-      mimeType = [
-        "x-scheme-handler/http"
-        "x-scheme-handler/https"
-      ];
-    };
-  };
+  xdg.desktopEntries = desktopEntries;
 
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
-      "x-scheme-handler/http" = [ "url-router.desktop" ];
-      "x-scheme-handler/https" = [ "url-router.desktop" ];
-      "text/html" = [ "url-router.desktop" ];
+      "x-scheme-handler/http" = [ "google-chrome.desktop" ];
+      "x-scheme-handler/https" = [ "google-chrome.desktop" ];
+      "text/html" = [ "google-chrome.desktop" ];
     };
   };
 }

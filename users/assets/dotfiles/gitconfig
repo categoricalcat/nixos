@@ -7,7 +7,7 @@
 
 [core]
 	sshCommand = ssh -T
-	editor = emacs
+	editor = nvim
 	autocrlf = input
 
 [alias]

@@ -10,11 +10,6 @@
     nixpkgs.source = inputs.nixpkgs;
     package = pkgs.neovim-unwrapped;
 
-    colorschemes.catppuccin = {
-      enable = true;
-      settings.flavour = "mocha";
-    };
-
     opts = {
       number = true;
       relativenumber = true;
@@ -33,6 +28,8 @@
     plugins = {
       lualine.enable = true;
       telescope.enable = true;
+      octo.enable = true;
+      diffview.enable = true;
       treesitter = {
         enable = true;
         settings = {
@@ -48,6 +45,8 @@
             "rust"
             "haskell"
             "json"
+            "markdown"
+            "markdown_inline"
           ];
         };
       };

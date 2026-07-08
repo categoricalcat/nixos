@@ -13,6 +13,7 @@
 
     qbz
     dbeaver-bin
+    github-desktop
 
     wl-clipboard
 

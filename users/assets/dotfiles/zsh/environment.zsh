@@ -1,5 +1,5 @@
 # Environment variables
-export EDITOR='emacs'           # Default editor
+export EDITOR='vim'           # Default editor
 export PATH="$HOME/.local/bin:$PATH"  # Add local bin to PATH
 
 # NPM Global

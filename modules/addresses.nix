@@ -230,7 +230,7 @@ in
             atticd = "atticd";
             grafana = "grafana";
           };
-          urls.atticd = "postgresql:///${databases.atticd}?host=${socketDir}";
+          urls.atticd = "postgres://atticd@localhost/${databases.atticd}?host=${socketDir}";
         };
         forgejo = {
           domain = "git.fufu.land";

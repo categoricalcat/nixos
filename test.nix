@@ -1,5 +1,5 @@
 let
-  yaml = builtins.readFile ./theme.yaml;
+  yaml = builtins.readFile ./modules/theme.yaml;
 
   lines = builtins.filter (x: builtins.isString x && builtins.match "^[a-zA-Z0-9]+:.*" x != null) (
     builtins.split "\n" yaml

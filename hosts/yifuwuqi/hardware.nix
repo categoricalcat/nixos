@@ -40,7 +40,6 @@
     };
   };
 
-  # Using zram for swap instead of physical partition
   swapDevices = [ ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";

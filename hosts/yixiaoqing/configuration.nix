@@ -52,6 +52,7 @@ in
     ../../modules/services/samba/client.nix
     # ../../modules/services/power-profiles-daemon.nix
     ../../modules/services/netbird.nix
+    ../../modules/services/tpm-fido2.nix
   ];
 
   system.stateVersion = global.version;
@@ -96,6 +97,7 @@ in
   services.fprintd.enable = true;
   security = {
     fido2.enable = true;
+    tpm-fido2.enable = true;
     polkit.enable = true;
     pam.services = {
       login.fprintAuth = lib.mkDefault true;
