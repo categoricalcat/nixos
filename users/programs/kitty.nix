@@ -17,7 +17,7 @@ in
       initial_window_width = "90c";
       initial_window_height = "34c";
       scrollback_lines = 100000;
-      shell = "${lib.getExe config.programs.zellij.package} attach -c default";
+      shell = "${lib.getExe config.programs.zellij.package}";
       window_padding_width = 2;
       font_family = "family='${themeAssets.fonts.monospace.name}' style=Light";
       confirm_os_window_close = 0;

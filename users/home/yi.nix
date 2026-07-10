@@ -18,7 +18,6 @@ in
     ../programs/fcitx5.nix
     ../programs/kitty.nix
     ../programs/mprisence.nix
-    ../../modules/desktop/web-apps.nix
   ]
   ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "dms") [
     ../programs/dms.nix

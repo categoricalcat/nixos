@@ -148,6 +148,7 @@ in
     ./desktop/noctalia.nix
     ./desktop/regreet.nix
     ./desktop/apps.nix
+    ./desktop/web-apps.nix
     ./desktop/greetd.nix
     ./desktop/ly.nix
     ./desktop/valent.nix
