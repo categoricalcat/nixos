@@ -77,33 +77,42 @@ let
     };
   };
 
+  chromeCustomized = pkgs.google-chrome.override {
+    commandLineArgs = lib.concatStringsSep " " (
+      map lib.escapeShellArg [
+        "--enable-zero-copy"
+        "--ozone-platform-hint=auto"
+        "--enable-features=AcceleratedVideoDecodeLinuxZeroCopyGL,AcceleratedVideoEncoder,UseMultiPlaneFormatForHardwareVideo,WaylandOverlayDelegation"
+        "--no-first-run"
+        "--no-default-browser-check"
+      ]
+    );
+  };
+
+  webAppDesktopItems = lib.mapAttrsToList (
+    id: app:
+    pkgs.makeDesktopItem {
+      name = "chrome-webapp-${id}";
+      desktopName = app.name;
+      exec = "${lib.getExe chromeCustomized} --profile-directory=Default --app=${app.url}";
+      icon = "google-chrome"; # Fallback icon
+      categories = [
+        "Network"
+        "WebBrowser"
+      ];
+    }
+  ) webApps;
+
 in
 {
   programs.chromium = {
     enable = true;
-    extraOpts.WebAppInstallForceList = lib.mapAttrsToList (_: app: {
-      inherit (app) url;
-      default_launch_container = "window";
-      custom_name = app.name;
-      fallback_app_name = app.name;
-      install_as_shortcut = true;
-      create_desktop_shortcut = true;
-    }) webApps;
   };
 
   environment.systemPackages = [
-    (pkgs.google-chrome.override {
-      commandLineArgs = lib.concatStringsSep " " (
-        map lib.escapeShellArg [
-          "--enable-zero-copy"
-          "--ozone-platform-hint=auto"
-          "--enable-features=AcceleratedVideoDecodeLinuxZeroCopyGL,AcceleratedVideoEncoder,UseMultiPlaneFormatForHardwareVideo,WaylandOverlayDelegation"
-          "--no-first-run"
-          "--no-default-browser-check"
-        ]
-      );
-    })
-  ];
+    chromeCustomized
+  ]
+  ++ webAppDesktopItems;
 
   xdg.mime.defaultApplications = {
     "x-scheme-handler/http" = "google-chrome.desktop";
