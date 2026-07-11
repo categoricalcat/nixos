@@ -36,8 +36,6 @@ in
   ];
 
   programs = {
-    adb.enable = true;
-
     alvr = {
       enable = true;
       openFirewall = true;
@@ -75,5 +73,6 @@ in
   services.wivrn.enable = false;
 
   environment.systemPackages = with pkgs; [
+    android-tools
   ];
 }
