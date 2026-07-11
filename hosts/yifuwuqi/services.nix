@@ -39,6 +39,8 @@ in
     ../../modules/services/opencode.nix
     ../../modules/services/atticd.nix
     ../../modules/services/attic-watch-store.nix
+    ../../modules/services/arr.nix
+    ../../modules/services/qbittorrent-vpn.nix
   ];
   # yi.tailscale = {
   #   routingMode = "client";

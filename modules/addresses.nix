@@ -241,6 +241,34 @@ in
           port = 18203;
           cacheName = "yi";
         };
+        radarr = {
+          domain = "radarr.fufu.land";
+          port = 7878;
+        };
+        sonarr = {
+          domain = "sonarr.fufu.land";
+          port = 8989;
+        };
+        lidarr = {
+          domain = "lidarr.fufu.land";
+          port = 8686;
+        };
+        readarr = {
+          domain = "readarr.fufu.land";
+          port = 8787;
+        };
+        prowlarr = {
+          domain = "prowlarr.fufu.land";
+          port = 9696;
+        };
+        bazarr = {
+          domain = "bazarr.fufu.land";
+          port = 6767;
+        };
+        qbittorrent = {
+          domain = "qbittorrent.fufu.land";
+          port = 8080;
+        };
       };
 
       nixBuild = {

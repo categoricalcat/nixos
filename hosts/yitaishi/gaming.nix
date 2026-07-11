@@ -36,6 +36,13 @@ in
   ];
 
   programs = {
+    adb.enable = true;
+
+    alvr = {
+      enable = true;
+      openFirewall = true;
+    };
+
     gamemode.settings = {
       custom = {
         start = "${pkgs.writeShellScript "gamemode-start" ''
@@ -64,38 +71,9 @@ in
 
   services.lact.enable = true;
 
-  services.wivrn = {
-    enable = true;
-    openFirewall = true;
-
-    autoStart = false;
-
-    highPriority = true;
-
-    steam = {
-      enable = true;
-      importOXRRuntimes = true;
-    };
-  };
+  # disabled in favor of ALVR
+  services.wivrn.enable = false;
 
   environment.systemPackages = with pkgs; [
-    (makeDesktopItem {
-      name = "wivrn-server-toggle";
-      desktopName = "Toggle WiVRn Server";
-      exec = "${writeShellScript "toggle-wivrn" ''
-        if ${systemd}/bin/systemctl --user is-active --quiet wivrn.service; then
-          ${systemd}/bin/systemctl --user stop wivrn.service
-          ${libnotify}/bin/notify-send "WiVRn" "Server stopped"
-        else
-          ${systemd}/bin/systemctl --user start wivrn.service
-          ${libnotify}/bin/notify-send "WiVRn" "Server started"
-        fi
-      ''}";
-      icon = "io.github.wivrn.wivrn";
-      categories = [
-        "Utility"
-        "Network"
-      ];
-    })
   ];
 }

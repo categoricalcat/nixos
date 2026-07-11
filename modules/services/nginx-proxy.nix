@@ -228,6 +228,70 @@ in
         };
       };
 
+      # Arr stack and qBittorrent — proxied to yifuwuqi
+      "${yifuwuqiServices.radarr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.radarr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+      "${yifuwuqiServices.sonarr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.sonarr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+      "${yifuwuqiServices.lidarr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.lidarr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+      "${yifuwuqiServices.readarr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.readarr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+      "${yifuwuqiServices.prowlarr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.prowlarr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+      "${yifuwuqiServices.bazarr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.bazarr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
+      "${yifuwuqiServices.qbittorrent.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.qbittorrent.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
     };
   };
 }

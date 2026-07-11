@@ -14,6 +14,17 @@ let
     addresses.network.lan.ipv4.host
     allAddresses.hosts.yirukou.network.lan.ipv4.host
   ];
+  backendUiPorts = nftSet (
+    map toString [
+      addresses.services.radarr.port
+      addresses.services.sonarr.port
+      addresses.services.lidarr.port
+      addresses.services.readarr.port
+      addresses.services.prowlarr.port
+      addresses.services.bazarr.port
+      addresses.services.qbittorrent.port
+    ]
+  );
 in
 
 {
@@ -64,6 +75,19 @@ in
 
               # 2. Block containers from reaching any other internal IP range
               ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } drop
+            }
+          '';
+        };
+
+        backend-ui-guard = {
+          family = "inet";
+          content = ''
+            chain input {
+              type filter hook input priority -10; policy accept;
+
+              iifname "lo" tcp dport { ${backendUiPorts} } accept
+              ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport { ${backendUiPorts} } accept
+              tcp dport { ${backendUiPorts} } counter drop
             }
           '';
         };
