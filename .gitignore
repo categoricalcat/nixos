@@ -1,5 +1,5 @@
 secrets/secrets.yaml
-result
+result*
 docs/book/
 .pre-commit-config.yaml
 .cursor/plans

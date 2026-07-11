@@ -9,6 +9,8 @@
     dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
   };
 
+  hardware.steam-hardware.enable = true;
+
   environment.systemPackages = with pkgs; [
     # heroic # install heroic launcher  # uses insecure pnpm at build time
     lutris # install lutris launcher
