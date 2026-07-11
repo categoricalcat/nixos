@@ -21,7 +21,10 @@ let
       DISCOVERED_GW=
       DISCOVERED_SRC=$(ip -4 addr show dev "$1" 2>/dev/null | awk '/inet /{split($2,a,"/"); print a[1]; exit}')
       [ -z "$DISCOVERED_SRC" ] && return 1
-      gv=$(networkctl dhcp-lease "$1" 2>/dev/null | awk -F': *' '/^[ \t]*Router:/ { r=$2 } /^[ \t]*Server Address:/ { s=$2 } END { if (r != "") { split(r, arr, " "); print arr[1] } else if (s != "") { split(s, arr, " "); print arr[1] } }')
+      gv=$(networkctl dhcp-lease "$1" 2>/dev/null | grep -i 'router' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+      if [ -z "$gv" ]; then
+        gv=$(networkctl dhcp-lease "$1" 2>/dev/null | grep -iE 'server_id|server address' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+      fi
       if [ -n "$gv" ]; then
         DISCOVERED_GW=$gv
         return 0
