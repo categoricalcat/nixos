@@ -23,7 +23,7 @@ let
       [ -z "$DISCOVERED_SRC" ] && return 1
       for f in /run/systemd/netif/leases/*; do
         [ -f "$f" ] || continue
-        gv=$(awk -F= -v ip="$DISCOVERED_SRC" '$1=="ADDRESS"&&$2==ip{f=1; next} f&&$1=="ROUTER"{print $2; exit}' "$f")
+        gv=$(awk -F= -v ip="$DISCOVERED_SRC" '{a[$1]=$2} END{if(a["ADDRESS"]==ip) { split(a["ROUTER"], r, " "); print r[1] } }' "$f")
         if [ -n "$gv" ]; then
           DISCOVERED_GW=$gv
           return 0
