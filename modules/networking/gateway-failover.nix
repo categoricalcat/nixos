@@ -21,14 +21,11 @@ let
       DISCOVERED_GW=
       DISCOVERED_SRC=$(ip -4 addr show dev "$1" 2>/dev/null | awk '/inet /{split($2,a,"/"); print a[1]; exit}')
       [ -z "$DISCOVERED_SRC" ] && return 1
-      for f in /run/systemd/netif/leases/*; do
-        [ -f "$f" ] || continue
-        gv=$(awk -F= -v ip="$DISCOVERED_SRC" '{a[$1]=$2} END{if(a["ADDRESS"]==ip) { split(a["ROUTER"], r, " "); print r[1] } }' "$f")
-        if [ -n "$gv" ]; then
-          DISCOVERED_GW=$gv
-          return 0
-        fi
-      done
+      gv=$(networkctl dhcp-lease "$1" 2>/dev/null | awk -F': *' '/^[ \t]*Router:/ { r=$2 } /^[ \t]*Server Address:/ { s=$2 } END { if (r != "") { split(r, arr, " "); print arr[1] } else if (s != "") { split(s, arr, " "); print arr[1] } }')
+      if [ -n "$gv" ]; then
+        DISCOVERED_GW=$gv
+        return 0
+      fi
       return 1
     }
   '';
@@ -80,6 +77,7 @@ let
       pkgs.iputils
       pkgs.iproute2
       pkgs.gawk
+      pkgs.systemd
     ];
     text = ''
       ${leaseDiscoverFor [ cfg.primary ]}
@@ -103,6 +101,7 @@ let
       pkgs.iproute2
       pkgs.conntrack-tools
       pkgs.gawk
+      pkgs.systemd
     ];
     text = ''
       ${leaseDiscoverFor [
