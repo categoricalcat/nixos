@@ -107,6 +107,12 @@ in
         ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelistEnabled'  true
         ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelist'         "127.0.0.1, 10.42.0.0/24, 100.42.0.0/16, 10.88.0.0/16, 172.16.0.0/12"
 
+        # Fetch and inject ngosang's trackerslist
+        trackers=$(${pkgs.curl}/bin/curl -s https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt | ${pkgs.gawk}/bin/awk NF | ${pkgs.gawk}/bin/awk 'NR>1 {printf "\\n"} {printf "%s", $0}')
+        if [ -n "$trackers" ]; then
+          ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\AdditionalTrackers' "$trackers"
+        fi
+
         chown -R 999:${gid} /var/lib/container-volumes/qbittorrent
       '';
   };
