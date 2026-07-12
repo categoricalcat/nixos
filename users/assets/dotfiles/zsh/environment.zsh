@@ -1,5 +1,5 @@
 # Environment variables
-export EDITOR='vim'           # Default editor
+export EDITOR='nvim'           # Default editor
 export PATH="$HOME/.local/bin:$PATH"  # Add local bin to PATH
 
 # NPM Global
