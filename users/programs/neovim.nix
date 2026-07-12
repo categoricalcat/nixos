@@ -6,6 +6,7 @@
 
   programs.nixvim = {
     enable = true;
+    enableMan = false;
     defaultEditor = true;
     nixpkgs.source = inputs.nixpkgs;
     package = pkgs.neovim-unwrapped;

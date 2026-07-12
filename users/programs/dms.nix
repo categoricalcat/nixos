@@ -48,7 +48,7 @@ in
 
     quickshell.package = pkgs.quickshell;
 
-    settings = dmsSettings // {
+    settings = builtins.mapAttrs (_n: v: lib.mkForce v) dmsSettings // {
       currentThemeName = lib.mkForce "dynamic";
       lockScreenInactiveColor = lib.mkForce "#${colors.base00}";
       currentThemeCategory = lib.mkForce "dynamic";

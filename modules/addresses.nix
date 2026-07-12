@@ -265,6 +265,14 @@ in
           domain = "bazarr.fufu.land";
           port = 6767;
         };
+        jellyfin = {
+          domain = "jellyfin.fufu.land";
+          port = 8096;
+        };
+        flaresolverr = {
+          domain = "flaresolverr.fufu.land";
+          port = 8191;
+        };
         qbittorrent = {
           domain = "qbittorrent.fufu.land";
           port = 8080;

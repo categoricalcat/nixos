@@ -1,4 +1,9 @@
-{ config, allAddresses, ... }:
+{
+  config,
+  pkgs,
+  allAddresses,
+  ...
+}:
 
 let
   inherit (config.networking) hostName;
@@ -19,7 +24,7 @@ in
       Connection\InterfaceName=tun0
       WebUI\LocalHostAuth=false
       WebUI\AuthSubnetWhitelistEnabled=true
-      WebUI\AuthSubnetWhitelist=10.42.0.0/24, 100.42.0.0/16
+      WebUI\AuthSubnetWhitelist=127.0.0.1, 10.42.0.0/24, 100.42.0.0/16, 10.88.0.0/16, 172.16.0.0/12
     '';
   };
 
@@ -44,6 +49,7 @@ in
         VPN_PORT_FORWARDING = "on";
         VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
         VPN_PORT_FORWARDING_UP_COMMAND = "wget -O- --retry-connrefused --post-data 'json={\"listen_port\":'$1',\"upnp\":false,\"random_port\":false}' http://127.0.0.1:8080/api/v2/app/setPreferences";
+        HTTPPROXY = "on";
       };
       environmentFiles = [
         config.sops.templates."gluetun.env".path
@@ -51,6 +57,7 @@ in
       ports = [
         "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
         "10.42.0.2:${toString addrs.services.qbittorrent.port}:8080"
+        "127.0.0.1:8889:8888"
       ];
     };
 
@@ -62,9 +69,11 @@ in
       ];
       environment = {
         PUID = "999";
-        PGID = toString config.users.groups.media.gid;
         UMASK = "002";
       };
+      environmentFiles = [
+        "/run/qbittorrent-pgid.env"
+      ];
       volumes = [
         "/var/lib/container-volumes/qbittorrent:/config"
         "/persist/media:/persist/media"
@@ -75,14 +84,30 @@ in
   systemd.services."podman-qbittorrent" = {
     after = [ "podman-gluetun.service" ];
     bindsTo = [ "podman-gluetun.service" ];
-    preStart = ''
-      mkdir -p /var/lib/container-volumes/qbittorrent/qBittorrent
-      if [ ! -f /var/lib/container-volumes/qbittorrent/qBittorrent/qBittorrent.conf ]; then
-        cp ${
-          config.sops.templates."qbittorrent.conf".path
-        } /var/lib/container-volumes/qbittorrent/qBittorrent/qBittorrent.conf
-        chown -R 999:${toString config.users.groups.media.gid} /var/lib/container-volumes/qbittorrent
-      fi
-    '';
+    preStart =
+      let
+        conf = "/var/lib/container-volumes/qbittorrent/qBittorrent/qBittorrent.conf";
+        gid = "media";
+      in
+      ''
+        # Resolve media group GID at runtime for the container
+        echo "PGID=$(${pkgs.coreutils}/bin/stat -c %g /persist/media)" > /run/qbittorrent-pgid.env
+
+        mkdir -p /var/lib/container-volumes/qbittorrent/qBittorrent
+
+        # Seed template on first run
+        if [ ! -f ${conf} ]; then
+          cp ${config.sops.templates."qbittorrent.conf".path} ${conf}
+        fi
+
+        # Always enforce auth / interface settings
+        ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'Connection\Interface'              tun0
+        ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'Connection\InterfaceName'          tun0
+        ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\LocalHostAuth'               false
+        ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelistEnabled'  true
+        ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelist'         "127.0.0.1, 10.42.0.0/24, 100.42.0.0/16, 10.88.0.0/16, 172.16.0.0/12"
+
+        chown -R 999:${gid} /var/lib/container-volumes/qbittorrent
+      '';
   };
 }
