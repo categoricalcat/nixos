@@ -43,8 +43,8 @@ let
         };
 
         yirukou = {
-          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJxn53xfvn7s7hceO1LuYveOhWbbLX5fj27fNdR2bbgi yi@yirukou";
-          ageRecipient = "age1qv55r86rg4kdy3vrt8autrl0sz245r6qadzc0dvjsrzw9yjtuusswn0d45";
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICU0876qeNJLIxk1PPOknm8gWxlbqbuSuy89FPofzh7W yi@yirukou";
+          ageRecipient = "age1y94npwx0wk98lqhgsn4htm5uxu6q8757l5ggsqar534vwzxtl98sdcu4sg";
         };
 
         yixiaoqing = {
