@@ -51,3 +51,22 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 ## 6. Recyclarr (TRaSH Guides Sync)
 
 Recyclarr is fully declarative and automatically uses the API keys configured in `secrets.yaml`. It syncs the configured TRaSH profiles on a daily schedule. You can trigger it manually via `systemctl start recyclarr.service`.
+
+## 7. Brazilian Dubbed Content (pt-BR)
+
+To automatically discover and download foreign movies and TV shows with Brazilian Portuguese voice acting (Dublado / Dual Áudio):
+
+**1. Prowlarr Indexer Setup:**
+A custom `torrent-indexer` container runs locally alongside the stack to scrape Brazilian public trackers.
+- In Prowlarr, navigate to **Indexers** > **Add Indexer**.
+- Select **Generic Torznab**.
+- Name: `Torrent-Indexer BR`
+- URL: `http://127.0.0.1:8181/api/torznab`
+- Save and sync this indexer to Radarr and Sonarr.
+
+**2. Radarr / Sonarr Custom Formats:**
+To ensure your media applications prefer files with Brazilian voice acting:
+- Go to **Settings** > **Custom Formats** in Radarr/Sonarr.
+- Create rules that match release titles containing regex patterns like `(?i)\b(dublado|dual(\W)?audio|pt(\W)?br)\b`.
+- Go to your **Profiles** > **Quality Profiles** and assign a positive score to this Custom Format so the system automatically upgrades or prefers these releases.
+*(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*

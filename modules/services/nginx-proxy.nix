@@ -274,6 +274,15 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
+      "${yifuwuqiServices.torrent-indexer.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.torrent-indexer.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
       "${yifuwuqiServices.bazarr.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;

@@ -99,6 +99,14 @@ in
     };
   };
 
+  virtualisation.oci-containers.containers.torrent-indexer = {
+    image = "felipemarinho97/torrent-indexer:latest";
+    ports = [ "${toString addrs.services.torrent-indexer.port}:8080" ];
+    environment = {
+      PORT = "8080";
+    };
+  };
+
   systemd.services = {
     radarr = {
       environment.RADARR__SERVER__PORT = toString addrs.services.radarr.port;

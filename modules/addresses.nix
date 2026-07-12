@@ -261,6 +261,10 @@ in
           domain = "prowlarr.fufu.land";
           port = 9696;
         };
+        torrent-indexer = {
+          domain = "torrent-indexer.fufu.land";
+          port = 8181;
+        };
         bazarr = {
           domain = "bazarr.fufu.land";
           port = 6767;
