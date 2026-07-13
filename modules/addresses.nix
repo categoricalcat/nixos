@@ -285,6 +285,10 @@ in
           domain = "qbittorrent.fufu.land";
           port = 8080;
         };
+        homepage = {
+          domain = "home.fufu.land";
+          port = 8082;
+        };
       };
 
       nixBuild = {

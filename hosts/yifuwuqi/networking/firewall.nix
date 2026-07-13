@@ -23,6 +23,7 @@ let
       addresses.services.prowlarr.port
       addresses.services.bazarr.port
       addresses.services.qbittorrent.port
+      addresses.services.homepage.port
     ]
   );
 in
