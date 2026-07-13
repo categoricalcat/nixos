@@ -273,6 +273,10 @@ in
           domain = "jellyfin.fufu.land";
           port = 8096;
         };
+        jellyseerr = {
+          domain = "jellyseerr.fufu.land";
+          port = 5055;
+        };
         flaresolverr = {
           domain = "flaresolverr.fufu.land";
           port = 8191;

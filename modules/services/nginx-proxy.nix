@@ -301,6 +301,15 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
+      "${yifuwuqiServices.jellyseerr.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.jellyseerr.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
       "${yifuwuqiServices.qbittorrent.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;

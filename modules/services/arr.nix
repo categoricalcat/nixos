@@ -65,6 +65,10 @@ in
       enable = true;
       group = "media";
     };
+    seerr = {
+      enable = true;
+      port = addrs.services.jellyseerr.port;
+    };
     prowlarr = {
       enable = true;
     };
@@ -166,6 +170,11 @@ in
         UMask = lib.mkForce "0002";
         PrivateUsers = lib.mkForce "identity";
         ReadWritePaths = [ "/persist/media" ];
+      };
+    };
+    seerr = {
+      serviceConfig = {
+        UMask = lib.mkForce "0002";
       };
     };
     prowlarr = {
