@@ -28,71 +28,71 @@ in
     '';
   };
 
-  # Make sure the container volumes root directory exists
+  virtualisation.oci-containers.containers = {
+    gluetun = {
+      image = "docker.io/qmcgaw/gluetun:latest";
+      extraOptions = [
+        "--cap-add=NET_ADMIN"
+        "--device=/dev/net/tun:/dev/net/tun"
+        "--sysctl=net.ipv6.conf.all.disable_ipv6=1"
+        "--sysctl=net.ipv4.conf.all.src_valid_mark=1"
+      ];
+      environment = {
+        VPN_SERVICE_PROVIDER = "protonvpn";
+        VPN_TYPE = "wireguard";
+        PORT_FORWARD_ONLY = "on";
+        VPN_PORT_FORWARDING = "on";
+        VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
+        VPN_PORT_FORWARDING_UP_COMMAND = "wget -O- --retry-connrefused --post-data 'json={\"listen_port\":'$1',\"upnp\":false,\"random_port\":false}' http://127.0.0.1:8080/api/v2/app/setPreferences";
+        HTTPPROXY = "on";
+      };
+      environmentFiles = [
+        config.sops.templates."gluetun.env".path
+      ];
+      ports = [
+        "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
+        "10.42.0.2:${toString addrs.services.qbittorrent.port}:8080"
+        "127.0.0.1:8889:8888"
+        "${toString addrs.services.flaresolverr.port}:8191"
+      ];
+    };
+
+    qbittorrent = {
+      image = "lscr.io/linuxserver/qbittorrent:latest";
+      dependsOn = [ "gluetun" ];
+      extraOptions = [
+        "--network=container:gluetun"
+      ];
+      environment = {
+        PUID = "999";
+        UMASK = "002";
+      };
+      environmentFiles = [
+        "/run/qbittorrent-pgid.env"
+      ];
+      volumes = [
+        "/var/lib/container-volumes/qbittorrent:/config"
+        "/persist/media:/persist/media"
+      ];
+    };
+
+    flaresolverr = {
+      image = "ghcr.io/flaresolverr/flaresolverr:latest";
+      dependsOn = [ "gluetun" ];
+      extraOptions = [
+        "--network=container:gluetun"
+      ];
+      environment = {
+        PORT = "8191";
+      };
+    };
+  };
+
   systemd = {
+    # Make sure the container volumes root directory exists
     tmpfiles.rules = [
       "d /var/lib/container-volumes/qbittorrent 0755 999 media - -"
     ];
-
-    virtualisation.oci-containers.containers = {
-      gluetun = {
-        image = "docker.io/qmcgaw/gluetun:latest";
-        extraOptions = [
-          "--cap-add=NET_ADMIN"
-          "--device=/dev/net/tun:/dev/net/tun"
-          "--sysctl=net.ipv6.conf.all.disable_ipv6=1"
-          "--sysctl=net.ipv4.conf.all.src_valid_mark=1"
-        ];
-        environment = {
-          VPN_SERVICE_PROVIDER = "protonvpn";
-          VPN_TYPE = "wireguard";
-          PORT_FORWARD_ONLY = "on";
-          VPN_PORT_FORWARDING = "on";
-          VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
-          VPN_PORT_FORWARDING_UP_COMMAND = "wget -O- --retry-connrefused --post-data 'json={\"listen_port\":'$1',\"upnp\":false,\"random_port\":false}' http://127.0.0.1:8080/api/v2/app/setPreferences";
-          HTTPPROXY = "on";
-        };
-        environmentFiles = [
-          config.sops.templates."gluetun.env".path
-        ];
-        ports = [
-          "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
-          "10.42.0.2:${toString addrs.services.qbittorrent.port}:8080"
-          "127.0.0.1:8889:8888"
-          "${toString addrs.services.flaresolverr.port}:8191"
-        ];
-      };
-
-      qbittorrent = {
-        image = "lscr.io/linuxserver/qbittorrent:latest";
-        dependsOn = [ "gluetun" ];
-        extraOptions = [
-          "--network=container:gluetun"
-        ];
-        environment = {
-          PUID = "999";
-          UMASK = "002";
-        };
-        environmentFiles = [
-          "/run/qbittorrent-pgid.env"
-        ];
-        volumes = [
-          "/var/lib/container-volumes/qbittorrent:/config"
-          "/persist/media:/persist/media"
-        ];
-      };
-
-      flaresolverr = {
-        image = "ghcr.io/flaresolverr/flaresolverr:latest";
-        dependsOn = [ "gluetun" ];
-        extraOptions = [
-          "--network=container:gluetun"
-        ];
-        environment = {
-          PORT = "8191";
-        };
-      };
-    };
 
     services = {
       "podman-qbittorrent" = {
