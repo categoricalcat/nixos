@@ -72,31 +72,32 @@ in
     prowlarr = {
       enable = true;
     };
-    flaresolverr = {
-      enable = true;
-      port = addrs.services.flaresolverr.port;
-    };
+
     recyclarr = {
       enable = true;
       configuration = {
         radarr = {
           radarr-main = {
             base_url = "http://127.0.0.1:${toString addrs.services.radarr.port}";
-            api_key = "!env_var RADARR__AUTH__APIKEY";
+            api_key = {
+              _secret = config.sops.secrets."arr/radarr_api_key".path;
+            };
             quality_definition = {
               type = "movie";
             };
-            quality_profiles = [ { name = "HD Bluray + WEB"; } ];
+            quality_profiles = [ { name = "All-in-One"; } ];
           };
         };
         sonarr = {
           sonarr-main = {
             base_url = "http://127.0.0.1:${toString addrs.services.sonarr.port}";
-            api_key = "!env_var SONARR__AUTH__APIKEY";
+            api_key = {
+              _secret = config.sops.secrets."arr/sonarr_api_key".path;
+            };
             quality_definition = {
               type = "series";
             };
-            quality_profiles = [ { name = "WEB-1080p"; } ];
+            quality_profiles = [ { name = "All-in-One"; } ];
           };
         };
       };

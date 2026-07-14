@@ -58,6 +58,7 @@ in
         "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
         "10.42.0.2:${toString addrs.services.qbittorrent.port}:8080"
         "127.0.0.1:8889:8888"
+        "${toString addrs.services.flaresolverr.port}:8191"
       ];
     };
 
@@ -78,6 +79,17 @@ in
         "/var/lib/container-volumes/qbittorrent:/config"
         "/persist/media:/persist/media"
       ];
+    };
+
+    flaresolverr = {
+      image = "ghcr.io/flaresolverr/flaresolverr:latest";
+      dependsOn = [ "gluetun" ];
+      extraOptions = [
+        "--network=container:gluetun"
+      ];
+      environment = {
+        PORT = "8191";
+      };
     };
   };
 
@@ -110,10 +122,34 @@ in
         # Fetch and inject ngosang's trackerslist
         trackers=$(${pkgs.curl}/bin/curl -s https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt | ${pkgs.gawk}/bin/awk NF | ${pkgs.gawk}/bin/awk 'NR>1 {printf "\\n"} {printf "%s", $0}')
         if [ -n "$trackers" ]; then
+          ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\AdditionalTrackersEnabled' true
           ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\AdditionalTrackers' "$trackers"
         fi
 
         chown -R 999:${gid} /var/lib/container-volumes/qbittorrent
       '';
+  };
+
+  systemd.services."podman-flaresolverr" = {
+    after = [ "podman-gluetun.service" ];
+    bindsTo = [ "podman-gluetun.service" ];
+  };
+
+  systemd.services."restart-gluetun" = {
+    description = "Restart Gluetun VPN to rotate IP";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.systemd}/bin/systemctl restart podman-gluetun.service";
+    };
+  };
+
+  systemd.timers."restart-gluetun" = {
+    description = "Timer to restart Gluetun VPN every 6 hours";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "6h";
+      OnUnitActiveSec = "6h";
+      RandomizedDelaySec = "5m";
+    };
   };
 }
