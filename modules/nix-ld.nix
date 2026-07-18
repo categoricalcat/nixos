@@ -41,6 +41,9 @@
         cairo
         cups
         libxkbcommon
+        fontconfig
+        libxcb-util
+        libxcb-cursor
       ];
   };
 }

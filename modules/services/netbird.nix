@@ -3,6 +3,9 @@
   services.netbird = {
     enable = true;
     package = pkgs.netbird;
+    clients.default.environment = {
+      NB_LAZY_CONN = "false";
+    };
   };
 
   # The NixOS netbird module adds a wrapper to systemPackages that sets NB_CONFIG,

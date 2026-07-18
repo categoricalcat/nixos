@@ -1,4 +1,10 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  nix-ld-libraries = config.programs.nix-ld.libraries;
+
+  mt-power-drum-kit = pkgs.callPackage ./mt-power-drum-kit.nix { inherit nix-ld-libraries; };
+  # drum-locker = pkgs.callPackage ./drum-locker.nix { inherit nix-ld-libraries; };
+in
 {
   musnix.enable = true;
   musnix.rtirq.enable = true;
@@ -23,8 +29,8 @@
           192000
         ];
         "default.clock.quantum" = 256;
-        "default.clock.min-quantum" = 32;
-        "default.clock.max-quantum" = 1024;
+        "default.clock.min-quantum" = 256;
+        "default.clock.max-quantum" = 256;
       };
     };
 
@@ -129,6 +135,8 @@
     pkgs.noise-repellent
 
     # Drums
+    mt-power-drum-kit
+    # drum-locker
     pkgs.drumgizmo
     pkgs.x42-avldrums
     pkgs.hydrogen
@@ -164,6 +172,14 @@
     LADSPA_PATH = "/run/current-system/sw/lib/ladspa:$HOME/.ladspa";
     CLAP_PATH = "/run/current-system/sw/lib/clap:$HOME/.clap";
   };
+
+  systemd.user.tmpfiles.rules = [
+    "L+ %h/.vst - - - - /run/current-system/sw/lib/vst"
+    "L+ %h/.vst3 - - - - /run/current-system/sw/lib/vst3"
+    "L+ %h/.lv2 - - - - /run/current-system/sw/lib/lv2"
+    "L+ %h/.clap - - - - /run/current-system/sw/lib/clap"
+    "L+ %h/.ladspa - - - - /run/current-system/sw/lib/ladspa"
+  ];
 
   security.pam.loginLimits = [
     {

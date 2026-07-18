@@ -19,13 +19,13 @@
                 "border=lightmagenta"
                 "text=white"
                 "prompt=lightcyan"
-                "time=lightblue"
-                "action=yellow"
-                "button=lightyellow"
+                "time=lightcyan"
+                "action=blue"
+                "button=lightblue"
                 "container=black"
-                "input=lightblue"
-                "greet=lightblue"
-                "title=lightblue"
+                "input=lightcyan"
+                "greet=lightcyan"
+                "title=lightcyan"
               ];
             in
             lib.concatStringsSep " " [

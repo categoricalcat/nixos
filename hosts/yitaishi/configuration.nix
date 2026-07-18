@@ -28,7 +28,7 @@ in
     ../../secrets/sops.nix
     ../../modules/fonts.nix
     ../../modules/fido2.nix
-    ../../modules/audio.nix
+    ../../modules/audio
     ../../modules/common.nix
     ../../modules/gaming.nix
     ../../modules/locale.nix

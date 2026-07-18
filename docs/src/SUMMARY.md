@@ -20,3 +20,7 @@
 ## Hardware
 
 - [USB Boot Delays](hardware/usb-boot-delays.md)
+
+## Audio
+
+- [Drum Kits](audio/drums.md)
