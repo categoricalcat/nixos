@@ -44,14 +44,8 @@ in
         # Plain DNS on port 53 is gated to internal interfaces by the host firewall.
         bind_hosts = [ "0.0.0.0" ];
 
-        upstream_dns =
-          addresses.dns.quad9
-          ++ addresses.dns.adguard
-          ++ addresses.dns.google
-          ++ addresses.dns.cloudflare
-          ++ addresses.dns.opendns
-          ++ addresses.dns.nextdns
-          ++ addresses.dns.freedns;
+        # Forward everything to local Unbound
+        upstream_dns = [ "127.0.0.1:5335" ];
 
         # load_balance: weighted random algorithm to select the best upstream server.
         # parallel: Parallel queries to all configured upstream servers to speed up resolving.
@@ -75,12 +69,6 @@ in
         max_goroutines = 1000;
         upstream_timeout = "2s";
         serve_http3 = true;
-
-        cache_enabled = true;
-        cache_size = 20000000;
-        cache_ttl_min = 300;
-        cache_ttl_max = 86400;
-        cache_optimistic = true;
       };
 
       filtering = {

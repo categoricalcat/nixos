@@ -15,6 +15,7 @@ in
     ../../modules/services/avahi.nix
     ../../modules/services/openssh.nix
     ../../modules/services/adguardhome.nix
+    ../../modules/services/unbound.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/netbird.nix
     ../../modules/services/ai/llama-swap.nix

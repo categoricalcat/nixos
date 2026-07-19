@@ -9,7 +9,7 @@
 
 let
   desktopEnvironment = "niri";
-  desktopShell = "dms";
+  desktopShell = "noctalia";
   greeter = "tuigreet";
   monitors = [
     {

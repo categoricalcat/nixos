@@ -23,7 +23,6 @@ let
 in
 {
 
-
   sops.secrets = {
     cloudflare_api_token = { };
   };

@@ -1,11 +1,9 @@
 {
   pkgs,
-  config,
   ...
 }:
 
 {
-
 
   services.nginx = {
     additionalModules = [ pkgs.nginxModules.dav ];

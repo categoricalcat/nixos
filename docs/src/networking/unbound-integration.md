@@ -24,6 +24,10 @@ Create a new NixOS module file at `modules/services/unbound.nix` with the follow
 {
   services.unbound = {
     enable = true;
+    
+    # Enable the control socket so we can use `unbound-control`
+    localControlSocketPath = "/run/unbound/unbound.ctl";
+
     settings = {
       server = {
         # Listen on localhost on a non-standard port to avoid conflicting with AdGuard Home
@@ -32,9 +36,6 @@ Create a new NixOS module file at `modules/services/unbound.nix` with the follow
         
         # Only allow queries from localhost
         access-control = [ "127.0.0.0/8 allow" ];
-        
-        # Enable DNSSEC validation
-        auto-trust-anchor-file = "/var/lib/unbound/root.key";
         
         # Performance tuning and caching
         cache-min-ttl = 300;
@@ -74,6 +75,10 @@ Edit `modules/services/adguardhome.nix` to change its upstream servers.
 ```nix
         # Forward everything to local Unbound
         upstream_dns = [ "127.0.0.1:5335" ];
+
+        # Disable AdGuard Home's cache to rely entirely on Unbound.
+        # This avoids double-caching and allows Unbound's prefetch to work.
+        cache_size = 0;
 ```
 
 *Note: You may optionally want to change `upstream_mode` from `"parallel"` to `"load_balance"` or `"fastest_addr"` if you only have one upstream, although it shouldn't cause issues if left as is.*
@@ -148,3 +153,31 @@ For daily browsing, the speed difference will be practically unnoticeable, but t
 - **Prefetching:** The Unbound config includes `prefetch = "yes"`. If an item in the cache is about to expire and is requested, Unbound returns the old cached IP immediately so the user doesn't wait, and goes to fetch the fresh IP in the background.
 
 This setup trades a tiny fraction of a second on initial, un-cached page loads for complete DNS privacy.
+
+### How can I inspect Unbound's cache or statistics?
+
+Unbound includes a command-line utility called `unbound-control` to inspect and manage the running server. Because we enabled `localControlSocketPath` in the NixOS module, you can run these commands directly on the host machine:
+
+**1. Inspect the entire cache in plain text:**
+
+```bash
+sudo unbound-control -c /etc/unbound/unbound.conf dump_cache
+```
+
+**2. See detailed statistics (including cache hit ratios and prefetch metrics):**
+
+```bash
+sudo unbound-control -c /etc/unbound/unbound.conf stats_noreset
+```
+
+**3. Clear specific domains from the cache:**
+
+```bash
+sudo unbound-control -c /etc/unbound/unbound.conf flush github.com
+```
+
+**4. Clear the entire cache:**
+
+```bash
+sudo unbound-control -c /etc/unbound/unbound.conf flush_zone .
+```
