@@ -79,6 +79,11 @@ in
 
         rewrites = [
           {
+            domain = "smb.fufu.land";
+            answer = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
+            enabled = true;
+          }
+          {
             domain = "*.fufu.land";
             answer = yirukouLan;
             enabled = true;

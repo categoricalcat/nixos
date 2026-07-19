@@ -40,21 +40,15 @@ in
 
   fileSystems = {
     "/mnt/smb/share" = lib.mkIf hasNetbird {
-      device = "//${addresses.hosts.yifuwuqi.network.vpn.ipv4.host}/share";
+      device = "//smb.fufu.land/share";
       fsType = "cifs";
-      options = mountCommonOptions ++ [
-        "x-systemd.after=netbird.service"
-        "x-systemd.requires=netbird.service"
-      ];
+      options = mountCommonOptions;
     };
 
     "/mnt/smb/the.files" = lib.mkIf hasNetbird {
-      device = "//${addresses.hosts.yifuwuqi.network.vpn.ipv4.host}/the.files";
+      device = "//smb.fufu.land/the.files";
       fsType = "cifs";
-      options = mountCommonOptions ++ [
-        "x-systemd.after=netbird.service"
-        "x-systemd.requires=netbird.service"
-      ];
+      options = mountCommonOptions;
     };
 
     "/mnt/smb/ts/share" = lib.mkIf hasTailscale {
@@ -86,7 +80,6 @@ in
         "mnt-smb-ts-the.files.mount"
       ]
       ++ lib.optionals hasNetbird [
-        "netbird.service"
         "mnt-smb-share.mount"
         "mnt-smb-the.files.mount"
       ];
