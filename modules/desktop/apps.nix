@@ -27,6 +27,7 @@
     obsidian
     mangohud
     multiviewer-for-f1
+    jellyfin-media-player
     scrcpy
     (wrapOBS {
       plugins = with obs-studio-plugins; [

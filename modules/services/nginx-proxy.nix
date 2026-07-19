@@ -219,11 +219,16 @@ in
         forceSSL = true;
 
         locations."/" = {
+          root = "/var/lib/goaccess";
+          index = "index.html";
+        };
+
+        locations."/ws" = {
           proxyPass = "http://127.0.0.1:7890";
           proxyWebsockets = true;
           extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 3600;
+            proxy_send_timeout 3600;
           '';
         };
       };
