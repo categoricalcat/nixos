@@ -5,13 +5,7 @@
 }:
 
 {
-  imports = [ ./shared-auth.nix ];
 
-  sops.secrets."webdav/htpasswd" = {
-    owner = "nginx";
-    group = "nginx";
-    mode = "0440";
-  };
 
   services.nginx = {
     additionalModules = [ pkgs.nginxModules.dav ];
@@ -35,8 +29,7 @@
 
           client_max_body_size 0;
 
-          auth_basic "WebDAV";
-          auth_basic_user_file ${config.sops.secrets."webdav/htpasswd".path};
+
 
           autoindex on;
         '';

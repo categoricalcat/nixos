@@ -171,6 +171,10 @@ in
         UMask = lib.mkForce "0002";
         PrivateUsers = lib.mkForce "identity";
         ReadWritePaths = [ "/persist/media" ];
+        SupplementaryGroups = [
+          "render"
+          "video"
+        ];
       };
     };
     seerr = {

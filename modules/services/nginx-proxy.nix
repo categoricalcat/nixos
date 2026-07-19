@@ -22,7 +22,7 @@ let
   );
 in
 {
-  imports = [ ./shared-auth.nix ];
+
 
   sops.secrets = {
     cloudflare_api_token = { };
@@ -109,7 +109,7 @@ in
       "netdata.fufu.land" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
-        basicAuthFile = config.sops.secrets."services/htpasswd".path;
+
         locations."/" = {
           proxyPass = "http://${yifuwuqiLan}:19999";
           proxyWebsockets = true;
@@ -217,7 +217,7 @@ in
       "goaccess.fufu.land" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
-        basicAuthFile = config.sops.secrets."services/htpasswd".path;
+
         locations."/" = {
           proxyPass = "http://127.0.0.1:7890";
           proxyWebsockets = true;

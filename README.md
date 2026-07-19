@@ -15,7 +15,7 @@ my allegedly pure configs
 ### secrets and keys
 
 See [Secrets And Host Keys](docs/src/services/secrets.md) for SOPS setup,
-host key provisioning, distributed builds key rotation, shared htpasswd,
+host key provisioning, distributed builds key rotation,
 the search service note, and the lockout checklist.
 
 ### samba server

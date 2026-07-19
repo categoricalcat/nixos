@@ -41,22 +41,6 @@ Prometheus/Grafana/Loki deployment:
 - `grafana.fufu.land` is served by nginx on the proxy host and proxies to the
   central host's Grafana endpoint.
 
-## Access Control
-
-`netdata.fufu.land` is protected by the shared HTTP basic-auth file:
-
-- SOPS key: `services/htpasswd`
-- Module: `modules/services/shared-auth.nix`
-- Nginx consumer: `modules/services/nginx-proxy.nix`
-
-Generate a new bcrypt entry with:
-
-```sh
-nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"
-```
-
-Then paste the entry under `services.htpasswd` in the encrypted secrets file.
-
 ## Operational Notes
 
 Netdata is configured with:
@@ -94,4 +78,3 @@ Prometheus/Grafana/Loki is configured with:
 - `hosts/yirukou/services.nix`
 - `hosts/yifuwuqi/services.nix`
 - `modules/services/nginx-proxy.nix`
-- `modules/services/shared-auth.nix`

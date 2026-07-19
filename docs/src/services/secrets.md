@@ -123,15 +123,11 @@ samba:
             username=...
             password=...
 services:
-    htpasswd: |
-        admin:$2y$05$...
     grafana:
         secret-key: string
     proton:
         wireguard_private_key: string
-webdav:
-    htpasswd: |
-        user:$2y$05$...
+
 ```
 
 PostgreSQL on `yifuwuqi` uses local Unix socket peer authentication. It creates
@@ -169,8 +165,7 @@ Recipes:
 | `tokens/forgejo-runner` | raw token | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner |
 | `tokens/github-runner-nixos` | raw token | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner |
 | `services/grafana/secret-key` | random string | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets |
-| `services/htpasswd` | htpasswd lines | Generate each line: `nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"` |
-| `webdav/htpasswd` | htpasswd lines | Same `htpasswd -nbB` command, stored separately from `services/htpasswd` |
+
 | `cloudflare_api_token` | env file | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>` |
 | `tokens/cloudflared` | raw token | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token |
 | `tokens/playit-agent` | env file | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...` |
@@ -204,11 +199,7 @@ sudo atticd-atticadm make-token \
   --push 'yi'
 ```
 
-Shared/WebDAV htpasswd line:
 
-```bash
-nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"
-```
 
 ### Attic Bootstrap (After Database Resets)
 
@@ -291,39 +282,10 @@ client identity. There is no shared builder keypair and no SOPS file for it.
 Rotation is the same as rotating that host's SSH host key. Adding a new host to
 the build mesh just means registering its public key in `secrets/keys.nix`.
 
-## Shared Services Htpasswd (yifuwuqi)
-
-Shared HTTP basic-auth file used by nginx-proxied web UIs that opt in to the
-common gate. Today that is Netdata and GoAccess in
-`modules/services/nginx-proxy.nix`. Declared in `modules/services/shared-auth.nix`
-as the sops secret `services/htpasswd`.
-
-```bash
-# generate a bcrypt entry (repeat to add more users)
-nix-shell -p apacheHttpd --run "htpasswd -nbB admin '<password>'"
-
-# paste under services.htpasswd in the encrypted file
-sops secrets/secrets.yaml
-```
-
-Expected shape (see `secrets/.secrets.example.yaml`):
-
-```yaml
-services:
-    htpasswd: |
-        admin:$2y$05$...
-```
-
-Rotating the password rotates it for every service that uses this file.
-
-WebDAV has its own htpasswd secret, `webdav/htpasswd`, declared in
-`modules/services/webdav.nix`. Do not reuse `services/htpasswd` unless you want
-the same credentials.
-
 ## Search (yifuwuqi)
 
 `search.fufu.land` -> SearXNG (`modules/services/searxng.nix`). It does not use
-SOPS today and is not behind `services/htpasswd` in the nginx proxy.
+SOPS today and is not behind an authentication proxy.
 
 The signing key is generated into `/run` before each service start:
 
