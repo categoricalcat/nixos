@@ -20,12 +20,6 @@ in
     registry = lib.mapAttrs (_: flake: { inherit flake; }) inputs;
     nixPath = [ "/etc/nix/inputs" ];
 
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = lib.mkDefault "--delete-older-than 9d";
-    };
-
     settings = {
       allowed-users = [ "root" ] ++ builtins.attrNames config.users.users;
       auto-optimise-store = true;

@@ -28,7 +28,6 @@ _: {
         nil # Nix language server
         nixd # Nix language server (with statix/deadnix support)
         nixfmt # Official RFC-166 Nix formatter
-        nh # Nix Helper - nicer CLI for nixos-rebuild
         direnv # Environment switcher for shell
         nix-update # Swiss-knife for updating nix packages
         nix-init # Generator for Nix packages from URLs
