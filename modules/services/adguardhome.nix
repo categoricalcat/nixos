@@ -30,19 +30,21 @@ in
     enable = true;
     package = pkgs.adguardhome;
     host = "0.0.0.0";
-    port = 3333;
+    port = allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port;
     mutableSettings = false;
     settings = {
 
       http = {
-        address = "0.0.0.0:3333";
+        address = "0.0.0.0:${
+          toString allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port
+        }";
         session_ttl = "12h";
       };
 
       dns = {
         # Wildcard so plain DNS / DoT / DoQ / DoH stay reachable on the dynamic fallback WAN IP.
         # Plain DNS on port 53 is gated to internal interfaces by the host firewall.
-        bind_hosts = [ "0.0.0.0" ];
+        bind_hosts = allAddresses.hosts.${config.networking.hostName}.services.adguardhome.dnsBindHosts;
 
         # Forward everything to local Unbound
         upstream_dns = [ "127.0.0.1:5335" ];

@@ -73,6 +73,14 @@ let
     ];
   };
 
+  sharedServices = {
+    adguardhome = {
+      domain = "adguard.fufu.land";
+      port = 3333;
+      dnsPort = 53;
+    };
+  };
+
 in
 {
   monitoring = {
@@ -289,6 +297,24 @@ in
         homepage = {
           domain = "home.fufu.land";
           port = 8082;
+        };
+        adguardhome = sharedServices.adguardhome // {
+          dnsBindHosts = [
+            "127.0.0.1"
+            "10.42.0.2"
+            "100.69.0.6"
+            "100.42.0.2"
+          ];
+        };
+        searxng = {
+          domain = "search.fufu.land";
+          port = 8888;
+        };
+        opencode = {
+          port = 3010;
+        };
+        firecrawl = {
+          port = 3002;
         };
       };
 
@@ -552,6 +578,18 @@ in
         systems = [ "x86_64-linux" ];
         maxJobs = 1;
         speedFactor = 60;
+      };
+
+      services = {
+        adguardhome = sharedServices.adguardhome // {
+          dnsBindHosts = [
+            "127.0.0.1"
+            "10.42.0.1"
+            "10.42.42.1"
+            "100.69.0.1"
+            "100.42.0.1"
+          ];
+        };
       };
     };
   };

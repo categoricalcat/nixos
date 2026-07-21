@@ -37,6 +37,7 @@ in
     ../../modules/services/monitoring/grafana.nix
     ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
+    ../../modules/services/firecrawl.nix
     ../../modules/services/opencode.nix
     ../../modules/services/atticd.nix
     ../../modules/services/attic-watch-store.nix

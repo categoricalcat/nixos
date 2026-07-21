@@ -5,6 +5,10 @@ _:
     # Keep SYN floods from exhausting half-open TCP state.
     "net.ipv4.tcp_syncookies" = 1;
 
+    # Allow services (sshd, adguard, etc.) to bind to VPN IPs before tunnel interfaces assign them.
+    "net.ipv4.ip_nonlocal_bind" = 1;
+    "net.ipv6.ip_nonlocal_bind" = 1;
+
     # Avoid TIME-WAIT assassination hazards described by RFC 1337.
     "net.ipv4.tcp_rfc1337" = 1;
 

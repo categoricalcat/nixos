@@ -1,5 +1,7 @@
 {
   pkgs,
+  allAddresses,
+  config,
   ...
 }:
 
@@ -15,6 +17,10 @@ in
   # both `searx-init.service` (envsubst) and `searx.service`, so this unit must
   # finish before either of them, otherwise EnvironmentFile= fails on first
   # boot and `searx-init` never writes /run/searx/settings.yml.
+
+  networking.firewall.allowedTCPPorts = [
+    allAddresses.hosts.${config.networking.hostName}.services.searxng.port
+  ];
 
   services.searx = {
     enable = true;
@@ -36,7 +42,7 @@ in
         # Public access still goes through nginx on yirukou, but the backend
         # must be reachable from the router over LAN and directly via Tailscale.
         bind_address = "0.0.0.0";
-        port = 8888;
+        port = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
         # `searx-init.service` runs envsubst over this YAML and loads
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
         # replaced with the runtime-generated value before SearXNG starts.
@@ -107,13 +113,35 @@ in
       # not.
       engines = [
         {
-          name = "google";
-          disabled = true;
+          name = "duckduckgo";
+          engine = "duckduckgo";
+          shortcut = "ddg";
+          categories = "general";
+          disabled = false;
         }
         {
           name = "mojeek";
           disabled = false;
           shortcut = "mjk";
+          categories = "general";
+        }
+        {
+          name = "google scholar";
+          engine = "google_scholar";
+          shortcut = "gs";
+          categories = "science";
+          disabled = false;
+        }
+        {
+          name = "arxiv";
+          engine = "arxiv";
+          shortcut = "ar";
+          categories = "science";
+          disabled = false;
+        }
+        {
+          name = "google";
+          disabled = true;
         }
       ];
 

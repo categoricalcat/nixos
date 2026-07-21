@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  allAddresses,
   ...
 }:
 
@@ -23,7 +24,9 @@ in
       after = [ "network-online.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.opencode}/bin/opencode serve --port 3010 --hostname 0.0.0.0";
+        ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${
+          toString allAddresses.hosts.${config.networking.hostName}.services.opencode.port
+        } --hostname 0.0.0.0";
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";
@@ -32,7 +35,7 @@ in
 
       environment = {
         HOME = opencodeHome;
-        OPENCODE_ENABLE_EXA = "1";
+        OPENCODE_ENABLE_EXA = "0";
         XDG_CONFIG_HOME = opencodeConfigHome;
         OPENCODE_CONFIG = opencodeConfigPath;
       };

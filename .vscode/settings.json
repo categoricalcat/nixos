@@ -17,5 +17,13 @@
   "files.associations": {
     "*.nix": "nix",
     "flake.lock": "json"
+  },
+  "search.exclude": {
+    "**/result*": true,
+    "**/.direnv": true
+  },
+  "files.watcherExclude": {
+    "**/result*/**": true,
+    "**/.direnv/**": true
   }
 }

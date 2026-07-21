@@ -34,12 +34,6 @@ in
     '';
   };
 
-  boot.kernel.sysctl = {
-    # Allow sshd to bind to VPN IPs before tunnel interfaces assign them.
-    "net.ipv4.ip_nonlocal_bind" = 1;
-    "net.ipv6.ip_nonlocal_bind" = 1;
-  };
-
   services.openssh = {
     enable = true;
     ports = [ addresses.ssh.listenPort ];

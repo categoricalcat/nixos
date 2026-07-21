@@ -1,6 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, osConfig, ... }:
 let
   ai = import ../../modules/services/ai/models.nix;
+  allAddresses = import ../../modules/addresses.nix;
+  firecrawlPort = allAddresses.hosts.${osConfig.networking.hostName}.services.firecrawl.port;
 in
 {
   programs.opencode = {
@@ -34,6 +36,22 @@ in
         websearch = "allow";
         question = "allow";
         task = "ask";
+      };
+    };
+  };
+
+  home.file.".config/opencode/mcp.json".text = builtins.toJSON {
+    mcpServers = {
+      firecrawl = {
+        command = "npx";
+        args = [
+          "-y"
+          "@mendable/firecrawl-mcp-server"
+        ];
+        env = {
+          FIRECRAWL_API_URL = "http://localhost:${toString firecrawlPort}";
+          FIRECRAWL_API_KEY = "this_is_just_a_dummy_key";
+        };
       };
     };
   };
