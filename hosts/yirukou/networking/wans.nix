@@ -1,4 +1,4 @@
-{ addresses, ... }:
+{ addresses, pkgs, ... }:
 
 let
   inherit (addresses.network.wan) primary fallback;
@@ -32,5 +32,19 @@ in
       };
       linkConfig.RequiredForOnline = "routable";
     };
+  };
+
+  systemd.services.tailscale-udp-gro = {
+    description = "Enable UDP GRO forwarding for Tailscale";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.ethtool}/bin/ethtool -K ${primary.interface} rx-udp-gro-forwarding on rx-gro-list off || true
+      ${pkgs.ethtool}/bin/ethtool -K ${fallback.interface} rx-udp-gro-forwarding on rx-gro-list off || true
+    '';
   };
 }

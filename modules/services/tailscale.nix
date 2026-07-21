@@ -1,5 +1,4 @@
 {
-  allAddresses,
   config,
   lib,
   pkgs,
@@ -40,8 +39,14 @@ in
 
     exitNodeHost = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
+      default = null;
       description = "Tailscale IP of the exit node to use (client mode).";
+    };
+
+    ssh = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable Tailscale SSH.";
     };
   };
 
@@ -54,7 +59,7 @@ in
       # that registered earlier keeps stale prefs (e.g. ExitNodeID) even
       # after we change exitNodeHost in config, because `tailscale up` is
       # only run on initial auth.
-      runtimeFlags =
+      baseFlags =
         if isServer then
           [
             "--accept-dns=true"
@@ -70,6 +75,7 @@ in
             "--exit-node=${if cfg.exitNodeHost != null then cfg.exitNodeHost else ""}"
             "--exit-node-allow-lan-access=${if cfg.exitNodeHost != null then "true" else "false"}"
           ];
+      runtimeFlags = baseFlags ++ lib.optional cfg.ssh "--ssh";
     in
     {
       services.tailscale = {
@@ -84,5 +90,11 @@ in
         trustedInterfaces = [ config.services.tailscale.interfaceName ];
         allowedUDPPorts = [ config.services.tailscale.port ];
       };
+
+      environment.systemPackages = [
+        (pkgs.writeShellScriptBin "tailscale-up" ''
+          exec sudo tailscale up --reset ${lib.escapeShellArgs runtimeFlags} "$@"
+        '')
+      ];
     };
 }

@@ -6,8 +6,8 @@
 {
   imports = [
     ../../modules/services/ai/llama-swap.nix
-    # ../../modules/services/tailscale.nix
-    ../../modules/services/netbird.nix
+    ../../modules/services/tailscale.nix
+    # ../../modules/services/netbird.nix
     ../../modules/services/lan-mouse.nix
   ];
 
@@ -46,7 +46,7 @@
       "KeyRightalt"
     ];
     right = {
-      hostname = "${allAddresses.hosts.yixiaoqing.hostName}.vpn";
+      hostname = "${allAddresses.hosts.yixiaoqing.hostName}.${allAddresses.hosts.yixiaoqing.network.vpn.domain}";
       activate_on_startup = true;
       ips = [ allAddresses.hosts.yixiaoqing.network.vpn.ipv4.host ];
     };

@@ -48,10 +48,10 @@ in
     ../../modules/services/openssh.nix
     ../../modules/distributed-builds.nix
     ../../modules/services/lan-mouse.nix
-    # ../../modules/services/tailscale.nix
+    ../../modules/services/tailscale.nix
     ../../modules/services/samba/client.nix
     # ../../modules/services/power-profiles-daemon.nix
-    ../../modules/services/netbird.nix
+    # ../../modules/services/netbird.nix
     ../../modules/services/tpm-fido2.nix
   ];
 
@@ -152,12 +152,17 @@ in
 
   services.lan-mouse.settings = {
     left = {
-      hostname = "${allAddresses.hosts.yitaishi.hostName}.vpn";
+      hostname = "${allAddresses.hosts.yitaishi.hostName}.${allAddresses.hosts.yitaishi.network.vpn.domain}";
       activate_on_startup = true;
       ips = [ allAddresses.hosts.yitaishi.network.vpn.ipv4.host ];
     };
     authorized_fingerprints = {
       # "yitaishi-fingerprint" = "yitaishi";
     };
+  };
+
+  yi.tailscale = {
+    routingMode = "client";
+    exitNodeHost = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
   };
 }

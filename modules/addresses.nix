@@ -126,8 +126,10 @@ in
       // sharedDnsUpstreams;
 
       network = rec {
+        vpn = tailscale;
 
         netbird = {
+          domain = "nb";
           interface = "wt0";
           ipv4 = rec {
             cidr = "100.42.0.0/16";
@@ -136,8 +138,6 @@ in
             address = "${host}/${toString prefixLength}";
           };
         };
-
-        vpn = netbird;
 
         lan = {
           interface = "eno1";
@@ -159,6 +159,7 @@ in
         };
 
         tailscale = {
+          domain = "ts";
           interface = "tailscale0";
           ipv6 = rec {
             host = "fd7a:115c:a1e0::8501:3aa9";
@@ -330,7 +331,9 @@ in
       hostName = "yixiaoqing";
 
       network = rec {
+        vpn = tailscale;
         netbird = {
+          domain = "nb";
           interface = "wt0";
           ipv4 = rec {
             cidr = "100.42.0.0/16";
@@ -340,9 +343,8 @@ in
           };
         };
 
-        vpn = netbird;
-
         tailscale = {
+          domain = "ts";
           interface = "tailscale0";
           ipv4 = rec {
             host = "100.69.0.3";
@@ -375,7 +377,9 @@ in
       hostName = "yitaishi";
 
       network = rec {
+        vpn = tailscale;
         netbird = {
+          domain = "nb";
           interface = "wt0";
           ipv4 = rec {
             cidr = "100.42.0.0/16";
@@ -385,9 +389,8 @@ in
           };
         };
 
-        vpn = netbird;
-
         tailscale = {
+          domain = "ts";
           interface = "tailscale0";
           ipv4 = rec {
             host = "100.69.0.4";
@@ -434,7 +437,9 @@ in
       // sharedDnsUpstreams;
 
       network = rec {
+        vpn = tailscale;
         netbird = {
+          domain = "nb";
           interface = "wt0";
           ipv4 = rec {
             cidr = "100.42.0.0/16";
@@ -443,8 +448,6 @@ in
             address = "${host}/${toString prefixLength}";
           };
         };
-
-        vpn = netbird;
 
         wan = {
           primary = {
@@ -458,6 +461,7 @@ in
         };
 
         tailscale = {
+          domain = "ts";
           interface = "tailscale0";
           ipv4 = rec {
             host = "100.69.0.1";
@@ -567,15 +571,6 @@ in
       path = [
         "network"
         "lan"
-        "ipv4"
-        "host"
-      ];
-    }
-    {
-      suffix = "vpn";
-      path = [
-        "network"
-        "vpn"
         "ipv4"
         "host"
       ];

@@ -105,8 +105,8 @@ in
         # iifname "${config.services.tailscale.interfaceName}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "tailscale to lan subnet"
         # iifname "${lan.interface}" oifname "${config.services.tailscale.interfaceName}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to tailscale subnet clients"
 
-        iifname "${addresses.network.vpn.interface}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "netbird to lan subnet"
-        iifname "${lan.interface}" oifname "${addresses.network.vpn.interface}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to netbird clients"
+        iifname "${addresses.network.vpn.interface}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "tailscale to lan subnet"
+        iifname "${lan.interface}" oifname "${addresses.network.vpn.interface}" ip saddr ${lan.ipv4.cidr} ct state established,related accept comment "lan replies to tailscale clients"
       '';
     };
 

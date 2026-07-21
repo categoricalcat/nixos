@@ -25,7 +25,7 @@ _: {
     };
 
     #wg-quick.interfaces = {
-    #  "yifuwuqi.vpn" = wgCommon // {
+    #  "yifuwuqi.${addresses.network.vpn.domain}" = wgCommon // {
     #    peers = [
     #      (mkPeer {
     #        endpoint = endpoints.remote;
@@ -37,7 +37,7 @@ _: {
 
   systemd.services.NetworkManager-wait-online.enable = false;
 
-  #systemd.services."wg-quick-yifuwuqi.vpn" = {
+  #systemd.services."wg-quick-yifuwuqi.${addresses.network.vpn.domain}" = {
   #  serviceConfig = {
   #    Type = lib.mkForce "simple";
   #    Restart = "on-failure";

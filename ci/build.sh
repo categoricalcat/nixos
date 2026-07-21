@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BUILDER_ARGS=()
-if timeout 2 bash -c '</dev/tcp/yitaishi.vpn/24212' 2>/dev/null; then
+if timeout 2 bash -c '</dev/tcp/yitaishi.ts/24212' 2>/dev/null || timeout 2 bash -c '</dev/tcp/yitaishi.nb/24212' 2>/dev/null; then
   echo "yitaishi is online! Adding as a remote builder."
   b="ssh-ng://yitaishi x86_64-linux - 16 100 kvm,nixos-test,benchmark,big-parallel"
   [ -f /etc/nix/machines ] && b="@/etc/nix/machines ; $b"
