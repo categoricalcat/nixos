@@ -2,6 +2,7 @@ _: {
   perSystem =
     {
       pkgs,
+      inputs',
       ...
     }:
     let
@@ -39,11 +40,17 @@ _: {
           rustPkgs
           ++ nixDevPkgs
           ++ [
+            pkgs.zsh
             nixosRebuildWrapper
             inspectWrapper
+            inputs'.antigravity-nix.packages.google-antigravity-ide
+            inputs'.antigravity-nix.packages.google-antigravity-cli
           ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
+          if [ -z "$DIRENV_IN_ENVRC" ]; then
+            exec zsh
+          fi
         '';
       };
 

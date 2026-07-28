@@ -34,6 +34,7 @@
             pkgs = import nixpkgs {
               system = "x86_64-linux";
               config.allowUnfree = true;
+              overlays = import ./nix/overlays.nix;
             };
             extraSpecialArgs = {
               inherit inputs;
@@ -186,5 +187,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    antigravity-nix = {
+      url = "github:jacopone/antigravity-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }

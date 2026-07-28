@@ -101,21 +101,25 @@ in
 
       filters = [
         {
+          id = 1;
           url = "https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt";
           name = "AdGuard Home Default Filter";
           enabled = true;
         }
         {
+          id = 2;
           url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt";
           name = "Hagezi Multi PRO";
           enabled = false;
         }
         {
+          id = 3;
           url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt";
           name = "Hagezi Multi PRO++";
           enabled = true;
         }
         {
+          id = 4;
           url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt";
           name = "Hagezi TIF";
           enabled = true;

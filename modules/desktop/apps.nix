@@ -2,11 +2,10 @@
 
 {
   environment.systemPackages = with pkgs; [
-    floorp-bin # the good
+    vivaldi
 
     vscode-fhs
     code-cursor-fhs
-    antigravity
     onlyoffice-desktopeditors
     discord
     # vesktop # uses insecure pnpm_10_29_2 at build time
@@ -27,7 +26,15 @@
     obsidian
     mangohud
     multiviewer-for-f1
-    jellyfin-media-player
+    (symlinkJoin {
+      name = "jellyfin-media-player";
+      paths = [ jellyfin-media-player ];
+      buildInputs = [ makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/jellyfin-desktop \
+          --set QT_QPA_PLATFORM xcb
+      '';
+    })
     scrcpy
     (wrapOBS {
       plugins = with obs-studio-plugins; [
@@ -37,6 +44,11 @@
       ];
     })
     obs-studio-plugins.obs-vkcapture
+    feishin
+    jellyflix
+    jellyfin-rpc
+    jellyfin-tui
+    jellytui
     # nextcloud-client
   ];
 

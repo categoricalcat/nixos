@@ -49,8 +49,8 @@ in
       listen = "[::]:${toString attic.port}";
       database.url = postgres.urls.atticd;
       garbage-collection = {
-        interval = "2 days";
-        default-retention-period = "12 days";
+        interval = "1 days";
+        default-retention-period = "1 days";
       };
       chunking = {
         nar-size-threshold = 64 * 1024;

@@ -2,13 +2,9 @@
 
 {
   pkgs,
-  allAddresses,
   ...
 }:
 
-let
-  yitaishiVpn = allAddresses.hosts.yitaishi.network.vpn.ipv4.host;
-in
 {
   imports = [
     ../../modules/services/samba/server.nix
@@ -18,7 +14,7 @@ in
     ../../modules/services/unbound.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/tailscale.nix
-    ../../modules/services/ai/llama-swap.nix
+    ../../modules/services/ai/llama-cpp.nix
     # ../../modules/services/netbird.nix
     # ../../modules/services/playit-agent.nix
     # ../../modules/services/localtonet.nix
@@ -83,12 +79,9 @@ in
       };
     };
 
-    llama-swap-amdgpu = {
+    llama-cpp-node = {
       enable = true;
-      rocmTargets = [ "gfx1035" ];
-      rocmOverrideGfx = "10.3.0";
-      rpcPeers = [ "${yitaishiVpn}:50052" ];
-      tensorSplit = "1,0";
+      backend = "vulkan";
     };
 
     tor = {
