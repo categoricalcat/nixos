@@ -7,7 +7,24 @@
   ...
 }:
 
+let
+  # Chromium bdic dictionaries for Qt WebEngine spellchecking (e.g. zapzap).
+  # These are a different format from the hunspell .dic/.aff files below and
+  # are looked up via QTWEBENGINE_DICTIONARIES_PATH, not DICPATH.
+  ptBrChromiumDict = pkgs.hunspellDictsChromium.mkDictFromChromium {
+    shortName = "pt-br";
+    dictFileName = "pt-BR-3-0.bdic";
+    shortDescription = "Portuguese (Brazil)";
+  };
+in
+
 {
+  _module.args.chromiumDictionaries = with pkgs.hunspellDictsChromium; [
+    ptBrChromiumDict
+    en-gb
+    en-us
+  ];
+
   time.timeZone = "America/Sao_Paulo";
 
   environment = {

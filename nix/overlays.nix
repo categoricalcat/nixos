@@ -6,8 +6,5 @@
       };
     });
 
-    lact = prev.lact.override {
-      libdisplay-info = prev.libdisplay-info_0_2;
-    };
   })
 ]

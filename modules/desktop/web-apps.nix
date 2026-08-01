@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  chromiumDictionaries,
   ...
 }:
 
@@ -19,12 +20,6 @@ let
       name = "YouTube Music";
       url = "https://music.youtube.com/";
       icon = "${iconBase}/youtube-music.svg";
-    };
-
-    whatsapp = {
-      name = "WhatsApp";
-      url = "https://web.whatsapp.com/";
-      icon = "${iconBase}/whatsapp.svg";
     };
 
     nix-search = {
@@ -120,6 +115,10 @@ let
     }
   ) webApps;
 
+  zapzapCustomized = pkgs.zapzap.override {
+    dictionaries = chromiumDictionaries;
+  };
+
 in
 {
   programs.chromium = {
@@ -128,6 +127,7 @@ in
 
   environment.systemPackages = [
     chromeCustomized
+    zapzapCustomized
   ]
   ++ webAppDesktopItems;
 

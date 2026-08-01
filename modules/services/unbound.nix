@@ -32,6 +32,10 @@ _:
         serve-expired-ttl = 86400; # 1 day limit for stale records
         serve-expired-client-timeout = 0; # Serve stale immediately while revalidating
 
+        # Always use only the lowest-RTT nameserver; prefetch/serve-expired still explore.
+        fast-server-permil = 1000;
+        fast-server-num = 1;
+
         # Security Hardening & Privacy
         hide-identity = "yes";
         hide-version = "yes";

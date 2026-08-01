@@ -140,17 +140,17 @@ in
 
   imports = [
     ./desktop/gnome.nix
-    ./desktop/hyprland.nix
+    #./desktop/hyprland.nix
     ./desktop/niri.nix
-    ./desktop/cosmic.nix
+    #./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
     ./desktop/noctalia.nix
-    ./desktop/regreet.nix
+    #./desktop/regreet.nix
     ./desktop/apps.nix
     ./desktop/web-apps.nix
     ./desktop/greetd.nix
-    ./desktop/ly.nix
+    #./desktop/ly.nix
     ./desktop/valent.nix
   ];
 
@@ -201,6 +201,22 @@ in
         RestartSec = 1;
         TimeoutStopSec = 10;
       };
+    };
+
+    xdg.portal = {
+      enable = true;
+      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+      config =
+        lib.genAttrs
+          [
+            "common"
+            "gnome"
+            "niri"
+          ]
+          (_: {
+            "org.freedesktop.impl.portal.AppChooser" = lib.mkForce [ "gtk" ];
+            "org.freedesktop.impl.portal.Access" = lib.mkForce [ ];
+          });
     };
   };
 }

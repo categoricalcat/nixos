@@ -55,6 +55,7 @@ let
       ];
       CacheDirectory = "llama-cpp";
       DynamicUser = true;
+      User = "llama-cpp";
       SupplementaryGroups = [
         "video"
         "render"

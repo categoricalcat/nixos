@@ -51,17 +51,29 @@ let
     # Qwen Family (Alibaba)
     # -------------------------------------------------------------------------
     "qwen2.5:7b" = {
-      enable = true;
+      enable = false;
       tools = true;
       reasoning = true;
       targetHost = "yifuwuqi";
       # llama-server unit on yifuwuqi (Vulkan). 32k native window; the old
       # 4096 cap was an Ollama-ROCm artifact, not a hardware limit.
-      port = 11436;
       contextLength = 32768;
       llamaCpp = {
         hfRepo = "bartowski/Qwen2.5-7B-Instruct-GGUF";
         quant = "Q4_K_M";
+      };
+    };
+
+    "qwen3.6-35b-a3b" = {
+      enable = true;
+      tools = true;
+      reasoning = true;
+      targetHost = "yifuwuqi";
+      port = 11436;
+      contextLength = 16384; # maybe start at 16384, watch RAM
+      llamaCpp = {
+        hfRepo = "bartowski/Qwen_Qwen3.6-35B-A3B-GGUF";
+        quant = "IQ2_M"; # 12.96 GB — safe with KV cache + OS
       };
     };
 
@@ -89,20 +101,6 @@ let
       llamaCpp = {
         hfRepo = "bartowski/Qwen_Qwen3.5-4B-GGUF";
         quant = "Q8_0";
-      };
-    };
-
-    "qwen3.6:35b-a3b" = {
-      # Disabled: Ollama was removed from yitaishi; re-enable when yitaishi
-      # migrates to llama-cpp-node (rocm backend) and this entry gets a port.
-      enable = false;
-      tools = true;
-      reasoning = true;
-      targetHost = "yitaishi";
-      contextLength = 65536;
-      llamaCpp = {
-        hfRepo = "bartowski/Qwen_Qwen3.6-35B-A3B-GGUF";
-        quant = "Q4_K_M";
       };
     };
 

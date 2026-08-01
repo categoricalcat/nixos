@@ -56,8 +56,6 @@ let
       # Priority: user entries override bundled ones. Fields left unset in a higher-priority entry fall back to lower matches, then [player.default], then built-in defaults. If identity and bus-name differ, an exact user bus-name entry wins.
       default = {
         ignore = false;
-        app_id = "1121632048155742288";
-        icon = "https://nixos.wiki/images/thumb/2/20/Home-nixos-logo.png/207px-Home-nixos-logo.png";
         show_icon = false;
         allow_streaming = false;
         # status_display_type = "name"; # or details
@@ -66,9 +64,20 @@ let
 
       chromium = {
         ignore = false;
+        allow_streaming = true;
+      };
+
+      chrome = {
+        ignore = false;
+        allow_streaming = true;
       };
 
       qbz = {
+        ignore = false;
+        allow_streaming = true;
+      };
+
+      qbz-player = {
         ignore = false;
         allow_streaming = true;
       };

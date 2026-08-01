@@ -15,7 +15,7 @@ let
     seat * xcursor_theme ${styl.cursor.name} ${toString styl.cursor.size}
     default_border none
     default_floating_border none
-    exec "${lib.getExe config.programs.regreet.package}; swaymsg exit"
+    exec "${lib.getExe config.services.displayManager.regreet.package}; swaymsg exit"
   '';
 in
 {
@@ -26,7 +26,7 @@ in
     # greetd command. We pull the same values from Stylix manually below.
     stylix.targets.regreet.enable = false;
 
-    programs.regreet = {
+    services.displayManager.regreet = {
       enable = true;
 
       theme = {
@@ -127,7 +127,7 @@ in
     };
 
     systemd.services.greetd.environment = {
-      GTK_THEME = config.programs.regreet.theme.name;
+      GTK_THEME = config.services.displayManager.regreet.theme.name;
       XCURSOR_THEME = styl.cursor.name;
 
       GDK_DEBUG = "no-portals";

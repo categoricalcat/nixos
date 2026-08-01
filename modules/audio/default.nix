@@ -110,24 +110,26 @@ in
     pkgs.tonelib-gfx
     pkgs.tonelib-metal
     pkgs.neural-amp-modeler-lv2
-    pkgs.caps
     pkgs.ir-lv2
     pkgs.chow-centaur
+
+    # Tape / saturation
+    pkgs.chow-tape-model # the star — real tape
+    pkgs.airwindows-lv2 # ToTape + friends
+    pkgs.calf # tape sim + saturator
+    pkgs.zam-plugins # ZamTube
+    pkgs.caps # AmpVTS
+    pkgs.tap-plugins # TubeWarmth
 
     # Effects (LV2/VST/LADSPA)
     pkgs.lsp-plugins
     pkgs.kapitonov-plugins-pack
-    pkgs.calf
-    pkgs.zam-plugins
     pkgs.dragonfly-reverb
-    pkgs.chow-tape-model
     pkgs.x42-plugins
     pkgs.rkrlv2
     pkgs.mod-distortion
     pkgs.swh_lv2
     pkgs.mda_lv2
-    pkgs.tap-plugins
-    pkgs.airwindows-lv2
     pkgs.infamousplugins
     pkgs.fomp
     pkgs.eq10q
