@@ -22,6 +22,20 @@ _: {
 
       inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./inspect.sh);
 
+      diffToCommitWrapper = pkgs.writeShellScriptBin "diff-to-commit" ''
+        diff=$(git diff --cached)
+        if [ -z "$diff" ]; then
+          echo "No staged changes found."
+          exit 1
+        fi
+
+        echo "Generating commit message..."
+        msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
+
+        agy -p "Write a concise git commit message for this staged diff. Output ONLY the commit message itself (no markdown blocks or preamble). DIFF: $diff" > "$msg_file"
+        exec git commit -e -F "$msg_file"
+      '';
+
       nixDevPkgs = with pkgs; [
         statix # Lints and suggestions for Nix
         deadnix # Nix dead code locator
@@ -43,6 +57,7 @@ _: {
             pkgs.zsh
             nixosRebuildWrapper
             inspectWrapper
+            diffToCommitWrapper
             inputs'.antigravity-nix.packages.google-antigravity-ide
             inputs'.antigravity-nix.packages.google-antigravity-cli
           ];
