@@ -52,6 +52,7 @@ let
         "--jinja"
         "-c ${toString m.contextLength}"
         "--no-webui"
+        "--sleep-idle-seconds 300"
       ];
       CacheDirectory = "llama-cpp";
       DynamicUser = true;

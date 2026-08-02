@@ -40,7 +40,6 @@ in
         "tuigreet"
         "dms"
         "gdm"
-        "regreet"
         "ly"
         "none"
       ];
@@ -146,11 +145,10 @@ in
     ./desktop/stylix.nix
     ./desktop/dms.nix
     ./desktop/noctalia.nix
-    #./desktop/regreet.nix
     ./desktop/apps.nix
     ./desktop/web-apps.nix
     ./desktop/greetd.nix
-    #./desktop/ly.nix
+    ./desktop/ly.nix
     ./desktop/valent.nix
   ];
 

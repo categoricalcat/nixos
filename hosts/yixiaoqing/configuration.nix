@@ -10,7 +10,7 @@
 let
   desktopEnvironment = "niri";
   desktopShell = "noctalia";
-  greeter = "tuigreet";
+  greeter = "ly";
   monitors = [
     {
       name = "eDP-1";
@@ -137,8 +137,7 @@ in
   };
 
   boot.kernel.sysctl = {
-    # Prefer compressed zram swap on this workstation.
-    "vm.swappiness" = 100;
+    "vm.swappiness" = 180;
 
     # Avoid aggressive watermark boosting that can over-reclaim with zram.
     "vm.watermark_boost_factor" = 0;
