@@ -9,7 +9,7 @@
 let
   opencodeHome = config.users.users.yi.home;
   opencodeConfigHome = "${opencodeHome}/.config";
-  opencodeConfigPath = "${opencodeConfigHome}/opencode/config.json";
+  opencodeConfigPath = "${opencodeConfigHome}/opencode/opencode.json";
 in
 {
   options.services.opencode = {

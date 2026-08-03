@@ -150,8 +150,8 @@ in
 
 ## Manual / no-config follow-ups
 
-- Factory presets already ship in `lsp-plugins`, `calf`, `dragonfly-reverb`, `guitarix`, `surge-xt` -> nothing to do.
-- Build EQ/comp chains and save as Reaper FX chains into `~/Audio/reaper-fxchains`.
+- Factory presets already ship in `lsp-plugins`, `calf`, `dragonfly-reverb`, `guitarix`, `surge-xt` -> nothing to do. (Note: LSP-plugins do not have centralized preset packs; users manage presets by exporting from the DAW or saving them as Reaper FX chains).
+- Build your own EQ/comp chains for LSP and other plugins and save them as Reaper FX chains into `~/Audio/reaper-fxchains`.
 - Amp/cab tone "library": download `.nam` + IR `.wav` from TONE3000 (formerly ToneHunt) into `~/Audio/nam` and `~/Audio/ir` (no stable bulk URL -> manual). IRs load into `ir-lv2`/`x42`, not Dragonfly (algorithmic).
 - Gated MIDI packs (JJ Groove, OddGrooves, Unison, Cymatics) -> drop into `~/Music/midi-library/_user`.
 - Browse setup is manual: add `~/Music/midi-library` as a Reaper Media Explorer shortcut / Bitwig browser location; point a drum sampler (`x42-avldrums`, GM-mapped) at the groove MIDI.

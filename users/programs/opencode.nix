@@ -9,8 +9,11 @@ let
   yifuwuqiModels = lib.filterAttrs (
     _n: m: (m.targetHost or null) == "yifuwuqi" && m ? port
   ) ai.local.models;
-  localModelName = lib.head (builtins.attrNames yifuwuqiModels);
+  localModelName = "qwen3.6-35b-a3b";
   localPort = yifuwuqiModels.${localModelName}.port;
+
+  uncensoredModelName = "qwen3.6-35b-abliterated";
+  uncensoredPort = yifuwuqiModels.${uncensoredModelName}.port;
 in
 {
   programs.opencode = {
@@ -25,6 +28,7 @@ in
       enabled_providers = [
         "deepseek"
         "local"
+        "local_uncensored"
       ];
       agent = {
         plan.variant = "max";
@@ -58,7 +62,17 @@ in
           name = "Local";
           npm = "@ai-sdk/openai-compatible";
           options.baseURL = "http://127.0.0.1:${toString localPort}/v1";
-          models = ai.local.opencodeModels;
+          models = {
+            ${localModelName} = ai.local.opencodeModels.${localModelName};
+          };
+        };
+        local_uncensored = {
+          name = "Local Uncensored";
+          npm = "@ai-sdk/openai-compatible";
+          options.baseURL = "http://127.0.0.1:${toString uncensoredPort}/v1";
+          models = {
+            ${uncensoredModelName} = ai.local.opencodeModels.${uncensoredModelName};
+          };
         };
       };
 

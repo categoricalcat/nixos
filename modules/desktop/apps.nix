@@ -8,7 +8,7 @@
     code-cursor-fhs
     onlyoffice-desktopeditors
     discord
-    # vesktop # uses insecure pnpm_10_29_2 at build time
+    vesktop # uses insecure pnpm_10_29_2 at build time
 
     qbz
     dbeaver-bin

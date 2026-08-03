@@ -108,4 +108,6 @@ in
   programs.ssh.extraConfig = builtins.readFile ../../users/assets/dotfiles/ssh/config + ''
     ${dynamicSshConfig}
   '';
+
+  programs.mosh.enable = true;
 }

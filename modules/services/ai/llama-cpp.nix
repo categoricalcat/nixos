@@ -32,7 +32,9 @@ let
     # First start downloads the GGUF from HuggingFace.
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+
+    # Intentionally omitted wantedBy = [ "multi-user.target" ];
+    # so these don't auto-start on boot or rebuild.
 
     # HF cache; also HOME so Mesa/RADV gets a writable shader cache (a
     # DynamicUser's HOME is /, read-only).
@@ -40,20 +42,23 @@ let
     environment.HOME = "/var/cache/llama-cpp";
 
     serviceConfig = {
-      ExecStart = lib.concatStringsSep " " [
-        "${package}/bin/llama-server"
-        "-hf ${m.llamaCpp.hfRepo}:${m.llamaCpp.quant}"
-        "--host 127.0.0.1"
-        "--port ${toString m.port}"
-        "-ngl 99"
-        "-fa on"
-        "--cache-type-k q8_0"
-        "--cache-type-v q8_0"
-        "--jinja"
-        "-c ${toString m.contextLength}"
-        "--no-webui"
-        "--sleep-idle-seconds 300"
-      ];
+      ExecStart = lib.concatStringsSep " " (
+        [
+          "${package}/bin/llama-server"
+          "-hf ${m.llamaCpp.hfRepo}:${m.llamaCpp.quant}"
+          "--host 127.0.0.1"
+          "--port ${toString m.port}"
+          "-ngl 99"
+          "-fa on"
+          "--cache-type-k q8_0"
+          "--cache-type-v q8_0"
+          "--jinja"
+          "-c ${toString m.contextLength}"
+          "--no-webui"
+          "--sleep-idle-seconds 300"
+        ]
+        ++ lib.optional (!(m.reasoning or false)) "--reasoning-format none"
+      );
       CacheDirectory = "llama-cpp";
       DynamicUser = true;
       User = "llama-cpp";

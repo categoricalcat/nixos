@@ -77,6 +77,19 @@ let
       };
     };
 
+    "qwen3.6-35b-abliterated" = {
+      enable = true;
+      tools = true;
+      reasoning = true;
+      targetHost = "yifuwuqi";
+      port = 11437;
+      contextLength = 16384;
+      llamaCpp = {
+        hfRepo = "mradermacher/Qwen3.6-35B-A3B-abliterated-i1-GGUF";
+        quant = "IQ2_M";
+      };
+    };
+
     "qwen2.5-coder:7b" = {
       # Nothing serves this once Ollama leaves yifuwuqi; re-enable by giving
       # it a `port` (llama-cpp.nix picks it up as a unit).
