@@ -40,6 +40,7 @@
     ../../modules/services/arr.nix
     ../../modules/services/qbittorrent-vpn.nix
     ../../modules/services/homepage.nix
+    ../../modules/services/ai/sillytavern.nix
   ];
   yi.tailscale = {
     routingMode = "client";
@@ -92,6 +93,7 @@
     fwupd.enable = true;
     opencode.enable = true;
   };
+  yi.services.sillytavern.enable = true;
 
   environment.systemPackages = with pkgs; [
     google-authenticator

@@ -65,7 +65,7 @@ let
     };
 
     "qwen3.6-35b-a3b" = {
-      enable = true;
+      enable = false;
       tools = true;
       reasoning = true;
       targetHost = "yifuwuqi";

@@ -9,7 +9,7 @@ let
   yifuwuqiModels = lib.filterAttrs (
     _n: m: (m.targetHost or null) == "yifuwuqi" && m ? port
   ) ai.local.models;
-  localModelName = "qwen3.6-35b-a3b";
+  localModelName = "qwen3.6-35b-abliterated";
   localPort = yifuwuqiModels.${localModelName}.port;
 
   uncensoredModelName = "qwen3.6-35b-abliterated";

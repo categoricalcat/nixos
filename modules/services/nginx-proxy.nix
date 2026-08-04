@@ -332,6 +332,23 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
+
+      "${yifuwuqiServices.sillytavern.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.sillytavern.port}";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 1d;
+            proxy_send_timeout 1d;
+            client_max_body_size 10M;
+            ${restrictedProxyConfig}
+          '';
+        };
+      };
     };
   };
 }

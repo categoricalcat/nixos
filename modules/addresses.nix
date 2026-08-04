@@ -316,6 +316,10 @@ in
         firecrawl = {
           port = 3002;
         };
+        sillytavern = {
+          domain = "companion.fufu.land";
+          port = 8000;
+        };
       };
 
       nixBuild = {
