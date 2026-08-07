@@ -69,6 +69,7 @@ in
       backend = "nftables";
       filterForward = true;
       allowPing = false;
+      checkReversePath = "loose";
       interfaces = {
         ${lan.interface} = {
           allowedTCPPorts = internalTcpPorts ++ [ addresses.ssh.listenPort ];

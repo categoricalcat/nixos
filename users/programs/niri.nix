@@ -1,5 +1,6 @@
 {
   lib,
+  pkgs,
   desktopShell ? "none",
   monitors ? [ ],
   inputs,
@@ -279,6 +280,7 @@ in
   config = {
     xdg.enable = true;
 
+    programs.niri.package = pkgs.niri-unstable;
     programs.niri.settings = {
       prefer-no-csd = true;
 

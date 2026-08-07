@@ -7,7 +7,6 @@
 }:
 
 {
-  imports = [ inputs.niri.nixosModules.niri ];
 
   config = lib.mkIf (config.desktop.environment == "niri") {
     environment.systemPackages = with pkgs; [
@@ -18,7 +17,7 @@
     ];
 
     programs.niri.enable = true;
-    programs.niri.package = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
+    programs.niri.package = pkgs.niri-unstable;
 
     # Keep the existing polkit-gnome agent (modules/desktop.nix); disable niri-flake's KDE agent.
     systemd.user.services.niri-flake-polkit.enable = false;

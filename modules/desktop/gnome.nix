@@ -80,9 +80,9 @@
       gnomeExtensions.appindicator
       gnomeExtensions.dash-to-panel
       gnomeExtensions.weather-oclock
-      # gnomeExtensions.tiling-assistant
+      gnomeExtensions.tiling-assistant
       gnomeExtensions.clipboard-indicator
-      # gnomeExtensions.vertical-workspaces
+      gnomeExtensions.vertical-workspaces
       gnomeExtensions.switch-workspaces-on-active-monitor
     ];
 

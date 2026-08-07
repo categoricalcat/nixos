@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 
 {
   _module.args.allAddresses = import ./addresses.nix;
@@ -12,6 +17,6 @@
 
   nix.package = lib.mkForce pkgs.lix;
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.overlays = import ../nix/overlays.nix;
+  nixpkgs.overlays = import ../nix/overlays.nix { inherit inputs; };
   environment.defaultPackages = lib.mkForce [ ];
 }

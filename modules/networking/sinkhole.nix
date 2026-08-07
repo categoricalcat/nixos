@@ -12,7 +12,7 @@ in
       family = "inet";
       content = ''
         chain input {
-          type filter hook input priority filter; policy accept;
+          type filter hook input priority -1; policy accept;
 
           # IPv4 Sinkhole
           ip daddr ${ipv4} meta l4proto tcp counter reject with tcp reset
@@ -24,7 +24,7 @@ in
         }
 
         chain forward {
-          type filter hook forward priority filter; policy accept;
+          type filter hook forward priority -1; policy accept;
 
           # IPv4 Sinkhole
           ip daddr ${ipv4} meta l4proto tcp counter reject with tcp reset
@@ -36,7 +36,7 @@ in
         }
 
         chain output {
-          type filter hook output priority filter; policy accept;
+          type filter hook output priority -1; policy accept;
 
           # IPv4 Sinkhole
           ip daddr ${ipv4} meta l4proto tcp counter reject with tcp reset

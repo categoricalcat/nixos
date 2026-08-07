@@ -54,8 +54,16 @@ _:
     # Space keepalive probes thirty seconds apart.
     "net.ipv4.tcp_keepalive_intvl" = 30;
 
-    # Prefer compressed zram swap for service and AI workloads.
-    "vm.swappiness" = 100;
+    "vm.swappiness" = 180;
+
+    # Avoid aggressive watermark boosting that can over-reclaim with zram.
+    "vm.watermark_boost_factor" = 0;
+
+    # Keep the kernel's free-memory watermark scaling conservative.
+    "vm.watermark_scale_factor" = 100;
+
+    # Swap individual pages instead of clustering reads around zram.
+    "vm.page-cluster" = 0;
   };
 
   boot.kernelModules = [

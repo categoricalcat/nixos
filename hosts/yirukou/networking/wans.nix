@@ -1,7 +1,13 @@
-{ addresses, pkgs, ... }:
+{
+  addresses,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   inherit (addresses.network.wan) primary fallback;
+  inherit (addresses.network.lan) interface ports;
 in
 {
   systemd.network.networks = {
@@ -45,6 +51,10 @@ in
     script = ''
       ${pkgs.ethtool}/bin/ethtool -K ${primary.interface} rx-udp-gro-forwarding on rx-gro-list off || true
       ${pkgs.ethtool}/bin/ethtool -K ${fallback.interface} rx-udp-gro-forwarding on rx-gro-list off || true
+      ${pkgs.ethtool}/bin/ethtool -K ${interface} rx-udp-gro-forwarding on rx-gro-list off || true
+      ${lib.concatMapStringsSep "\n" (
+        port: "${pkgs.ethtool}/bin/ethtool -K ${port} rx-udp-gro-forwarding on rx-gro-list off || true"
+      ) ports}
     '';
   };
 }

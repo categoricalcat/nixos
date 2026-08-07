@@ -34,7 +34,7 @@
             pkgs = import nixpkgs {
               system = "x86_64-linux";
               config.allowUnfree = true;
-              overlays = import ./nix/overlays.nix;
+              overlays = import ./nix/overlays.nix { inherit inputs; };
             };
             extraSpecialArgs = {
               inherit inputs;
@@ -59,6 +59,7 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
+                inputs.niri.nixosModules.niri
                 ./hosts/yixiaoqing/configuration.nix
               ];
             };

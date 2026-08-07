@@ -8,11 +8,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785744764,
-        "narHash": "sha256-tOLoj3MC6v3P4i86mrSXOzgRFqAfpnwOIrP6ESFOFdM=",
+        "lastModified": 1786088053,
+        "narHash": "sha256-aBgz98Ib3FHYk9QIEhRQzyCxYxzf6BkV5tifS7T0IH8=",
         "owner": "jacopone",
         "repo": "antigravity-nix",
-        "rev": "87120dee89edab1795bcaf7343075e1eb93b1d12",
+        "rev": "0972a3578715dad156713151d90eaeaa9f860eed",
         "type": "github"
       },
       "original": {
@@ -145,11 +145,11 @@
     "dank-qml-common": {
       "flake": false,
       "locked": {
-        "lastModified": 1785445867,
-        "narHash": "sha256-l9IRsLIVZ7bV+KMuTdCga89tGt4lpdMXhQR7f/2qoe4=",
+        "lastModified": 1786121412,
+        "narHash": "sha256-XHNpDNfQfjP6nIscd26GK6ydgBdVN5gknYGOVxXBWLw=",
         "owner": "AvengeMedia",
         "repo": "dank-qml-common",
-        "rev": "3b06bd9372e18bc8086cc3958d4f677d57fbfdd8",
+        "rev": "28fde7311296cbd041e5b704e54a481082b92b18",
         "type": "github"
       },
       "original": {
@@ -167,11 +167,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785809393,
-        "narHash": "sha256-lZtQZpPMrmr6xUATMXfJgj/rOZRm6Diw7cIDvS50E9k=",
+        "lastModified": 1786143419,
+        "narHash": "sha256-F/DtWkckCxxZatVug33fLeZloFDHvF4JpO5p+vb+Ao0=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "6de5593216548551db507cecde581558475972a6",
+        "rev": "f16bdda969d1d374bb7e78ff3c2cea76e1fe3060",
         "type": "github"
       },
       "original": {
@@ -457,11 +457,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785531816,
-        "narHash": "sha256-vkMnV0JIyw+g/NmcfoajlGaAO+9a0ezia+FZohQJrik=",
+        "lastModified": 1786031233,
+        "narHash": "sha256-TIDlLTLI1/pB7IqgjzcKQjpODQsZE2oII4XGG9B6KjI=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "bf9ce9fec78f95f374e8dd3b503863a3ec128ebe",
+        "rev": "7834e82588860aaf780cec1366524456a70898d7",
         "type": "github"
       },
       "original": {
@@ -702,11 +702,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1785828668,
-        "narHash": "sha256-8fsyqeO+mJqvIzeO4xIpgJe/f7MTbbVTEC6RT6WSXNs=",
+        "lastModified": 1785967620,
+        "narHash": "sha256-IItrdb7Puk05RqOBWZYFC5X6Wl1sJmCfh5MWVHw5iMM=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+        "rev": "b7c2ada94fe99c15b0dbcf4d11fd7850b957a436",
         "type": "github"
       },
       "original": {
@@ -745,11 +745,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785809412,
-        "narHash": "sha256-QbFIduUhpNIucJy/WcwRxsvTQocnwIXlSwnYEjmGMSQ=",
+        "lastModified": 1786115669,
+        "narHash": "sha256-+UpdMASvCJgEejw4SZbhefk/9oboIDR2s8gezsYjulg=",
         "owner": "noctalia-dev",
         "repo": "noctalia-shell",
-        "rev": "e41c99439605df6d2fa62409139f96ded6ac7345",
+        "rev": "e9230c81beb2513e4a4b09884f37e4f22fc246de",
         "type": "github"
       },
       "original": {
@@ -887,11 +887,11 @@
         "tinted-zed": "tinted-zed"
       },
       "locked": {
-        "lastModified": 1785794750,
-        "narHash": "sha256-OqIrGVL7AX462ISyJFAqjbqTc1RZlBkVHCa4dwPEZU4=",
+        "lastModified": 1786144742,
+        "narHash": "sha256-ROqWcNC1qYU2p0EY1d9BHnZbcl0ZDaCmXtojENSqL18=",
         "owner": "nix-community",
         "repo": "stylix",
-        "rev": "cb5eb3a7343faba61fd694fac8040a326485a339",
+        "rev": "d18ba6834c7f1141429b6d4cf148fff6c8c41139",
         "type": "github"
       },
       "original": {
@@ -1034,11 +1034,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785360170,
-        "narHash": "sha256-XE1lKgQ3eIO3E7zWryqcRsax+mYXod/5RHBn4YaR9YE=",
+        "lastModified": 1785945821,
+        "narHash": "sha256-NLSyTCW4K4ofhNBllt3omPasm6QpralXH1DBZOc91Dw=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "d1187f8bc71fb8aab02395869ec3f5c1920f75c0",
+        "rev": "ae7910970dddc408fe6ab1c8e4b277bb21d72dc0",
         "type": "github"
       },
       "original": {
