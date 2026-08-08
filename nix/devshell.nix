@@ -2,7 +2,6 @@ _: {
   perSystem =
     {
       pkgs,
-      inputs',
       ...
     }:
     let
@@ -15,9 +14,6 @@ _: {
         nix-tree
         nix-inspect
       ];
-
-      code-cursor-nix = builtins.getFlake "https://github.com/jacopone/code-cursor-nix/archive/refs/heads/main.tar.gz";
-      antigravity-nix = builtins.getFlake "https://github.com/jacopone/antigravity-nix/archive/refs/heads/master.tar.gz";
 
       nixosRebuildWrapper = pkgs.writeShellScriptBin "nixos-rebuild" ''
         exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild "$@"
@@ -40,19 +36,19 @@ _: {
       '';
 
       nxdAgyWrapper = pkgs.writeShellScriptBin "nxd-agy" ''
-        exec ${antigravity-nix.packages.${pkgs.stdenv.hostPlatform.system}.google-antigravity-cli}/bin/agy "$@"
+        exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"
       '';
 
       nxdAgentWrapper = pkgs.writeShellScriptBin "nxd-agent" ''
-        exec ${antigravity-nix.packages.${pkgs.stdenv.hostPlatform.system}.google-antigravity-cli}/bin/agy "$@"
+        exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"
       '';
 
       nxdCursorWrapper = pkgs.writeShellScriptBin "nxd-cursor" ''
-        exec ${code-cursor-nix.packages.${pkgs.stdenv.hostPlatform.system}.cursor}/bin/cursor "$@"
+        exec nix run github:jacopone/code-cursor-nix#cursor -- "$@"
       '';
 
       nxdAntigravityWrapper = pkgs.writeShellScriptBin "nxd-antigravity" ''
-        exec ${antigravity-nix.packages.${pkgs.stdenv.hostPlatform.system}.google-antigravity-ide}/bin/google-antigravity-ide "$@"
+        exec nix run github:jacopone/antigravity-nix#google-antigravity-ide -- "$@"
       '';
 
       nixDevPkgs = with pkgs; [
@@ -81,9 +77,6 @@ _: {
             nxdAgentWrapper
             nxdCursorWrapper
             nxdAntigravityWrapper
-            antigravity-nix.packages.${pkgs.stdenv.hostPlatform.system}.google-antigravity-ide
-            antigravity-nix.packages.${pkgs.stdenv.hostPlatform.system}.google-antigravity-cli
-            code-cursor-nix.packages.${pkgs.stdenv.hostPlatform.system}.cursor
           ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"

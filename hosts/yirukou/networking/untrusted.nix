@@ -1,7 +1,7 @@
 { addresses, ... }:
 
 let
-  inherit (addresses.network) lan untrusted;
+  inherit (addresses.network) untrusted;
 in
 {
   systemd.network = {
@@ -18,7 +18,6 @@ in
         matchConfig.Name = untrusted.parentInterface;
         vlan = [ untrusted.interface ];
         networkConfig = {
-          Bridge = lan.interface;
           LinkLocalAddressing = "no";
         };
         linkConfig.RequiredForOnline = "no";

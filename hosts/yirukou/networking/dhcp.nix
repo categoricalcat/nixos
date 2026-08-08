@@ -63,7 +63,7 @@ in
             }
             {
               name = "domain-name-servers";
-              data = dnsServers;
+              data = untrusted.ipv4.host;
             }
           ];
         }

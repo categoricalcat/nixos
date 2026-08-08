@@ -9,6 +9,7 @@
     onlyoffice-desktopeditors
     discord
     vesktop # uses insecure pnpm_10_29_2 at build time
+    stoat-desktop
 
     qbz
     dbeaver-bin
