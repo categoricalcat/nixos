@@ -62,6 +62,7 @@
       loupe
       nautilus
       showtime
+      snapshot
       decibels
       gnome-weather
       gnome-calendar

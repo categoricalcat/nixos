@@ -61,5 +61,9 @@ in
     };
   };
 
+  systemd.services.atticd.serviceConfig.ExecStartPre = pkgs.lib.mkAfter [
+    "+${pkgs.bash}/bin/bash -c 'if [ -d /var/lib/private/atticd/storage ]; then ${pkgs.coreutils}/bin/chown -R --reference=/var/lib/private/atticd /var/lib/private/atticd/storage; fi'"
+  ];
+
   networking.firewall.allowedTCPPorts = [ attic.port ];
 }

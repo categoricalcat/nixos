@@ -21,6 +21,7 @@ in
     ./portainer.nix
     ../../users/users.nix
     ../../modules/common.nix
+    ../../modules/stylix.nix
     ../../modules/nix-settings.nix
     ../../modules/distributed-builds.nix
     ../../modules/boot-common.nix

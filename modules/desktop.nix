@@ -138,6 +138,7 @@ in
   };
 
   imports = [
+    ./stylix.nix
     ./desktop/gnome.nix
     #./desktop/hyprland.nix
     ./desktop/niri.nix
