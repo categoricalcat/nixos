@@ -1,6 +1,4 @@
 {
-  desktopEnvironment ? null,
-  desktopShell ? if desktopEnvironment == "niri" then "dms" else "none",
   keyboardProfile ? "us-intl",
   inputs,
   monitors ? [ ],
@@ -13,8 +11,6 @@
   backupFileExtension = "bkp";
   extraSpecialArgs = {
     inherit
-      desktopEnvironment
-      desktopShell
       inputs
       keyboardProfile
       monitors

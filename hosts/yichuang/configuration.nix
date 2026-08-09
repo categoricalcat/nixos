@@ -26,6 +26,8 @@ in
   wsl.defaultUser = "yi";
   wsl.enable = true;
 
+  host.developer = true;
+
   networking = {
     hostName = "yichuang";
   };

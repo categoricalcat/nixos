@@ -25,7 +25,7 @@ base05: "fcfcfc" # text
 base06: "abd9ed" # sky blue / lavender
 
 # lightest background or bright white (high-contrast elements, terminal bright white)
-base07: "ffd6e8" # pink
+base07: "ffcce2" # pink
 
 # variables, xml tags, markup link text, markup lists, diff deleted
 base08: "e8557a" # red
@@ -49,4 +49,4 @@ base0D: "88ddd7" # miku-ish teal
 base0E: "c8a5f3" # mauve
 
 # deprecated, opening/closing embedded language tags
-base0F: "ffd6e8" # pink
+base0F: "ffcce2" # pink

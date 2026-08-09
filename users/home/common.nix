@@ -2,6 +2,9 @@
   pkgs,
   lib,
   config,
+  headless ? false,
+  developer ? (!headless),
+  vr ? false,
   ...
 }:
 let
@@ -16,48 +19,60 @@ in
 {
   imports = [
     ../programs/git.nix
-    ../programs/tui.nix
     ../programs/ssh
-    ../programs/neovim.nix
+    ../programs/fastfetch.nix
+  ]
+  ++ lib.optionals developer [
     ../programs/vscode-theme.nix
+    ../programs/tui.nix
+    ../programs/neovim.nix
   ];
 
   home = {
-    packages = with pkgs; [
-      pnpm
-      eslint
-      typescript
-      npm-check-updates
-      rtk
-    ];
+    packages = lib.optionals developer (
+      with pkgs;
+      [
+        pnpm
+        eslint
+        typescript
+        npm-check-updates
+        rtk
+      ]
+    );
 
     sessionVariables = {
       TERMINFO = "/run/current-system/sw/share/terminfo";
       TERMINFO_DIRS = "${config.home.profileDirectory}/share/terminfo:/run/current-system/sw/share/terminfo";
     };
 
-    file = {
-      ".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
-      ".gemini/config/skills/code-quality/SKILL.md".source =
-        ../../modules/services/ai/code-quality-skill.md;
-      ".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
-      ".cursor/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
-      ".config/zsh" = {
-        source = zshDir;
-        recursive = true;
-        force = true;
-      };
-      ".config/openxr/1/active_runtime.json".text = ''
-        {
-          "file_format_version": "1.0.0",
-          "runtime": {
-            "VALVE_runtime_is_steamvr": true,
-            "library_path": "${config.home.homeDirectory}/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so",
-            "name": "SteamVR"
+    file = lib.mkMerge [
+      {
+        ".config/zsh" = {
+          source = zshDir;
+          recursive = true;
+          force = true;
+        };
+      }
+      (lib.mkIf developer {
+        ".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
+        ".gemini/config/skills/code-quality/SKILL.md".source =
+          ../../modules/services/ai/code-quality-skill.md;
+        ".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
+        ".cursor/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
+      })
+      (lib.mkIf vr {
+        ".config/openxr/1/active_runtime.json".text = ''
+          {
+            "file_format_version": "1.0.0",
+            "runtime": {
+              "VALVE_runtime_is_steamvr": true,
+              "library_path": "${config.home.homeDirectory}/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so",
+              "name": "SteamVR"
+            }
           }
-        }
-      '';
-    };
+        '';
+      })
+    ];
 
     activation.realizeSshConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       run install -d -m 0700 "$HOME/.ssh"

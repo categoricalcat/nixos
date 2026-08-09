@@ -13,6 +13,11 @@ in
       default = false;
       description = "Enable headless server mode (disables GUI)";
     };
+    developer = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Include developer tooling in the home-manager profile on headless hosts";
+    };
   };
 
   config = lib.mkIf cfg.headless {

@@ -31,7 +31,8 @@ in
         "niri"
         "cosmic"
       ];
-      default = "gnome";
+      default =
+        if config.host.desktopEnvironment != null then config.host.desktopEnvironment else "gnome";
       description = "Desktop environment to use";
     };
 
@@ -59,7 +60,13 @@ in
         "noctalia"
         "none"
       ];
-      default = if config.desktop.environment == "niri" then "dms" else "none";
+      default =
+        if config.host.desktopShell != null then
+          config.host.desktopShell
+        else if config.desktop.environment == "niri" then
+          "dms"
+        else
+          "none";
       description = "Desktop shell to run on top of the compositor";
     };
 

@@ -43,6 +43,9 @@
               desktopShell = "dms";
               monitors = [ ];
               keyboardProfile = "us-intl";
+              headless = false;
+              developer = true;
+              vr = false;
             };
             modules = [
               ./users/home/yi.nix

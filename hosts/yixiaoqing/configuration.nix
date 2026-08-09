@@ -8,8 +8,6 @@
 }:
 
 let
-  desktopEnvironment = "niri";
-  desktopShell = "noctalia";
   greeter = "ly";
   monitors = [
     {
@@ -57,11 +55,14 @@ in
 
   system.stateVersion = global.version;
 
+  host = {
+    desktopEnvironment = "niri";
+    desktopShell = "noctalia";
+  };
+
   home-manager = mkHome {
     inherit
       inputs
-      desktopEnvironment
-      desktopShell
       monitors
       ;
     keyboardProfile = "br-thinkpad";
@@ -69,8 +70,6 @@ in
   };
 
   desktop = {
-    environment = desktopEnvironment;
-    shell = desktopShell;
     inherit greeter;
     keyboard = "br";
     inherit monitors;

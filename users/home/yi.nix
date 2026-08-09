@@ -3,6 +3,8 @@
   lib,
   desktopEnvironment ? null,
   desktopShell ? null,
+  headless ? false,
+  developer ? (!headless),
   ...
 }:
 let
@@ -11,7 +13,8 @@ in
 {
   imports = [
     ./common.nix
-    ../programs/fastfetch.nix
+  ]
+  ++ lib.optionals developer [
     ../programs/opencode.nix
   ]
   ++ lib.optionals (desktopEnvironment != null) [
@@ -34,24 +37,33 @@ in
     inherit homeDirectory;
 
     packages =
-      with pkgs;
-      with haskellPackages;
-      [
-        bun
-        nodejs
+      lib.optionals developer (
+        with pkgs;
+        [
+          bun
+          nodejs
 
-        sshfs
-        ghc
-        cabal-install
-        haskell-language-server
-        stack
-        ghcid
-      ]
-      ++ lib.optionals (desktopEnvironment != null) [
-        smile
-        wtype
-        ksnip
-        wl-clipboard
-      ];
+          sshfs
+        ]
+      )
+      ++ lib.optionals developer (
+        with pkgs.haskellPackages;
+        [
+          ghc
+          cabal-install
+          haskell-language-server
+          stack
+          ghcid
+        ]
+      )
+      ++ lib.optionals (desktopEnvironment != null) (
+        with pkgs;
+        [
+          smile
+          wtype
+          ksnip
+          wl-clipboard
+        ]
+      );
   };
 }

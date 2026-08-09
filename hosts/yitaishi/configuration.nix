@@ -1,5 +1,4 @@
 {
-  config,
   pkgs,
   inputs,
   lib,
@@ -8,8 +7,6 @@
 }:
 
 let
-  desktopEnvironment = "gnome";
-  desktopShell = "none";
   greeter = "ly";
   mkHome = import ../../modules/home-manager.nix;
   inherit (global) version;
@@ -49,21 +46,18 @@ in
 
   system.stateVersion = version;
 
+  host = {
+    desktopEnvironment = "gnome";
+    vr = true;
+  };
+
   home-manager = mkHome {
-    inherit inputs desktopEnvironment;
+    inherit inputs;
     keyboardProfile = "us-intl";
     stateVersion = global.homeVersion;
   };
 
-  sops.secrets."tokens/deepseek" = {
-    owner = config.users.users.yi.name;
-    inherit (config.users.users.yi) group;
-    mode = "0400";
-  };
-
   desktop = {
-    environment = desktopEnvironment;
-    shell = desktopShell;
     inherit greeter;
     keyboard = "us";
     monitors = [

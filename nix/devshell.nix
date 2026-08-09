@@ -20,6 +20,10 @@ _: {
       '';
 
       inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./inspect.sh);
+      hostTreeWrapper = pkgs.writeShellScriptBin "host-tree" (builtins.readFile ./scripts/host-tree.sh);
+      hostSizeWrapper = pkgs.writeShellScriptBin "host-size" (builtins.readFile ./scripts/host-size.sh);
+      hostDiffWrapper = pkgs.writeShellScriptBin "host-diff" (builtins.readFile ./scripts/host-diff.sh);
+      hostDeadWrapper = pkgs.writeShellScriptBin "host-dead" (builtins.readFile ./scripts/host-dead.sh);
 
       diffToCommitWrapper = pkgs.writeShellScriptBin "diff-to-commit" ''
         diff=$(git diff --cached)
@@ -53,7 +57,7 @@ _: {
       '';
 
       nxdAgentWrapper = pkgs.writeShellScriptBin "nxd-agent" ''
-        exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"
+        exec nix run github:numtide/nix-ai-tools#cursor-agent -- "$@"
       '';
 
       nxdCursorWrapper = pkgs.writeShellScriptBin "nxd-cursor" ''
@@ -75,6 +79,9 @@ _: {
         nix-update # Swiss-knife for updating nix packages
         nix-init # Generator for Nix packages from URLs
         comma # Run software without installing it (, <pkg>)
+        nvd # Package version diff tool for Nix store paths
+        fzf # Command-line fuzzy finder
+        jq # Command-line JSON processor
       ];
 
       defaultShell = pkgs.mkShell {
@@ -85,6 +92,10 @@ _: {
             pkgs.zsh
             nixosRebuildWrapper
             inspectWrapper
+            hostTreeWrapper
+            hostSizeWrapper
+            hostDiffWrapper
+            hostDeadWrapper
             diffToCommitWrapper
             nxdAgyWrapper
             nxdAgentWrapper

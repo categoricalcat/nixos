@@ -31,8 +31,6 @@ in
     stateVersion = global.homeVersion;
   };
 
-  serverMode.headless = true;
-
   nixpkgs.hostPlatform = "x86_64-linux";
 
   zramSwap.enable = false;

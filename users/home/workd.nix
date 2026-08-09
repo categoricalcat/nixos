@@ -1,5 +1,7 @@
 {
   pkgs,
+  lib,
+  developer ? false,
   ...
 }:
 
@@ -10,8 +12,11 @@
     username = "workd";
     homeDirectory = "/home/workd";
 
-    packages = with pkgs; [
-      nodejs_24
-    ];
+    packages = lib.optionals developer (
+      with pkgs;
+      [
+        nodejs_24
+      ]
+    );
   };
 }
