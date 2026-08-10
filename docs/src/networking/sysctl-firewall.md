@@ -5,8 +5,8 @@ the Nix modules remain the source of truth.
 
 ## Shared Baseline
 
-`modules/networking/sysctl-base.nix` is imported by both `yifuwuqi` and
-`yirukou`.
+`modules/networking/sysctl-base.nix` is imported by `yifuwuqi`, `yirukou`,
+and `yitaishi`.
 
 It sets low-risk host hardening defaults:
 

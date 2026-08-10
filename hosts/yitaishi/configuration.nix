@@ -35,6 +35,7 @@ in
     ../../modules/hardware/fanatec
     ../../modules/nix-settings.nix
     ../../modules/networking/ipv6.nix
+    ../../modules/networking/sysctl-base.nix
     ../../modules/services/openssh.nix
     ../../modules/distributed-builds.nix
     # ../../modules/services/tailscale.nix

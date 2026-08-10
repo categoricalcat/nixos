@@ -1,9 +1,38 @@
 {
+  allAddresses,
+  lib,
   pkgs,
   ...
 }:
 
 let
+  shares = [
+    "share"
+    "the.files"
+  ];
+
+  mountPoints = map (name: "/mnt/smb/${name}") shares;
+
+  # Equivalent of `systemd-escape --path`: "/" becomes "-", "-" becomes \x2d.
+  escapeUnitPath =
+    path:
+    lib.concatStrings (
+      map (
+        c:
+        if c == "/" then
+          "-"
+        else if c == "-" then
+          "\\x2d"
+        else
+          c
+      ) (lib.stringToCharacters (lib.removePrefix "/" path))
+    );
+
+  automountUnitNames = map (mountPoint: "${escapeUnitPath mountPoint}.automount") mountPoints;
+
+  mountUnitNames = map (mountPoint: "${escapeUnitPath mountPoint}.mount") mountPoints;
+
+  serverIp = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
   credentialsFile = "/etc/samba/credentials/yi";
   mountCommonOptions = [
     "credentials=${credentialsFile}"
@@ -16,7 +45,6 @@ let
     "x-systemd.after=sops-install-secrets.service"
     "x-systemd.requires=sops-install-secrets.service"
     "x-systemd.automount"
-    "x-systemd.idle-timeout=1min"
     "x-systemd.mount-timeout=10s"
     "noauto"
     "nofail"
@@ -31,32 +59,53 @@ in
 
   boot.supportedFilesystems = [ "cifs" ];
 
-  fileSystems = {
-    "/mnt/smb/share" = {
-      device = "//smb.fufu.land/share";
-      fsType = "cifs";
-      options = mountCommonOptions;
+  fileSystems = lib.listToAttrs (
+    map (name: {
+      name = "/mnt/smb/${name}";
+      value = {
+        device = "//${serverIp}/${name}";
+        fsType = "cifs";
+        options = mountCommonOptions;
+      };
+    }) shares
+  );
+
+  systemd = {
+    services.cifs-lazy-umount = {
+      description = "Lazy-unmount CIFS shares before network shutdown";
+      wantedBy = [ "multi-user.target" ];
+      after = mountUnitNames;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.coreutils}/bin/true";
+        ExecStop = "-${pkgs.util-linux}/bin/umount -a -l -t cifs";
+      };
     };
 
-    "/mnt/smb/the.files" = {
-      device = "//smb.fufu.land/the.files";
-      fsType = "cifs";
-      options = mountCommonOptions;
+    services.smb-mounts-recover = {
+      description = "Recover failed SMB automount units";
+      script = ''
+        for unit in ${lib.concatStringsSep " " automountUnitNames}; do
+          if systemctl is-failed "$unit" >/dev/null 2>&1; then
+            mount_unit="''${unit%.automount}.mount"
+            systemctl reset-failed "$unit" "$mount_unit"
+            systemctl restart "$unit"
+          fi
+        done
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+      };
     };
-  };
 
-  systemd.services.cifs-lazy-umount = {
-    description = "Lazy-unmount CIFS shares before network shutdown";
-    wantedBy = [ "multi-user.target" ];
-    after = [
-      "mnt-smb-share.mount"
-      "mnt-smb-the.files.mount"
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${pkgs.coreutils}/bin/true";
-      ExecStop = "-${pkgs.util-linux}/bin/umount -a -l -t cifs";
+    timers.smb-mounts-recover = {
+      description = "Periodically recover failed SMB automount units";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "1min";
+        OnUnitActiveSec = "30s";
+      };
     };
   };
 }
