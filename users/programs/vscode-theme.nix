@@ -58,11 +58,11 @@ let
             "member" = base08;
             "function" = base0D;
             "method" = base0D;
-            "namespace" = base0E;
+            "namespace" = base0A;
             "class" = base0A;
             "interface" = base0A;
             "type" = base0A;
-            "struct" = base0A;
+            "struct" = base0E;
             "enum" = base0A;
             "typeParameter" = base0A;
             "event" = base0A;
@@ -70,10 +70,12 @@ let
             "constant" = base09;
             "string" = base0B;
             "number" = base09;
+            "boolean" = base09;
+            "label" = base0A;
             "operator" = base05;
             "keyword" = base0E;
-            "macro" = base09;
-            "decorator" = base08;
+            "macro" = base08;
+            "decorator" = base0D;
             "regexp" = base0F;
             "modifier" = base0E;
             "comment" = base03;
@@ -89,36 +91,156 @@ let
             "*.defaultLibrary" = base0C;
             "*.deprecated" = base08;
           };
-          tokenColors =
-            tpl.tokenColors
-            ++ (with colors.withHashtag; [
-              {
-                name = "Nvim mini.base16 Variables";
-                scope = [
-                  "variable"
-                  "variable.parameter"
-                  "variable.other"
-                  "entity.name.variable"
-                  "entity.name.variable.parameter"
-                  "entity.name.variable.local"
-                ];
-                settings.foreground = base05;
-              }
-              {
-                name = "Nvim mini.base16 Properties";
-                scope = [
-                  "variable.other.object.property"
-                  "variable.other.property"
-                  "support.variable.property"
-                ];
-                settings.foreground = base08;
-              }
-              {
-                name = "Nvim mini.base16 Operators";
-                scope = [ "keyword.operator" ];
-                settings.foreground = base05;
-              }
-            ]);
+          tokenColors = with colors.withHashtag; [
+            {
+              name = "Comment";
+              scope = [
+                "comment"
+                "punctuation.definition.comment"
+              ];
+              settings = {
+                foreground = base03;
+                fontStyle = "italic";
+              };
+            }
+            {
+              name = "Variables";
+              scope = [
+                "variable"
+                "string constant.other.placeholder"
+              ];
+              settings.foreground = base05;
+            }
+            {
+              name = "Properties, fields (fallback)";
+              scope = [
+                "variable.other.object.property"
+                "variable.other.property"
+                "support.variable.property"
+              ];
+              settings.foreground = base08;
+            }
+            {
+              name = "Keywords, storage, control";
+              scope = [
+                "keyword"
+                "storage.type"
+                "storage.modifier"
+              ];
+              settings.foreground = base0E;
+            }
+            {
+              name = "Functions, methods";
+              scope = [
+                "entity.name.function"
+                "support.function"
+                "entity.name.function.method"
+              ];
+              settings.foreground = base0D;
+            }
+            {
+              name = "Numbers, constants, booleans";
+              scope = [
+                "constant.numeric"
+                "constant.language"
+                "constant.character"
+              ];
+              settings.foreground = base09;
+            }
+            {
+              name = "Strings, symbols";
+              scope = [
+                "string"
+                "constant.other.symbol"
+              ];
+              settings.foreground = base0B;
+            }
+            {
+              name = "Types, classes, tags";
+              scope = [
+                "entity.name.type"
+                "entity.name.class"
+                "entity.name.tag"
+                "support.class"
+                "support.type"
+              ];
+              settings.foreground = base0A;
+            }
+            {
+              name = "Operators, punctuation";
+              scope = [
+                "keyword.operator"
+                "punctuation"
+              ];
+              settings.foreground = base05;
+            }
+            {
+              name = "Embedded, delimiters, deprecated";
+              scope = [
+                "punctuation.section.embedded"
+                "invalid.deprecated"
+              ];
+              settings.foreground = base0F;
+            }
+            {
+              name = "Regex, escape chars, CSS property names";
+              scope = [
+                "string.regexp"
+                "constant.character.escape"
+                "support.type.property-name.css"
+              ];
+              settings.foreground = base0C;
+            }
+            {
+              name = "Diff inserted";
+              scope = [ "markup.inserted" ];
+              settings.foreground = base0B;
+            }
+            {
+              name = "Diff deleted";
+              scope = [ "markup.deleted" ];
+              settings.foreground = base08;
+            }
+            {
+              name = "Diff changed";
+              scope = [ "markup.changed" ];
+              settings.foreground = base0E;
+            }
+            {
+              name = "Markdown headings";
+              scope = [ "markup.heading" ];
+              settings.foreground = base0D;
+            }
+            {
+              name = "Markdown bold/italic";
+              scope = [
+                "markup.bold"
+                "markup.italic"
+              ];
+              settings.foreground = base05;
+            }
+            {
+              name = "JSON keys";
+              scope = [ "support.type.property-name.json" ];
+              settings.foreground = base0D;
+            }
+            {
+              name = "URL/link";
+              scope = [
+                "markup.underline.link"
+                "string.other.link"
+              ];
+              settings = {
+                foreground = base05;
+                fontStyle = "underline";
+              };
+            }
+            {
+              name = "Invalid/illegal";
+              scope = [ "invalid.illegal" ];
+              settings.foreground = base08;
+            }
+          ];
         }
       );
 
