@@ -30,6 +30,8 @@ let
       config.services.nginx.enable
     else if name == "fail2ban" then
       config.services.fail2ban.enable
+    else if name == "postgres" then
+      config.services.postgresql.enable
     else
       true;
 

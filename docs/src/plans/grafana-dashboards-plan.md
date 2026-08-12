@@ -1,4 +1,4 @@
-# Declarative Grafana Dashboards Plan
+# Declarative Grafana Dashboards Plan [IMPLEMENTED]
 
 ## Goal
 
@@ -48,7 +48,10 @@ modules/services/monitoring/dashboards/
 
 In `grafana.nix`, assemble the dashboard directory with `pkgs.runCommand`:
 copy the vendored JSONs (stripping the `id` field via `jq del(.id)`, per
-[Grafana provisioning docs](https://grafana.com/docs/grafana/latest/administration/provisioning/))
+[Grafana provisioning docs](https://grafana.com/docs/grafana/latest/administration/provisioning/)),
+also stripping `__inputs` and resolving `${DS_PROMETHEUS}` datasource
+placeholders to the provisioned Prometheus datasource uid (the file provider
+does not substitute `__inputs` — only the UI import flow does),
 plus the `writeText`-rendered custom boards, then add:
 
 ```nix

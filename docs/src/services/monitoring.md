@@ -9,11 +9,11 @@ Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
 | --- | --- | --- |
 | `netdata.nix` | Implemented | Per-second host metrics and web UI. |
 | `prometheus.nix` | Implemented | Central time-series metrics server on `yifuwuqi`. |
-| `grafana.nix` | Implemented | Dashboards and provisioned Prometheus/Loki datasources. |
+| `grafana.nix` | Implemented | Dashboards and provisioned Prometheus/Loki datasources. Declarative dashboards via Nix. |
 | `loki.nix` | Implemented | Central log aggregation server on `yifuwuqi`. |
 | `promtail.nix` | Implemented | Vector-based journald shipper. |
 | `alertmanager.nix` | Placeholder | Future alert routing. |
-| `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, and fail2ban exporters. |
+| `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, fail2ban, and postgres exporters. |
 
 ## Topology
 
@@ -60,6 +60,7 @@ Prometheus/Grafana/Loki is configured with:
 - Prometheus retention: 30 days.
 - Loki retention: 7 days.
 - Grafana datasource provisioning for Prometheus and Loki.
+- Grafana dashboards are fully provisioned declaratively from `modules/services/monitoring/dashboards` (hybrid of vendored JSON and custom Nix attrsets).
 - Grafana uses anonymous Viewer access; only the required `secret_key` is a
   SOPS secret referenced through Grafana's file provider.
 - Remote exporter ports are opened on the LAN interface for scrape hosts.
@@ -72,6 +73,7 @@ Prometheus/Grafana/Loki is configured with:
 - `modules/services/monitoring/exporter-metadata.nix`
 - `modules/services/monitoring/prometheus.nix`
 - `modules/services/monitoring/grafana.nix`
+- `modules/services/monitoring/dashboards/`
 - `modules/services/monitoring/loki.nix`
 - `modules/services/monitoring/promtail.nix`
 - `modules/services/monitoring/exporters.nix`

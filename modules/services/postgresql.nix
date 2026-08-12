@@ -30,6 +30,7 @@ in
     authentication = ''
       # type database DBuser auth-method
       host   all      all    ${allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr} trust
+      host   all      all    127.0.0.1/32 trust
     '';
   };
 

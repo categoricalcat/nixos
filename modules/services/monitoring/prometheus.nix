@@ -37,6 +37,12 @@ let
     {
       job_name = exporter;
       static_configs = map (mkStaticConfig exporter) (resolveHosts spec.hosts);
+      relabel_configs = [
+        {
+          source_labels = [ "host" ];
+          target_label = "instance";
+        }
+      ];
     }
     // lib.optionalAttrs (spec ? scrapeInterval) {
       scrape_interval = spec.scrapeInterval;
@@ -69,6 +75,24 @@ in
         static_configs = [
           {
             targets = [ "127.0.0.1:${toString prometheus.port}" ];
+            labels.host = monitoring.centralHost;
+          }
+        ];
+      }
+      {
+        job_name = "loki";
+        static_configs = [
+          {
+            targets = [ "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.loki.port}" ];
+            labels.host = monitoring.centralHost;
+          }
+        ];
+      }
+      {
+        job_name = "grafana";
+        static_configs = [
+          {
+            targets = [ "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.grafana.port}" ];
             labels.host = monitoring.centralHost;
           }
         ];
