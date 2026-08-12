@@ -6,3 +6,4 @@ docs/book/
 .sops.yaml
 .direnv
 .agents
+.opencode

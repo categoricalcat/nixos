@@ -334,20 +334,6 @@ let
         zip -qr "$out" extension '[Content_Types].xml' extension.vsixmanifest
       '';
 
-  # Directories where the various vscode-based IDEs keep their extensions
-  extensionDirs = [
-    "$HOME/.vscode/extensions"
-    "$HOME/.vscode-server/extensions"
-    "$HOME/.cursor/extensions"
-    "$HOME/.cursor-server/extensions"
-    "$HOME/.antigravity/extensions"
-    "$HOME/.antigravity-ide/extensions"
-    "$HOME/.antigravity-server/extensions"
-    "$HOME/.vscode-oss/extensions"
-    "$HOME/.windsurf/extensions"
-    "$HOME/.openvscode-server/extensions"
-    "$HOME/.local/share/code-server/extensions"
-  ];
 in
 {
   config = lib.mkIf hasStylix {
@@ -363,29 +349,10 @@ in
     home.activation.installYimokaTheme = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       vsix="${stylixVsix}"
       ext_theme="${stylixThemeExt}/share/vscode/extensions/${extUniqueId}/themes/stylix.json"
-      jq_bin="${pkgs.jq}/bin/jq"
       log() { printf '%s\n' "yimoka-theme: $*"; }
 
-      # Remove stale unregistered copies (previous versions / old symlink
-      # drops) and obsolete markers so editors do not prune the freshly
-      # installed theme on their next scan.
-      purge() {
-        local d="$1"
-        run rm -rf "$d/stylix.stylix-0.0.0"
-        if [ -f "$d/.obsolete" ]; then
-          if "$jq_bin" 'del(."stylix.stylix-0.0.0", ."stylix.stylix-${extVersion}")' "$d/.obsolete" > "$d/.obsolete.tmp"; then
-            run mv "$d/.obsolete.tmp" "$d/.obsolete"
-          else
-            rm -f "$d/.obsolete.tmp"
-          fi
-        fi
-      }
-
-      # Install the theme through the editor's own extension CLI so it lands in
-      # the editor's registry and survives the obsolete pruning that otherwise
-      # deletes manually-dropped, unregistered extensions. Uninstall first so a
-      # reinstall works even while the editor is running ("restart VS Code"
-      # guard), and skip entirely when the installed copy is already current.
+      # Fresh install per editor: --force overwrites any existing copy, so no
+      # uninstall or stale-state cleanup is needed. Skip when already current.
       install_vsix() {
         local bin="$1" label="$2" d="$3"
         local target="$d/${extUniqueId}-${extVersion}/themes/stylix.json"
@@ -393,13 +360,13 @@ in
           log "up to date for $label"
           return 0
         fi
-        "$bin" --uninstall-extension "${extUniqueId}" >/dev/null 2>&1 || true
         if out="$("$bin" --install-extension "$vsix" --force 2>&1)"; then
           log "installed for $label"
-        elif printf '%s' "$out" | grep -qi 'No Cursor IDE installation'; then
-          log "skipped $label (no IDE binary)"
-        elif printf '%s' "$out" | grep -qi 'restart'; then
-          log "$label: already installed, restart the editor to apply updates"
+        elif [ -f "$target" ] && cmp -s "$target" "$ext_theme"; then
+          # Antigravity servers unpack and register the extension before
+          # failing on a post-install analytics error, so verify by the
+          # installed theme file rather than the CLI exit code.
+          log "installed for $label (CLI errored after unpack)"
         else
           log "FAILED for $label: $(printf '%s' "$out" | head -n1)"
         fi
@@ -407,23 +374,19 @@ in
 
       ext_dir_for() {
         case "$1" in
-          cursor) echo "$HOME/.cursor/extensions" ;;
+          cursor | nxd-cursor) echo "$HOME/.cursor/extensions" ;;
           code) echo "$HOME/.vscode/extensions" ;;
           codium) echo "$HOME/.vscode-oss/extensions" ;;
           windsurf) echo "$HOME/.windsurf/extensions" ;;
           antigravity) echo "$HOME/.antigravity/extensions" ;;
-          antigravity-ide) echo "$HOME/.antigravity-ide/extensions" ;;
+          antigravity-ide | antigravity-ide-fhs | nxd-antigravity) echo "$HOME/.antigravity-ide/extensions" ;;
           antigravity-server) echo "$HOME/.antigravity-server/extensions" ;;
+          antigravity-ide-server) echo "$HOME/.antigravity-ide-server/extensions" ;;
           code-server) echo "$HOME/.local/share/code-server/extensions" ;;
+          openvscode-server) echo "$HOME/.openvscode-server/extensions" ;;
           *) echo "" ;;
         esac
       }
-
-      # Remove stale unregistered copies and obsolete markers so editors do not
-      # prune the freshly installed theme on their next scan.
-      for d in ${builtins.concatStringsSep " " extensionDirs}; do
-        run purge "$d"
-      done
 
       # cursor-server (remote sessions)
       for cs in "$HOME"/.cursor-server/bin/linux-x64/*/bin/cursor-server; do
@@ -433,8 +396,24 @@ in
         fi
       done
 
+      # antigravity-ide-server (remote sessions)
+      for cs in "$HOME"/.antigravity-ide-server/bin/*/bin/antigravity-ide-server; do
+        if [ -x "$cs" ]; then
+          run install_vsix "$cs" "antigravity-ide-server" "$HOME/.antigravity-ide-server/extensions"
+          break
+        fi
+      done
+
+      # antigravity-server (remote sessions)
+      for cs in "$HOME"/.antigravity-server/bin/*/bin/antigravity-server; do
+        if [ -x "$cs" ]; then
+          run install_vsix "$cs" "antigravity-server" "$HOME/.antigravity-server/extensions"
+          break
+        fi
+      done
+
       # generic vscode-based editors, best effort
-      for bin in cursor code codium windsurf antigravity antigravity-ide antigravity-server code-server; do
+      for bin in cursor nxd-cursor code codium windsurf antigravity antigravity-ide antigravity-ide-fhs nxd-antigravity antigravity-server code-server openvscode-server; do
         if command -v "$bin" >/dev/null 2>&1; then
           run install_vsix "$bin" "$bin" "$(ext_dir_for "$bin")"
         fi

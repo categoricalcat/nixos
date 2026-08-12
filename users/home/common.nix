@@ -59,6 +59,8 @@ in
           ../../modules/services/ai/code-quality-skill.md;
         ".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
         ".cursor/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
+        ".agents/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
+        ".agents/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
       })
       (lib.mkIf vr {
         ".config/openxr/1/active_runtime.json".text = ''

@@ -32,17 +32,19 @@ let
     labels = { inherit host; };
   };
 
+  hostRelabelConfig = [
+    {
+      source_labels = [ "host" ];
+      target_label = "instance";
+    }
+  ];
+
   mkScrapeConfig =
     exporter: spec:
     {
       job_name = exporter;
       static_configs = map (mkStaticConfig exporter) (resolveHosts spec.hosts);
-      relabel_configs = [
-        {
-          source_labels = [ "host" ];
-          target_label = "instance";
-        }
-      ];
+      relabel_configs = hostRelabelConfig;
     }
     // lib.optionalAttrs (spec ? scrapeInterval) {
       scrape_interval = spec.scrapeInterval;
@@ -78,6 +80,7 @@ in
             labels.host = monitoring.centralHost;
           }
         ];
+        relabel_configs = hostRelabelConfig;
       }
       {
         job_name = "loki";
@@ -87,6 +90,7 @@ in
             labels.host = monitoring.centralHost;
           }
         ];
+        relabel_configs = hostRelabelConfig;
       }
       {
         job_name = "grafana";
@@ -96,6 +100,7 @@ in
             labels.host = monitoring.centralHost;
           }
         ];
+        relabel_configs = hostRelabelConfig;
       }
     ]
     ++ lib.mapAttrsToList mkScrapeConfig exporterMetadata;

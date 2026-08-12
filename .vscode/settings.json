@@ -25,5 +25,8 @@
   "files.watcherExclude": {
     "**/result*/**": true,
     "**/.direnv/**": true
-  }
+  },
+  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
+  "nixEnvSelector.useFlakes": true,
+  "nixEnvSelector.flakeShell": "default"
 }

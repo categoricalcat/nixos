@@ -47,22 +47,20 @@ in
       };
     };
 
-    environment.etc."netdata/stream.conf" = lib.mkMerge [
-      (lib.mkIf childMode {
-        text = ''
+    services.netdata.configDir."stream.conf" = pkgs.writeText "stream.conf" (
+      if childMode then
+        ''
           [stream]
               enabled = yes
               destination = ${yifuwuqiLan}:19999
-        '';
-      })
-      (lib.mkIf (!childMode) {
-        text = ''
+        ''
+      else
+        ''
           [stream]
               enabled = yes
               allow from = ${yirukouLan}
-        '';
-      })
-    ];
+        ''
+    );
 
     systemd.services = {
       chrony-waitsync-for-netdata = {
