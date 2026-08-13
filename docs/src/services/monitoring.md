@@ -13,7 +13,7 @@ Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
 | `loki.nix` | Implemented | Central log aggregation server on `yifuwuqi`. |
 | `promtail.nix` | Implemented | Vector-based journald shipper. |
 | `alertmanager.nix` | Placeholder | Future alert routing. |
-| `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, fail2ban, and postgres exporters. |
+| `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, fail2ban, postgres, AdGuard Home, and Unbound exporters. |
 
 ## Topology
 
@@ -61,6 +61,9 @@ Prometheus/Grafana/Loki is configured with:
 - Loki retention: 7 days.
 - Grafana datasource provisioning for Prometheus and Loki.
 - Grafana dashboards are fully provisioned declaratively from `modules/services/monitoring/dashboards` (hybrid of vendored JSON and custom Nix attrsets).
+- Vendored dashboards include `adguard.json` (grafana.com 23579, classic-schema revision 3 — later revisions use the v2 dashboard API that file provisioning cannot import) and `unbound.json` (grafana.com 21006), fed by the per-host `adguard`/`unbound` exporter jobs with `instance=<host>` labels.
+- The AdGuard exporter (`modules/services/monitoring/adguard-exporter/`, module `default.nix` + package `package.nix`) scrapes the local AGH API (`:3333`, dummy Basic auth — AGH auth is disabled, VPN-only exposure) on port 9617; GeoIP metrics are disabled (no MaxMind DB) so those panels stay empty.
+- The Unbound exporter (nixpkgs `services.prometheus.exporters.unbound`) connects over the local control socket `/run/unbound/unbound.ctl`; unbound runs with `extended-statistics` for recursion-time percentiles and per-type counters.
 - Grafana uses anonymous Viewer access; only the required `secret_key` is a
   SOPS secret referenced through Grafana's file provider.
 - Remote exporter ports are opened on the LAN interface for scrape hosts.
@@ -77,6 +80,9 @@ Prometheus/Grafana/Loki is configured with:
 - `modules/services/monitoring/loki.nix`
 - `modules/services/monitoring/promtail.nix`
 - `modules/services/monitoring/exporters.nix`
+- `modules/services/monitoring/adguard-exporter/`
+- `modules/services/monitoring/dashboards/vendor/adguard.json`
+- `modules/services/monitoring/dashboards/vendor/unbound.json`
 - `hosts/yirukou/services.nix`
 - `hosts/yifuwuqi/services.nix`
 - `modules/services/nginx-proxy.nix`

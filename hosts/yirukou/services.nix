@@ -11,6 +11,7 @@
     ../../modules/services/nginx-proxy.nix
     ../../modules/services/monitoring/netdata.nix
     ../../modules/services/monitoring/exporters.nix
+    ../../modules/services/monitoring/adguard-exporter
     ../../modules/services/monitoring/promtail.nix
     ./goaccess.nix
   ];

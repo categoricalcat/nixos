@@ -122,6 +122,20 @@ in
         hosts = "centralHost";
         settings.dataSourceName = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable";
       };
+
+      adguard = {
+        hosts = "scrapeHosts";
+      };
+
+      unbound = {
+        hosts = "scrapeHosts";
+        settings.unbound = {
+          host = "unix:///run/unbound/unbound.ctl";
+          ca = null;
+          certificate = null;
+          key = null;
+        };
+      };
     };
   };
 

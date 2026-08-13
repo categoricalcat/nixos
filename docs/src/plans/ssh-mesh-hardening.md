@@ -2,54 +2,46 @@
 
 ## Objective
 
-Three goals, in order of risk:
-
-1. **Stop AI agents (opencode running as `yi`) from using raw SSH**, and give them a
+1. **Stop AI agents (opencode running as `yi`) from using raw SSH**; give them a
    sanctioned read-only lane instead.
-2. **Harden the mesh**: pin host keys, disable password auth, remove dead accounts.
-3. **Separate key duties**: dedicated nix-builder keys, decoupled SOPS age identity,
-   and a server-enforced read-only `ai` account.
+2. **Harden the mesh**: pin host keys, disable password auth outside the LAN,
+   remove dead/stray key material.
 
-Constraints from review:
+Constraints (from review):
 
-- Do **not** touch yifuwuqi's Google Authenticator TOTP setup.
-- **Keep** `GatewayPorts yes` (reverse tunnels are used).
+- Keep `GatewayPorts yes` (reverse tunnels are used).
+- Do **not** touch yifuwuqi's Google Authenticator TOTP.
+- Keep the `none` user (bubblewrap sandbox identity, `nix/devshell.nix`).
+- Keep host-key-as-age and host-key-as-builder (no new age/builder keys).
 
-## Current state (what the mesh is)
+## Current state
 
 - **Build mesh** (`modules/distributed-builds.nix`): hosts SSH to each other as
-  `nix-builder`, authenticating with their own SSH **host** private key
-  (`/persist/keys/ssh/ssh_host_ed25519_key`). `nix-builder` is locked down via
-  `Match User nix-builder` (`ForceCommand nix-daemon --stdio`, no TTY/forwarding).
+  `nix-builder`, authenticating with their own SSH **host** key
+  (`/persist/keys/ssh/ssh_host_ed25519_key`). `nix-builder` is locked via
+  `Match User nix-builder` (`ForceCommand nix-daemon --stdio`).
 - **User mesh** (`secrets/keys.nix` → `users.yi.meshKeys`): every host's `yi`
-  authorized_keys accepts all other hosts' `yi` keys. `yssh` races routes
-  (ts/nb/lan).
-- **Trust model**: total mutual trust. One stolen `yi` or host key = `yi`/`nix-builder`
-  on every host **and** decryption of every SOPS secret (sops files are encrypted to
-  all 8 recipients; `secrets/sops.nix` uses `age.sshKeyPaths = sshHostKey`).
-- **AI**: opencode runs as `yi` (`modules/services/opencode.nix` systemd unit
-  `User = yi`; interactive sessions are as `yi`). `users/programs/opencode.nix` sets
-  **no** Bash permission rules, so `ssh` falls back to `ask` — the AI tries and gets
-  approved.
+  authorized_keys accepts all other hosts' `yi` keys. `yssh` races routes (ts/nb/lan).
+- **Secrets**: one shared `secrets/secrets.yaml` synced to every host
+  (`setup-sops.sh` → `/persist/keys/sops/secrets.yaml`), encrypted to **all 8
+  recipients** (4 host + 4 yi mesh keys) via a single `.sops.yaml` creation rule.
+  Age identity is derived from the SSH host key (`sops.age.sshKeyPaths`) — the
+  standard sops-nix pattern. Consequence: any single host/yi key decrypts the
+  whole blob. Accepted for the 4-machine mutual-trust mesh; per-host isolation is
+  a possible future change, not part of this plan.
+- **AI**: opencode runs as `yi` (`modules/services/opencode.nix` systemd unit,
+  `User = yi`; interactive sessions as `yi`). `users/programs/opencode.nix` sets
+  no Bash permission rules, so `ssh` falls back to `ask` and gets approved.
 
 ## Phase 1 — AI read-only lane, raw SSH denied
 
-Config-only, no rebuild risk.
-
 ### 1.1 Deny raw SSH in opencode
 
-`users/programs/opencode.nix` — extend the `permission` attrset:
+`users/programs/opencode.nix` — extend `permission`:
 
 ```nix
 permission = {
-  webfetch = "allow";
-  websearch = "allow";
-  question = "allow";
-  task = "ask";
-  firecrawl_search = "allow";
-  firecrawl_scrape = "allow";
-
-  # AI must never run raw SSH; only the ai-ssh wrapper is allowed.
+  # ...existing (webfetch, websearch, question, task, firecrawl_*)...
   "Bash(ssh*)" = "deny";
   "Bash(scp*)" = "deny";
   "Bash(sshfs*)" = "deny";
@@ -60,98 +52,71 @@ permission = {
 };
 ```
 
-`nixos-rebuild` stays `ask` — local builds keep working, remote deploys need yi.
+`nixos-rebuild` stays `ask` (local builds work, remote deploys need yi).
 
-### 1.2 Agent rule
+### 1.2 Skill (not a rule)
 
-New `.agents/rules/ssh.md`:
+New `.agents/skills/ssh/SKILL.md` following the repo skill pattern
+(`.agents/skills/nixos/SKILL.md`), frontmatter `name: ssh` + `description` +
+`alwaysApply: true`:
 
 - Remote reads only via `ai-ssh <host> <command>`.
-- Never raw `ssh`, `yssh`, `scp`, `sshfs`, `mosh`, `rsync`.
+- Never raw `ssh`, `scp`, `sshfs`, `mosh`, `rsync`.
 - Never `nixos-rebuild --target-host` / `--build-host` (ask the user instead).
 
 ### 1.3 `ai-ssh` wrapper
 
-Small script (sibling of `users/programs/ssh/yssh.sh`) that invokes ssh with:
-
-- `-i ~/.ssh/id_ai_ed25519 -o IdentitiesOnly=yes`
-- `-o StrictHostKeyChecking=yes` (after Phase 2 pins host keys)
-- `-o BatchMode=yes -o ConnectTimeout=5`
-- Passes the host and command through, e.g. `ai-ssh yirukou systemctl status sshd`
-
-Installed via home-manager alongside the `yssh` wrappers
-(`users/programs/ssh/default.nix`), plus allowed in opencode (1.1).
+Sibling of `users/programs/ssh/yssh.sh` (which is removed in Phase 2). Invokes
+ssh with `-i ~/.ssh/id_ai_ed25519 -o IdentitiesOnly=yes -o
+StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=5`, passing the
+host + command through.
 
 ## Phase 2 — mesh hardening
 
-One coordinated multi-host rebuild.
-
 ### 2.1 Pin host keys (drop TOFU)
 
-`StrictHostKeyChecking accept-new` → `yes`, with known_hosts generated from
-`secrets/keys.nix`:
+`StrictHostKeyChecking accept-new` → `yes`, with `programs.ssh.knownHosts`
+generated from `secrets/keys.nix` (`keys.hosts.*.sshPublicKey`) covering all
+aliases (bare, `.ts`, `.nb`, `.lan`, `.local`). Applies to
+`modules/distributed-builds.nix`, `modules/ssh-dynamic.nix`, and
+`users/programs/ssh/default.nix`. `ssh.fufu.land` (cloudflared) keeps
+`accept-new` unless its backing host key is pinned.
 
-- `programs.ssh.knownHosts` entries built from `keys.hosts.*.sshPublicKey`, covering
-  all aliases (bare hostname, `.ts`, `.nb`, `.lan`, `.local`) and the VPN/IPv4 hosts.
-- Files: `modules/distributed-builds.nix` (builder ssh config),
-  `modules/ssh-dynamic.nix` / `users/programs/ssh/default.nix` (user config).
-- `ssh.fufu.land` (cloudflared) keeps `accept-new` unless its backing host key is
-  pinned — verify which host it fronts first.
+### 2.2 Password auth: LAN only
 
-### 2.2 Disable password auth
+Global `PasswordAuthentication no` in `services.openssh.settings`, then in
+`extraConfig`:
 
-`modules/services/openssh.nix` settings:
-
-```nix
-PasswordAuthentication = false;
+```
+Match Address 10.42.0.0/24
+  PasswordAuthentication yes
 ```
 
-Keep `KbdInteractiveAuthentication` enabled — yifuwuqi's TOTP depends on it.
+`KbdInteractiveAuthentication` untouched (TOTP). VPN/cloudflared stay password-off.
 
-### 2.3 Remove `none` user
+### 2.3 Keep `none` user
 
-`users/users.nix:68-76` — drop `users.extraUsers.none` and the `none` group
-(`gid 1002`). Verified: the "none" matches in `modules/desktop.nix` /
-`modules/host.nix` are enum labels, not references. Double-check for container /
-podman uses before the rebuild.
+No change — sandbox identity. (Left its password hash as-is per review.)
 
-### 2.4 Remove stray key
+### 2.4 Remove stray `~/.ssh/nix-builder-key`
 
-`~/.ssh/nix-builder-key` is not referenced by the repo or `~/.ssh/config` (399B,
-suspiciously same size as `id_ed25519`). Confirm with yi it is not used by some
-external workflow, then delete.
+Unused third key (neither mesh nor host key; absent from `keys.nix`). Confirm no
+external workflow uses it, then delete `.pub` + private half.
 
-## Phase 3 — key separation + read-only `ai` account
+### 2.5 Remove `yssh`
 
-### 3.1 Dedicated nix-builder key per host
+Delete `users/programs/ssh/yssh.sh` and the `ysshApp`/`ysshWrappers`
+(`ssh-<host>` wrappers) from `users/programs/ssh/default.nix`. Keep
+`dynamicSshConfig` — plain `ssh <host>.suffix` remains the connect path.
 
-- New per-host key `/persist/keys/ssh/ssh_builder_key` (ed25519, no passphrase),
-  generated by `users/scripts/setup-sops.sh` alongside the host key (extend the
-  script; existing pattern at lines 25-39).
-- `secrets/keys.nix`: add `builderPublicKey` per host.
-- `modules/distributed-builds.nix`: `sshKey` / `IdentityFile` / `nix-builder`
-  authorized_keys switch from the sshd host key to the builder key.
-- Result: sshd host identity is no longer a client identity.
-
-### 3.2 Decouple SOPS age identity (heaviest step — own commit)
-
-- New per-host age key `/persist/keys/age/age_identity` (`age-keygen`), added to
-  `setup-sops.sh`.
-- `secrets/sops.nix`: `age.sshKeyPaths = [ keys.paths.ageIdentity ]`.
-- `secrets/keys.nix`: swap `sshPublicKey`-derived age recipients for the new age
-  keys (keep the yi mesh age recipients).
-- Re-encrypt all sops files with `sops updatekeys` on every host, verify
-  decryption, rebuild each host. Roll back = previous generation still has the old
-  identity.
-
-### 3.3 Read-only `ai` user + `ai-gate` (server-enforced)
+## Phase 3 — read-only `ai` account (server-enforced)
 
 - New `ai` user on all mesh hosts (`users/users.nix`): no password, no `wheel`,
   `shell = /bin/sh`, added to `AllowUsers`.
-- Per-host `ai` keys in `secrets/keys.nix` (mirroring `meshKeys` shape); each host
+- Per-host `ai` keys in `secrets/keys.nix` (mirroring `meshKeys`); each host
   authorizes all others' `ai` keys.
-- `modules/services/openssh.nix` — `Match User ai` block, enforced server-side so a
-  hostile key can only run the gate:
+- `modules/services/openssh.nix` — `Match User ai` block (server-enforced, so a
+  hostile key can only run the gate):
 
 ```
 Match User ai
@@ -166,32 +131,28 @@ Match User ai
   ForceCommand <ai-gate>
 ```
 
-- `ai-gate` script (Nix `writeShellScript`, injection-safe — no eval, whitelisted
-  binaries resolved from `/run/current-system/sw/bin`), whitelist:
+- `ai-gate` script (Nix `writeShellScript`, injection-safe, no eval, whitelisted
+  binaries from `/run/current-system/sw/bin`):
   - `systemctl`: status, is-active, is-failed, is-enabled, show, list-units,
     list-timers, list-sockets
-  - `journalctl`: read-only flags only, no `-f`
+  - `journalctl`: read-only flags, no `-f`
   - `cat`, `ls`, `readlink`: paths restricted to a per-host allowlist
-    (default `/etc`, `/proc`, `/var/log`, `/nix/var/nix/profiles`; configurable)
-  - everything else → rejected with exit 1
-- Local private half installed at `~yi/.ssh/id_ai_ed25519` (opencode runs as yi),
-  used only by `ai-ssh`.
-- opencode already allows `ai-ssh` (Phase 1) — the gate is the safety net.
+    (default `/etc`, `/proc`, `/var/log`, `/nix/var/nix/profiles`)
+  - everything else rejected
+- Local private half installed at `~yi/.ssh/id_ai_ed25519` (opencode runs as
+  yi), used only by `ai-ssh`. opencode already allows `ai-ssh` (Phase 1).
 
 ## Rollout order
 
-1. Phase 1 — config-only, safe, immediate.
+1. Phase 1 — config-only, safe.
 2. Phase 2 — rebuild all mesh hosts together.
-3. Phase 3.1 — builder keys; regenerate + register pubkeys, rebuild.
-4. Phase 3.2 — sops re-encryption on every host (own commit, verify rollback path).
-5. Phase 3.3 — `ai` user + gate + `ai-ssh`.
-6. Update docs: `docs/src/services/nix-build-cache.md` (builder keys),
-   `docs/src/services/secrets.md` (age identity), new section for `ai-ssh`.
+3. Phase 3 — `ai` user + gate + `ai-ssh`.
+4. Update docs: `nix-build-cache.md` (yssh removal), `secrets.md`
+   (all-to-all note), new `ai-ssh` section.
 
 ## Open questions
 
 - `ssh.fufu.land` backing host — pin its host key or keep `accept-new`?
-- Which additional paths should the `ai` gate read beyond the defaults?
-- Is `~/.ssh/nix-builder-key` safe to delete?
-- Move the opencode `serve` daemon off `yi` (e.g. to a dedicated user) — deferred;
-  the sshd-side gate is the enforcement boundary regardless of process user.
+- Additional `ai` gate paths beyond the defaults?
+- Move the opencode `serve` daemon off `yi`? Deferred; the sshd-side gate is the
+  enforcement boundary regardless of process user.

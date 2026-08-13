@@ -44,6 +44,10 @@ _:
         harden-glue = "yes";
         harden-dnssec-stripped = "yes";
 
+        # Extended statistics (required by prometheus-unbound-exporter for
+        # per-query-type counters and recursion time percentiles)
+        extended-statistics = "yes";
+
         # Network & Fragmentation
         edns-buffer-size = 1232;
         do-ip4 = "yes";
