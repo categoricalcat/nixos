@@ -159,7 +159,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "adguard_protection_enabled",
+          "expr": "adguard_protection_enabled{host=\"$host\"}",
           "instant": false,
           "legendFormat": "Protection Status",
           "range": true,
@@ -171,7 +171,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "adguard_running",
+          "expr": "adguard_running{host=\"$host\"}",
           "instant": false,
           "legendFormat": "Service Status",
           "range": true,
@@ -256,8 +256,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "adguard_running",
-          "legendFormat": "__auto",
+          "expr": "adguard_running{host=\"$host\"}",
+          "legendFormat": "{{host}}: Running",
           "range": true,
           "refId": "A"
         }
@@ -326,8 +326,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "(adguard_blocked_filtering_total / adguard_dns_queries_total) * 100",
-          "legendFormat": "__auto",
+          "expr": "(adguard_blocked_filtering_total{host=\"$host\"} / adguard_dns_queries_total{host=\"$host\"}) * 100",
+          "legendFormat": "{{host}}: Block Rate",
           "range": true,
           "refId": "A"
         }
@@ -397,8 +397,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "adguard_avg_processing_time * 1000",
-          "legendFormat": "__auto",
+          "expr": "adguard_avg_processing_time{host=\"$host\"} * 1000",
+          "legendFormat": "{{host}}: Avg Processing",
           "range": true,
           "refId": "A"
         }
@@ -471,8 +471,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "increase(adguard_exporter_dedup_hits_total[5m])",
-          "legendFormat": "__auto",
+          "expr": "increase(adguard_exporter_dedup_hits_total{host=\"$host\"}[5m])",
+          "legendFormat": "{{host}}: Dedup Hits",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -580,7 +580,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(rate(adguard_query_type_total[5m])) by (type)",
+          "expr": "sum(rate(adguard_query_type_total{host=\"$host\"}[5m])) by (type)",
           "format": "time_series",
           "instant": false,
           "legendFormat": "{{type}}",
@@ -589,109 +589,6 @@
         }
       ],
       "title": "🔍 DNS Query Types",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 1,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 4,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "qps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 6
-      },
-      "id": 33,
-      "options": {
-        "legend": {
-          "calcs": [
-            "min",
-            "max",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.4.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "expr": "sum(rate(adguard_query_isp_total[5m])) by (isp)",
-          "legendFormat": "{{isp}}",
-          "range": true,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
-        }
-      ],
-      "title": "DNS Queries by ISP (QPS)",
       "type": "timeseries"
     },
     {
@@ -793,7 +690,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "adguard_upstream_avg_response_time_seconds * 1000",
+          "expr": "adguard_upstream_avg_response_time_seconds{host=\"$host\"} * 1000",
           "legendFormat": "{{upstream}}",
           "range": true,
           "refId": "A"
@@ -902,7 +799,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "rate(adguard_dns_queries_total[1m])",
+          "expr": "rate(adguard_dns_queries_total{host=\"$host\"}[1m])",
           "legendFormat": "DNS QPS",
           "range": true,
           "refId": "A"
@@ -1005,8 +902,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "topk(10, sum(adguard_query_client_reason_total) by (client))",
-          "legendFormat": "__auto",
+          "expr": "topk(10, sum(adguard_query_client_reason_total{host=\"$host\"}) by (client))",
+          "legendFormat": "{{client}}",
           "range": true,
           "refId": "A"
         }
@@ -1111,7 +1008,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(adguard_query_client_reason_total[1m])) by (client, reason)",
+          "expr": "sum(rate(adguard_query_client_reason_total{host=\"$host\"}[1m])) by (client, reason)",
           "legendFormat": "{{client}} - {{reason}}",
           "range": true,
           "refId": "A"
@@ -1214,8 +1111,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(adguard_query_reason_total) by (reason)\r\n",
-          "legendFormat": "__auto",
+          "expr": "sum(adguard_query_reason_total{host=\"$host\"}) by (reason)\r\n",
+          "legendFormat": "{{reason}}",
           "range": true,
           "refId": "A"
         }
@@ -1230,15 +1127,40 @@
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           }
         },
         "overrides": []
@@ -1251,37 +1173,17 @@
       },
       "id": 8,
       "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "BrBG",
-          "steps": 64
-        },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        },
-        "filterValues": {
-          "le": 1e-9
-        },
         "legend": {
-          "show": true
-        },
-        "rowsFrame": {
-          "layout": "auto"
+          "calcs": [
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
-          "showColorScale": false,
-          "yHistogram": false
-        },
-        "yAxis": {
-          "axisPlacement": "right",
-          "reverse": false
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "pluginVersion": "12.4.0",
@@ -1292,14 +1194,14 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "topk(10, adguard_query_domain_total)",
+          "expr": "topk(10, adguard_query_domain_total{host=\"$host\"})",
           "legendFormat": "{{domain}}",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "🌍 Top Queried Domains",
-      "type": "heatmap"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -1308,15 +1210,40 @@
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           }
         },
         "overrides": []
@@ -1329,37 +1256,17 @@
       },
       "id": 10,
       "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "Oranges",
-          "steps": 64
-        },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        },
-        "filterValues": {
-          "le": 1e-9
-        },
         "legend": {
-          "show": true
-        },
-        "rowsFrame": {
-          "layout": "auto"
+          "calcs": [
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
-          "showColorScale": false,
-          "yHistogram": false
-        },
-        "yAxis": {
-          "axisPlacement": "right",
-          "reverse": false
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "pluginVersion": "12.4.0",
@@ -1370,659 +1277,14 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "topk(10, adguard_top_blocked_domain_total)",
+          "expr": "topk(10, adguard_top_blocked_domain_total{host=\"$host\"})",
           "legendFormat": "{{domain}}",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "🚫 Top Blocked Domains",
-      "type": "heatmap"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 12,
-        "x": 12,
-        "y": 42
-      },
-      "id": 34,
-      "options": {
-        "basemap": {
-          "config": {},
-          "name": "Layer 0",
-          "noRepeat": true,
-          "type": "default"
-        },
-        "controls": {
-          "mouseWheelZoom": true,
-          "showAttribution": true,
-          "showDebug": false,
-          "showMeasure": true,
-          "showScale": true,
-          "showZoom": true
-        },
-        "layers": [
-          {
-            "config": {
-              "arrow": 1,
-              "style": {
-                "color": {
-                  "fixed": "dark-orange"
-                },
-                "lineWidth": 2,
-                "opacity": 0.4,
-                "rotation": {
-                  "fixed": 0,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "text": {
-                  "field": "",
-                  "fixed": "",
-                  "mode": "field"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "layer-tooltip": false,
-            "location": {
-              "lookup": "value",
-              "mode": "lookup"
-            },
-            "name": "Layer 2",
-            "opacity": 0.4,
-            "tooltip": true,
-            "type": "route"
-          },
-          {
-            "config": {
-              "showLegend": true,
-              "style": {
-                "color": {
-                  "fixed": "dark-red"
-                },
-                "opacity": 1,
-                "rotation": {
-                  "fixed": 1,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "field": "value",
-                  "fixed": 15,
-                  "max": 5,
-                  "min": 5
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "text": {
-                  "fixed": "",
-                  "mode": "field"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "filterData": {
-              "id": "byRefId",
-              "options": "merge-A-A-A-A-A-A-A"
-            },
-            "layer-tooltip": true,
-            "location": {
-              "gazetteer": "public/build/gazetteer/countries.json",
-              "lookup": "value",
-              "mode": "lookup"
-            },
-            "name": "Layer 1",
-            "tooltip": true,
-            "type": "markers"
-          }
-        ],
-        "tooltip": {
-          "mode": "details"
-        },
-        "view": {
-          "allLayers": true,
-          "id": "zero",
-          "lat": 0,
-          "lon": 0,
-          "noRepeat": true,
-          "shared": true,
-          "zoom": 1
-        }
-      },
-      "pluginVersion": "12.4.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(adguard_query_isp_total) by (country, isp)",
-          "format": "time_series",
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
-        }
-      ],
-      "title": "DNS Traffic Map by ISP Country",
-      "transformations": [
-        {
-          "id": "labelsToFields",
-          "options": {
-            "mode": "rows",
-            "valueLabel": "country"
-          }
-        },
-        {
-          "id": "merge",
-          "options": {}
-        }
-      ],
-      "type": "geomap"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 12,
-        "x": 0,
-        "y": 53
-      },
-      "id": 21,
-      "options": {
-        "basemap": {
-          "config": {},
-          "name": "Layer 0",
-          "noRepeat": false,
-          "type": "default"
-        },
-        "controls": {
-          "mouseWheelZoom": true,
-          "showAttribution": true,
-          "showDebug": true,
-          "showMeasure": true,
-          "showScale": true,
-          "showZoom": true
-        },
-        "layers": [
-          {
-            "config": {
-              "arrow": 0,
-              "style": {
-                "color": {
-                  "fixed": "blue"
-                },
-                "lineWidth": 2,
-                "opacity": 0.4,
-                "rotation": {
-                  "fixed": 0,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "text": {
-                  "field": "",
-                  "fixed": "",
-                  "mode": "field"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "filterData": {
-              "id": "byRefId",
-              "options": "A"
-            },
-            "layer-tooltip": true,
-            "location": {
-              "latitude": "lat",
-              "longitude": "lon",
-              "mode": "coords"
-            },
-            "name": "GarisKoneksi",
-            "opacity": 0.4,
-            "tooltip": true,
-            "type": "route"
-          },
-          {
-            "config": {
-              "showLegend": true,
-              "style": {
-                "color": {
-                  "fixed": "dark-red"
-                },
-                "opacity": 1,
-                "rotation": {
-                  "field": "Value",
-                  "fixed": 3,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "text": {
-                  "fixed": "",
-                  "mode": "field"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "filterData": {
-              "id": "byRefId",
-              "options": "A"
-            },
-            "location": {
-              "latitude": "lat",
-              "longitude": "lon",
-              "mode": "coords"
-            },
-            "name": "Layer 1",
-            "tooltip": true,
-            "type": "markers"
-          }
-        ],
-        "tooltip": {
-          "mode": "details"
-        },
-        "view": {
-          "allLayers": true,
-          "id": "coords",
-          "lat": 19.5,
-          "lon": 80,
-          "noRepeat": false,
-          "shared": false,
-          "zoom": 4
-        }
-      },
-      "pluginVersion": "12.4.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(adguard_client_geo_queries) by (lat, lon, client, country)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
-        }
-      ],
-      "title": "GeoIP Clients",
-      "transformations": [
-        {
-          "id": "labelsToFields",
-          "options": {}
-        },
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "number",
-                "targetField": "lat"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "lon"
-              }
-            ],
-            "fields": {}
-          }
-        }
-      ],
-      "type": "geomap"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 12,
-        "x": 12,
-        "y": 53
-      },
-      "id": 35,
-      "options": {
-        "basemap": {
-          "config": {},
-          "name": "Layer 0",
-          "noRepeat": false,
-          "type": "default"
-        },
-        "controls": {
-          "mouseWheelZoom": true,
-          "showAttribution": true,
-          "showDebug": true,
-          "showMeasure": true,
-          "showScale": true,
-          "showZoom": true
-        },
-        "layers": [
-          {
-            "config": {
-              "showLegend": true,
-              "style": {
-                "color": {
-                  "fixed": "dark-red"
-                },
-                "opacity": 1,
-                "rotation": {
-                  "field": "Value",
-                  "fixed": 3,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "filterData": {
-              "id": "byRefId",
-              "options": "A"
-            },
-            "location": {
-              "latitude": "lat",
-              "longitude": "lon",
-              "mode": "coords"
-            },
-            "name": "Layer 1",
-            "tooltip": true,
-            "type": "markers"
-          },
-          {
-            "config": {
-              "arrow": 0,
-              "style": {
-                "color": {
-                  "fixed": "dark-purple"
-                },
-                "lineWidth": 2,
-                "opacity": 0.4,
-                "rotation": {
-                  "fixed": 0,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "location": {
-              "latitude": "lat",
-              "longitude": "lon",
-              "mode": "coords"
-            },
-            "name": "GarisKoneksi",
-            "opacity": 0.4,
-            "tooltip": true,
-            "type": "route"
-          }
-        ],
-        "tooltip": {
-          "mode": "details"
-        },
-        "view": {
-          "allLayers": true,
-          "id": "coords",
-          "lat": 19.5,
-          "lon": 80,
-          "noRepeat": false,
-          "shared": false,
-          "zoom": 4
-        }
-      },
-      "pluginVersion": "12.4.0",
-      "targets": [
-        {
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(adguard_blocked_geo_queries) by (lat, lon, client, country)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          }
-        }
-      ],
-      "title": "GeoIP Blocked Queries by AdGuard",
-      "transformations": [
-        {
-          "id": "labelsToFields",
-          "options": {}
-        },
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "number",
-                "targetField": "lat"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "lon"
-              }
-            ],
-            "fields": {}
-          }
-        }
-      ],
-      "type": "geomap"
+      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -2126,8 +1388,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (upstream) (\r\nrate(adguard_upstream_latency_seconds_count[5m])\r\n)",
-          "legendFormat": "__auto",
+          "expr": "sum by (upstream) (\r\nrate(adguard_upstream_latency_seconds_count{host=\"$host\"}[5m])\r\n)",
+          "legendFormat": "{{upstream}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2236,8 +1498,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "(\r\nsum by (upstream) (rate(adguard_upstream_latency_seconds_sum[5m]))\r\n/\r\nsum by (upstream) (rate(adguard_upstream_latency_seconds_count[5m]))\r\n) * 1000",
-          "legendFormat": "__auto",
+          "expr": "(\r\nsum by (upstream) (rate(adguard_upstream_latency_seconds_sum{host=\"$host\"}[5m]))\r\n/\r\nsum by (upstream) (rate(adguard_upstream_latency_seconds_count{host=\"$host\"}[5m]))\r\n) * 1000",
+          "legendFormat": "{{upstream}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2340,8 +1602,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(\r\n0.95,\r\nsum(rate(adguard_upstream_latency_seconds_bucket[5m])) by (le, upstream)\r\n) * 1000",
-          "legendFormat": "__auto",
+          "expr": "histogram_quantile(\r\n0.95,\r\nsum(rate(adguard_upstream_latency_seconds_bucket{host=\"$host\"}[5m])) by (le, upstream)\r\n) * 1000",
+          "legendFormat": "{{upstream}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2448,8 +1710,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(\r\n0.99,\r\nsum(rate(adguard_upstream_latency_seconds_bucket[5m])) by (le, upstream)\r\n) * 1000",
-          "legendFormat": "__auto",
+          "expr": "histogram_quantile(\r\n0.99,\r\nsum(rate(adguard_upstream_latency_seconds_bucket{host=\"$host\"}[5m])) by (le, upstream)\r\n) * 1000",
+          "legendFormat": "{{upstream}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2547,8 +1809,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "adguard_exporter_up",
-          "legendFormat": "__auto",
+          "expr": "adguard_exporter_up{host=\"$host\"}",
+          "legendFormat": "{{host}}: Exporter Up",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2659,8 +1921,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "adguard_exporter_scrape_duration_seconds",
-          "legendFormat": "Scrape Duration",
+          "expr": "adguard_exporter_scrape_duration_seconds{host=\"$host\"}",
+          "legendFormat": "{{host}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2728,7 +1990,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "adguard_exporter_query_cache_size",
+          "expr": "adguard_exporter_query_cache_size{host=\"$host\"}",
           "legendFormat": "Query Cache",
           "range": true,
           "refId": "A",
@@ -2743,7 +2005,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "adguard_exporter_geo_cache_size",
+          "expr": "adguard_exporter_geo_cache_size{host=\"$host\"}",
           "instant": false,
           "legendFormat": "GeoIP Cache",
           "range": true,
@@ -2818,8 +2080,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "increase(adguard_exporter_scrape_errors_total[5m])",
-          "legendFormat": "__auto",
+          "expr": "increase(adguard_exporter_scrape_errors_total{host=\"$host\"}[5m])",
+          "legendFormat": "{{host}}: Scrape Errors",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -2842,7 +2104,38 @@
     "Server"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(adguard_running, host)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "host",
+        "multi": false,
+        "name": "host",
+        "options": [],
+        "query": {
+          "query": "label_values(adguard_running, host)",
+          "refId": "Prometheus-host-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "now-1h",

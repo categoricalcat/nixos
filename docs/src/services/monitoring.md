@@ -62,7 +62,7 @@ Prometheus/Grafana/Loki is configured with:
 - Grafana datasource provisioning for Prometheus and Loki.
 - Grafana dashboards are fully provisioned declaratively from `modules/services/monitoring/dashboards` (hybrid of vendored JSON and custom Nix attrsets).
 - Vendored dashboards include `adguard.json` (grafana.com 23579, classic-schema revision 3 — later revisions use the v2 dashboard API that file provisioning cannot import) and `unbound.json` (grafana.com 21006), fed by the per-host `adguard`/`unbound` exporter jobs with `instance=<host>` labels.
-- The AdGuard exporter (`modules/services/monitoring/adguard-exporter/`, module `default.nix` + package `package.nix`) scrapes the local AGH API (`:3333`, dummy Basic auth — AGH auth is disabled, VPN-only exposure) on port 9617; GeoIP metrics are disabled (no MaxMind DB) so those panels stay empty.
+- The AdGuard exporter (`modules/services/monitoring/adguard-exporter/`, module `default.nix` + package `package.nix`) scrapes the local AGH API (`:3333`, dummy Basic auth — AGH auth is disabled, VPN-only exposure) on port 9617. The vendored dashboard's ISP/GeoIP panels were removed: the exporter only resolves ISP/geo for public client IPs, and every querylog client is private (LAN/Tailscale/containers), so those panels can never render.
 - The Unbound exporter (nixpkgs `services.prometheus.exporters.unbound`) connects over the local control socket `/run/unbound/unbound.ctl`; unbound runs with `extended-statistics` for recursion-time percentiles and per-type counters.
 - Grafana uses anonymous Viewer access; only the required `secret_key` is a
   SOPS secret referenced through Grafana's file provider.

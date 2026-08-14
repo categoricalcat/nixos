@@ -106,9 +106,15 @@ in
 
   virtualisation.oci-containers.containers.torrent-indexer = {
     image = "felipemarinho97/torrent-indexer:latest";
-    ports = [ "${toString addrs.services.torrent-indexer.port}:8080" ];
+    # Share gluetun's network namespace (like FlareSolverr): outbound traffic
+    # goes through the VPN and FlareSolverr is reachable on 127.0.0.1.
+    dependsOn = [ "gluetun" ];
+    extraOptions = [ "--network=container:gluetun" ];
     environment = {
-      PORT = "8080";
+      # 8080 is taken by qBittorrent inside the shared namespace; the host
+      # publishes this port through gluetun.
+      PORT = toString addrs.services.torrent-indexer.port;
+      FLARESOLVERR_URL = "http://127.0.0.1:${toString addrs.services.flaresolverr.port}";
     };
   };
 
@@ -192,6 +198,11 @@ in
     };
     recyclarr = {
       serviceConfig.EnvironmentFile = config.sops.templates."arr-secrets.env".path;
+    };
+    # Restart with gluetun: the torrent-indexer shares its network namespace.
+    "podman-torrent-indexer" = {
+      after = [ "podman-gluetun.service" ];
+      bindsTo = [ "podman-gluetun.service" ];
     };
   };
 }

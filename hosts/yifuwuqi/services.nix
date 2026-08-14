@@ -38,8 +38,9 @@
     ../../modules/services/opencode.nix
     ../../modules/services/atticd.nix
     ../../modules/services/attic-watch-store.nix
-    ../../modules/services/arr.nix
+    ../../modules/services/arr
     ../../modules/services/qbittorrent-vpn.nix
+    ../../modules/services/slskd.nix
     ../../modules/services/homepage.nix
     ../../modules/services/ai/sillytavern.nix
   ];

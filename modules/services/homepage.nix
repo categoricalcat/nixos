@@ -20,6 +20,7 @@ let
     bazarr = "https://${addrs.services.bazarr.domain}";
     torrent-indexer = "https://${addrs.services.torrent-indexer.domain}";
     qbittorrent = "https://${addrs.services.qbittorrent.domain}";
+    slskd = "https://${addrs.services.slskd.domain}";
     grafana = "https://${addrs.services.grafana.domain}";
     cockpit = "https://${addrs.services.cockpit.domain}";
     forgejo = "https://${addrs.services.forgejo.domain}";
@@ -176,6 +177,13 @@ in
               icon = "qbittorrent.png";
               href = serviceDomains.qbittorrent;
               ping = serviceDomains.qbittorrent;
+            };
+          }
+          {
+            "Soulseek" = {
+              icon = "slskd.png";
+              href = serviceDomains.slskd;
+              ping = serviceDomains.slskd;
             };
           }
         ];

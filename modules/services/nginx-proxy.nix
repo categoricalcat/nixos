@@ -323,6 +323,15 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
+      "${yifuwuqiServices.slskd.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.slskd.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
       "${yifuwuqiServices.homepage.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;

@@ -313,6 +313,11 @@ in
           domain = "qbittorrent.fufu.land";
           port = 8080;
         };
+        slskd = {
+          domain = "slskd.fufu.land";
+          port = 5030;
+          listenPort = 2234;
+        };
         homepage = {
           domain = "home.fufu.land";
           port = 8082;

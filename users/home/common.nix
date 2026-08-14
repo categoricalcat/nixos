@@ -8,6 +8,14 @@
   ...
 }:
 let
+  agentSkills = {
+    ".gemini/config/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
+    ".gemini/config/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
+    ".cursor/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
+    ".cursor/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
+    ".agents/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
+    ".agents/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
+  };
   zshColors = import ../../modules/theme.nix;
   zshDir = pkgs.runCommand "zsh-config" { } ''
     cp -r ${../assets/dotfiles/zsh} "$out"
@@ -53,15 +61,12 @@ in
           force = true;
         };
       }
-      (lib.mkIf developer {
-        ".gemini/config/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
-        ".gemini/config/skills/code-quality/SKILL.md".source =
-          ../../modules/services/ai/code-quality-skill.md;
-        ".cursor/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
-        ".cursor/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
-        ".agents/skills/nixos/SKILL.md".source = ../../modules/services/ai/nixos-skill.md;
-        ".agents/skills/code-quality/SKILL.md".source = ../../modules/services/ai/code-quality-skill.md;
-      })
+      (lib.mkIf developer (
+        lib.mapAttrs (_path: src: {
+          source = src;
+          force = true;
+        }) agentSkills
+      ))
       (lib.mkIf vr {
         ".config/openxr/1/active_runtime.json".text = ''
           {
@@ -84,6 +89,25 @@ in
         run install -m 0600 "$src" "$HOME/.ssh/config"
       fi
     '';
+
+    activation.realizeSkillFiles = lib.mkIf developer (
+      lib.hm.dag.entryAfter [ "linkGeneration" ] (
+        let
+          skills = builtins.attrNames agentSkills;
+          realizeCmds = lib.concatMapStringsSep "\n" (relPath: ''
+            target="$HOME/${relPath}"
+            if [ -e "$target" ] || [ -L "$target" ]; then
+              src="$(readlink -f "$target")"
+              dir="$(dirname "$target")"
+              run install -d -m 0755 "$dir"
+              run rm -f "$target"
+              run install -m 0444 "$src" "$target"
+            fi
+          '') skills;
+        in
+        realizeCmds
+      )
+    );
   };
 
   programs = {

@@ -9,10 +9,11 @@ both hosts (`yifuwuqi`, `yirukou`):
   24h aggregates in the AGH web UI — no history).
 - **Unbound** resolver stats (cache hit rate, recursion time, memory).
 
-## Status: IMPLEMENTED
+## Status: IMPLEMENTED — Phase 2 (remediation) planned
 
 Deployed 2026-08-13 on both hosts. See "Implementation notes" below for
-corrections made during execution.
+corrections made during execution. A follow-up remediation plan for broken
+dashboards was diagnosed on 2026-08-14 — see "Phase 2: Remediation" below.
 
 ## Design
 
@@ -169,10 +170,10 @@ module: it runs as `User = unbound` (matching the repo's unbound service),
 
 ## Notes / trade-offs
 
-- Dashboard 23579's GeoIP/ISP/geomap panels will be **empty**: geo metrics
-  require a MaxMind GeoLite2-City.mmdb (license + download step). Exporter
-  skips geo metrics without the DB (feature added Mar 2026); panels can be
-  trimmed later via jq if annoying.
+- Dashboard 23579's GeoIP/ISP/geomap panels are **inapplicable**: the exporter
+  only resolves ISP/geo for public client IPs and every querylog client is
+  private (LAN/Tailscale/containers), so the panels can never render. They
+  were **removed** in Phase 2 (see below); no GeoIP DB provisioning needed.
 - Dashboard 23579 must stay on classic-schema **revision 3**; future
   revisions are v2beta1 format, which file provisioning cannot import.
   Re-fetching "latest" will silently produce an unprovisioned dashboard.
@@ -187,3 +188,104 @@ module: it runs as `User = unbound` (matching the repo's unbound service),
 - `unbound` exporter emits metrics from `unbound-control stats`; cache
   hit-rate panels use `unbound_cache_hit_ratio` etc. — verify against the live
   exporter after deploy, tweak queries if the nixpkgs version (0.6.0) differs.
+
+## Phase 2: Remediation (2026-08-14)
+
+### Symptoms (from Grafana)
+
+1. Stat panels render raw label sets as names, e.g.
+   `{host="yifuwuqi", instance="yifuwuqi", job="adguard"} 9.46 K` (and
+   `9.04 K` for yirukou).
+2. "DNS Queries by ISP (QPS)" and the 3 GeoIP geomap panels show no data on
+   both hosts.
+3. Unbound dashboard: 4 of 6 principal panels empty on `yirukou`, all panels
+   fine on `yifuwuqi`.
+
+### Diagnosis
+
+#### 1. Broken stat titles — `legendFormat: "__auto"` on math expressions
+
+6 panels in `vendor/adguard.json` use `legendFormat: "__auto"` with PromQL
+math/rate expressions (`(adguard_blocked_filtering_total /
+adguard_dns_queries_total) * 100`, `increase(...)`, `* 1000`). PromQL math
+yields nameless series, so Grafana displays the full label set as the series
+name — exactly the `{host=...} 9.46 K` text observed.
+
+#### 2. ISP / GeoIP panels can never have data
+
+- The exporter's `adguard_query_isp_total` reads AGH querylog
+  `client_info.whois`; `resolveGeo()` in the exporter and AGH's whois both
+  skip private IPs (`ip.IsPrivate()`).
+- Verified live: every querylog client is private (10.88.x containers,
+  127.0.0.1, 10.42.x LAN, 100.69.x Tailscale); Prometheus has **zero** series
+  for `adguard_query_isp_total` / `adguard_client_geo_queries` on both hosts
+  over 24h.
+- No public DNS exposure exists: yirukou has no ACME certs so the AGH TLS
+  block stays inactive; AGH binds only private interfaces.
+- Conclusion: panels id 33 (ISP QPS), 34 (ISP Country geomap), 21 (GeoIP
+  Clients), 35 (GeoIP Blocked) are dead weight — removed. No `GEOIP_DB`
+  provisioning needed.
+
+#### 3. Unbound on yirukou — running process predates `extended-statistics`
+
+- `extended-statistics = "yes"` landed in b386e52 (2026-08-13 09:16), but
+  yirukou's unbound process has been running since 2026-08-13 07:47. The
+  generation-63 rebuild (08-14 09:44) updated `/etc/unbound/unbound.conf` but
+  never restarted the service (deploy was `boot`-style; nixpkgs
+  `restartTriggers` only fires on `switch`).
+- Evidence: yirukou exporter exports 26 `unbound_*` metrics vs 54 on
+  yifuwuqi — missing exactly the extended-statistics family
+  (`unbound_query_types_total`, `unbound_answer_rcodes_total`,
+  `unbound_query_opcodes_total`, `unbound_memory_caches_bytes`, msg/rrset
+  cache counts, tcp/tls/https counters, ...). yifuwuqi's unbound restarted
+  08-14 10:22 → all panels fine.
+- Fix: restart unbound on yirukou; the deployed config already enables the
+  stats.
+
+#### 4. Domain heatmaps — wrong viz type
+
+"Top Queried Domains" (id 8) and "Top Blocked Domains" (id 10) are heatmap
+panels fed with `topk(10, adguard_query_domain_total)` — domain-labeled
+gauges, not histogram buckets → garbage rendering. Converted to timeseries.
+
+#### 5. No host selector
+
+AdGuard dashboard has an empty `templating.list`; unbound dashboard has
+`$instance`. Added `$host` (`label_values(adguard_running, host)`) and
+scoped queries with `{host="$host"}`.
+
+### Changes
+
+- `modules/services/monitoring/dashboards/vendor/adguard.json`:
+  - Add `$host` template variable; wrap panel queries with `{host="$host"}`.
+  - Set explicit `legendFormat` on the affected stat/timeseries panels
+    (Block Rate, Avg Processing Time, Deduplicated Queries, Exporter Scrape
+    Errors, Status, AdGuard Exporter Status, Exporter Scrape Duration, Total
+    DNS Query Rate) so names render as e.g. `{{host}}: Block Rate`.
+  - Delete panels id 33, 34, 21, 35 (ISP QPS + 3 geomaps).
+  - Convert ids 8/10 from heatmap to timeseries.
+- `docs/src/services/monitoring.md` — update the "GeoIP metrics are disabled"
+  note to reflect panel removal.
+- No exporter/module/addresses.nix changes (nothing metric-side is broken).
+
+### Ops steps
+
+1. `sudo nixos-rebuild switch --flake .#yifuwuqi` (re-provisions dashboards;
+   grafana picks up the new store path).
+2. `ssh yi@100.69.0.1 'sudo systemctl restart unbound'` — or switch yirukou
+   as well (nixpkgs `restartTriggers` will restart it).
+
+### Verification
+
+- `curl 10.42.0.1:9167/metrics | grep -c unbound_query_types_total` → ≥ 1 on
+  yirukou after restart; all 6 principal panels populate.
+- Grafana: stat panels show friendly names, `$host` dropdown filters to one
+  host, top-domain panels render as timeseries, ISP/geo panels gone.
+
+### Notes / trade-offs
+
+- ISP/geo were removed rather than kept: with all-private clients the data is
+  impossible. If public DoH/DoT is ever enabled on the WAN (ACME certs +
+  firewall), the panels could be restored along with a GeoIP DB (DB-IP lite
+  mmdb needs no account; MaxMind GeoLite2 needs a license key in sops).
+- Dashboard stays on classic-schema revision 3 (v2beta1 caveat unchanged).

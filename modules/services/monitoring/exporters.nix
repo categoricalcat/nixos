@@ -58,4 +58,13 @@ in
   networking.firewall.interfaces.${addresses.network.lan.interface}.allowedTCPPorts =
     lib.mkIf (!isCentral)
       (lib.mapAttrsToList (name: _: config.services.prometheus.exporters.${name}.port) enabledExporters);
+
+  systemd.services = lib.mkIf (!isCentral) (
+    lib.mapAttrs' (
+      name: _:
+      lib.nameValuePair "prometheus-${name}-exporter" {
+        serviceConfig.FreeBind = true;
+      }
+    ) enabledExporters
+  );
 }

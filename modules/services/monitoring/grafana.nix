@@ -39,6 +39,13 @@ let
                 else
                   .
                 end
+              ) |
+              walk(
+                if type == "object" and .legend?.placement? == "right" then
+                  .legend.placement = "bottom"
+                else
+                  .
+                end
               )
             ' "$f" > "$out/$(basename "$f")"
           fi

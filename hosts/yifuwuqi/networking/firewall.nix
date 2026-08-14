@@ -23,6 +23,7 @@ let
       addresses.services.prowlarr.port
       addresses.services.bazarr.port
       addresses.services.qbittorrent.port
+      addresses.services.slskd.port
       addresses.services.homepage.port
     ]
   );
@@ -48,9 +49,8 @@ in
       ];
 
       trustedInterfaces = [
-        # "tailscale0"
+        "tailscale0"
         "eno1"
-        "enp4s0"
       ];
 
       interfaces."eno1".allowedTCPPorts = [ addresses.ssh.listenPort ];
@@ -88,6 +88,8 @@ in
 
               iifname "lo" tcp dport { ${backendUiPorts} } accept
               ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport { ${backendUiPorts} } accept
+              # soularr (sharing gluetun's namespace) needs Lidarr's API
+              ip saddr { ${containerSourceSubnets} } tcp dport ${toString addresses.services.lidarr.port} accept
               tcp dport { ${backendUiPorts} } counter drop
             }
           '';
