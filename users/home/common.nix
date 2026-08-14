@@ -11,10 +11,13 @@ let
   agentSkills = {
     ".gemini/config/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
     ".gemini/config/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
+    ".gemini/config/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
     ".cursor/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
     ".cursor/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
+    ".cursor/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
     ".agents/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
     ".agents/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
+    ".agents/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
   };
   zshColors = import ../../modules/theme.nix;
   zshDir = pkgs.runCommand "zsh-config" { } ''

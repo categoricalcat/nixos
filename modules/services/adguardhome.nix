@@ -54,7 +54,7 @@ in
         # fastest_addr: It finds an IP address with the lowest latency and returns this IP address in DNS response.
         upstream_mode = "parallel";
 
-        bootstrap_prefer_ipv6 = true;
+        bootstrap_prefer_ipv6 = false;
         bootstrap_dns = [
           "2620:fe::fe"
           "9.9.9.9"
@@ -104,7 +104,7 @@ in
           id = 1;
           url = "https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt";
           name = "AdGuard Home Default Filter";
-          enabled = true;
+          enabled = false;
         }
         {
           id = 2;
