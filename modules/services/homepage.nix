@@ -30,7 +30,7 @@ let
   # Network/Proxy services (via yirukou NGINX config)
   proxyDomains = {
     adguard = "https://adguard.fufu.land";
-    netdata = "https://netdata.fufu.land";
+    # netdata = "https://netdata.fufu.land";
     searxng = "https://search.fufu.land";
     portainer = "https://prtnr.fufu.land";
     opencode = "https://agent.fufu.land";
@@ -197,13 +197,13 @@ in
               ping = serviceDomains.grafana;
             };
           }
-          {
-            "Netdata" = {
-              icon = "netdata.png";
-              href = proxyDomains.netdata;
-              ping = proxyDomains.netdata;
-            };
-          }
+          # {
+          #   "Netdata" = {
+          #     icon = "netdata.png";
+          #     href = proxyDomains.netdata;
+          #     ping = proxyDomains.netdata;
+          #   };
+          # }
           {
             "GoAccess" = {
               icon = "goaccess.png";

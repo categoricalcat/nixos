@@ -104,20 +104,20 @@ in
         };
       };
 
-      # Netdata web UI — yifuwuqi parent (shows both hosts via streaming)
-      "netdata.fufu.land" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:19999";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-          '';
-        };
-      };
+      # # Netdata web UI — yifuwuqi parent (shows both hosts via streaming)
+      # "netdata.fufu.land" = {
+      #   useACMEHost = "fufu.land";
+      #   forceSSL = true;
+      #
+      #   locations."/" = {
+      #     proxyPass = "http://${yifuwuqiLan}:19999";
+      #     proxyWebsockets = true;
+      #     extraConfig = ''
+      #       proxy_set_header X-Forwarded-Host $host;
+      #       proxy_set_header X-Forwarded-Proto $scheme;
+      #     '';
+      #   };
+      # };
 
       # Grafana dashboards — yifuwuqi observability stack
       "${yifuwuqiServices.grafana.domain}" = {

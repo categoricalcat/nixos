@@ -25,7 +25,7 @@
     ../../modules/services/cockpit.nix
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
-    ../../modules/services/monitoring/netdata.nix
+    # ../../modules/services/monitoring/netdata.nix
     ../../modules/services/monitoring/exporters.nix
     ../../modules/services/monitoring/adguard-exporter
     ../../modules/services/monitoring/prometheus.nix

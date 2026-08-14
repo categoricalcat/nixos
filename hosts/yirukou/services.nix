@@ -9,7 +9,7 @@
     ../../modules/services/adguardhome.nix
     ../../modules/services/unbound.nix
     ../../modules/services/nginx-proxy.nix
-    ../../modules/services/monitoring/netdata.nix
+    # ../../modules/services/monitoring/netdata.nix
     ../../modules/services/monitoring/exporters.nix
     ../../modules/services/monitoring/adguard-exporter
     ../../modules/services/monitoring/promtail.nix
@@ -21,7 +21,7 @@
     ssh = true;
   };
 
-  yi.netdata = {
-    childMode = true;
-  };
+  # yi.netdata = {
+  #   childMode = true;
+  # };
 }
