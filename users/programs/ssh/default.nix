@@ -6,7 +6,9 @@
 let
   keys = import ../../../secrets/keys.nix;
   allAddresses = import ../../../modules/addresses.nix;
-  dynamicSshConfig = import ../../../modules/services/ssh/dynamic.nix { inherit lib allAddresses keys; };
+  dynamicSshConfig = import ../../../modules/services/ssh/dynamic.nix {
+    inherit lib allAddresses keys;
+  };
 
   aiSshApp = pkgs.writeShellApplication {
     name = "ai-ssh";
