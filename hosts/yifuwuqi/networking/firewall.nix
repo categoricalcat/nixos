@@ -94,6 +94,23 @@ in
             }
           '';
         };
+
+        # Shared valkey (unbound cachedb) is reachable only from loopback and
+        # yirukou's unbound. The LAN is otherwise wide open (trusted
+        # interface), and unbound serves cachedb entries without re-validation
+        # -- unrestricted write access would enable cache poisoning.
+        valkey-guard = {
+          family = "inet";
+          content = ''
+            chain input {
+              type filter hook input priority -10; policy accept;
+
+              iifname "lo" tcp dport ${toString addresses.services.valkey.port} accept
+              ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport ${toString addresses.services.valkey.port} accept
+              tcp dport ${toString addresses.services.valkey.port} counter drop
+            }
+          '';
+        };
       };
     };
 

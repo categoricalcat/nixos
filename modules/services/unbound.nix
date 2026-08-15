@@ -1,14 +1,36 @@
-_:
+{
+  pkgs,
+  config,
+  lib,
+  allAddresses,
+  ...
+}:
+
+let
+  # Shared DNS cache: single valkey on yifuwuqi, reached over the LAN from
+  # both hosts. Survives unbound restarts (and reboots, via RDB snapshots)
+  # and lets both instances share one cache.
+  cacheDb = allAddresses.hosts.yifuwuqi.services.valkey;
+in
 
 {
   services.unbound = {
     enable = true;
+
+    # nixpkgs builds the cachedb/redis module only when withRedis is set.
+    package = pkgs.unbound-with-systemd.override { withRedis = true; };
 
     localControlSocketPath = "/run/unbound/unbound.ctl";
     settings = {
       server = {
         interface = [ "127.0.0.1" ];
         port = 5335;
+
+        # Enable the cachedb module (second-level cache in valkey). It sits
+        # between the in-memory cache and iterative resolution. Quoted: the
+        # freeform renderer doesn't quote string values, and unbound reads
+        # only the first token of an unquoted value.
+        module-config = ''"validator cachedb iterator"'';
 
         access-control = [ "127.0.0.0/8 allow" ];
 
@@ -67,6 +89,31 @@ _:
         do-udp = "yes";
         do-tcp = "yes";
       };
+
+      # Second-level cache (valkey, shared with the other unbound instance).
+      # Low timeout so a hung valkey degrades to memory-cache-only resolution
+      # instead of stalling DNS. secret-seed stays at the default on both
+      # hosts so keys are identical and shareable.
+      cachedb = {
+        backend = "redis";
+        redis-server-host = cacheDb.host;
+        redis-server-port = cacheDb.port;
+        redis-timeout = 100;
+        redis-expire-records = "yes";
+      };
     };
+  };
+
+  # unbound's cachedb redis_init probes SET-with-EX only once at startup and
+  # never re-checks on reconnect (cachedb/redis.c). If it boots before the
+  # valkey host is reachable, every store falls back to plain SET for the
+  # process lifetime -- no key TTLs, LRU-only eviction. Wait for the network
+  # (and the local valkey, when one exists) so redis_init succeeds.
+  systemd.services.unbound = {
+    wants = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+    ]
+    ++ lib.optionals (config.services.redis.servers ? "") [ "redis.service" ];
   };
 }

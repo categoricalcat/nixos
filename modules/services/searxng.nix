@@ -22,13 +22,20 @@ in
     allAddresses.hosts.${config.networking.hostName}.services.searxng.port
   ];
 
+  # The shared valkey's unix socket is owned redis:redis mode 660; searx needs
+  # group access to use it (rate-limiter keys live on logical db 1).
+  users.users.searx.extraGroups = [ "redis" ];
+
   services.searx = {
     enable = true;
     package = pkgs.searxng;
-    redisCreateLocally = true;
     environmentFile = secretEnv;
 
     settings = {
+      # Shared valkey on yifuwuqi (also backing unbound's cachedb); rate
+      # limiter keys live in logical db 1, separate from the DNS cache.
+      valkey.url = "unix://${config.services.redis.servers."".unixSocket}?db=1";
+
       general = {
         instance_name = "yi search";
         debug = false;
@@ -234,10 +241,12 @@ in
       wants = [
         "network-online.target"
         "wait-for-tor.service"
+        "redis.service"
       ];
       after = [
         "network-online.target"
         "wait-for-tor.service"
+        "redis.service"
       ];
       serviceConfig.SyslogLevel = "err";
     };

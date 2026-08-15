@@ -136,6 +136,23 @@ in
           key = null;
         };
       };
+
+      # Shared valkey (unbound cachedb DNS cache + searxng). Runs only on the
+      # central host, reaches the instance over its unix socket (same-host, so
+      # it bypasses the valkey-guard nftables table). Key name must match the
+      # nixpkgs exporter module (services.prometheus.exporters.redis).
+      redis = {
+        hosts = "centralHost";
+        settings = {
+          # Runs as the valkey server user so it can open the unix socket
+          # (owned redis:redis mode 660, under /run/redis).
+          user = "redis";
+          extraFlags = [
+            "-redis.addr"
+            "unix:///run/redis/redis.sock"
+          ];
+        };
+      };
     };
   };
 
@@ -333,6 +350,10 @@ in
         searxng = {
           domain = "search.fufu.land";
           port = 8888;
+        };
+        valkey = {
+          port = 6379;
+          host = network.lan.ipv4.host;
         };
         opencode = {
           port = 3010;

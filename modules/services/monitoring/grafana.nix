@@ -83,6 +83,9 @@ let
             builtins.toJSON (import ./dashboards/postgres.nix { inherit pkgs; })
           )
         } $out/postgres.json
+        ln -s ${
+          pkgs.writeText "valkey.json" (builtins.toJSON (import ./dashboards/valkey.nix { inherit pkgs; }))
+        } $out/valkey.json
       '';
 in
 {

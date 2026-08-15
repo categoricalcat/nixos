@@ -110,7 +110,7 @@ in
           id = 2;
           url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt";
           name = "Hagezi Multi PRO";
-          enabled = true;
+          enabled = false;
         }
         {
           id = 3;
