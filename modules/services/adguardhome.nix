@@ -66,6 +66,24 @@ in
         };
         ecs_use_subnet_opt = true;
         ratelimit = 0; # no per-client rate limit
+
+        # Edge quick cache (AGH) in front of the slow-but-huge unbound+valkey
+        # resolver. AGH answers the hot working set from RAM in ~sub-ms; the
+        # cache is keyed per (qname,qtype,DO), and unbound floors TTLs at >= 1h
+        # (cache-min-ttl) so entries linger long in AGH's cache.
+        cache_enabled = true;
+        cache_size = 67108864; # 64 MiB (default is 4 MiB)
+        # Optimistic refresh: on expiry AGH keeps serving the stale answer
+        # (TTL cache_optimistic_answer_ttl) while re-resolving in the
+        # background, so client-visible latency stays ~0 even on cold-upstream
+        # refresh. cache_optimistic_max_age bounds how long expired entries
+        # remain servable. These match the AGH 0.107.x defaults.
+        cache_optimistic = true;
+        cache_optimistic_answer_ttl = "30s";
+        cache_optimistic_max_age = "12h";
+        # cache_ttl_min/cache_ttl_max left at 0 (no override): unbound already
+        # floors TTLs at cache-min-ttl and caps at cache-max-ttl, and a lower
+        # AGH max would only push extra queries down to unbound.
         enable_dnssec = true;
         ipv6_disabled = false;
         max_goroutines = 1000;

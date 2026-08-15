@@ -63,6 +63,18 @@ in
         createHome = true;
         shell = pkgs.bash;
       };
+
+      # Read-only AI account (see docs/src/plans/ssh-mesh-hardening.md).
+      # ForceCommand-gated on the sshd side: a hostile ai key can only run the
+      # whitelisted reads in modules/services/ssh/scripts/ai-gate.sh.
+      ai = {
+        isSystemUser = true;
+        group = "nogroup";
+        description = "Read-only AI agent";
+        shell = "/bin/sh";
+        openssh.authorizedKeys.keys = keys.users.ai.sshAuthorizedKeys;
+        extraGroups = [ "systemd-journal" ];
+      };
     };
 
     extraUsers = {
@@ -103,6 +115,13 @@ in
       (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
       (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
       (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
+      # Read-only mesh access lane (used by the opencode systemd unit, which
+      # runs as yi but does not see home-manager's ~/.nix-profile/bin).
+      (pkgs.writeShellApplication {
+        name = "ai-ssh";
+        runtimeInputs = [ pkgs.coreutils ];
+        text = builtins.readFile ./scripts/ai-ssh.sh;
+      })
     ];
 
     variables = {

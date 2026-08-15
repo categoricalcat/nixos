@@ -9,7 +9,7 @@
   imports = [
     ../../modules/services/samba/server.nix
     ../../modules/services/avahi.nix
-    ../../modules/services/openssh.nix
+    ../../modules/services/ssh
     ../../modules/services/adguardhome.nix
     ../../modules/services/unbound.nix
     ../../modules/services/cloudflared.nix

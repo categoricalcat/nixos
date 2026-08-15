@@ -43,7 +43,7 @@ in
     ../../modules/nix-settings.nix
     ../../modules/services/tlp.nix
     ../../modules/networking/ipv6.nix
-    ../../modules/services/openssh.nix
+    ../../modules/services/ssh
     ../../modules/distributed-builds.nix
     ../../modules/services/lan-mouse.nix
     ../../modules/services/tailscale.nix

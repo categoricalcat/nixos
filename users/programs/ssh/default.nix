@@ -6,26 +6,13 @@
 let
   keys = import ../../../secrets/keys.nix;
   allAddresses = import ../../../modules/addresses.nix;
-  dynamicSshConfig = import ../../../modules/ssh-dynamic.nix { inherit lib allAddresses keys; };
+  dynamicSshConfig = import ../../../modules/services/ssh/dynamic.nix { inherit lib allAddresses keys; };
 
-  ysshApp = pkgs.writeShellApplication {
-    name = "yssh";
-    text = builtins.readFile ./yssh.sh;
+  aiSshApp = pkgs.writeShellApplication {
+    name = "ai-ssh";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = builtins.readFile ../../scripts/ai-ssh.sh;
   };
-
-  ysshWrappers = lib.concatMap (
-    host:
-    let
-      hasPort = (host.ssh.listenPort or null) != null;
-      validAliases = lib.filter (a: lib.attrByPath a.path null host != null) allAddresses.aliases;
-      targets = map (a: "${host.hostName}.${a.suffix}") validAliases;
-    in
-    lib.optional (hasPort && targets != [ ]) (
-      pkgs.writeShellScriptBin "ssh-${host.hostName}" ''
-        exec ${lib.getExe ysshApp} "${host.hostName}" ${lib.escapeShellArgs targets} -- "$@"
-      ''
-    )
-  ) (builtins.attrValues allAddresses.hosts);
 in
 {
   services.ssh-agent.enable = true;
@@ -48,5 +35,5 @@ in
     '';
   };
 
-  home.packages = ysshWrappers;
+  home.packages = [ aiSshApp ];
 }

@@ -3,15 +3,19 @@
   allAddresses,
   config,
   lib,
+  pkgs,
   ...
 }:
 let
-  keys = import ../../secrets/keys.nix;
+  keys = import ../../../secrets/keys.nix;
   listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
   listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
-  dynamicSshConfig = import ../ssh-dynamic.nix { inherit lib allAddresses keys; };
+  dynamicSshConfig = import ./dynamic.nix { inherit lib allAddresses keys; };
+
+  aiGate = pkgs.writeShellScript "ai-gate" (builtins.readFile ./scripts/ai-gate.sh);
 in
 {
+  imports = [ ./known-hosts.nix ];
 
   systemd.services.sshd = {
     wants = [ "network-online.target" ];
@@ -78,9 +82,12 @@ in
         "yi"
         "workd"
         "nix-builder"
+        "ai"
       ];
       PermitRootLogin = "no";
       GatewayPorts = "yes";
+      # Password auth is off globally; re-enabled only for LAN clients below.
+      PasswordAuthentication = false;
     };
 
     # Additional performance settings
@@ -90,6 +97,11 @@ in
 
       # Faster SFTP (if using internal-sftp)
       Subsystem sftp internal-sftp
+
+      # LAN clients (10.42.0.0/24) keep password auth; ts/nb/cloudflared do not.
+      # Match Address matches the client source address.
+      Match Address 10.42.0.0/24
+        PasswordAuthentication yes
 
       Match User nix-builder
         AuthenticationMethods publickey
@@ -102,10 +114,21 @@ in
         PermitTTY no
         PermitOpen none
         ForceCommand nix-daemon --stdio
+
+      Match User ai
+        AuthenticationMethods publickey
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        X11Forwarding no
+        AllowTcpForwarding no
+        AllowAgentForwarding no
+        AllowStreamLocalForwarding no
+        PermitTTY no
+        ForceCommand ${aiGate}
     '';
   };
 
-  programs.ssh.extraConfig = builtins.readFile ../../users/assets/dotfiles/ssh/config + ''
+  programs.ssh.extraConfig = builtins.readFile ../../../users/assets/dotfiles/ssh/config + ''
     ${dynamicSshConfig}
   '';
 

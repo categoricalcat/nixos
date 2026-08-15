@@ -55,7 +55,7 @@ let
         User nix-builder
         IdentityFile ${keys.paths.sshHostKey}
         IdentitiesOnly yes
-        StrictHostKeyChecking accept-new
+        StrictHostKeyChecking yes
         ConnectTimeout 3
         ConnectionAttempts 1
     '') builderNames

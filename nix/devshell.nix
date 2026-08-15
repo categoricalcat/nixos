@@ -19,11 +19,12 @@ _: {
         exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild "$@"
       '';
 
-      inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./inspect.sh);
+      inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./scripts/inspect.sh);
       hostTreeWrapper = pkgs.writeShellScriptBin "host-tree" (builtins.readFile ./scripts/host-tree.sh);
       hostSizeWrapper = pkgs.writeShellScriptBin "host-size" (builtins.readFile ./scripts/host-size.sh);
       hostDiffWrapper = pkgs.writeShellScriptBin "host-diff" (builtins.readFile ./scripts/host-diff.sh);
       hostDeadWrapper = pkgs.writeShellScriptBin "host-dead" (builtins.readFile ./scripts/host-dead.sh);
+      dnsWarmWrapper = pkgs.writeShellScriptBin "dns-warm" (builtins.readFile ./scripts/dns-warm.sh);
 
       diffToCommitWrapper = pkgs.writeShellScriptBin "diff-to-commit" ''
         diff=$(git diff --cached)
@@ -82,6 +83,8 @@ _: {
         nvd # Package version diff tool for Nix store paths
         fzf # Command-line fuzzy finder
         jq # Command-line JSON processor
+        dnsx # Fast and multi-purpose DNS toolkit
+        curl # Transfer data with URLs
       ];
 
       defaultShell = pkgs.mkShell {
@@ -96,6 +99,7 @@ _: {
             hostSizeWrapper
             hostDiffWrapper
             hostDeadWrapper
+            dnsWarmWrapper
             diffToCommitWrapper
             nxdAgyWrapper
             nxdAgentWrapper

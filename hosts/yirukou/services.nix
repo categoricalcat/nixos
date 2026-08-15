@@ -2,7 +2,7 @@
 
 {
   imports = [
-    ../../modules/services/openssh.nix
+    ../../modules/services/ssh
     ../../modules/services/tailscale.nix
     # ../../modules/services/netbird.nix
     ../../modules/services/samba/client.nix

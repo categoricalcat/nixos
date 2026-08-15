@@ -19,7 +19,7 @@ Host *
 
     KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
 
-    StrictHostKeyChecking accept-new
+    StrictHostKeyChecking yes
 
     ConnectTimeout 10
 
@@ -38,6 +38,9 @@ Host ssh.fufu.land
     ServerAliveInterval 60
     ServerAliveCountMax 3
     Compression yes
+    # Out-of-band backup path: the backend host key is not pinned because it
+    # may be repointed during maintenance.
+    StrictHostKeyChecking accept-new
 
 Host ssh.workd.land
     HostName ssh.fufu.land
@@ -46,3 +49,4 @@ Host ssh.workd.land
     ServerAliveInterval 60
     ServerAliveCountMax 3
     Compression yes
+    StrictHostKeyChecking accept-new

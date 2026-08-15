@@ -34,8 +34,10 @@ in
 
         access-control = [ "127.0.0.0/8 allow" ];
 
-        # Performance & Threading (16 threads for the 16-core router)
-        num-threads = 16;
+        # Performance & Threading (per-host, see addresses.nix dns.threads).
+        # Home QPS doesn't need a thread per core; caches are shared slabhashes,
+        # not per-thread, so fewer threads also mean fewer idle event loops.
+        num-threads = allAddresses.hosts.${config.networking.hostName}.dns.threads or 4;
         # *-cache-slabs left unset: auto power-of-2 matching num-threads
         so-reuseport = "yes";
 
@@ -66,9 +68,10 @@ in
         so-rcvbuf = "4m";
         so-sndbuf = "4m";
 
-        # Always use only the lowest-RTT nameserver; prefetch/serve-expired still explore.
+        # Prefer the fastest servers; num 3 keeps the three fastest in the
+        # candidate band so a hiccuping single server doesn't force retransmits.
         fast-server-permil = 1000;
-        fast-server-num = 1;
+        fast-server-num = 3;
 
         # Security Hardening & Privacy
         hide-identity = "yes";
@@ -85,7 +88,7 @@ in
         # Network & Fragmentation
         edns-buffer-size = 1232;
         do-ip4 = "yes";
-        do-ip6 = "yes";
+        do-ip6 = "no"; # no IPv6 connectivity on either host (verified: no default v6 route)
         do-udp = "yes";
         do-tcp = "yes";
       };

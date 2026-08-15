@@ -36,7 +36,7 @@ in
     ../../modules/nix-settings.nix
     ../../modules/networking/ipv6.nix
     ../../modules/networking/sysctl-base.nix
-    ../../modules/services/openssh.nix
+    ../../modules/services/ssh
     ../../modules/distributed-builds.nix
     # ../../modules/services/tailscale.nix
     ../../modules/services/samba/client.nix

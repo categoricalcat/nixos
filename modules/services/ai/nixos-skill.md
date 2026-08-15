@@ -15,6 +15,18 @@ Each host's configuration lives under `hosts/<hostname>/configuration.nix` in th
 
 If you are connected remotely and need to modify a *different* host's configuration, clearly state which host you are editing for and do **not** run deployment commands meant for a different host.
 
+## 1.5 Cross-Host Access (read-only)
+
+To inspect *another* mesh host (systemd status, journal, files), use the
+sanctioned lane: `ai-ssh <host> <command>` — a read-only gate enforced on the
+server (see `docs/src/services/ai-ssh.md`).
+
+- Never raw `ssh`, `scp`, `sshfs`, `mosh`, `rsync`.
+- Never `nixos-rebuild --target-host` / `--build-host` — hand the command to
+  the user instead.
+- `ai-ssh` is not deployed yet — until it is, ask the user before any remote
+  access.
+
 ## 2. Read Local Source Code First
 
 Always search for and read the source code in the local flake inputs folder, which is located at `/etc/nix/inputs`.

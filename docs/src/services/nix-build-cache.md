@@ -110,6 +110,13 @@ Each host authenticates to remote builders using its own SSH host key at
 as rotating the host's SSH host key. No Nix binary-cache signing key is needed;
 the SSH transport carries built paths back to the requester.
 
+Host keys are now **pinned**, not TOFU'd: `modules/services/ssh/known-hosts.nix`
+regenerates `/etc/ssh/ssh_known_hosts` from `secrets/keys.nix` ×
+`modules/addresses.nix` (bare names, `.lan`/`.local`/`.ts`/`.nb` aliases, and
+IPs), and the ssh client config uses `StrictHostKeyChecking yes`. When a host's
+key changes, update `secrets/keys.nix` before switching, or connections to that
+host will be refused.
+
 ## Build Locally, Switch Locally
 
 From the host you want to switch, ask `yifuwuqi` to build and then copy the

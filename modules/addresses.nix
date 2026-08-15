@@ -161,6 +161,7 @@ in
       hostName = "yifuwuqi";
 
       dns = {
+        threads = 6; # unbound num-threads on this host
         systemNameservers = [
           "10.42.0.1"
           "127.0.0.1"
@@ -498,6 +499,7 @@ in
       hostName = "yirukou";
 
       dns = {
+        threads = 6; # unbound num-threads on this host
         systemNameservers = [ "127.0.0.1" ];
         lanServers = [
           "10.42.0.1"

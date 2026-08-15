@@ -17,6 +17,7 @@ HOST_KEY="/persist/keys/ssh/ssh_host_ed25519_key"
 HOST_KEY_DIR="$(dirname "$HOST_KEY")"
 MESH_KEY="$USER_HOME/.ssh/id_ed25519"
 GIT_KEY="$USER_HOME/.ssh/id_git_ed25519"
+AI_KEY="$USER_HOME/.ssh/id_ai_ed25519"
 
 echo "=<< setup for $HOSTNAME >>="
 
@@ -60,9 +61,16 @@ else
     echo "-> git Key ok"
 fi
 
+if [ ! -f "$AI_KEY" ]; then
+    echo "-> Generating AI Key..."
+    sudo -u yi ssh-keygen -t ed25519 -N "" -f "$AI_KEY" -C "ai@$HOSTNAME"
+else
+    echo "-> ai key ok"
+fi
+
 chown yi:yi "$USER_HOME/.ssh"
 chmod 0700 "$USER_HOME/.ssh"
-for key in "$MESH_KEY" "$GIT_KEY"; do
+for key in "$MESH_KEY" "$GIT_KEY" "$AI_KEY"; do
     if [ -f "$key" ]; then
         chown yi:yi "$key"
         chmod 0600 "$key"
@@ -95,6 +103,7 @@ fi
 # We are running as root, so we can cat these files safely.
 HOST_PUB=$(cat "$HOST_KEY.pub")
 MESH_PUB=$(cat "$MESH_KEY.pub")
+AI_PUB=$(cat "$AI_KEY.pub")
 HOST_AGE=$(echo "$HOST_PUB" | sudo -u yi nix shell nixpkgs#ssh-to-age -c ssh-to-age)
 MESH_AGE=$(echo "$MESH_PUB" | sudo -u yi nix shell nixpkgs#ssh-to-age -c ssh-to-age)
 
@@ -103,6 +112,9 @@ if ! grep -Fq "$HOST_PUB" secrets/keys.nix 2>/dev/null; then
     NEEDS_INSTRUCTIONS=true
 fi
 if ! grep -Fq "$MESH_PUB" secrets/keys.nix 2>/dev/null; then
+    NEEDS_INSTRUCTIONS=true
+fi
+if ! grep -Fq "$AI_PUB" secrets/keys.nix 2>/dev/null; then
     NEEDS_INSTRUCTIONS=true
 fi
 
@@ -130,6 +142,16 @@ EOF
         ageRecipient = "$MESH_AGE";
       };
 EOF
+
+    echo ""
+    echo "=========================================="
+    echo "   Add to secrets/keys.nix (users.ai)     "
+    echo "=========================================="
+    cat <<EOF
+      $HOSTNAME = {
+        sshPublicKey = "$AI_PUB";
+      };
+EOF
 fi
 
 echo ""
@@ -141,6 +163,7 @@ echo "-> mesh age:    $MESH_AGE"
 echo "-> host pkey:   $HOST_PUB"
 echo "-> mesh pkey:   $MESH_PUB"
 echo "-> git pkey:    $(cat "$GIT_KEY.pub")"
+echo "-> ai pkey:     $AI_PUB"
 echo ""
 
 echo "-> setup /persist/keys/sops permissions"

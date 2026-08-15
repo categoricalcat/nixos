@@ -99,6 +99,21 @@ in
         task = "ask";
         firecrawl_search = "allow";
         firecrawl_scrape = "allow";
+
+        # Raw remote-access binaries are denied outright; the only sanctioned
+        # lane is `ai-ssh <host> <command>` (read-only gate, server-enforced).
+        # The repo rule prefixes shell commands with `rtk`, so that form is
+        # denied too. Anything not listed here keeps the default (ask).
+        # No overlapping patterns => no order dependence.
+        bash = {
+          "ssh*" = "deny";
+          "scp*" = "deny";
+          "sshfs*" = "deny";
+          "mosh*" = "deny";
+          "rtk ssh*" = "deny";
+          "rsync*" = "deny";
+          "ai-ssh*" = "allow";
+        };
       };
     };
   };
