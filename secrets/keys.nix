@@ -55,9 +55,6 @@ let
     };
 
     # Read-only `ai` account (see docs/src/plans/ssh-mesh-hardening.md, Phase 3).
-    # Generate the per-host keys on each mesh host with setup-sops.sh, then
-    # replace each `null` below with the printed `sshPublicKey`. The ai gate
-    # needs no secrets, so these are NOT sops age recipients.
     ai = rec {
       sshAuthorizedKeys = builtins.filter (x: x != null) (
         map (k: k.sshPublicKey) (builtins.attrValues meshKeys)
@@ -73,7 +70,7 @@ let
         };
 
         yirukou = {
-          sshPublicKey = null;
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICKpimnH0veob7IVu4y1EWEmicQFLrMSXf185BOjMzDi ai@yirukou";
         };
 
         yixiaoqing = {

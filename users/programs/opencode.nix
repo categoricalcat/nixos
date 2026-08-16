@@ -112,6 +112,12 @@ in
           "mosh*" = "deny";
           "rtk ssh*" = "deny";
           "rsync*" = "deny";
+          "sudo*" = "deny";
+          "sops*" = "deny";
+          "nixos-rebuild switch*" = "deny";
+          "nixos-rebuild boot*" = "deny";
+          "nixos-rebuild test*" = "deny";
+          "nix switch*" = "deny";
           "ai-ssh*" = "allow";
         };
       };

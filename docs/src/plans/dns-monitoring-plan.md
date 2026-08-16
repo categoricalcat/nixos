@@ -289,3 +289,23 @@ scoped queries with `{host="$host"}`.
   firewall), the panels could be restored along with a GeoIP DB (DB-IP lite
   mmdb needs no account; MaxMind GeoLite2 needs a license key in sops).
 - Dashboard stays on classic-schema revision 3 (v2beta1 caveat unchanged).
+
+## Phase 3: Dashboard honesty (percentiles + miss-path visibility) — 2026-08-16
+
+Diagnosis: on the primary resolver `yirukou`, client-facing DNS is ~1ms
+(p50/p95 of AGH `query_elapsed`), but the dashboard averages (AGH upstream avg
+~22ms, unbound recursion avg ~71ms) headline the rare-but-slow recursive
+cache-miss path (100-800ms per miss over the ISP's 130-310ms RTT to
+root/TLD servers). No DNS stack change is warranted; the dashboards were made
+honest instead.
+
+Changes (see `docs/src/plans/dns-dashboard-honesty-plan.md`):
+- AGH panel id 20 -> "Upstream latency (avg / p50 / p95)"; added a
+  "Client-facing latency (query elapsed) p50/p95/p99" panel; shifted the
+  Exporter Healths row down by 8.
+- Unbound: appended "Response time percentiles (p50/p95/p99)",
+  "Recursion time (avg / median)", and "Miss path: misses / prefetches /
+  expired served (per s)" panels.
+- Deploy: `sudo nixos-rebuild switch --flake .#yifuwuqi` (dashboard
+  re-provision only).
+

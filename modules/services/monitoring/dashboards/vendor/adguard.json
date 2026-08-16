@@ -679,7 +679,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "This panel displays the **average response time of DNS upstream servers**, in milliseconds.\n\n- Based on metric: `adguard_upstream_avg_response_time_seconds`\n- Converted to milliseconds by multiplying with 1000:",
+      "description": "This panel displays the **response time of DNS upstream servers** (the AGH -> local unbound leg), in milliseconds.\n\n- `avg`: `adguard_upstream_avg_response_time_seconds` (misleading: dragged up by the rare cache-miss recursion path)\n- `p50` / `p95`: percentiles of the `adguard_upstream_latency_seconds` histogram (true distribution)\n- Converted to milliseconds by multiplying with 1000:",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -774,12 +774,34 @@
           },
           "editorMode": "code",
           "expr": "adguard_upstream_avg_response_time_seconds{host=\"$host\"} * 1000",
-          "legendFormat": "{{upstream}}",
+          "legendFormat": "{{upstream}}: avg",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(adguard_upstream_latency_seconds_bucket{host=\"$host\"}[5m])) by (le, upstream)) * 1000",
+          "legendFormat": "{{upstream}}: p50",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(adguard_upstream_latency_seconds_bucket{host=\"$host\"}[5m])) by (le, upstream)) * 1000",
+          "legendFormat": "{{upstream}}: p95",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "title": "🌐 Avg Upstream Response Time",
+      "title": "Upstream latency (avg / p50 / p95)",
       "type": "timeseries"
     },
     {
@@ -1724,12 +1746,142 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Client-facing latency as measured by AGH (full query elapsed time). This is what users actually experience; p50/p95 are ~1ms on the primary resolver because AGH's edge cache absorbs the hot working set.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 2,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 3,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 200
+              },
+              {
+                "color": "dark-red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 59
+      },
+      "id": 33,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(adguard_query_elapsed_ms_bucket{host=\"$host\"}[5m])) by (le))",
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(adguard_query_elapsed_ms_bucket{host=\"$host\"}[5m])) by (le))",
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(rate(adguard_query_elapsed_ms_bucket{host=\"$host\"}[5m])) by (le))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "title": "Client-facing latency (query elapsed) p50/p95/p99",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 59
+        "y": 67
       },
       "id": 23,
       "panels": [],
@@ -1785,7 +1937,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 60
+        "y": 68
       },
       "id": 22,
       "options": {
@@ -1894,7 +2046,7 @@
         "h": 8,
         "w": 8,
         "x": 4,
-        "y": 60
+        "y": 68
       },
       "id": 24,
       "options": {
@@ -1966,7 +2118,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 68
       },
       "id": 32,
       "options": {
@@ -2056,7 +2208,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 64
+        "y": 72
       },
       "id": 25,
       "options": {
