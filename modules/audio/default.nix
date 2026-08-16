@@ -132,7 +132,6 @@ in
     pkgs.mda_lv2
     pkgs.infamousplugins
     pkgs.fomp
-    pkgs.eq10q
     pkgs.fil-plugins
     pkgs.fverb
     pkgs.wolf-shaper
