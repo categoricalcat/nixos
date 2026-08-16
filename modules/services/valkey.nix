@@ -12,11 +12,15 @@
       enable = true;
       bind = addresses.services.valkey.host;
       port = addresses.services.valkey.port;
-      # unbound's cachedb module never removes data from the store itself;
-      # cap memory and let valkey evict least-recently-used keys. Keys are
-      # also TTL'd by unbound (redis-expire-records = "yes"). protected-mode
-      # is off so unbound can reach it from yirukou over the LAN; the
-      # valkey-guard nftables table is the access control.
+      # unbound SETs keys with EX = clamped DNS TTL + serve-expired-ttl
+      # (7d1h-14d), so the db normally self-cleans. maxmemory + allkeys-lru
+      # is the fallback cap for keys stored WITHOUT EX: unbound's redis_init
+      # probes SET-with-EX once at startup and never re-probes on reconnect,
+      # so booting before valkey is reachable means plain SET for the whole
+      # process lifetime. Note allkeys-lru evicts across logical DBs,
+      # including SearXNG's db1. protected-mode is off so unbound can reach
+      # it from yirukou over the LAN; the valkey-guard nftables table is the
+      # access control.
       extraParams = [
         "--maxmemory"
         "1gb"

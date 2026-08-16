@@ -4,6 +4,7 @@
   config,
   headless ? false,
   developer ? (!headless),
+  tui ? true,
   vr ? false,
   ...
 }:
@@ -33,9 +34,11 @@ in
     ../programs/ssh
     ../programs/fastfetch.nix
   ]
+  ++ lib.optionals tui [
+    ../programs/tui.nix
+  ]
   ++ lib.optionals developer [
     ../programs/vscode-theme.nix
-    ../programs/tui.nix
     ../programs/neovim.nix
   ];
 

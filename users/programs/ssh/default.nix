@@ -1,6 +1,5 @@
 {
   lib,
-  pkgs,
   ...
 }:
 let
@@ -8,12 +7,6 @@ let
   allAddresses = import ../../../modules/addresses.nix;
   dynamicSshConfig = import ../../../modules/services/ssh/dynamic.nix {
     inherit lib allAddresses keys;
-  };
-
-  aiSshApp = pkgs.writeShellApplication {
-    name = "ai-ssh";
-    runtimeInputs = [ pkgs.coreutils ];
-    text = builtins.readFile ../../scripts/ai-ssh.sh;
   };
 in
 {
@@ -36,6 +29,4 @@ in
       ${dynamicSshConfig}
     '';
   };
-
-  home.packages = [ aiSshApp ];
 }

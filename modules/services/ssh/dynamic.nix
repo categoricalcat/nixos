@@ -15,10 +15,25 @@ let
           Port ${toString host.ssh.listenPort}
     '';
 
+  # Bare-name routing so `ai-ssh <host> <command>` resolves. Prefer the LAN
+  # address when the host has one (yifuwuqi, yirukou), otherwise fall back to
+  # the tailscale address (yitaishi, yixiaoqing accept ssh only via VPN).
+  mkBareRewrite =
+    host:
+    let
+      lanIp = lib.attrByPath [ "network" "lan" "ipv4" "host" ] null host;
+      ip = if lanIp != null then lanIp else host.network.vpn.ipv4.host;
+    in
+    lib.optionalString ((host.ssh.listenPort or null) != null) ''
+      Host ${host.hostName}
+          HostName ${ip}
+          Port ${toString host.ssh.listenPort}
+    '';
+
   dynamicSshConfig = lib.concatStringsSep "\n" (
-    lib.concatMap (host: map (alias: mkSshRewrite host alias) allAddresses.aliases) (
-      builtins.attrValues allAddresses.hosts
-    )
+    builtins.concatMap (
+      host: [ (mkBareRewrite host) ] ++ (map (alias: mkSshRewrite host alias) allAddresses.aliases)
+    ) (builtins.attrValues allAddresses.hosts)
   );
 in
 ''

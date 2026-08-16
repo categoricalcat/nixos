@@ -45,6 +45,7 @@
               keyboardProfile = "us-intl";
               headless = false;
               developer = true;
+              tui = true;
               vr = false;
             };
             modules = [

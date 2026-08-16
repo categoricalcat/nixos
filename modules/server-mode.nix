@@ -18,6 +18,11 @@ in
       default = false;
       description = "Include developer tooling in the home-manager profile on headless hosts";
     };
+    tui = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include terminal UI and productivity tools";
+    };
   };
 
   config = lib.mkIf cfg.headless {

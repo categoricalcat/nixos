@@ -69,6 +69,10 @@ _: {
         exec nix run github:jacopone/antigravity-nix#google-antigravity-ide -- "$@"
       '';
 
+      nxdOpencodeWrapper = pkgs.writeShellScriptBin "nxd-opencode" ''
+        exec nix run github:anomalyco/opencode#opencode -- "$@"
+      '';
+
       nixDevPkgs = with pkgs; [
         statix # Lints and suggestions for Nix
         deadnix # Nix dead code locator
@@ -105,6 +109,7 @@ _: {
             nxdAgentWrapper
             nxdCursorWrapper
             nxdAntigravityWrapper
+            nxdOpencodeWrapper
           ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"

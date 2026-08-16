@@ -65,11 +65,11 @@ let
 
       meshKeys = {
         yifuwuqi = {
-          sshPublicKey = null;
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIfeDtTmqxtZAJem+P21xb+YSFxUQW1UP2NCVFy10YAJ ai@yifuwuqi";
         };
 
         yitaishi = {
-          sshPublicKey = null;
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAeFhfoGC6M5MfcnqSPTU0yRnxTHT6MxYUiR2HqjXYRt ai@yitaishi";
         };
 
         yirukou = {
@@ -77,7 +77,7 @@ let
         };
 
         yixiaoqing = {
-          sshPublicKey = null;
+          sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMvsQ0jz1OKb1QOm7VfniDauBrCa1WeZNwnXzhIf1dud ai@yixiaoqing";
         };
       };
     };

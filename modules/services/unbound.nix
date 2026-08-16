@@ -48,7 +48,7 @@ in
         # Stale-while-revalidate: hold popular records long, refresh in background,
         # serve stale instantly on expiry, keep stale entries alive on refresh failure
         cache-min-ttl = 3600;
-        cache-max-ttl = 604800; # 7 days, unbound maximum
+        cache-max-ttl = 604800; # 7 days, chosen cap (default 86400; not a hard max)
         prefetch = "yes";
         prefetch-key = "yes";
         serve-expired = "yes";
@@ -97,6 +97,13 @@ in
       # Low timeout so a hung valkey degrades to memory-cache-only resolution
       # instead of stalling DNS. secret-seed stays at the default on both
       # hosts so keys are identical and shareable.
+      #
+      # redis-expire-records: redis_store SETs with EX = clamped_ttl +
+      # serve-expired-ttl (cachedb/redis.c: ttl += cfg->serve_expired_ttl),
+      # i.e. 7d1h-14d. Keys thus expire exactly when the read side
+      # (good_expiry_and_qinfo) would refuse them (older than expiry +
+      # serve-expired-ttl). Turning EX off would desync L2 from the 7d stale
+      # window and grow the db until the 1 GiB LRU cap.
       cachedb = {
         backend = "redis";
         redis-server-host = cacheDb.host;

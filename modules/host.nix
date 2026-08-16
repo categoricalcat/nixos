@@ -35,6 +35,12 @@
       description = "Include developer tooling in the home-manager profile";
     };
 
+    tui = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include terminal UI and productivity tools (starship, tmux, zellij, btop, fzf, zoxide, yazi, etc.)";
+    };
+
     vr = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -43,7 +49,10 @@
   };
 
   config = {
-    serverMode.headless = config.host.desktopEnvironment == null;
-    serverMode.developer = config.host.developer;
+    serverMode = {
+      headless = config.host.desktopEnvironment == null;
+      developer = config.host.developer;
+      tui = config.host.tui;
+    };
   };
 }

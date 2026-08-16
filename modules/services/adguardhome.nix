@@ -69,21 +69,26 @@ in
 
         # Edge quick cache (AGH) in front of the slow-but-huge unbound+valkey
         # resolver. AGH answers the hot working set from RAM in ~sub-ms; the
-        # cache is keyed per (qname,qtype,DO), and unbound floors TTLs at >= 1h
-        # (cache-min-ttl) so entries linger long in AGH's cache.
+        # cache is keyed per (qname,qtype,DO).
         cache_enabled = true;
         cache_size = 67108864; # 64 MiB (default is 4 MiB)
-        # Optimistic refresh: on expiry AGH keeps serving the stale answer
-        # (TTL cache_optimistic_answer_ttl) while re-resolving in the
-        # background, so client-visible latency stays ~0 even on cold-upstream
-        # refresh. cache_optimistic_max_age bounds how long expired entries
-        # remain servable. These match the AGH 0.107.x defaults.
+        # cache_ttl_max caps stored AND served TTLs at 5m (dnsproxy clamps
+        # every upstream response via setMinMaxTTL), so a hot name re-queries
+        # unbound ~every 300s and lands in prefetch's last-10%-of-TTL window
+        # (>= 360s on a cache-min-ttl=1h record). unbound (>=1h / <=7d) and
+        # valkey (EX = clamped TTL + 7d) keep the long copy; clients see at
+        # most 5m of edge staleness. cache_ttl_min stays 0 (unset): unbound
+        # already floors TTLs at >= 1h.
+        cache_ttl_max = 300;
+        # Optimistic refresh: on expiry AGH serves the stale answer (with TTL
+        # cache_optimistic_answer_ttl) and re-resolves in the background on
+        # EVERY expired hit, so client latency stays ~0. max_age is NOT a
+        # refresh cadence: it only bounds how long a *failed* refresh may
+        # still be served past expiry (only matters when local unbound is
+        # down). 1h instead of the 12h default -- this is a short edge cache.
         cache_optimistic = true;
         cache_optimistic_answer_ttl = "30s";
-        cache_optimistic_max_age = "12h";
-        # cache_ttl_min/cache_ttl_max left at 0 (no override): unbound already
-        # floors TTLs at cache-min-ttl and caps at cache-max-ttl, and a lower
-        # AGH max would only push extra queries down to unbound.
+        cache_optimistic_max_age = "1h";
         enable_dnssec = true;
         ipv6_disabled = false;
         max_goroutines = 1000;
