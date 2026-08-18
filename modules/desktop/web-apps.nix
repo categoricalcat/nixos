@@ -40,6 +40,12 @@ let
       icon = "${iconBase}/gemini.svg";
     };
 
+    kimi = {
+      name = "Kimi";
+      url = "https://kimi.ai/";
+      icon = "${iconBase}/browser.svg";
+    };
+
     my-nixos = {
       name = "My NixOS";
       url = "https://mynixos.com/";
@@ -68,6 +74,12 @@ let
       name = "Forgejo.git";
       url = "https://git.fufu.land/";
       icon = "${iconBase}/git.svg";
+    };
+
+    grafana = {
+      name = "Grafana";
+      url = "https://grafana.fufu.land/";
+      icon = "${iconBase}/utilities-system-monitor.svg";
     };
 
     tiktok = {

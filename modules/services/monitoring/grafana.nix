@@ -41,6 +41,13 @@ let
                 end
               ) |
               walk(
+                if type == "object" and has("type") and .type == "query" and has("name") then
+                  .includeAll = false | .multi = false
+                else
+                  .
+                end
+              ) |
+              walk(
                 if type == "object" and .legend?.placement? == "right" then
                   .legend.placement = "bottom"
                 else

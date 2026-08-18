@@ -1,22 +1,18 @@
 { config, lib, ... }:
 
 {
-  options.services.nix-access-tokens.enable = lib.mkEnableOption "GitHub access tokens for Nix";
+  options.services.nix-access-tokens.enable = lib.mkEnableOption "GitHub access token for Nix flake fetches (sops secret nix/access-tokens)";
 
-  config = {
-    sops.secrets = lib.optionalAttrs config.services.nix-access-tokens.enable {
-      "github-token" = {
-        mode = "0440";
-      };
+  # Opt-in: enabling without the nix.access-tokens key in the host's sops file fails sops-install-secrets.
+  # Fine-grained PAT, public repos read-only, no permissions — see docs/src/services/secrets.md.
+  config = lib.mkIf config.services.nix-access-tokens.enable {
+    sops.secrets."nix/access-tokens" = {
+      mode = "0440";
+      group = "wheel";
     };
 
-    sops.templates = lib.mkIf config.services.nix-access-tokens.enable {
-      "nix-access-tokens" = {
-        content = ''
-          access-tokens = github.com=${config.sops.secrets."github-token".placeholder}
-        '';
-        mode = "0440";
-      };
-    };
+    nix.extraOptions = ''
+      !include ${config.sops.secrets."nix/access-tokens".path}
+    '';
   };
 }

@@ -2,8 +2,6 @@
 
 {
   inputs,
-  config,
-  lib,
   global,
   ...
 }:
@@ -48,17 +46,13 @@ in
 
   host.developer = true;
 
+  services.nix-access-tokens.enable = true;
+
   nix.settings = {
     trusted-users = [
       "@wheel"
     ];
   };
-
-  nix.extraOptions = lib.optionalString config.services.nix-access-tokens.enable ''
-    include ${config.sops.templates."nix-access-tokens".path}
-  '';
-
-  services.nix-access-tokens.enable = false;
 
   hardware = {
     enableRedistributableFirmware = true;

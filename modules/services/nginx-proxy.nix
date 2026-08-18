@@ -2,6 +2,7 @@
   addresses,
   allAddresses,
   config,
+  lib,
   ...
 }:
 
@@ -17,9 +18,9 @@ let
     ${builtins.concatStringsSep "\n" (map (cidr: "allow ${cidr};") trustedProxyCidrs)}
     deny all;
   '';
-  acmeResolvers = map (resolver: "--dns.resolvers=${resolver}") (
-    addresses.dns.fallbackServers or [ "9.9.9.9:53" ]
-  );
+  # Use Cloudflare's public DNS exclusively for ACME propagation since we use Cloudflare DNS-01
+  cloudflareIpv4 = lib.filter (ns: !lib.hasInfix ":" ns) addresses.dns.cloudflare;
+  acmeResolvers = map (ns: "--dns.resolvers=${ns}:53") cloudflareIpv4;
 in
 {
 

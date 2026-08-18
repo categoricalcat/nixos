@@ -506,9 +506,9 @@ in
           "10.42.0.2"
         ];
         fallbackServers = [
-          "9.9.9.9:53"
-          "149.112.112.112:53"
-          "[2620:fe::fe]:53"
+          "${builtins.elemAt sharedDnsUpstreams.quad9 5}:53"
+          "${builtins.elemAt sharedDnsUpstreams.quad9 6}:53"
+          "[${builtins.elemAt sharedDnsUpstreams.quad9 7}]:53"
         ];
       }
       // sharedDnsUpstreams;

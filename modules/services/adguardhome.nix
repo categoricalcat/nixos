@@ -56,8 +56,7 @@ in
 
         bootstrap_prefer_ipv6 = false;
         bootstrap_dns = [
-          "2620:fe::fe"
-          "9.9.9.9"
+          "127.0.0.1:5335"
         ];
 
         edns_client_subnet = {
@@ -190,9 +189,11 @@ in
   systemd.services.adguardhome = {
     wants = [
       "network-online.target"
+      "unbound.service"
     ];
     after = [
       "network-online.target"
+      "unbound.service"
     ]
     # ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
     ++ (lib.optional config.services.netbird.enable "netbird.service");
