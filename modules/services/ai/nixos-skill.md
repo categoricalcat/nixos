@@ -24,8 +24,8 @@ server (see `docs/src/services/ai-ssh.md`).
 - Never raw `ssh`, `scp`, `sshfs`, `mosh`, `rsync`.
 - Never `nixos-rebuild --target-host` / `--build-host` — hand the command to
   the user instead.
-- `ai-ssh` is not deployed yet — until it is, ask the user before any remote
-  access.
+- `ai-ssh` is deployed on all mesh hosts and is the only sanctioned lane for
+  cross-host reads — use it, no need to ask.
 
 ## 2. Read Local Source Code First
 

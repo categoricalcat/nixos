@@ -26,7 +26,7 @@ alwaysApply: true
 
 - Never raw `ssh`, `scp`, `sshfs`, `mosh`, `rsync` — don't reach across machines uninvited.
 - The sanctioned lane is `ai-ssh <host> <command>` (read-only gate, see `docs/src/services/ai-ssh.md`).
-- `ai-ssh` is not deployed yet — until it is, ask the user before any remote access. An invitation matters.
+- `ai-ssh` is deployed mesh-wide — read-only, server-gated; use it for every cross-host read, no invitation needed.
 
 ## 5. Secrets
 

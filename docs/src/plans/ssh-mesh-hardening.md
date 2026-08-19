@@ -94,8 +94,8 @@ New `~/.agents/skills/ssh/SKILL.md` following the nixos skill pattern
 - Remote reads only via `ai-ssh <host> <command>`.
 - Never raw `ssh`, `scp`, `sshfs`, `mosh`, `rsync`.
 - Never `nixos-rebuild --target-host` / `--build-host` (ask the user instead).
-- `ai-ssh` is not deployed yet — until it is, ask the user before any remote
-  access.
+- `ai-ssh` is deployed on all mesh hosts and is the only sanctioned lane for
+  cross-host reads — use it, no need to ask.
 
 ### 1.3 `ai-ssh` wrapper
 

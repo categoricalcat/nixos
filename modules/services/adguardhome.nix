@@ -58,6 +58,8 @@ in
         bootstrap_dns = [
           "127.0.0.1:5335"
         ];
+        # fallback_dns = [];
+        local_ptr_upstreams = [ "127.0.0.1:5335" ];
 
         edns_client_subnet = {
           enabled = true;
@@ -195,7 +197,7 @@ in
       "network-online.target"
       "unbound.service"
     ]
-    # ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
     ++ (lib.optional config.services.netbird.enable "netbird.service");
 
     environment = {
