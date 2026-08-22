@@ -1,7 +1,6 @@
 {
   allAddresses,
   lib,
-  pkgs,
   ...
 }:
 
@@ -71,16 +70,8 @@ in
   );
 
   systemd = {
-    services.cifs-lazy-umount = {
-      description = "Lazy-unmount CIFS shares before network shutdown";
-      wantedBy = [ "multi-user.target" ];
-      after = mountUnitNames;
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = "${pkgs.coreutils}/bin/true";
-        ExecStop = "-${pkgs.util-linux}/bin/umount -a -l -t cifs";
-      };
+    services."user@" = {
+      after = mountUnitNames ++ automountUnitNames;
     };
 
     services.smb-mounts-recover = {

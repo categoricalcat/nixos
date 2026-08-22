@@ -65,7 +65,7 @@ in
       inputs
       monitors
       ;
-    keyboardProfile = "br-thinkpad";
+    keyboardProfile = "br";
     stateVersion = global.homeVersion;
   };
 

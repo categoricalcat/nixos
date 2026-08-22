@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}:
 
 let
   tomlFormat = pkgs.formats.toml { };
@@ -85,8 +90,11 @@ let
   };
 in
 {
-  home.packages = [ pkgs.mprisence ];
+  config = lib.mkIf (config.host.desktopEnvironment != null) {
+    home.packages = [ pkgs.mprisence ];
 
-  xdg.configFile."mprisence/config.toml".source =
-    tomlFormat.generate "mprisence-config" defaultConfig;
+    xdg.configFile."mprisence/config.toml".source =
+      tomlFormat.generate "mprisence-config" defaultConfig;
+
+  };
 }

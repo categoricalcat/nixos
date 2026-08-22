@@ -2,13 +2,11 @@
   pkgs,
   lib,
   config,
-  headless ? false,
-  developer ? (!headless),
-  tui ? true,
-  vr ? false,
   ...
 }:
 let
+  inherit (config.serverMode) developer;
+  inherit (config.host) vr;
   agentSkills = {
     ".gemini/config/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
     ".gemini/config/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
@@ -33,11 +31,7 @@ in
     ../programs/git.nix
     ../programs/ssh
     ../programs/fastfetch.nix
-  ]
-  ++ lib.optionals tui [
     ../programs/tui.nix
-  ]
-  ++ lib.optionals developer [
     ../programs/vscode-theme.nix
     ../programs/neovim.nix
   ];

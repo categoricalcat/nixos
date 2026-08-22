@@ -18,14 +18,11 @@
     ./services/kmscon.nix
   ];
 
-  home-manager.extraSpecialArgs = {
-    headless = config.serverMode.headless;
-    developer = config.serverMode.developer;
-    tui = config.host.tui;
-    desktopEnvironment = config.host.desktopEnvironment;
-    desktopShell = config.host.desktopShell;
-    vr = config.host.vr;
-  };
+  home-manager.sharedModules = [
+    {
+      inherit (config) host serverMode;
+    }
+  ];
 
   nix.package = lib.mkForce pkgs.lix;
   nixpkgs.config.allowUnfree = true;

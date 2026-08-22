@@ -37,19 +37,10 @@
               overlays = import ./nix/overlays.nix { inherit inputs; };
             };
             extraSpecialArgs = {
-              inherit inputs;
-              stateVersion = global.homeVersion;
-              desktopEnvironment = "niri";
-              desktopShell = "dms";
-              monitors = [ ];
-              keyboardProfile = "us-intl";
-              headless = false;
-              developer = true;
-              tui = true;
-              vr = false;
+              inherit inputs global;
             };
             modules = [
-              ./users/home/yi.nix
+              ./users/home/yijia.nix
               inputs.niri.homeModules.config
               { home.stateVersion = global.homeVersion; }
             ];

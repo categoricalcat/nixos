@@ -54,7 +54,7 @@ in
 
   home-manager = mkHome {
     inherit inputs;
-    keyboardProfile = "us-intl";
+    keyboardProfile = "us";
     stateVersion = global.homeVersion;
   };
 

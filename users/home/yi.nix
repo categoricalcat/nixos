@@ -1,35 +1,24 @@
 {
   pkgs,
   lib,
-  desktopEnvironment ? null,
-  desktopShell ? null,
-  headless ? false,
-  developer ? (!headless),
+  config,
   ...
 }:
 let
   homeDirectory = "/home/yi";
+  inherit (config.host) desktopEnvironment;
+  inherit (config.serverMode) developer;
 in
 {
   imports = [
+    ../../modules/options/host.nix
+    ../../modules/options/server-mode.nix
+    ../../modules/options/desktop.nix
     ./common.nix
-  ]
-  ++ lib.optionals developer [
     ../programs/opencode.nix
-  ]
-  ++ lib.optionals (desktopEnvironment != null) [
     ../programs/fcitx5.nix
     ../programs/kitty.nix
     ../programs/mprisence.nix
-  ]
-  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "dms") [
-    ../programs/dms.nix
-  ]
-  ++ lib.optionals (desktopEnvironment == "niri" && desktopShell == "noctalia") [
-    ../programs/noctalia
-  ]
-  ++ lib.optionals (desktopEnvironment == "niri") [
-    ../programs/niri.nix
   ];
 
   home = {

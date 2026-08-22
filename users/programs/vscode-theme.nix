@@ -336,7 +336,7 @@ let
 
 in
 {
-  config = lib.mkIf hasStylix {
+  config = lib.mkIf (config.serverMode.developer && hasStylix) {
     # opencode has no --install-extension CLI; keep a plain folder symlink
     home.file = {
       ".opencode/extensions/${extUniqueId}-${extVersion}".source =

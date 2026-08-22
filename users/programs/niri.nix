@@ -1,13 +1,14 @@
 {
   lib,
   pkgs,
-  desktopShell ? "none",
-  monitors ? [ ],
+  config,
   inputs,
   ...
 }:
 
 let
+  desktopShell = config.host.desktopShell;
+  monitors = config.desktop.monitors;
   colors = import ../../modules/theme.nix;
 
   parseMode =
@@ -273,9 +274,10 @@ in
 {
   # homeModules.config is auto-imported via home-manager.sharedModules by the
   # niri NixOS module for NixOS hosts, and via flake.nix for homeConfigurations.yijia.
-  imports =
-    lib.optional (desktopShell == "dms") inputs.dms.homeModules.niri
-    ++ lib.optional (desktopShell == "dms") ./niri-dms.nix;
+  imports = [
+    inputs.dms.homeModules.niri
+    ./niri-dms.nix
+  ];
 
   config = {
     xdg.enable = true;

@@ -1,5 +1,5 @@
 {
-  keyboardProfile ? "us-intl",
+  keyboardProfile ? "us",
   inputs,
   monitors ? [ ],
   stateVersion,
@@ -12,11 +12,16 @@
   extraSpecialArgs = {
     inherit
       inputs
-      keyboardProfile
-      monitors
       stateVersion
       ;
   };
+
+  sharedModules = [
+    {
+      desktop.monitors = monitors;
+      desktop.keyboard = keyboardProfile;
+    }
+  ];
 
   users.yi = {
     imports = [ ../users/home/yi.nix ];
