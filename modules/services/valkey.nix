@@ -19,8 +19,7 @@
       # so booting before valkey is reachable means plain SET for the whole
       # process lifetime. Note allkeys-lru evicts across logical DBs,
       # including SearXNG's db1. protected-mode is off so unbound can reach
-      # it from yirukou over the LAN; the valkey-guard nftables table is the
-      # access control.
+      # it from yirukou over the LAN; default-deny firewall permits yirukou gateway.
       extraParams = [
         "--maxmemory"
         "1gb"

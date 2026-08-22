@@ -101,8 +101,8 @@ in
     # DAW
     pkgs.reaper
     pkgs.reaper-reapack-extension
-    pkgs.ardour
-    pkgs.bitwig-studio
+    # pkgs.ardour
+    # pkgs.bitwig-studio
 
     # Amp & cabinet simulators
     pkgs.guitarix

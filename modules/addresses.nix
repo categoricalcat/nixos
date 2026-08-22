@@ -138,8 +138,7 @@ in
       };
 
       # Shared valkey (unbound cachedb DNS cache + searxng). Runs only on the
-      # central host, reaches the instance over its unix socket (same-host, so
-      # it bypasses the valkey-guard nftables table). Key name must match the
+      # central host, reaches the instance locally over its unix socket. Key name must match the
       # nixpkgs exporter module (services.prometheus.exporters.redis).
       redis = {
         hosts = "centralHost";

@@ -45,7 +45,7 @@ in
       [Lidarr]
       api_key = ${config.sops.placeholder."arr/lidarr_api_key"}
       # Lidarr is a host service; the LAN IP is reachable from the gluetun
-      # network namespace (allowed by backend-ui-guard for container subnets).
+      # network namespace (allowed by firewall extraInputRules for container subnets).
       host_url = http://${lanHost}:${toString services.lidarr.port}
       download_dir = /persist/media/downloads/soulseek
       disable_sync = False

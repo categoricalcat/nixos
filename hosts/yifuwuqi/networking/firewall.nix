@@ -14,19 +14,6 @@ let
     addresses.network.lan.ipv4.host
     allAddresses.hosts.yirukou.network.lan.ipv4.host
   ];
-  backendUiPorts = nftSet (
-    map toString [
-      addresses.services.radarr.port
-      addresses.services.sonarr.port
-      addresses.services.lidarr.port
-      addresses.services.readarr.port
-      addresses.services.prowlarr.port
-      addresses.services.bazarr.port
-      addresses.services.qbittorrent.port
-      addresses.services.slskd.port
-      addresses.services.homepage.port
-    ]
-  );
 in
 
 {
@@ -48,70 +35,43 @@ in
         5353 # mDNS/Avahi
       ];
 
+      # eno1 (LAN) is default-deny. Only explicitly declared ports and yirukou gateway traffic are permitted.
       trustedInterfaces = [
         "tailscale0"
-        "eno1"
       ];
 
-      interfaces."eno1".allowedTCPPorts = [ addresses.ssh.listenPort ];
-      # interfaces."eno1".allowedUDPPorts = [];
+      interfaces."eno1" = {
+        allowedTCPPorts = [
+          addresses.ssh.listenPort
+          addresses.services.adguardhome.port
+          addresses.services.adguardhome.dnsPort
+        ];
+
+        allowedUDPPorts = [
+          addresses.services.adguardhome.dnsPort
+        ];
+      };
+
+      extraInputRules = ''
+        # Allow yirukou reverse proxy and DNS resolver to access backend services
+        ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} accept comment "allow yirukou gateway"
+
+        # Allow container subnets to reach host services (e.g. Lidarr API for soularr, MariaDB)
+        ip saddr { ${containerSourceSubnets} } accept comment "allow container subnets to host"
+      '';
+
+      extraForwardRules = ''
+        # Container forwarding isolation:
+        # 1. Allow containers to reach host destinations
+        ip saddr { ${containerSourceSubnets} } ip daddr { ${trustedHostDestinations} } accept comment "allow containers to host"
+        # 2. Block containers from reaching other private subnets
+        ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } drop comment "drop container to private networks"
+      '';
     };
 
     nftables = {
       enable = true;
-      tables = {
-        # Allows tunnel containers to talk to the host (e.g., database)
-        # but blocks access to the rest of the internal LAN/VPN network.
-        container-isolation = {
-          family = "inet";
-          content = ''
-            chain forward {
-              type filter hook forward priority 0;
-
-              # Match traffic from the configured Podman/container subnets
-              # targeting private IP ranges.
-
-              # 1. Allow containers to talk to the host's LAN/VPN/ZT IPs directly for services (like MariaDB)
-              ip saddr { ${containerSourceSubnets} } ip daddr { ${trustedHostDestinations} } accept
-
-              # 2. Block containers from reaching any other internal IP range
-              ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } drop
-            }
-          '';
-        };
-
-        backend-ui-guard = {
-          family = "inet";
-          content = ''
-            chain input {
-              type filter hook input priority -10; policy accept;
-
-              iifname "lo" tcp dport { ${backendUiPorts} } accept
-              ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport { ${backendUiPorts} } accept
-              # soularr (sharing gluetun's namespace) needs Lidarr's API
-              ip saddr { ${containerSourceSubnets} } tcp dport ${toString addresses.services.lidarr.port} accept
-              tcp dport { ${backendUiPorts} } counter drop
-            }
-          '';
-        };
-
-        # Shared valkey (unbound cachedb) is reachable only from loopback and
-        # yirukou's unbound. The LAN is otherwise wide open (trusted
-        # interface), and unbound serves cachedb entries without re-validation
-        # -- unrestricted write access would enable cache poisoning.
-        valkey-guard = {
-          family = "inet";
-          content = ''
-            chain input {
-              type filter hook input priority -10; policy accept;
-
-              iifname "lo" tcp dport ${toString addresses.services.valkey.port} accept
-              ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport ${toString addresses.services.valkey.port} accept
-              tcp dport ${toString addresses.services.valkey.port} counter drop
-            }
-          '';
-        };
-      };
+      tables = { };
     };
 
   };
