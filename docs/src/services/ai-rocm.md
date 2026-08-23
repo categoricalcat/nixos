@@ -36,7 +36,7 @@ llama-server (`http://127.0.0.1:11436/v1`, port derived from the registry).
 There is no shared gateway: a previous nginx body-routing attempt
 (`map $request_body`) was abandoned — nginx evaluates a variable
 `proxy_pass` before reading the request body, so it can never see the model
-name (see docs/src/plans/llama-cpp-vulkan-migration-plan.md §3).
+name.
 
 Web search/scrape for agents comes from the self-hosted Firecrawl instance
 via `users/programs/firecrawl-mcp.js` — a zero-dependency MCP stdio server

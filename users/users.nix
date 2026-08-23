@@ -65,7 +65,7 @@ in
         shell = pkgs.bash;
       };
 
-      # Read-only AI account (see docs/src/plans/ssh-mesh-hardening.md).
+      # Read-only AI account (see docs/src/services/ai-ssh.md).
       # ForceCommand-gated on the sshd side: a hostile ai key can only run the
       # whitelisted reads in modules/services/ssh/scripts/ai-gate.sh.
       ai = {

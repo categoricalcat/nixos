@@ -54,7 +54,7 @@ let
       };
     };
 
-    # Read-only `ai` account (see docs/src/plans/ssh-mesh-hardening.md, Phase 3).
+    # Read-only `ai` account (see docs/src/services/ai-ssh.md).
     ai = rec {
       sshAuthorizedKeys = builtins.filter (x: x != null) (
         map (k: k.sshPublicKey) (builtins.attrValues meshKeys)
