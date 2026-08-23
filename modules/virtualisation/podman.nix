@@ -74,9 +74,6 @@
     "d /var/lib/container-volumes 0770 root podman -"
   ];
 
-  # ── User access ────────────────────────────────────────────────────
-  users.users.workd.extraGroups = [ "podman" ];
-
   # ── CLI tools ──────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
     buildah

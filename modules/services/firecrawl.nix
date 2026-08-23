@@ -19,7 +19,10 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStart = "-${pkgs.podman}/bin/podman network create firecrawl_net";
+        ExecStart = [
+          "-${pkgs.podman}/bin/podman network create --ignore firecrawl_net"
+          "-${pkgs.podman}/bin/podman network create --ignore --internal firecrawl_internal"
+        ];
       };
     };
     "podman-firecrawl-redis" = {
@@ -44,22 +47,15 @@ in
     };
   };
 
-  # Allow containers to reach aardvark-dns on the host (port 53).
-  # Opened globally because nftables fails to parse wildcard interfaces like "podman+".
-  # This is safe because AdGuard is explicitly bound to internal LAN/Tailscale IPs,
-  # and aardvark-dns is explicitly bound to internal Podman bridge IPs.
-  networking.firewall.allowedUDPPorts = [ 53 ];
-  networking.firewall.allowedTCPPorts = [ 53 ];
-
   virtualisation.oci-containers.containers = {
     firecrawl-redis = {
       image = "redis:alpine";
-      extraOptions = [ "--network=firecrawl_net" ];
+      extraOptions = [ "--network=firecrawl_internal" ];
     };
 
     firecrawl-postgres = {
       image = "ghcr.io/firecrawl/nuq-postgres:latest";
-      extraOptions = [ "--network=firecrawl_net" ];
+      extraOptions = [ "--network=firecrawl_internal" ];
       environment = {
         POSTGRES_USER = "postgres";
         POSTGRES_PASSWORD = "postgres";
@@ -69,12 +65,15 @@ in
 
     firecrawl-rabbitmq = {
       image = "rabbitmq:3-management";
-      extraOptions = [ "--network=firecrawl_net" ];
+      extraOptions = [ "--network=firecrawl_internal" ];
     };
 
     firecrawl-playwright = {
       image = "ghcr.io/firecrawl/playwright-service:latest";
-      extraOptions = [ "--network=firecrawl_net" ];
+      extraOptions = [
+        "--network=firecrawl_internal"
+        "--network=firecrawl_net"
+      ];
       environment = {
         PORT = "3000";
         MAX_CONCURRENT_PAGES = "10";
@@ -83,7 +82,10 @@ in
 
     firecrawl = {
       image = "ghcr.io/firecrawl/firecrawl:latest";
-      extraOptions = [ "--network=firecrawl_net" ];
+      extraOptions = [
+        "--network=firecrawl_internal"
+        "--network=firecrawl_net"
+      ];
       ports = [ "${toString firecrawlPort}:3002" ];
       environment = {
         HOST = "0.0.0.0";

@@ -18,10 +18,6 @@ in
   # finish before either of them, otherwise EnvironmentFile= fails on first
   # boot and `searx-init` never writes /run/searx/settings.yml.
 
-  networking.firewall.allowedTCPPorts = [
-    allAddresses.hosts.${config.networking.hostName}.services.searxng.port
-  ];
-
   # The shared valkey's unix socket is owned redis:redis mode 660; searx needs
   # group access to use it (rate-limiter keys live on logical db 1).
   users.users.searx.extraGroups = [ "redis" ];

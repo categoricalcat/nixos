@@ -83,7 +83,5 @@ in
         Type = "simple";
       };
     };
-
-    networking.firewall.allowedTCPPorts = [ yifuwuqiServices.sillytavern.port ];
   };
 }

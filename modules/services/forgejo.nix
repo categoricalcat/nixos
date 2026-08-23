@@ -52,8 +52,6 @@ in
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ forgejoServer.HTTP_PORT ];
-
   systemd.services.forgejo = {
     after = [ "postgresql.service" ];
     requires = [ "postgresql.service" ];

@@ -262,10 +262,10 @@ input_radius = 6.0
 show_login_button = true
 
 [nightlight]
-enabled = false
+enabled = true
 force = false
 temperature_day = 6500
-temperature_night = 4500
+temperature_night = 3700
 
 [notification]
 background_opacity = 1.0

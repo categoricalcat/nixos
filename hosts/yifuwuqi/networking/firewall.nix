@@ -45,10 +45,14 @@ in
           addresses.ssh.listenPort
           addresses.services.adguardhome.port
           addresses.services.adguardhome.dnsPort
+          139 # Samba NetBIOS Session
+          445 # Samba SMB
         ];
 
         allowedUDPPorts = [
           addresses.services.adguardhome.dnsPort
+          137 # NetBIOS Name Service
+          138 # NetBIOS Datagram Service
         ];
       };
 
@@ -56,8 +60,16 @@ in
         # Allow yirukou reverse proxy and DNS resolver to access backend services
         ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} accept comment "allow yirukou gateway"
 
-        # Allow container subnets to reach host services (e.g. Lidarr API for soularr, MariaDB)
-        ip saddr { ${containerSourceSubnets} } accept comment "allow container subnets to host"
+        # Container to Host: Principle of Least Privilege
+        # 1. Allow containers to reach host DNS (Aardvark-DNS on the bridge gateway; AdGuard Home binds internal IPs only)
+        ip saddr { ${containerSourceSubnets} } udp dport 53 accept comment "allow container dns udp"
+        ip saddr { ${containerSourceSubnets} } tcp dport 53 accept comment "allow container dns tcp"
+
+        # 2. Allow specific container integrations to required host APIs only
+        ip saddr { ${containerSourceSubnets} } tcp dport {
+          ${toString addresses.services.lidarr.port},
+          ${toString addresses.services.searxng.port}
+        } accept comment "allow containers to specific host apis"
       '';
 
       extraForwardRules = ''

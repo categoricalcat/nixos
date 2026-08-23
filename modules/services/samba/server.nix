@@ -9,7 +9,7 @@ in
 {
   services.samba = {
     enable = true;
-    openFirewall = true;
+    openFirewall = false;
     nmbd.enable = true;
 
     settings = {

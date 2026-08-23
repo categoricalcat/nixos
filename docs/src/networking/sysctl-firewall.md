@@ -94,10 +94,25 @@ Forwarding behavior:
 That explicit Tailscale forwarding is what makes tailnet clients able to reach
 LAN addresses through the advertised subnet, not only direct Tailscale IPs.
 
+## yifuwuqi Firewall
+
+`hosts/yifuwuqi/networking/firewall.nix` enforces default-deny on `eno1` and implements the principle of least privilege for container networking:
+
+- Trusted interface: `tailscale0`.
+- Allowed on `eno1` (LAN): SSH, AdGuard Home web UI, AdGuard Home DNS (`53`).
+- Gateway traffic: `yirukou` reverse proxy and DNS resolver traffic allowed.
+- Container least-privilege isolation:
+  - DNS resolution: UDP/TCP `53` allowed from container subnets (`10.88.0.0/16`, `172.17.0.0/16`, `172.18.0.0/16`).
+  - Scoped host API access: TCP `8686` (Lidarr for soularr) and TCP `8888` (SearXNG for firecrawl) allowed explicitly.
+  - Default drop: All other host ports (SSH `24212`, Cockpit `9091`, PostgreSQL `5432`, Valkey `6379`, Prometheus `9090`, Samba `445`, Exporters) are dropped for container subnets.
+- Forwarding isolation:
+  - Containers are blocked from forwarding to private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`).
+
 ## Source Files
 
 - `modules/networking/sysctl-base.nix`
 - `hosts/yifuwuqi/networking/sysctl.nix`
+- `hosts/yifuwuqi/networking/firewall.nix`
 - `hosts/yirukou/networking/sysctl.nix`
 - `hosts/yirukou/networking/firewall.nix`
 - `modules/networking/sinkhole.nix`

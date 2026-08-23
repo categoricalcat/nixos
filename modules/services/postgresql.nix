@@ -34,7 +34,6 @@ in
     '';
   };
 
-  networking.firewall.allowedTCPPorts = [ 5432 ];
 
   systemd.tmpfiles.rules = [
     "d ${postgres.dataRoot} 0750 postgres postgres -"
