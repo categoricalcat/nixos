@@ -9,7 +9,7 @@ When reasoning about NixOS configurations, modules, or options, you must strictl
 
 ## 1. Identify the Current Host
 
-Before running any command or making configuration changes, **always verify which host you are on** by running `hostname`. Do not assume you know which host you are operating on — the workspace may be accessed remotely (e.g. via SSH) and the host may differ from what you expect.
+Verify which host the local workspace is running on once at the start of a session if unknown (e.g. by running `hostname`). Do not assume hostnames, but do **not** repeatedly run `hostname` before every single command or when executing explicit cross-host commands like `ai-ssh <host>`.
 
 Each host's configuration lives under `hosts/<hostname>/configuration.nix` in the flake. Make sure any NixOS commands (e.g. `nixos-rebuild`, reading hardware config, checking services) target the **correct host**.
 
@@ -25,7 +25,7 @@ server (see `docs/src/services/ai-ssh.md`).
 - Never `nixos-rebuild --target-host` / `--build-host` — hand the command to
   the user instead.
 - `ai-ssh` is deployed on all mesh hosts and is the only sanctioned lane for
-  cross-host reads — use it, no need to ask.
+  cross-host reads — use it directly with the target command without redundant hostname checks.
 
 ## 2. Read Local Source Code First
 
