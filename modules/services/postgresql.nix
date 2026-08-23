@@ -34,7 +34,6 @@ in
     '';
   };
 
-
   systemd.tmpfiles.rules = [
     "d ${postgres.dataRoot} 0750 postgres postgres -"
     "d ${dataDir} 0750 postgres postgres -"
