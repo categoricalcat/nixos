@@ -1,6 +1,7 @@
 {
   addresses,
   pkgs,
+  lib,
   ...
 }:
 
@@ -71,9 +72,10 @@ let
     fi
   '';
 
-  # Pings cfg.pingTarget bound to the primary interface. First installs a
-  # /32 to that target via the primary's gateway so the probe always exits
+  # Pings cfg.pingTargets bound to the primary interface. First installs a
+  # /32 to each target via the primary's gateway so probes always exit
   # via the primary even while in FAULT (default route on fallback).
+  # Probes each target sequentially and exits 0 on the first reply.
   checkScript = pkgs.writeShellApplication {
     name = "wan-check";
     runtimeInputs = [
@@ -90,14 +92,22 @@ let
       }
 
       resolve_primary || exit 1
-      ${routeReplace "${cfg.pingTarget}/32"}
-      exec ping -I "$SIDE_IFACE" -c 1 -W ${toString cfg.pingTimeout} -w ${toString cfg.pingDeadline} "${cfg.pingTarget}" >/dev/null 2>&1
+
+      ${lib.concatMapStringsSep "\n" (target: routeReplace "${target}/32") cfg.pingTargets}
+
+      ${lib.concatMapStringsSep "\n" (target: ''
+        if ping -I "$SIDE_IFACE" -c 1 -W 1 "${target}" >/dev/null 2>&1; then
+          exit 0
+        fi
+      '') cfg.pingTargets}
+
+      exit 1
     '';
   };
 
   # Switches the default route to the primary on MASTER, to the fallback on
-  # FAULT/BACKUP/STOP. Flushes conntrack on every transition so existing
-  # NAT sessions rebuild over the now-active WAN.
+  # FAULT/BACKUP/STOP. Flushes conntrack only when the active gateway actually changes
+  # so existing NAT sessions rebuild without redundant resets on steady-state transitions.
   notifyScript = pkgs.writeShellApplication {
     name = "wan-notify";
     runtimeInputs = [
@@ -105,6 +115,7 @@ let
       pkgs.conntrack-tools
       pkgs.gawk
       pkgs.systemd
+      pkgs.coreutils
     ];
     text = ''
       ${leaseDiscoverFor [
@@ -133,7 +144,19 @@ let
       esac
 
       ${routeReplace "default"}
-      conntrack -F >/dev/null 2>&1 || true
+
+      GW_STAMP_FILE="/run/gateway-failover-active-gw"
+      NEW_GW_KEY="$GW@$SIDE_IFACE"
+
+      PREV_GW_KEY=""
+      if [ -f "$GW_STAMP_FILE" ]; then
+        PREV_GW_KEY=$(cat "$GW_STAMP_FILE" 2>/dev/null || true)
+      fi
+
+      if [ "$PREV_GW_KEY" != "$NEW_GW_KEY" ]; then
+        echo "$NEW_GW_KEY" > "$GW_STAMP_FILE"
+        conntrack -F >/dev/null 2>&1 || true
+      fi
     '';
   };
 in
@@ -145,9 +168,9 @@ in
     vrrpScripts."check_${cfg.primary.interface}" = {
       script = "${checkScript}/bin/wan-check";
       interval = 2;
-      timeout = cfg.pingDeadline;
+      timeout = 4;
       rise = 2;
-      fall = 2;
+      fall = 4;
       user = "root";
     };
 

@@ -232,9 +232,10 @@ in
           source = null;
           metric = 200;
         };
-        pingTarget = "4.2.2.2";
-        pingTimeout = 2;
-        pingDeadline = 5;
+        pingTargets = [
+          "216.239.35.0"
+          "200.160.0.8"
+        ];
         virtualRouterId = 99;
         priority = 100;
         unicastPeers = [ "127.0.0.1" ];
@@ -603,9 +604,10 @@ in
           source = null;
           metric = network.wan.fallback.routeMetric;
         };
-        pingTarget = "1.1.1.1";
-        pingTimeout = 2;
-        pingDeadline = 5;
+        pingTargets = [
+          "216.239.35.0"
+          "200.160.0.8"
+        ];
         virtualRouterId = 99;
         priority = 100;
         unicastPeers = [ "127.0.0.1" ];
