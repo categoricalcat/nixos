@@ -37,8 +37,9 @@
     ../../modules/services/valkey.nix
     ../../modules/services/firecrawl.nix
     ../../modules/services/opencode.nix
-    ../../modules/services/atticd.nix
-    ../../modules/services/attic-watch-store.nix
+    ../../modules/services/attic/server.nix
+    ../../modules/services/attic/watch-store.nix
+    ../../modules/services/attic/closure-keeper.nix
     ../../modules/services/arr
     ../../modules/services/qbittorrent-vpn.nix
     ../../modules/services/slskd.nix

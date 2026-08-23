@@ -16,7 +16,7 @@ in
   assertions = [
     {
       assertion = config.networking.hostName == "yifuwuqi";
-      message = "modules/services/attic-watch-store.nix: may only be imported on yifuwuqi (services.attic.* hardcodes yifuwuqi addresses)";
+      message = "modules/services/attic/watch-store.nix: may only be imported on yifuwuqi (services.attic.* hardcodes yifuwuqi addresses)";
     }
   ];
 

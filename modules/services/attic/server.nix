@@ -7,7 +7,7 @@
 #   atticd-atticadm make-token --sub "*" --validity "10 years" --pull "*" --push "*" --create-cache "*" --configure-cache "*" --configure-cache-retention "*" --destroy-cache "*"
 #   attic login yi http://127.0.0.1:18203 <admin-token>
 #   attic cache create yi --public --priority 38
-#   attic cache info yi   # → update trusted-public-keys in modules/nix-settings.nix
+#   attic cache info yi   # → update trusted-public-keys in modules/services/attic/client.nix
 #   atticd-atticadm make-token --sub "yi" --validity "10 years" --push
 #   # → add to sops as tokens/attic-push-token, redeploy
 {
@@ -28,7 +28,7 @@ in
   assertions = [
     {
       assertion = config.networking.hostName == "yifuwuqi";
-      message = "modules/services/atticd.nix: may only be imported on yifuwuqi (services.attic.* hardcodes yifuwuqi addresses)";
+      message = "modules/services/attic/server.nix: may only be imported on yifuwuqi (services.attic.* hardcodes yifuwuqi addresses)";
     }
   ];
 
