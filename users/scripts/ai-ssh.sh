@@ -12,8 +12,17 @@ shift
 # The destination must be a bare host, never an ssh option: otherwise a caller
 # could smuggle -o ProxyCommand=... (runs locally, before any server gate).
 case "$host" in
-  -*) echo "ai-ssh: refusing option-like host: $host" >&2; exit 1 ;;
+-*)
+  echo "ai-ssh: refusing option-like host: $host" >&2
+  exit 1
+  ;;
 esac
+
+# If passed as a single quoted string (e.g. ai-ssh host "cmd arg1 arg2"),
+# parse it into positional arguments so the server gate receives individual tokens.
+if [ "$#" -eq 1 ]; then
+  eval "set -- $1"
+fi
 
 # Encode argv so the server gate reconstructs it exactly (spaces/quotes intact,
 # no eval). Protocol: literal "v1" then one base64 token per argument.
@@ -22,7 +31,7 @@ for a in "$@"; do
   enc+=" $(printf '%s' "$a" | base64 -w0)"
 done
 
-exec ssh -l ai -i ~/.ssh/id_ai_ed25519 \
+exec ssh -T -l ai -i ~/.ssh/id_ai_ed25519 \
   -o IdentitiesOnly=yes \
   -o BatchMode=yes \
   -o ConnectTimeout=5 \

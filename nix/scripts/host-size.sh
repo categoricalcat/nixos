@@ -4,7 +4,7 @@ set -euo pipefail
 HOSTS=("yixiaoqing" "yitaishi" "yifuwuqi" "yirukou" "yichuang" "yijia")
 TARGET_HOST="${1:-}"
 
-if [ -z "$TARGET_HOST" ]; then
+if [ "$TARGET_HOST" = "" ]; then
   if command -v fzf >/dev/null 2>&1 && [ -t 0 ]; then
     TARGET_HOST=$(printf '%s\n' "${HOSTS[@]}" | fzf --prompt="Select host for size breakdown: ")
   else
@@ -14,7 +14,7 @@ if [ -z "$TARGET_HOST" ]; then
   fi
 fi
 
-if [ -z "$TARGET_HOST" ]; then
+if [ "$TARGET_HOST" = "" ]; then
   echo "No host selected."
   exit 1
 fi

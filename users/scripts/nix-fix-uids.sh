@@ -13,7 +13,7 @@ entries=(
 )
 
 for entry in "${entries[@]}"; do
-  IFS=: read -r name target_uid target_gid home <<< "$entry"
+  IFS=: read -r _name target_uid target_gid home <<<"$entry"
   if [ -d "$home" ]; then
     current_uid=$(stat -c "%u" "$home")
     if [ "$current_uid" != "$target_uid" ]; then

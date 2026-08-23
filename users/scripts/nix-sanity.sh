@@ -13,14 +13,17 @@ check=true
 
 for arg in "$@"; do
   case "$arg" in
-    --quiet) quiet=true ;;
-    --no-check|-nc) check=false ;;
-    switch)  action="switch" ;;
-    *)       echo "Unknown argument: $arg" >&2; exit 1 ;;
+  --quiet) quiet=true ;;
+  --no-check | -nc) check=false ;;
+  switch) action="switch" ;;
+  *)
+    echo "Unknown argument: $arg" >&2
+    exit 1
+    ;;
   esac
 done
 
-if $quiet; then
+if "$quiet"; then
   check_flags=()
   rebuild_flags=()
 else
@@ -35,7 +38,7 @@ statix check .
 deadnix --fail .
 ./users/scripts/setup-sops.sh
 git add .
-if $check; then
+if "$check"; then
   nix flake check "${check_flags[@]}"
 fi
 

@@ -4,10 +4,10 @@ set -euo pipefail
 HOSTS=("yixiaoqing" "yitaishi" "yifuwuqi" "yirukou" "yichuang" "yijia")
 TARGET_HOST="${1:-}"
 
-if [ -z "$TARGET_HOST" ]; then
+if [ "$TARGET_HOST" = "" ]; then
   if command -v fzf >/dev/null 2>&1 && [ -t 0 ]; then
     TARGET_HOST=$(printf '%s\n' "${HOSTS[@]}" | fzf --prompt="Select host to inspect: ")
-  elif [ -n "${HOST:-}" ]; then
+  elif [ "${HOST:-}" != "" ]; then
     TARGET_HOST="$HOST"
   else
     TARGET_HOST="yifuwuqi"

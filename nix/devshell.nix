@@ -76,6 +76,10 @@ _: {
       nixDevPkgs = with pkgs; [
         statix # Lints and suggestions for Nix
         deadnix # Nix dead code locator
+        shellcheck # Shell linter
+        shfmt # Shell formatter
+        shellharden # Shell syntax hardener and auto-quoter
+        treefmt # Universal multi-file formatter
         nixpkgs-hammering # Linter for Nixpkgs packages
         nil # Nix language server
         nixd # Nix language server (with statix/deadnix support)

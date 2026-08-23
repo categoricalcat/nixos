@@ -5,7 +5,7 @@ HOST1="${1:-}"
 HOST2="${2:-}"
 HOSTS=("yixiaoqing" "yitaishi" "yifuwuqi" "yirukou" "yichuang" "yijia")
 
-if [ -z "$HOST1" ] || [ -z "$HOST2" ]; then
+if [ "$HOST1" = "" ] || [ "$HOST2" = "" ]; then
   if command -v fzf >/dev/null 2>&1 && [ -t 0 ]; then
     echo "Select first host for diff:"
     HOST1=$(printf '%s\n' "${HOSTS[@]}" | fzf --prompt="Select host 1: ")
@@ -19,7 +19,7 @@ if [ -z "$HOST1" ] || [ -z "$HOST2" ]; then
   fi
 fi
 
-if [ -z "$HOST1" ] || [ -z "$HOST2" ]; then
+if [ "$HOST1" = "" ] || [ "$HOST2" = "" ]; then
   echo "Both hosts must be selected."
   exit 1
 fi

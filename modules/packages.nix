@@ -39,9 +39,12 @@
     sops
     statix # Lints and suggestions for Nix
     tree
+    treefmt
 
     # Shell and related tools
     shellcheck
+    shfmt
+    shellharden
     bubblewrap
     bat
     brotli

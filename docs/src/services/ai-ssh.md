@@ -31,9 +31,13 @@ The gate is `modules/services/ssh/scripts/ai-gate.sh`, wired via
 
 | Command | Allowed forms |
 | --- | --- |
+| `hostname` | standalone execution |
+| `ip` | read-only subcommands: `route`, `addr`, `link`, `neigh`, `rule`, `mroute` with `show`/`list` |
+| `networkctl` | `status`, `list`, `lldp`, `label`, `dhcp-lease` |
+| `ping` | standard ICMP ping reachability probes |
 | `systemctl` | `status`, `is-active`, `is-failed`, `is-enabled`, `show`, `list-units`, `list-timers`, `list-sockets` |
 | `journalctl` | read-only flags, `--no-pager` forced; `-f`/`--follow` (any cluster) denied |
-| `cat`, `ls`, `readlink` | absolute paths under `/etc`, `/proc`, `/var/log`, `/nix/var/nix/profiles`, `/nix/store`, `/run/current-system` |
+| `cat`, `ls`, `readlink` | absolute paths under `/etc`, `/proc`, `/var/log`, `/nix/var/nix/profiles`, `/nix/store`, `/run/current-system`, `/run` (excluding protected secret/key paths) |
 
 Everything else — shell escapes, `id`, `systemctl reboot`, writes, arbitrary
 binaries — is denied. Options like `-o ProxyCommand=…` as the host argument are
