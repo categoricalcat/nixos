@@ -81,7 +81,7 @@
       gnomeExtensions.appindicator
       gnomeExtensions.dash-to-panel
       gnomeExtensions.weather-oclock
-      gnomeExtensions.tiling-assistant
+      # this bitch crashing: gnomeExtensions.tiling-assistant
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.vertical-workspaces
       gnomeExtensions.switch-workspaces-on-active-monitor

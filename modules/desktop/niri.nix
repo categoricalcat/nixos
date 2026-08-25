@@ -11,7 +11,6 @@
   config = lib.mkIf (config.desktop.environment == "niri") {
     home-manager.users.yi.imports = [
       inputs.dms.homeModules.dank-material-shell
-      inputs.noctalia.homeModules.default
       ../../users/programs/dms.nix
       ../../users/programs/noctalia
       ../../users/programs/niri.nix
