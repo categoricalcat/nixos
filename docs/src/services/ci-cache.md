@@ -9,6 +9,7 @@ pipeline on a fresh NixOS server. By the end you will have:
 - A GitHub Actions trigger that connects GitHub pushes → Forgejo
 
 **Prerequisites:**
+
 - A GitHub repository with your NixOS flake
 - A server (`yifuwuqi` in this repo's convention) running NixOS
 - DNS pointing `git.<domain>`, `ci.<domain>`, and `cache.<domain>` at that server
@@ -19,45 +20,45 @@ pipeline on a fresh NixOS server. By the end you will have:
 Every service in this pipeline has a single Nix module you edit. When the instructions below
 say "update the address" or "change the public key", here is where each value lives:
 
-| If you need to change… | Edit this file |
-|---|---|
-| Domains, ports, Attic cache name | `modules/addresses.nix` (under `hosts.yifuwuqi.services`) |
-| Forgejo configuration | `modules/services/forgejo.nix` |
-| Forgejo Actions runner | `modules/services/forgejo-runner.nix` |
-| Attic server | `modules/services/attic/server.nix` |
-| Attic watch-store push | `modules/services/attic/watch-store.nix` |
-| Attic closure keeper | `modules/services/attic/closure-keeper.nix` |
-| Reverse proxy (nginx) | `modules/services/nginx-proxy.nix` |
-| Cache substituter + public key | `modules/services/attic/client.nix` (imported via `modules/nix-settings.nix`) |
+| If you need to change…           | Edit this file                                                                |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| Domains, ports, Attic cache name | `modules/addresses.nix` (under `hosts.yifuwuqi.services`)                     |
+| Forgejo configuration            | `modules/services/forgejo.nix`                                                |
+| Forgejo Actions runner           | `modules/services/forgejo-runner.nix`                                         |
+| Attic server                     | `modules/services/attic/server.nix`                                           |
+| Attic watch-store push           | `modules/services/attic/watch-store.nix`                                      |
+| Attic closure keeper             | `modules/services/attic/closure-keeper.nix`                                   |
+| Reverse proxy (nginx)            | `modules/services/nginx-proxy.nix`                                            |
+| Cache substituter + public key   | `modules/services/attic/client.nix` (imported via `modules/nix-settings.nix`) |
 
 After deployment the endpoints resolve as:
 
-| Endpoint | Service |
-|---|---|
-| `git.fufu.land` | Forgejo mirror |
-| `cache.fufu.land/yi` | Attic cache |
+| Endpoint             | Service        |
+| -------------------- | -------------- |
+| `git.fufu.land`      | Forgejo mirror |
+| `cache.fufu.land/yi` | Attic cache    |
 
 ## Secret Inventory
 
 SOPS secrets in `secrets/secrets.yaml`:
 
-| Secret | Purpose | How to obtain |
-| --- | --- | --- |
-| `tokens/github-runner-nixos` | Registers the self-hosted GitHub runner | GitHub Repo Settings -> Actions -> Runners -> New self-hosted runner |
-| `tokens/attic-server-jwt-env` | Attic server JWT signing secret env file | See [Generate SOPS Secrets](#generate-sops-secrets) |
-| `tokens/attic-push-token` | Token used by `attic-watch-store` | See [Attic Bootstrap](#attic-bootstrap) |
-| `tokens/forgejo-runner` | Forgejo runner registration token | Forgejo Admin -> Actions -> Runners |
+| Secret                        | Purpose                                  | How to obtain                                                        |
+| ----------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| `tokens/github-runner-nixos`  | Registers the self-hosted GitHub runner  | GitHub Repo Settings -> Actions -> Runners -> New self-hosted runner |
+| `tokens/attic-server-jwt-env` | Attic server JWT signing secret env file | See [Generate SOPS Secrets](#generate-sops-secrets)                  |
+| `tokens/attic-push-token`     | Token used by `attic-watch-store`        | See [Attic Bootstrap](#attic-bootstrap)                              |
+| `tokens/forgejo-runner`       | Forgejo runner registration token        | Forgejo Admin -> Actions -> Runners                                  |
 
 GitHub Actions repository secrets:
 
-| Secret | Purpose | How to obtain |
-| --- | --- | --- |
+| Secret          | Purpose                                                | How to obtain                         |
+| --------------- | ------------------------------------------------------ | ------------------------------------- |
 | `FORGEJO_TOKEN` | Lets the trigger workflow sync/read the Forgejo mirror | See [Trigger Tokens](#trigger-tokens) |
 
 Forgejo repository secrets:
 
-| Secret | Purpose | How to obtain |
-| --- | --- | --- |
+| Secret        | Purpose                         | How to obtain                          |
+| ------------- | ------------------------------- | -------------------------------------- |
 | `attic_token` | Push token for Attic cache `yi` | Same as SOPS `tokens/attic-push-token` |
 
 ## Generate SOPS Secrets
@@ -88,10 +89,10 @@ tokens:
 Create the runner registration token in GitHub:
 
 1. Open the GitHub repository.
-2. Go to Settings -> Actions -> Runners.
-3. Select New self-hosted runner.
-4. Copy the registration token.
-5. Store it in SOPS as `tokens/github-runner-nixos`.
+1. Go to Settings -> Actions -> Runners.
+1. Select New self-hosted runner.
+1. Copy the registration token.
+1. Store it in SOPS as `tokens/github-runner-nixos`.
 
 This is only the runner registration token. It is not the same as the GitHub
 Actions repository secrets used by `trigger.yml`.
@@ -116,8 +117,8 @@ Expected state after the first switch:
 Open `git.fufu.land`.
 
 1. Create the first admin user.
-2. Create a read-only pull mirror from `https://github.com/categoricalcat/nixos`.
-3. Redeploy `yifuwuqi`.
+1. Create a read-only pull mirror from `https://github.com/categoricalcat/nixos`.
+1. Redeploy `yifuwuqi`.
 
 After the admin user exists, flip `service.DISABLE_REGISTRATION = true` in
 `modules/services/forgejo.nix` in a later config change.
@@ -143,9 +144,9 @@ push_token=$(sudo atticd-atticadm make-token --sub 'yi' --validity '10 years' --
 Then:
 
 1. Put `push_token` in SOPS as `tokens/attic-push-token`.
-2. Copy the public key from `attic cache info yi`.
-3. Replace the placeholder key in `modules/services/attic/client.nix`.
-4. Redeploy every host that should pull from `cache.fufu.land/yi`.
+1. Copy the public key from `attic cache info yi`.
+1. Replace the placeholder key in `modules/services/attic/client.nix`.
+1. Redeploy every host that should pull from `cache.fufu.land/yi`.
 
 ## Trigger Tokens
 
@@ -170,23 +171,23 @@ curl -I https://cache.fufu.land/yi/nix-cache-info
 Push test:
 
 1. Push to `develop`.
-2. GitHub Actions trigger passes.
-3. Forgejo mirror branch reaches the same commit SHA.
-4. Forgejo Actions builds all hosts.
-5. `attic cache info yi` shows objects.
+1. GitHub Actions trigger passes.
+1. Forgejo mirror branch reaches the same commit SHA.
+1. Forgejo Actions builds all hosts.
+1. `attic cache info yi` shows objects.
 
 ## Forking This Setup
 
 If you are adapting this repo for your own domains and secrets, replace every occurrence of:
 
-| What | Default | Replace with |
-|---|---|---|
-| Domain | `fufu.land` | your domain |
-| Attic cache name | `yi` | your cache name |
-| GitHub repo | `categoricalcat/nixos` | your repo |
-| Attic JWT key | (generate) | `openssl genrsa -traditional 4096 \| base64 -w0` |
-| Forgejo runner token | (fetch from UI) | Forgejo Admin -> Actions -> Runners |
-| GitHub runner token | (fetch from UI) | Settings → Actions → Runners |
+| What                 | Default                | Replace with                                     |
+| -------------------- | ---------------------- | ------------------------------------------------ |
+| Domain               | `fufu.land`            | your domain                                      |
+| Attic cache name     | `yi`                   | your cache name                                  |
+| GitHub repo          | `categoricalcat/nixos` | your repo                                        |
+| Attic JWT key        | (generate)             | `openssl genrsa -traditional 4096 \| base64 -w0` |
+| Forgejo runner token | (fetch from UI)        | Forgejo Admin -> Actions -> Runners              |
+| GitHub runner token  | (fetch from UI)        | Settings → Actions → Runners                     |
 
 Search in these files for `fufu.land`, `categoricalcat`, and `yi`:
 

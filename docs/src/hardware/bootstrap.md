@@ -1,48 +1,89 @@
-# Hardware Bootstrap
+# Hardware Authentication & Token Bootstrap
 
-This page contains imperative setup steps for hardware features that cannot be entirely declarative.
+This page provides the imperative initialization steps for biometric, hardware security token, and Secure Boot features across the fleet.
 
-## FIDO2 Authentication
+______________________________________________________________________
 
-To enable YubiKey or other FIDO2 tokens for system authentication (PAM):
+## 1. Physical FIDO2 / U2F Authentication (`pam_u2f`)
+
+Configured via `modules/fido2.nix` for hardware security keys (YubiKey, SoloKey, Nitrokey):
+
+### 1.1 Enrolling Primary Key
 
 ```bash
 mkdir -p ~/.config/Yubico
 nix-shell -p pam_u2f --run "pamu2fcfg > ~/.config/Yubico/u2f_keys"
 ```
 
-> *Note, for multiple keys, append instead of overwrite: `pamu2fcfg -n >> ~/.config/Yubico/u2f_keys`.*
-
-## Secure Boot (Lanzaboote) on `yitaishi`
-
-To enroll Secure Boot keys on `yitaishi` while preserving dual-boot compatibility with Windows:
+### 1.2 Enrolling Backup Keys (Append Mode)
 
 ```bash
-# if Windows uses BitLocker, save the recovery key first
+pamu2fcfg -n >> ~/.config/Yubico/u2f_keys
+```
+
+______________________________________________________________________
+
+## 2. Biometric Fingerprint Enrollment (`fprintd`)
+
+Active on `yixiaoqing` via `services.fprintd.enable = true`:
+
+```bash
+# Enroll right index finger
+fprintd-enroll
+
+# Verify enrollment
+fprintd-verify
+```
+
+______________________________________________________________________
+
+## 3. TPM2 Virtual FIDO2 Token (`modules/services/tpm-fido2.nix`)
+
+Active on `yixiaoqing` to expose a hardware-backed virtual security key through Linux `uhid`:
+
+```bash
+# Verify the tpm-fido2 daemon is active
+systemctl status tpm-fido2.service
+
+# Verify virtual token device creation
+ls -l /dev/uhid
+```
+
+______________________________________________________________________
+
+## 4. Lanzaboote Secure Boot Enrollment (`yitaishi`)
+
+Active on `yitaishi` via `boot.lanzaboote.enable = true`:
+
+```bash
+# 1. Generate Secure Boot keys (one-time)
 sudo sbctl create-keys
+
+# 2. Build and switch to the Lanzaboote generation
 sudo nixos-rebuild switch --flake .#yitaishi
 
-# put firmware into Secure Boot Setup Mode, then:
+# 3. Reboot into UEFI Firmware Setup -> Set Secure Boot to "Setup Mode"
+# 4. Enroll keys with Microsoft certs preserved (for dual-boot/GPU firmware compatibility)
 sudo sbctl enroll-keys --microsoft
 
-# verify
+# 5. Verify enrollment and EFI binary signatures
 bootctl status
 sudo sbctl verify
 ```
 
-> *Use `--microsoft` to keep the usual Windows and firmware signing chain available.*
+______________________________________________________________________
 
-## Bitwarden System Auth + Keyring
+## 5. Bitwarden System Auth & Keyring Verification
 
-**Verify prerequisites after `nixos-rebuild switch`:**
+Verify D-Bus Secret Service and Polkit integrations:
 
 ```bash
-# polkit policy is registered
+# 1. Verify Polkit policy is registered
 pkaction --action-id com.bitwarden.Bitwarden.unlock
 
-# gnome-keyring exposes Secret Service on D-Bus
+# 2. Verify gnome-keyring exposes Secret Service on D-Bus
 busctl --user list | grep -i secret
 
-# polkit agent is running (niri only; GNOME uses gnome-shell's built-in agent)
+# 3. Verify Polkit agent is running (polkit-gnome on Niri, built-in on GNOME)
 pgrep -a polkit
 ```

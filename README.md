@@ -13,4 +13,3 @@ my allegedly pure configs
 ## Bootstrap & Setup
 
 All setup and bootstrap instructions, including SOPS, Samba, FIDO2, and Secure Boot, have been moved to the [Documentation Book](docs/src/README.md) (specifically the Services and Hardware sections).
-

@@ -25,6 +25,15 @@ _: {
           shellcheck = {
             enable = true;
           };
+          mdformat = {
+            enable = true;
+            plugins = ps: [
+              ps.mdformat-gfm
+              ps.mdformat-frontmatter
+              ps.mdformat-gfm-alerts
+            ];
+            settings.wrap = "keep";
+          };
         };
         settings.formatter.shellharden = {
           command = "${pkgs.shellharden}/bin/shellharden";

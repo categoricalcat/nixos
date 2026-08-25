@@ -9,8 +9,8 @@ human operator to perform administrative work as `root`.
 Root must be reachable only through:
 
 1. **Client-root → server-root SSH keys** (the sanctioned remote admin lane),
-2. **Tailscale SSH** (lockout rescue, operator identity only), and
-3. **Physical console** (break-glass).
+1. **Tailscale SSH** (lockout rescue, operator identity only), and
+1. **Physical console** (break-glass).
 
 ## Threat Model
 
@@ -89,24 +89,24 @@ servers.
 
 ## Workflows
 
-| Task | How |
-| --- | --- |
+| Task                         | How                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------- |
 | Admin a server from a client | client TTY → `su -` (root pw) → `ssh root@yifuwuqi` → `nixos-rebuild switch` |
-| Admin a client locally | client TTY → `su -` → `nixos-rebuild switch` |
-| Rescue (broken sshd/keys) | `tailscale ssh root@host` from trusted device |
-| Last resort | physical console → `su -` / root login |
+| Admin a client locally       | client TTY → `su -` → `nixos-rebuild switch`                                 |
+| Rescue (broken sshd/keys)    | `tailscale ssh root@host` from trusted device                                |
+| Last resort                  | physical console → `su -` / root login                                       |
 
 ## Rollout Order (lockout-safe)
 
 1. **Verify Tailscale SSH rescue on servers first** — `tailscale ssh root@yifuwuqi`,
    `tailscale ssh root@yirukou` — before touching sshd.
-2. Add `passwords/root` to SOPS; apply; test `su -` on a client.
-3. Generate client root keys → register in `secrets/keys.nix` → authorize on
+1. Add `passwords/root` to SOPS; apply; test `su -` on a client.
+1. Generate client root keys → register in `secrets/keys.nix` → authorize on
    servers → test `ssh root@server` from client-root.
-4. Flip servers to `prohibit-password` + add root to `AllowUsers`; confirm `yi`
+1. Flip servers to `prohibit-password` + add root to `AllowUsers`; confirm `yi`
    cannot reach root.
-5. De-wheel `yi`; clean up `@wheel` refs, access-tokens group, setup-sops.sh.
-6. Validate all hosts:
+1. De-wheel `yi`; clean up `@wheel` refs, access-tokens group, setup-sops.sh.
+1. Validate all hosts:
    - `yi` cannot `sudo` or act as a trusted Nix user.
    - client-root → server-root SSH works.
    - Tailscale SSH rescue works.

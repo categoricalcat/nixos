@@ -1,126 +1,87 @@
-# Nix Build Host And Mesh
+# Nix Distributed Builds & Binary Cache Mesh
 
-This guide teaches you how to add a new host to the distributed build mesh. It covers
-registering the host, authenticating it via SSH host keys, and running builds against
-the mesh.
+This guide documents the distributed build infrastructure, pinned host-key mesh authentication, and binary cache integration across the NixOS fleet.
 
-## How The Mesh Works (in one paragraph)
+______________________________________________________________________
 
-One machine (by convention `yifuwuqi`) acts as the primary build host. Clients ask it
-to build their system closures; it may offload derivation work to configured remote
-builders (`yitaishi`). Built paths flow back over SSH — no separate binary cache service
-needed for day-to-day switching.
+## 1. How The Build Mesh Works
 
-For the CI path that mirrors GitHub into Forgejo, builds with Forgejo Actions, and
-pushes results to Attic, see [CI and Binary Cache](ci-cache.md).
-
-## Add A New Host — Step By Step
-
-### Step 1: Register the host in `modules/addresses.nix`
-
-Add an entry under `hosts.yifuwuqi.distributed-builds`. The shape is:
-
-```nix
-# modules/addresses.nix — inside the existing distributed-builds list
-{
-  host = "yixiaoqing";
-  hostName = "yixiaoqing.lan";
-  publicKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTV...";
-  systems = ["x86_64-linux" "aarch64-linux"];
-  sshUser = "yi";
-  remoteBuilder = true;  # false = client-only, true = both builds and accepts remote work
-}
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                       Client Request                        │
+│             (e.g., yixiaoqing laptop switching)             │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ nixos-rebuild --build-host yifuwuqi
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 yifuwuqi (Primary Build Host)               │
+│  • Coordinates derivation evaluation & compilation          │
+│  • Pushes built closures to Attic binary cache              │
+│  • Max parallel jobs: 16                                    │
+└──────────────┬──────────────────────────────▲───────────────┘
+               │ offloads heavy derivations   │ returns built paths
+               ▼                              │
+┌─────────────────────────────────────────────┴───────────────┐
+│              yitaishi (High-Power Remote Builder)           │
+│  • 16 CPU cores, speedFactor: 360                           │
+│  • AMD Radeon RX 7900 XTX acceleration                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-| Field | Purpose |
-|---|---|
-| `host` | Short name used in `--build-host` |
-| `hostName` | FQDN or IP reachable from the mesh |
-| `publicKey` | Base64-encoded SSH host key (see Step 2) |
-| `systems` | What architectures this host can build |
-| `sshUser` | User that Nix connects as on this host (must be in `nix.trustedUsers`) |
-| `remoteBuilder` | `true` to also receive derivations from other hosts |
+- **Primary Build Host (`yifuwuqi`)**: Accepts build delegations over SSH from clients, offloads compilation to configured remote builders, and stores resulting paths in the local Nix store.
+- **High-Performance Worker (`yitaishi`)**: Remote worker configured with `speedFactor = 360` to accelerate parallel C++/Rust/Linux kernel builds.
+- **Client Nodes (`yixiaoqing`, `yirukou`, `yichuang`)**: Request closures from `yifuwuqi`, minimizing laptop battery drain and router CPU usage.
 
-### Step 2: Register the SSH host key in `secrets/keys.nix`
+______________________________________________________________________
 
-Run this on the new host to get its SSH host key:
+## 2. Pinned SSH Host Key Authentication
 
-```bash
-cat /persist/keys/ssh/ssh_host_ed25519_key.pub
-# or if /persist does not exist yet:
-cat /etc/ssh/ssh_host_ed25519_key.pub
-```
+Nix distributed builds authenticate over SSH using the dedicated `nix-builder` user and pinned ED25519 host keys:
 
-The output looks like:
-```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...
-```
+### 2.1 Security Model
 
-Open `secrets/keys.nix` and add the key under the host's attribute:
+- **No Trust-On-First-Use (TOFU)**: `/etc/ssh/ssh_known_hosts` is generated deterministically by `modules/services/ssh/known-hosts.nix` from `secrets/keys.nix` and `modules/addresses.nix`.
+- **Locked-Down User**: The `nix-builder` user is restricted via SSH `ForceCommand nix-daemon --stdio` with all TTY, port forwarding, agent forwarding, and X11 forwarding disabled.
+- **Trusted Nix User**: `nix-builder` is listed in `nix.settings.trusted-users` on build servers, permitting direct communication with the Nix daemon.
 
-```nix
-# secrets/keys.nix — add inside the keys attrset
-yixiaoqing = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
-```
+### 2.2 Adding a Host to the Mesh
 
-### Step 3: Decide the host's role
+1. **Record the Host's Public SSH Key in `secrets/keys.nix`**:
+   ```nix
+   keys.hosts.newhost.sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+   ```
+1. **Configure `nixBuild` in `modules/addresses.nix`**:
+   ```nix
+   nixBuild = {
+     maxJobs = 8;
+     speedFactor = 100;
+     supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
+     mandatoryFeatures = [ ];
+   };
+   ```
+1. **Deploy the configuration**:
+   ```bash
+   nixos-rebuild switch --flake .#newhost
+   ```
 
-| Set `remoteBuilder` to… | If the host… |
-|---|---|
-| `false` (client-only) | Is a laptop, VM, or low-power machine that should build locally but never be asked to build for others |
-| `true` | Has ample CPU/RAM and should both build locally and accept remote work from `yifuwuqi` |
+______________________________________________________________________
 
-The topology of the current mesh (for reference, not for copy-paste):
+## 3. Attic Binary Cache Integration
 
-| Host | Role | Remote builders it uses |
-|---|---|---|
-| `yifuwuqi` | primary build host | `yitaishi` |
-| `yitaishi` | remote builder | `yifuwuqi` |
-| `yixiaoqing` / `yirukou` | client-only | `yifuwuqi`, `yitaishi` |
+Every host in the fleet automatically imports `modules/services/attic/client.nix` via `modules/nix-settings.nix`:
 
-### Step 4: Deploy
+- **Substituter URL**: `https://cache.fufu.land/yi` (or direct LAN `http://10.42.0.2:18203/yi`)
+- **Pinned Public Key**: `yi:wLUC4OacKKUxGtnXwIxTFGBlLwvJ9IU4BNP5OBDQO60=`
 
-```bash
-nixos-rebuild switch --flake .#your-new-host --target-host yi@your-new-host --use-remote-sudo
-```
+When any machine activates a new system generation, pre-built store paths are substituted from Attic rather than re-compiled locally.
 
-### Step 5: Verify
+______________________________________________________________________
 
-On the new host, confirm it can reach the mesh:
+## 4. Daily Build & Switch Workflows
 
-```bash
-nix store ping --store ssh-ng://yi@yifuwuqi
-```
+### 4.1 Build Remotely, Switch Locally
 
-Or run a build from outside:
-
-```bash
-nixos-rebuild switch \
-  --flake .#your-new-host \
-  --build-host yi@yifuwuqi \
-  --target-host yi@your-new-host \
-  --use-remote-sudo
-```
-
-### Builder SSH Keys (how it works)
-
-Each host authenticates to remote builders using its own SSH host key at
-`/persist/keys/ssh/ssh_host_ed25519_key`. Authorized client keys come from
-`secrets/keys.nix`. There is no shared builder keypair — rotating a key is the same
-as rotating the host's SSH host key. No Nix binary-cache signing key is needed;
-the SSH transport carries built paths back to the requester.
-
-Host keys are now **pinned**, not TOFU'd: `modules/services/ssh/known-hosts.nix`
-regenerates `/etc/ssh/ssh_known_hosts` from `secrets/keys.nix` ×
-`modules/addresses.nix` (bare names, `.lan`/`.local`/`.ts`/`.nb` aliases, and
-IPs), and the ssh client config uses `StrictHostKeyChecking yes`. When a host's
-key changes, update `secrets/keys.nix` before switching, or connections to that
-host will be refused.
-
-## Build Locally, Switch Locally
-
-From the host you want to switch, ask `yifuwuqi` to build and then copy the
-completed system closure back for activation:
+From the client machine you wish to update (e.g. `yixiaoqing`):
 
 ```bash
 sudo nixos-rebuild switch \
@@ -128,15 +89,9 @@ sudo nixos-rebuild switch \
   --build-host yi@yifuwuqi
 ```
 
-Use the target host's flake attribute, for example `.#yitaishi` when switching
-`yitaishi`.
+### 4.2 Build and Deploy Remotely from a Workstation
 
-If SSH config already supplies the remote user, `--build-host yifuwuqi` is
-equivalent. The build user on `yifuwuqi` must be trusted by the Nix daemon.
-
-## Build And Deploy Remotely
-
-From a third machine, build on `yifuwuqi` and deploy to another host:
+From your desktop (`yitaishi`), build on `yifuwuqi` and deploy to a target node:
 
 ```bash
 nixos-rebuild switch \
@@ -146,20 +101,31 @@ nixos-rebuild switch \
   --use-remote-sudo
 ```
 
-If remote sudo needs an interactive password prompt, run with:
+______________________________________________________________________
 
-```bash
-NIX_SSHOPTS="-o RequestTTY=force" nixos-rebuild switch \
-  --flake .#yixiaoqing \
-  --build-host yi@yifuwuqi \
-  --target-host yi@yixiaoqing \
-  --use-remote-sudo
-```
+## 5. Developer Shell Inspection Tools (`nix/devshell.nix`)
 
-## Source Of Truth
+Entering `nix develop` or running with `direnv` provides custom helper utilities:
 
-| If you need to… | Edit this file |
-|---|---|
-| Add, remove, or change a host's role | `modules/addresses.nix` (the `distributed-builds` list) |
-| Tweak how Nix schedules remote builders (max jobs, speed factor) | `modules/distributed-builds.nix` |
-| Register or remove a host's SSH key | `secrets/keys.nix` |
+| Command            | Purpose                                                                       |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `host-tree <host>` | Interactive visualizer for system closure dependencies using `nix-tree`       |
+| `host-size <host>` | Lists the top 25 largest packages in a host's system closure                  |
+| `host-diff <host>` | Compares package changes between current generation and new build using `nvd` |
+| `host-dead`        | Scans for dead code and statix linting warnings across the flake              |
+| `dns-warm`         | Pre-warms the recursive Unbound DNS cache using top Majestic Million domains  |
+| `diff-to-commit`   | Generates AI commit messages from staged Git diffs                            |
+| `inspect <host>`   | Drops into an interactive Nix REPL with the host configuration loaded         |
+
+______________________________________________________________________
+
+## 6. Key Source Files
+
+- `modules/distributed-builds.nix`
+- `modules/services/ssh/default.nix`
+- `modules/services/ssh/known-hosts.nix`
+- `modules/services/attic/client.nix`
+- `modules/addresses.nix`
+- `secrets/keys.nix`
+- `nix/devshell.nix`
+- `ci/build.sh`

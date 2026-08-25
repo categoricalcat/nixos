@@ -29,14 +29,14 @@ Bare hostnames resolve via the generated ssh config
 The gate is `modules/services/ssh/scripts/ai-gate.sh`, wired via
 `Match User ai` in `modules/services/ssh/default.nix`. It allows:
 
-| Command | Allowed forms |
-| --- | --- |
-| `hostname` | standalone execution |
-| `ip` | read-only subcommands: `route`, `addr`, `link`, `neigh`, `rule`, `mroute` with `show`/`list` |
-| `networkctl` | `status`, `list`, `lldp`, `label`, `dhcp-lease` |
-| `ping` | standard ICMP ping reachability probes |
-| `systemctl` | `status`, `is-active`, `is-failed`, `is-enabled`, `show`, `list-units`, `list-timers`, `list-sockets` |
-| `journalctl` | read-only flags, `--no-pager` forced; `-f`/`--follow` (any cluster) denied |
+| Command                 | Allowed forms                                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hostname`              | standalone execution                                                                                                                                          |
+| `ip`                    | read-only subcommands: `route`, `addr`, `link`, `neigh`, `rule`, `mroute` with `show`/`list`                                                                  |
+| `networkctl`            | `status`, `list`, `lldp`, `label`, `dhcp-lease`                                                                                                               |
+| `ping`                  | standard ICMP ping reachability probes                                                                                                                        |
+| `systemctl`             | `status`, `is-active`, `is-failed`, `is-enabled`, `show`, `list-units`, `list-timers`, `list-sockets`                                                         |
+| `journalctl`            | read-only flags, `--no-pager` forced; `-f`/`--follow` (any cluster) denied                                                                                    |
 | `cat`, `ls`, `readlink` | absolute paths under `/etc`, `/proc`, `/var/log`, `/nix/var/nix/profiles`, `/nix/store`, `/run/current-system`, `/run` (excluding protected secret/key paths) |
 
 Everything else — shell escapes, `id`, `systemctl reboot`, writes, arbitrary
@@ -52,9 +52,9 @@ path allowlist and additionally unreadable to the `ai` user.
 
 1. On the new mesh host run `./users/scripts/setup-sops.sh <host>`, which
    generates `~yi/.ssh/id_ai_ed25519` and prints its public half.
-2. Paste that `sshPublicKey` into `secrets/keys.nix` under
+1. Paste that `sshPublicKey` into `secrets/keys.nix` under
    `users.ai.meshKeys.<host>` (replacing the `null` placeholder).
-3. Rebuild the host — every mesh host authorizes all non-null `ai` keys, so
+1. Rebuild the host — every mesh host authorizes all non-null `ai` keys, so
    the new key works from every host at once.
 
 ## Threat model

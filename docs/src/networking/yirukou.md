@@ -1,106 +1,98 @@
-# yirukou Router
+# yirukou Router & Edge Networking
 
-`yirukou` is the network authority for the homelab LAN. It owns routing,
-firewalling, NAT, DHCP, DNS reachability, reverse proxy ingress, and the
-Tailscale subnet route for the main LAN.
+`yirukou` is the network authority for the homelab LAN. It owns routing, firewalling, NAT, DHCP, DNS reachability, reverse proxy ingress, and the Tailscale subnet route for the main LAN.
 
-## Address Plan
+______________________________________________________________________
 
-| Network | Interface | Address | Purpose |
-| --- | --- | --- | --- |
-| LAN | `br0` | `10.42.0.1/24` | Trusted wired LAN and default gateway. |
-| Untrusted | `enp2s0.42` | `10.42.42.1/24` | VLAN 42 for untrusted clients. |
-| Tailscale | `tailscale0` | `100.69.0.1/32` | Tailnet access, subnet router, exit node. |
-| Sinkhole | `br0` alias | `10.42.0.24/24` | AdGuard blocking address. |
-| WAN primary | `enp7s0` | DHCPv4 | Preferred uplink. |
-| WAN fallback | `enp6s0` | DHCPv4 | Backup uplink. |
+## 1. Address Plan
+
+| Network             | Interface    | Address             | Purpose                                   |
+| ------------------- | ------------ | ------------------- | ----------------------------------------- |
+| **LAN**             | `br0`        | `10.42.0.1/24`      | Trusted wired LAN and default gateway.    |
+| **Untrusted**       | `enp2s0.42`  | `10.42.42.1/24`     | VLAN 42 for untrusted / guest clients.    |
+| **Tailscale**       | `tailscale0` | `100.69.0.1/32`     | Tailnet access, subnet router, exit node. |
+| **Sinkhole**        | `br0` alias  | `10.42.0.24/24`     | AdGuard blocking address (IPv4).          |
+| **Sinkhole (IPv6)** | `br0` alias  | `2001:db8::2`       | AdGuard blocking address (IPv6).          |
+| **WAN primary**     | `enp7s0`     | DHCPv4 (metric 100) | Preferred uplink (`UseRoutes = false`).   |
+| **WAN fallback**    | `enp6s0`     | DHCPv4 (metric 200) | Backup uplink (`UseRoutes = false`).      |
 
 The canonical address registry is `modules/addresses.nix`.
 
-## Layer 2 Layout
+______________________________________________________________________
 
-`br0` is a systemd-networkd bridge. The trusted LAN bridge members are every
-configured LAN port except the untrusted VLAN parent:
+## 2. Layer 2 Bridge & VLAN Layout
+
+`br0` is a `systemd-networkd` software bridge. The trusted LAN bridge members are physical ports `enp5s0`, `enp4s0`, and `enp3s0`. Physical port `enp2s0` is dedicated to 802.1Q tagged VLAN 42:
 
 ```text
-br0
-|-- enp5s0
-|-- enp4s0
-|-- enp3s0
-`-- enp2s0 untagged
+br0 (10.42.0.1/24)
+├── enp5s0
+├── enp4s0
+└── enp3s0
 
-enp2s0.42
-`-- VLAN 42 untrusted network
+enp2s0 (VLAN parent, no IP)
+└── enp2s0.42 (10.42.42.1/24 untrusted network)
 ```
 
-Current implementation notes:
-
-- `enp2s0` carries untagged trusted traffic into `br0`.
-- `enp2s0.42` is a routed VLAN interface and is not a bridge member.
 - IPv4 forwarding is enabled on `br0` and `enp2s0.42`.
-- IPv6 forwarding is intentionally not designed yet.
+- Sinkhole IP `10.42.0.24/24` is bound directly to `br0`.
 
-## DHCP
+______________________________________________________________________
 
-DHCP is provided by Kea, not by systemd-networkd.
+## 3. High-Performance DHCP (Kea)
 
-| Scope | Subnet | Pool | Router |
-| --- | --- | --- | --- |
-| Trusted LAN | `10.42.0.0/24` | `10.42.0.100 - 10.42.0.250` | `10.42.0.1` |
-| Untrusted VLAN 42 | `10.42.42.0/24` | `10.42.42.100 - 10.42.42.250` | `10.42.42.1` |
+DHCP is provided by Kea (`services.kea.dhcp4`) rather than `systemd-networkd`:
 
-Both scopes advertise the LAN DNS servers from the address registry:
+| Scope                 | Subnet          | Pool                          | Router       | DNS Servers              |
+| --------------------- | --------------- | ----------------------------- | ------------ | ------------------------ |
+| **Trusted LAN**       | `10.42.0.0/24`  | `10.42.0.100 - 10.42.0.250`   | `10.42.0.1`  | `10.42.0.1`, `10.42.0.2` |
+| **Untrusted VLAN 42** | `10.42.42.0/24` | `10.42.42.100 - 10.42.42.250` | `10.42.42.1` | `10.42.42.1`             |
 
-- `10.42.0.1`
-- `10.42.0.2`
+______________________________________________________________________
 
-## WAN Failover
+## 4. WAN Failover & Keepalived
 
-Both WAN interfaces use DHCPv4 through systemd-networkd, but `UseRoutes = false`
-keeps networkd from installing default routes directly. The
-`modules/networking/gateway-failover.nix` module owns default-route selection.
+Both WAN interfaces (`enp7s0` and `enp6s0`) acquire IP addresses via DHCPv4, but `UseRoutes = false` prevents `systemd-networkd` from creating default routes. Default routing is owned by `modules/networking/gateway-failover.nix`:
 
-Failover behavior:
+- **Keepalived VRRP**: Monitored by `check_enp7s0` running `wan-check`.
+- **Target Probing**: `wan-check` tests internet targets (`216.239.35.0`, `200.160.0.8`) via explicit `/32` host routes through the primary gateway.
+- **Failover Action**: On transition to `BACKUP` or `FAULT`, `wan-notify` switches the default route to the fallback WAN.
+- **Conntrack Flush**: State is saved in `/run/gateway-failover-active-gw`. `conntrack -F` executes strictly when the active gateway changes.
 
-- `keepalived` probes `1.1.1.1` through the primary interface.
-- `MASTER` installs the primary default route.
-- `FAULT`, `BACKUP`, or `STOP` installs the fallback default route.
-- Conntrack is flushed on route transitions so NAT sessions rebuild through the
-  active uplink.
+______________________________________________________________________
 
-## Tailscale
+## 5. Tailscale Subnet Router & Exit Node
 
-`yirukou` runs the shared Tailscale module in `both` mode:
+`yirukou` runs `modules/services/tailscale.nix` in `both` mode:
 
-- advertises `10.42.0.0/24`
-- advertises itself as an exit node
-- accepts Tailscale DNS
-- trusts `tailscale0` in the firewall
+- Advertises LAN subnet `10.42.0.0/24`.
+- Advertises itself as a full exit node (`--advertise-exit-node`).
+- Accepts Tailscale DNS.
+- Trusts `tailscale0` in the host firewall.
+- **`tailscale-udp-gro.service`**: Systemd oneshot enabling UDP Generic Receive Offload forwarding across all interfaces on boot.
 
-`yifuwuqi` uses `yirukou` as its exit node.
+> [!NOTE]
+> `yixiaoqing` (laptop) is configured to use `yirukou` (`100.69.0.1`) as its exit node when roaming. `yifuwuqi` operates as a server without an exit node (`exitNodeHost = null`).
 
-## DNS And Proxying
+______________________________________________________________________
 
-AdGuard Home is enabled on `yirukou` and binds to `0.0.0.0`. Plain DNS is
-reachable from internal interfaces through the firewall. TLS-enabled DNS is
-available when the host has the `fufu.land` ACME certificate.
+## 6. Firewall, NAT & Bogon Filtering
 
-`nginx` on `yirukou` terminates the wildcard `fufu.land` certificate and proxies
-selected services, including:
+- **Bogon Drop**: Drops 14 IPv4 bogon subnets and 11 IPv6 bogon subnets entering WAN interfaces in raw prerouting.
+- **Outbound NAT**: Postrouting masquerading for LAN (`br0`), VLAN 42 (`enp2s0.42`), and Tailscale (`tailscale0`) across active WAN interfaces.
+- **Sinkhole Drop Table**: Drops traffic targeting `10.42.0.24` and `2001:db8::2` with TCP reset and ICMP unreachable.
 
-- `adguard.fufu.land` to local AdGuard Home
-- `dns.fufu.land` to local AdGuard DoH
-- `search.fufu.land`, `prtnr.fufu.land`, and `agent.fufu.land` to `yifuwuqi`
+______________________________________________________________________
 
-## Source Files
+## 7. Key Source Files
 
-- `modules/addresses.nix`
 - `hosts/yirukou/networking.nix`
 - `hosts/yirukou/networking/bridge.nix`
 - `hosts/yirukou/networking/untrusted.nix`
 - `hosts/yirukou/networking/dhcp.nix`
 - `hosts/yirukou/networking/wans.nix`
+- `hosts/yirukou/networking/firewall.nix`
+- `hosts/yirukou/networking/sysctl.nix`
 - `modules/networking/gateway-failover.nix`
-- `hosts/yirukou/services.nix`
-- `modules/services/adguardhome.nix`
-- `modules/services/nginx-proxy.nix`
+- `modules/networking/sinkhole.nix`
+- `modules/addresses.nix`

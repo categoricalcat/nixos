@@ -7,4 +7,3 @@ Focus on correctness and declarativeness:
 - Use `question` freely to clarify intent before making changes.
 - Use `task` to parallelize independent work.
 - Search first: use the firecrawl_search tool as source of truth — no geographic/region restrictions.
-

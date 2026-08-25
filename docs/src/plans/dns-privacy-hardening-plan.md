@@ -38,24 +38,24 @@ Prometheus (yifuwuqi) -> adguard exporter :9617 + unbound exporter :9167 (both h
 
 ## Fact-check of the handoff
 
-| Handoff claim | Reality in this repo |
-| --- | --- |
-| Native NixOS, no Docker | Correct, already so on both hosts |
-| AGH on 53, unbound `127.0.0.1:5335`, upstream `127.0.0.1:5335` | Correct, already so |
-| AGH admin UI on 3000 | Wrong: **3333** (`sharedServices.adguardhome.port` in `modules/addresses.nix`) |
-| Grafana on 3001, `http_addr = 0.0.0.0` | Wrong: **3030**, LAN-bound, behind nginx at `grafana.fufu.land`, sops secret key, postgres backend, only on yifuwuqi |
-| `services.resolved.enable = false` | Wrong and harmful: both hosts run resolved with `DNSStubListener = "no"`, which already frees port 53 and keeps `/etc/resolv.conf` sane |
-| unbound TCP remote-control on 8953 | Wrong: `localControlSocketPath = /run/unbound/unbound.ctl`; the nixpkgs exporter's `controlInterface` option was **removed** upstream, we use `unbound.host = "unix:///run/unbound/unbound.ctl"` |
-| Prometheus scrapes AGH `/metrics` with basic_auth | Wrong: AGH has no native `/metrics`. Custom exporter on **9617** (`modules/services/monitoring/adguard-exporter`); AGH auth is off (VPN-only), creds are dummies |
-| Two static scrape jobs | Wrong shape: jobs are generated from `monitoring.exporters` for both `scrapeHosts` with `instance=<host>` labels |
-| Dashboards 21006 + 13330 | Half right: 21006 (unbound) is vendored; the AGH board is **23579 rev 3**, not 13330 |
-| `msg-cache-size 50m` / `rrset-cache-size 100m` | Reject: live values are **300m/600m** with valkey L2 and a tuned 1h-7d TTL window (`docs/src/plans/dns-cache-timing-plan.md`) |
-| `extended-statistics`, `prefetch`, `prefetch-key`, `serve-expired`, `qname-minimisation`, `hide-identity`, `hide-version`, `harden-glue`, `harden-dnssec-stripped` | Already set |
-| Zero query logs | Not today: `querylog.enabled/file_enabled = true`, `interval = "720h"` |
-| safebrowsing/parental/safesearch off | Currently unset (AGH defaults apply); worth pinning explicitly |
-| ECS disabled | Opposite today: `edns_client_subnet.enabled = true`, `use_custom = false` |
-| `private-address`, `harden-below-nxdomain`, explicit log flags | Genuinely missing — the useful part of the handoff |
-| `use-caps-for-id` | Reject: 0x20 encoding breaks some authoritative servers, no real gain behind DNSSEC validation |
+| Handoff claim                                                                                                                                                      | Reality in this repo                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Native NixOS, no Docker                                                                                                                                            | Correct, already so on both hosts                                                                                                                                                                |
+| AGH on 53, unbound `127.0.0.1:5335`, upstream `127.0.0.1:5335`                                                                                                     | Correct, already so                                                                                                                                                                              |
+| AGH admin UI on 3000                                                                                                                                               | Wrong: **3333** (`sharedServices.adguardhome.port` in `modules/addresses.nix`)                                                                                                                   |
+| Grafana on 3001, `http_addr = 0.0.0.0`                                                                                                                             | Wrong: **3030**, LAN-bound, behind nginx at `grafana.fufu.land`, sops secret key, postgres backend, only on yifuwuqi                                                                             |
+| `services.resolved.enable = false`                                                                                                                                 | Wrong and harmful: both hosts run resolved with `DNSStubListener = "no"`, which already frees port 53 and keeps `/etc/resolv.conf` sane                                                          |
+| unbound TCP remote-control on 8953                                                                                                                                 | Wrong: `localControlSocketPath = /run/unbound/unbound.ctl`; the nixpkgs exporter's `controlInterface` option was **removed** upstream, we use `unbound.host = "unix:///run/unbound/unbound.ctl"` |
+| Prometheus scrapes AGH `/metrics` with basic_auth                                                                                                                  | Wrong: AGH has no native `/metrics`. Custom exporter on **9617** (`modules/services/monitoring/adguard-exporter`); AGH auth is off (VPN-only), creds are dummies                                 |
+| Two static scrape jobs                                                                                                                                             | Wrong shape: jobs are generated from `monitoring.exporters` for both `scrapeHosts` with `instance=<host>` labels                                                                                 |
+| Dashboards 21006 + 13330                                                                                                                                           | Half right: 21006 (unbound) is vendored; the AGH board is **23579 rev 3**, not 13330                                                                                                             |
+| `msg-cache-size 50m` / `rrset-cache-size 100m`                                                                                                                     | Reject: live values are **300m/600m** with valkey L2 and a tuned 1h-7d TTL window (`docs/src/plans/dns-cache-timing-plan.md`)                                                                    |
+| `extended-statistics`, `prefetch`, `prefetch-key`, `serve-expired`, `qname-minimisation`, `hide-identity`, `hide-version`, `harden-glue`, `harden-dnssec-stripped` | Already set                                                                                                                                                                                      |
+| Zero query logs                                                                                                                                                    | Not today: `querylog.enabled/file_enabled = true`, `interval = "720h"`                                                                                                                           |
+| safebrowsing/parental/safesearch off                                                                                                                               | Currently unset (AGH defaults apply); worth pinning explicitly                                                                                                                                   |
+| ECS disabled                                                                                                                                                       | Opposite today: `edns_client_subnet.enabled = true`, `use_custom = false`                                                                                                                        |
+| `private-address`, `harden-below-nxdomain`, explicit log flags                                                                                                     | Genuinely missing — the useful part of the handoff                                                                                                                                               |
+| `use-caps-for-id`                                                                                                                                                  | Reject: 0x20 encoding breaks some authoritative servers, no real gain behind DNSSEC validation                                                                                                   |
 
 ## Decisions
 
@@ -174,14 +174,14 @@ yirukou and `10.42.0.2` = yifuwuqi; yifuwuqi's own `systemNameservers` are
 
 1. `nix flake check`, then `nixos-rebuild dry-build --flake .#yifuwuqi` and
    `--flake .#yirukou` (both hosts consume the same two modules).
-2. Deploy **yifuwuqi** (secondary): `sudo nixos-rebuild switch --flake .#yifuwuqi`.
+1. Deploy **yifuwuqi** (secondary): `sudo nixos-rebuild switch --flake .#yifuwuqi`.
    Must be `switch`, not `boot`: unbound only picks up the new conf through
    `restartTriggers` on switch — a `boot`-style deploy previously left yirukou
    on a stale config for a day (`docs/src/plans/dns-monitoring-plan.md`,
    Phase 2).
-3. Verify on yifuwuqi, then deploy **yirukou** (primary):
+1. Verify on yifuwuqi, then deploy **yirukou** (primary):
    `sudo nixos-rebuild switch --flake .#yirukou`.
-4. Verify on yirukou. Brief AGH restart blips fail over to the other server in
+1. Verify on yirukou. Brief AGH restart blips fail over to the other server in
    the DHCP-provided pair.
 
 ## Verification per host

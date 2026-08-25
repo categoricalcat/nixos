@@ -9,33 +9,33 @@ The fallback WAN and keepalived remain IPv4-only.
 1. Neither WAN had a global IPv6 address or IPv6 default route when last
    checked. Only the primary WAN, `enp7s0` through CPE `192.168.1.1`, is in
    scope for IPv6. `enp6s0` stays IPv4-only.
-2. yirukou already has `net.ipv6.conf.all.forwarding = 1` at runtime because
+1. yirukou already has `net.ipv6.conf.all.forwarding = 1` at runtime because
    the NixOS Tailscale module sets it when `useRoutingFeatures` is `server` or
    `both`. `yi.tailscale.routingMode = "both"` selects that mode. Forwarding
    changes a Linux interface's default `accept_ra` behavior to `0`, so the
    primary WAN needs `accept_ra = 2`.
-3. `hosts/yirukou/networking/wans.nix` currently sets
+1. `hosts/yirukou/networking/wans.nix` currently sets
    `IPv6AcceptRA = "yes"` on both WANs, but `DHCP = "ipv4"` starts no DHCPv6
    client. The primary needs RA plus DHCPv6-PD; the fallback must explicitly
    disable RA.
-4. yirukou's `br0` and VLAN 42 interfaces disable IPv6 link-local addressing.
+1. yirukou's `br0` and VLAN 42 interfaces disable IPv6 link-local addressing.
    yifuwuqi's `eno1`, `enp4s0`, and `wlp2s0` reject RA; only `eno1` is in scope
    to change.
-5. `modules/services/unbound.nix` explicitly sets `do-ip6 = "no"` and listens
+1. `modules/services/unbound.nix` explicitly sets `do-ip6 = "no"` and listens
    only on `127.0.0.1`. `modules/services/adguardhome.nix` already has
    `ipv6_disabled = false`, but uses IPv4 loopback for Unbound and has
    `bootstrap_prefer_ipv6 = false`.
-6. `modules/networking/sinkhole.nix` already has IPv6 nftables rules.
+1. `modules/networking/sinkhole.nix` already has IPv6 nftables rules.
    `2001:db8::/32` is an RFC 3849 documentation prefix, so its current
    `2001:db8::1` and `2001:db8::2` placeholders must not survive rollout.
-7. The yirukou raw-prerouting bogon set drops `fe80::/10` on WAN. Upstream
+1. The yirukou raw-prerouting bogon set drops `fe80::/10` on WAN. Upstream
    router advertisements and neighbor discovery use link-local source
    addresses, so essential ICMPv6 must be accepted before that drop on the
    primary WAN. The normal NixOS firewall already admits core ICMPv6 in its
    filter chain, but that happens after this raw-prerouting rule.
-8. Kea is DHCPv4-only. No DHCPv6 server is required: LAN clients use SLAAC and
+1. Kea is DHCPv4-only. No DHCPv6 server is required: LAN clients use SLAAC and
    RDNSS. There is no IPv6 equivalent of the IPv4 `.100-.250` pool.
-9. `modules/networking/ipv6.nix` enables IPv6, disables privacy addresses, and
+1. `modules/networking/ipv6.nix` enables IPv6, disables privacy addresses, and
    gives native IPv6 higher RFC 6724 precedence than IPv4-mapped addresses.
    yifuwuqi imports it; yirukou currently does not.
 
@@ -57,11 +57,11 @@ The fallback WAN and keepalived remain IPv4-only.
   addressing but does not provide IPv6 internet access by itself.
 - No NAT66.
 
-| Segment | Delegated prefix | Router | Server | Sinkhole | Clients |
-| --- | --- | --- | --- | --- | --- |
-| LAN (`br0`) | first `/64` | yirukou `::1` | yifuwuqi `::2` | `::24` | SLAAC |
-| Untrusted (VLAN 42) | second `/64` | yirukou `::1` | — | optional `::24` | SLAAC |
-| Spare | remaining `/64`s | — | — | — | — |
+| Segment             | Delegated prefix | Router        | Server         | Sinkhole        | Clients |
+| ------------------- | ---------------- | ------------- | -------------- | --------------- | ------- |
+| LAN (`br0`)         | first `/64`      | yirukou `::1` | yifuwuqi `::2` | `::24`          | SLAAC   |
+| Untrusted (VLAN 42) | second `/64`     | yirukou `::1` | —              | optional `::24` | SLAAC   |
+| Spare               | remaining `/64`s | —             | —              | —               | —       |
 
 The PD must contain at least two `/64`s for both current segments. A single
 upstream `/64` cannot be routed onto both LANs without an undesirable
@@ -71,23 +71,27 @@ workaround.
 
 Check only the primary CPE (`192.168.1.1`) and ISP:
 
-| Primary CPE/ISP result | Action |
-| --- | --- |
-| Delegates at least two `/64`s to yirukou | Continue with Phases A-D |
-| Has IPv6 but offers no downstream PD | Stop; do not deploy NAT66 |
-| Has no IPv6 | Stop or separately design a tunnel broker |
+| Primary CPE/ISP result                   | Action                                    |
+| ---------------------------------------- | ----------------------------------------- |
+| Delegates at least two `/64`s to yirukou | Continue with Phases A-D                  |
+| Has IPv6 but offers no downstream PD     | Stop; do not deploy NAT66                 |
+| Has no IPv6                              | Stop or separately design a tunnel broker |
 
 ## Phase A — primary WAN receive and PD
 
 1. Import `modules/networking/ipv6.nix` on yirukou so both servers use the same
    IPv6-enabled, no-privacy-address, IPv6-before-IPv4 policy.
-2. In `hosts/yirukou/networking/sysctl.nix`, explicitly own:
+
+1. In `hosts/yirukou/networking/sysctl.nix`, explicitly own:
+
    - `net.ipv6.conf.all.forwarding = 1`
    - `net.ipv6.conf.default.forwarding = 1`
    - `net.ipv6.conf.enp7s0.accept_ra = 2`
 
    Do not set `accept_ra = 2` on `enp6s0`.
-3. In `hosts/yirukou/networking/wans.nix`:
+
+1. In `hosts/yirukou/networking/wans.nix`:
+
    - primary `enp7s0`: enable DHCPv6 as well as DHCPv4, retain
      `IPv6AcceptRA = "yes"`, request PD with
      `dhcpV6Config.PrefixDelegationHint`, and prevent RA/DHCPv6 DNS from
@@ -98,11 +102,13 @@ Check only the primary CPE (`192.168.1.1`) and ISP:
    `dhcpV6Config.PrefixDelegation = true` is not a valid networkd option.
    `PrefixDelegationHint` requests the PD; downstream interfaces consume it
    with `networkConfig.DHCPPrefixDelegation = true`.
-4. In `hosts/yirukou/networking/firewall.nix`, exempt essential primary-WAN
+
+1. In `hosts/yirukou/networking/firewall.nix`, exempt essential primary-WAN
    ICMPv6 link-local traffic (RA, NS, NA, and required error messages) before
    the raw `fe80::/10` bogon drop. Keep link-local blocked for ordinary
    primary-WAN traffic and keep all IPv6 blocked on the fallback WAN.
-5. Apply yirukou and verify `enp7s0` receives a global address, a default route,
+
+1. Apply yirukou and verify `enp7s0` receives a global address, a default route,
    and a delegated prefix. Verify `enp6s0` has no learned IPv6 default route.
 
 ```sh
@@ -117,6 +123,7 @@ No PD means stop at the project gate.
 ## Phase B — yirukou LAN routing and RA
 
 1. In `hosts/yirukou/networking/bridge.nix`, configure `br0` with:
+
    - `LinkLocalAddressing = "ipv6"`
    - `IPv6AcceptRA = "no"` (it is a router-facing LAN interface)
    - `IPv6Forwarding = true`
@@ -127,21 +134,27 @@ No PD means stop at the project gate.
 
    Keep link-local addressing disabled on the bridge member ports; addresses
    belong on `br0`.
-2. Apply the same downstream-PD and RA design to VLAN 42 in
+
+1. Apply the same downstream-PD and RA design to VLAN 42 in
    `hosts/yirukou/networking/untrusted.nix`, using a different subnet ID.
    Keep link-local addressing disabled on the VLAN parent `enp2s0`.
-3. In `modules/addresses.nix`, replace the RFC 3849 sinkhole placeholders and
+
+1. In `modules/addresses.nix`, replace the RFC 3849 sinkhole placeholders and
    record the stable server/service addresses. `dnsBindHosts` is defined here,
    not in `hosts/yirukou/services.nix`.
-4. Bind yirukou AdGuard Home on IPv6. If the GUA prefix is dynamic, bind the
+
+1. Bind yirukou AdGuard Home on IPv6. If the GUA prefix is dynamic, bind the
    IPv6 wildcard and enforce exposure with the firewall instead of embedding
    the changing GUA in `bind_hosts`.
-5. Audit `hosts/yirukou/networking/firewall.nix` for:
+
+1. Audit `hosts/yirukou/networking/firewall.nix` for:
+
    - LAN-to-primary-WAN IPv6 forwarding;
    - established/related return traffic;
    - required ICMPv6 and PMTU discovery;
    - no IPv6 forwarding through `enp6s0`.
-6. Verify one ordinary LAN client receives a GUA, default route, and RDNSS
+
+1. Verify one ordinary LAN client receives a GUA, default route, and RDNSS
    automatically. Verify it has no manually assigned address.
 
 ## Phase C — yifuwuqi and DNS
@@ -149,56 +162,56 @@ No PD means stop at the project gate.
 1. In `hosts/yifuwuqi/networking/interfaces/eno1.nix`, enable IPv6 link-local
    addressing and RA. Use a stable `::2` token for its server identity while
    learning the prefix and default route automatically.
-2. Keep IPv6 disabled on yifuwuqi `enp4s0` and `wlp2s0`.
-3. In `modules/services/unbound.nix`, set `do-ip6 = "yes"` and listen on both
+1. Keep IPv6 disabled on yifuwuqi `enp4s0` and `wlp2s0`.
+1. In `modules/services/unbound.nix`, set `do-ip6 = "yes"` and listen on both
    `127.0.0.1` and `::1`.
-4. In `modules/services/adguardhome.nix`, use IPv6 loopback Unbound endpoints
+1. In `modules/services/adguardhome.nix`, use IPv6 loopback Unbound endpoints
    before IPv4 loopback and set `bootstrap_prefer_ipv6 = true`. This preference
    is meaningful only after Unbound listens on `::1`; the current
    `bootstrap_dns = [ "127.0.0.1:5335" ]` does not use Quad9 directly.
-5. In `modules/addresses.nix`, add yifuwuqi's stable IPv6 server address to its
+1. In `modules/addresses.nix`, add yifuwuqi's stable IPv6 server address to its
    AdGuard Home bind list, or use an IPv6 wildcard when the PD is dynamic and
    rely on the firewall.
-6. Verify both Unbound instances make outbound IPv6 queries. Returning an AAAA
+1. Verify both Unbound instances make outbound IPv6 queries. Returning an AAAA
    record alone is insufficient because DNS transport could still be IPv4.
 
 ## Phase D — end-to-end and fallback verification
 
 1. Both servers have a global IPv6 address and default route through yirukou.
-2. LAN and VLAN 42 clients receive IPv6 automatically.
-3. `ping -6 2620:fe::fe` works from both servers and a LAN client.
-4. `dig @127.0.0.1 AAAA github.com` works, and Unbound statistics or packet
+1. LAN and VLAN 42 clients receive IPv6 automatically.
+1. `ping -6 2620:fe::fe` works from both servers and a LAN client.
+1. `dig @127.0.0.1 AAAA github.com` works, and Unbound statistics or packet
    capture confirms outbound IPv6 transport.
-5. AdGuard Home listens on IPv6 and filter downloads work with IPv6 preferred.
-6. Native IPv6 has higher address-selection precedence than IPv4 on both
+1. AdGuard Home listens on IPv6 and filter downloads work with IPv6 preferred.
+1. Native IPv6 has higher address-selection precedence than IPv4 on both
    servers. Test a dual-stack destination, not only an IPv6-only destination.
-7. Disable or disconnect primary-WAN IPv6 and verify dual-stack applications
+1. Disable or disconnect primary-WAN IPv6 and verify dual-stack applications
    continue over IPv4. Address selection alone does not guarantee instant
    fallback; applications without Happy Eyeballs may wait for IPv6 failure.
-8. Confirm the fallback WAN never acquires a global IPv6 address or IPv6
+1. Confirm the fallback WAN never acquires a global IPv6 address or IPv6
    default route.
 
 ## Global IPv6/IP6 audit
 
-| Existing setting | Final state |
-| --- | --- |
-| yirukou primary WAN RA/DHCPv6 | enabled |
-| yirukou fallback WAN RA/DHCPv6 | disabled intentionally |
-| yirukou `br0` and VLAN 42 | IPv6 forwarding, PD, RA enabled |
-| yirukou bridge member ports / VLAN parent | link-local disabled intentionally |
-| yifuwuqi `eno1` | IPv6 RA plus stable server token enabled |
-| yifuwuqi `enp4s0`, `wlp2s0` | disabled intentionally |
-| Unbound `do-ip6` and `::1` listener | enabled on both hosts |
-| AdGuard `ipv6_disabled` | already false |
-| AdGuard `bootstrap_prefer_ipv6` | enabled |
-| Sinkhole `ip6` rules | enabled with non-documentation addresses |
-| `networking.enableIPv6` / IPv6 precedence | enabled on both hosts |
-| keepalived | IPv4-only intentionally |
-| Tailscale LAN route advertisement | IPv4-only intentionally; Tailscale's own IPv6 remains |
-| qBittorrent VPN namespace `disable_ipv6=1` | disabled intentionally to prevent VPN leaks |
-| SSH `listenWildcardIPv6 = null` | unchanged; do not expose SSH on all IPv6 addresses |
-| Podman `ipv6_enabled = true` | already enabled |
-| Avahi `nssmdns6 = true` | already enabled |
+| Existing setting                           | Final state                                           |
+| ------------------------------------------ | ----------------------------------------------------- |
+| yirukou primary WAN RA/DHCPv6              | enabled                                               |
+| yirukou fallback WAN RA/DHCPv6             | disabled intentionally                                |
+| yirukou `br0` and VLAN 42                  | IPv6 forwarding, PD, RA enabled                       |
+| yirukou bridge member ports / VLAN parent  | link-local disabled intentionally                     |
+| yifuwuqi `eno1`                            | IPv6 RA plus stable server token enabled              |
+| yifuwuqi `enp4s0`, `wlp2s0`                | disabled intentionally                                |
+| Unbound `do-ip6` and `::1` listener        | enabled on both hosts                                 |
+| AdGuard `ipv6_disabled`                    | already false                                         |
+| AdGuard `bootstrap_prefer_ipv6`            | enabled                                               |
+| Sinkhole `ip6` rules                       | enabled with non-documentation addresses              |
+| `networking.enableIPv6` / IPv6 precedence  | enabled on both hosts                                 |
+| keepalived                                 | IPv4-only intentionally                               |
+| Tailscale LAN route advertisement          | IPv4-only intentionally; Tailscale's own IPv6 remains |
+| qBittorrent VPN namespace `disable_ipv6=1` | disabled intentionally to prevent VPN leaks           |
+| SSH `listenWildcardIPv6 = null`            | unchanged; do not expose SSH on all IPv6 addresses    |
+| Podman `ipv6_enabled = true`               | already enabled                                       |
+| Avahi `nssmdns6 = true`                    | already enabled                                       |
 
 ## Failure and failover behavior
 

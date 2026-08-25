@@ -1,46 +1,90 @@
-# AI And ROCm
+# AI & Local Inference Infrastructure
 
-This page documents the local inference setup: plain per-model servers, no
-routing layer.
+This document details the self-hosted LLM inference stack, Vulkan/ROCm acceleration, model registry architecture, agent tooling, and companion web interfaces.
 
-## Current Topology
+______________________________________________________________________
 
-Inference runs directly on the host that owns the model. Each host serves its
-own models; clients address the servers directly.
+## 1. Inference Topology
 
-- **`yifuwuqi`**: Hosts lightweight models on its **Radeon 680M APU (~9.6 GB
-  UMA)** via `services.llama-cpp-node` (llama.cpp, **Vulkan**) — one
-  `llama-cpp-<model>` systemd unit per enabled registry entry that declares a
-  `port`, bound to `127.0.0.1:<port>` (currently `qwen2.5:7b` on `11436`).
-  Vulkan is used instead of ROCm because ROCm on this APU (gfx1030 binaries
-  forced onto gfx1035) corrupts prompts beyond ~4–5k tokens.
-- **`yitaishi`**: No serving backend at the moment. Its registry entries
-  (`qwen3.6:35b-a3b`, `kimi-k2.7:code`, `glm-4.7-flash:30b`) are
-  `enable = false` until it migrates to `services.llama-cpp-node` with the
-  `rocm` backend (RX 7900 XTX, gfx1100). Ollama was removed everywhere.
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    yifuwuqi (Inference Host)                │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ AMD Radeon 680M APU (~9.6 GB UMA)                     │  │
+│  │ Backend: Vulkan (RADV) via services.llama-cpp-node    │  │
+│  └──────────────────────────┬────────────────────────────┘  │
+│                             │                               │
+│  ┌──────────────────────────▼────────────────────────────┐  │
+│  │ llama-server: qwen3.6-35b-abliterated                 │  │
+│  │ • Port: 11437 (127.0.0.1:11437)                       │  │
+│  │ • Quantization: IQ2_M (mradermacher)                  │  │
+│  │ • Context Window: 16,384 tokens                       │  │
+│  │ • Optimizations: FlashAttention, Q8 KV Cache          │  │
+│  │ • Idle Sleep: 300 seconds                             │  │
+│  └──────────────────────────┬────────────────────────────┘  │
+└─────────────────────────────┼───────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+┌──────────────────┐┌──────────────────┐┌──────────────────┐
+│ SillyTavern UI   ││ Opencode Agent   ││ Firecrawl MCP    │
+│ (:8000 Web UI)   ││ (:3010 Agent)    ││ (Stdio Scraper)  │
+└──────────────────┘└──────────────────┘└──────────────────┘
+```
 
-`modules/services/ai/models.nix` is the central registry declaring model
-definitions, capabilities, target hosts and ports.
+______________________________________________________________________
 
-## Serving Module
+## 2. Model Serving Module (`modules/services/ai/llama-cpp.nix`)
 
-`modules/services/ai/llama-cpp.nix` (`services.llama-cpp-node { backend =
-"vulkan" | "rocm"; }`): reads `models.nix` and spawns one `llama-server` unit
-per enabled local model with a `port`. GGUFs are pulled from HuggingFace on
-first start into `/var/cache/llama-cpp`.
+- **Vulkan Backend**: Configured via `services.llama-cpp-node.backend = "vulkan"`. Uses Vulkan compute rather than ROCm on the Ryzen APU because ROCm (forcing gfx1030 binaries onto gfx1035 hardware) causes memory corruption beyond ~4–5k tokens.
+- **On-Demand Execution**: Units intentionally omit `wantedBy = ["multi-user.target"]` to save VRAM and power until explicitly requested by clients.
+- **Dynamic Layer Offloading**: Runs with `-ngl 99` (offloading 100% of model layers to GPU), `-fa on` (FlashAttention), and `--cache-type-k q8_0 --cache-type-v q8_0` (high-precision 8-bit KV caching).
+- **Idle Power Down**: Automatically sleeps GPU memory after 5 minutes of inactivity (`--sleep-idle-seconds 300`).
 
-## Clients
+______________________________________________________________________
 
-`users/programs/opencode.nix` points provider `local` at yifuwuqi's
-llama-server (`http://127.0.0.1:11436/v1`, port derived from the registry).
-There is no shared gateway: a previous nginx body-routing attempt
-(`map $request_body`) was abandoned — nginx evaluates a variable
-`proxy_pass` before reading the request body, so it can never see the model
-name.
+## 3. Central Model Registry (`modules/services/ai/models.nix`)
 
-Web search/scrape for agents comes from the self-hosted Firecrawl instance
-via `users/programs/firecrawl-mcp.js` — a zero-dependency MCP stdio server
-that natively advertises the canonical `firecrawl_search`/`firecrawl_scrape`
-tool names with small whitelisted schemas (upstream `firecrawl-mcp` behind a
-rename shim was removed: doubled tool names broke small-model calls and its
-nested schemas broke llama.cpp's grammar compiler).
+`models.nix` provides a single declarative specification mapping AI models to hardware targets, context lengths, HuggingFace repositories, and capabilities:
+
+| Model ID                      | Target Host | Port    | Context  | Quantization | Enabled             | Tools / Reasoning          |
+| ----------------------------- | ----------- | ------- | -------- | ------------ | ------------------- | -------------------------- |
+| **`qwen3.6-35b-abliterated`** | `yifuwuqi`  | `11437` | `16384`  | `IQ2_M`      | **Active (`true`)** | Tools: Yes, Reasoning: Yes |
+| `qwen2.5:7b`                  | `yifuwuqi`  | `11436` | `32768`  | `Q4_K_M`     | `false`             | Tools: Yes, Reasoning: Yes |
+| `qwen3.6-35b-a3b`             | `yifuwuqi`  | `11436` | `16384`  | `IQ2_M`      | `false`             | Tools: Yes, Reasoning: Yes |
+| `qwen2.5-coder:7b`            | `yifuwuqi`  | `11436` | `65536`  | `Q4_K_M`     | `false`             | Tools: Yes, Reasoning: Yes |
+| `qwen3.5:4b`                  | `yifuwuqi`  | `11436` | `65536`  | `Q8_0`       | `false`             | Tools: Yes, Reasoning: No  |
+| `kimi-k2.7:code-7b`           | `yifuwuqi`  | `11436` | `65536`  | `Q4_K_M`     | `false`             | Tools: Yes, Reasoning: Yes |
+| `kimi-k2.7:code`              | `yitaishi`  | `11436` | `65536`  | `Q4_K_M`     | `false`             | Tools: Yes, Reasoning: Yes |
+| `glm4:latest`                 | `yifuwuqi`  | `11436` | `65536`  | `Q4_K_M`     | `false`             | Tools: Yes, Reasoning: Yes |
+| `glm-4.7-flash:30b`           | `yitaishi`  | `11436` | `131072` | `Q4_K_M`     | `false`             | Tools: Yes, Reasoning: Yes |
+
+______________________________________________________________________
+
+## 4. AI Client Ecosystem & Web Interfaces
+
+### 4.1 SillyTavern Companion (`modules/services/ai/sillytavern.nix`)
+
+- **Domain**: `https://sillytavern.fufu.land` (proxied to port `8000`).
+- **Security**: Strict systemd isolation under dedicated user `sillytavern`. Pre-start script automatically bootstraps default settings and enables network listening with security overrides.
+
+### 4.2 Opencode Agent Server (`modules/services/opencode.nix`)
+
+- **Domain**: `https://agent.fufu.land` (proxied to port `3010`).
+- **Configuration**: Runs as user `yi:yi`, providing a persistent backend for autonomous coding workflows.
+
+### 4.3 Firecrawl MCP Server (`users/programs/firecrawl-mcp.js`)
+
+- **Zero-Dependency Stdio Bridge**: Custom MCP server interfacing with the self-hosted Firecrawl instance.
+- **Canonical Tooling**: Natively advertises `firecrawl_search` and `firecrawl_scrape` tools with clean, flat JSON schemas compatible with llama.cpp grammar compilers.
+
+______________________________________________________________________
+
+## 5. Key Source Files
+
+- `modules/services/ai/llama-cpp.nix`
+- `modules/services/ai/models.nix`
+- `modules/services/ai/sillytavern.nix`
+- `modules/services/opencode.nix`
+- `users/programs/firecrawl-mcp.js`
+- `hosts/yifuwuqi/services.nix`

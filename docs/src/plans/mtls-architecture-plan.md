@@ -5,78 +5,97 @@
 Design and implement a server-side 3-tier Mutual TLS (mTLS) security architecture across the NixOS homelab infrastructure with **zero per-device client certificate overhead**:
 
 1. **Cloudflare Authenticated Origin Pulls (Tier 1: Edge Ingress)**: Enforce mTLS between Cloudflare edge proxy servers and `yirukou` Nginx to block direct-to-IP port scans, botnets, and proxy bypass attempts.
-2. **Inter-Host Upstream Proxy mTLS (Tier 2: LAN Inter-Host)**: Authenticate and encrypt all reverse-proxied traffic between `yirukou` (reverse proxy) and `yifuwuqi` (service host) across the LAN (`10.42.0.0/24`).
-3. **Observability & Metrics Scrape mTLS (Tier 3: Monitoring Mesh)**: Mutually authenticate Prometheus on `yifuwuqi` scraping all exporters (`node-exporter`, `adguard-exporter`, `postgres`, `unbound`, `nginx`) across hosts.
+1. **Inter-Host Upstream Proxy mTLS (Tier 2: LAN Inter-Host)**: Authenticate and encrypt all reverse-proxied traffic between `yirukou` (reverse proxy) and `yifuwuqi` (service host) across the LAN (`10.42.0.0/24`).
+1. **Observability & Metrics Scrape mTLS (Tier 3: Monitoring Mesh)**: Mutually authenticate Prometheus on `yifuwuqi` scraping all exporters (`node-exporter`, `adguard-exporter`, `postgres`, `unbound`, `nginx`) across hosts.
 
 > [!NOTE]
 > Personal client devices (laptops, phones, tablets, browsers) require **no** certificate installation. Administrative web services (Cockpit, Forgejo, Arr apps, Grafana) remain protected by existing network controls (`restrictedProxyConfig` LAN/VPN IP allowlists) and application-level authentication.
 
----
+______________________________________________________________________
 
 ## Current State
 
-- **Perimeter Ingress**: `yirukou` runs Nginx ([`modules/services/nginx-proxy.nix`](file:///home/yi/the.files/nixos/modules/services/nginx-proxy.nix)) with a wildcard ACME certificate for `*.fufu.land` obtained via Cloudflare DNS-01 (`sops.secrets.cloudflare_api_token`).
+- **Perimeter Ingress**: `yirukou` runs Nginx (\[`modules/services/nginx-proxy.nix`\](file:///home/yi/the.files/nixos/modules/services/nginx-proxy.nix)) with a wildcard ACME certificate for `*.fufu.land` obtained via Cloudflare DNS-01 (`sops.secrets.cloudflare_api_token`).
 - **Access Control**: Administrative services use `restrictedProxyConfig` (IP allowlisting: LAN `10.42.0.0/24` and VPN CIDRs).
 - **Inter-Host Traffic**: Reverse proxy on `yirukou` passes traffic to `yifuwuqi` over plain HTTP (`http://${yifuwuqiLan}:${port}`).
-- **Monitoring**: Prometheus on `yifuwuqi` scrapes exporters over unencrypted HTTP via LAN IPs ([`modules/services/monitoring/exporters.nix`](file:///home/yi/the.files/nixos/modules/services/monitoring/exporters.nix)).
-- **Secret Management**: Sops-nix encrypts secrets with SSH host keys and user mesh keys in [`secrets/secrets.yaml`](file:///home/yi/the.files/nixos/secrets/secrets.yaml).
+- **Monitoring**: Prometheus on `yifuwuqi` scrapes exporters over unencrypted HTTP via LAN IPs (\[`modules/services/monitoring/exporters.nix`\](file:///home/yi/the.files/nixos/modules/services/monitoring/exporters.nix)).
+- **Secret Management**: Sops-nix encrypts secrets with SSH host keys and user mesh keys in \[`secrets/secrets.yaml`\](file:///home/yi/the.files/nixos/secrets/secrets.yaml).
 
----
+______________________________________________________________________
 
 ## Decisions
 
 1. **PKI Authority Model**:
    - **Cloudflare Edge**: Cloudflare Origin Pull Static Root CA (publicly trusted Cloudflare certificate).
    - **Internal Service & Scrape CA (`fufu-service-ca`)**: Dedicated homelab internal Root CA for inter-host reverse proxying and Prometheus metrics scraping.
-2. **Zero Device Enrollment**:
+1. **Zero Device Enrollment**:
    - No user/device PKI (`fufu-client-ca` removed). No `.p12` files, device keychain imports, or mobile profiles.
-3. **100% Declarative Host Deployment**:
+1. **100% Declarative Host Deployment**:
    - **Public Certificates & CAs** (`*.crt`): Committed directly to Git (e.g. `modules/services/certs/`) and referenced via Nix store paths.
-   - **Private Keys** (`*.key`): Encrypted into [`secrets/secrets.yaml`](file:///home/yi/the.files/nixos/secrets/secrets.yaml) via Sops-nix and mounted automatically at runtime (e.g. `/run/secrets/certs/...`).
+   - **Private Keys** (`*.key`): Encrypted into \[`secrets/secrets.yaml`\](file:///home/yi/the.files/nixos/secrets/secrets.yaml) via Sops-nix and mounted automatically at runtime (e.g. `/run/secrets/certs/...`).
 
----
+______________________________________________________________________
 
 ## Architecture Diagram
 
-```mermaid
-graph LR
-    subgraph Internet / Edge
-        CF[Cloudflare Edge]
-    end
-
-    subgraph Host: yirukou [yirukou - Reverse Proxy & Gateway]
-        NG_EDGE[Nginx Ingress<br/>sslVerifyClient on<br/>CA: Cloudflare Origin CA]
-        NG_PROXY[Nginx Upstream Client<br/>Cert: yirukou-proxy.crt<br/>Key: sops yirukou_proxy_key]
-        EXP_YIRUKOU[Node Exporter<br/>Cert: exporter.crt]
-    end
-
-    subgraph Host: yifuwuqi [yifuwuqi - Service & Monitoring Host]
-        NG_BACKEND[Nginx Backend TLS<br/>Cert: yifuwuqi-backend.crt<br/>sslClientCertificate: service-ca.crt]
-        SVC[Internal Services<br/>Cockpit, Forgejo, Arr, Agent...]
-        PROM[Prometheus Scraper<br/>Cert: prometheus-scraper.crt<br/>Key: sops prometheus_scraper_key]
-        EXP_YIFUWUQI[Node / App Exporters<br/>Cert: exporter.crt]
-    end
-
-    CF -->|Tier 1: Cloudflare mTLS| NG_EDGE
-    NG_EDGE --> NG_PROXY
-    NG_PROXY -->|Tier 2: Inter-Host mTLS (LAN)| NG_BACKEND
-    NG_BACKEND --> SVC
-
-    PROM -->|Tier 3: Scrape mTLS| EXP_YIRUKOU
-    PROM -->|Tier 3: Scrape mTLS| EXP_YIFUWUQI
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                       Internet / Edge                       │
+│  ┌─────────────────────────┐                                │
+│  │     Cloudflare Edge     │                                │
+│  └────────────┬────────────┘                                │
+└───────────────┼─────────────────────────────────────────────┘
+                │ Tier 1: Cloudflare mTLS (Authenticated Origin Pulls)
+┌───────────────▼─────────────────────────────────────────────┐
+│        Host: yirukou (Reverse Proxy & Gateway)              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ Nginx Ingress (sslVerifyClient on; Cloudflare CA)     │  │
+│  └──────────────────────┬────────────────────────────────┘  │
+│                         │ proxy_pass over LAN               │
+│  ┌──────────────────────▼────────────────────────────────┐  │
+│  │ Nginx Upstream Client (Cert: yirukou-proxy.crt)       │  │
+│  └──────────────────────┬────────────────────────────────┘  │
+│                         │                                   │
+│  ┌──────────────────────┴───────┐                           │
+│  │ Node Exporter (exporter.crt) │                           │
+│  └──────────────▲───────────────┘                           │
+└─────────────────┼───────────────────────────────────────────┘
+                  │ Tier 2: Inter-Host mTLS (LAN)
+                  │ Tier 3: Scrape mTLS
+┌─────────────────┼───────────────────────────────────────────┐
+│        Host: yifuwuqi (Service & Monitoring Host)           │
+│  ┌──────────────▼────────────────────────────────────────┐  │
+│  │ Nginx Backend TLS (sslClientCert: service-ca.crt)     │  │
+│  └──────────────────────┬────────────────────────────────┘  │
+│                         │ local loopback                    │
+│  ┌──────────────────────▼────────────────────────────────┐  │
+│  │ Internal Services (Cockpit, Forgejo, Arr, Agent...)   │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────┐                           │
+│  │ Prometheus Scraper           │                           │
+│  │ (prometheus-scraper.crt)     │                           │
+│  └──┬─────────────────────────┬─┘                           │
+│     │ Scrape mTLS             │ Scrape mTLS                 │
+│     ▼                         ▼                             │
+│  ┌─────────────────────────┐  │                             │
+│  │ Node / App Exporters    │  │                             │
+│  │ (exporter.crt)          │  │                             │
+│  └─────────────────────────┘  └─────────────────────────────┼──► to yirukou exporter
+└─────────────────────────────────────────────────────────────┘
 ```
 
----
+______________________________________________________________________
 
 ## Phases & Implementation Details
 
----
+______________________________________________________________________
 
 ### Phase 1: Cloudflare Authenticated Origin Pulls (Tier 1: Edge Ingress)
 
 #### 1.1 Declarative Configuration (NixOS)
 
-Fetch Cloudflare's published Authenticated Origin Pull Root CA in [`modules/services/nginx-proxy.nix`](file:///home/yi/the.files/nixos/modules/services/nginx-proxy.nix):
+Fetch Cloudflare's published Authenticated Origin Pull Root CA in \[`modules/services/nginx-proxy.nix`\](file:///home/yi/the.files/nixos/modules/services/nginx-proxy.nix):
 
 ```nix
 let
@@ -100,11 +119,13 @@ in
 Enable Authenticated Origin Pulls for the zone:
 
 **Option A: Cloudflare Dashboard**:
-1. Log in to Cloudflare Dashboard $\to$ Select `fufu.land`.
-2. Navigate to **SSL/TLS** $\to$ **Origin Server**.
-3. Toggle **Authenticated Origin Pulls** to **ON**.
+
+1. Log in to Cloudflare Dashboard $\\to$ Select `fufu.land`.
+1. Navigate to **SSL/TLS** $\\to$ **Origin Server**.
+1. Toggle **Authenticated Origin Pulls** to **ON**.
 
 **Option B: Cloudflare API via CLI**:
+
 ```bash
 export CLOUDFLARE_ZONE_ID="<your-zone-id>"
 export CLOUDFLARE_API_TOKEN="<your-api-token>"
@@ -115,7 +136,7 @@ curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_I
   --data '{"enabled": true}' | jq .
 ```
 
----
+______________________________________________________________________
 
 ### Phase 2: Inter-Host Upstream Proxy mTLS (Tier 2: LAN Inter-Host)
 
@@ -157,7 +178,8 @@ openssl x509 -req -in yifuwuqi-backend.csr -CA service-ca.crt -CAkey service-ca.
 
 #### 2.2 Declarative Configuration (NixOS)
 
-**On `yirukou` (Reverse Proxy Client)** in [`modules/services/nginx-proxy.nix`](file:///home/yi/the.files/nixos/modules/services/nginx-proxy.nix):
+**On `yirukou` (Reverse Proxy Client)** in \[`modules/services/nginx-proxy.nix`\](file:///home/yi/the.files/nixos/modules/services/nginx-proxy.nix):
+
 ```nix
 { config, pkgs, ... }:
 let
@@ -186,6 +208,7 @@ in
 ```
 
 **On `yifuwuqi` (Backend Server TLS Termination)**:
+
 ```nix
 { config, pkgs, ... }:
 let
@@ -214,7 +237,7 @@ in
 }
 ```
 
----
+______________________________________________________________________
 
 ### Phase 3: Metrics & Prometheus Scraper mTLS (Tier 3: Monitoring Mesh)
 
@@ -247,7 +270,8 @@ openssl x509 -req -in exporter-server.csr -CA service-ca.crt -CAkey service-ca.k
 
 #### 3.2 Declarative Configuration (NixOS)
 
-**In [`modules/services/monitoring/exporters.nix`](file:///home/yi/the.files/nixos/modules/services/monitoring/exporters.nix)** (on monitored hosts):
+**In \[`modules/services/monitoring/exporters.nix`\](file:///home/yi/the.files/nixos/modules/services/monitoring/exporters.nix)** (on monitored hosts):
+
 ```nix
 { config, pkgs, lib, ... }:
 let
@@ -274,7 +298,8 @@ in
 }
 ```
 
-**In [`modules/services/monitoring/prometheus.nix`](file:///home/yi/the.files/nixos/modules/services/monitoring/prometheus.nix)** (on `yifuwuqi`):
+**In \[`modules/services/monitoring/prometheus.nix`\](file:///home/yi/the.files/nixos/modules/services/monitoring/prometheus.nix)** (on `yifuwuqi`):
+
 ```nix
 { config, pkgs, ... }:
 let
@@ -305,28 +330,43 @@ in
 }
 ```
 
----
+______________________________________________________________________
 
 ## Rollout Order
 
-```mermaid
-graph TD
-    P1[Phase 1: Cloudflare Origin Pulls] -->|Lock perimeter against direct IP scans| P2[Phase 2: Inter-Host Proxy mTLS]
-    P2 -->|Encrypt yirukou <-> yifuwuqi LAN traffic| P3[Phase 3: Monitoring Scrape mTLS]
-    P3 -->|Mutually authenticate Prometheus scrapes| DONE[Infrastructure mTLS Deployed]
+```text
+┌─────────────────────────────────────────────────────────────┐
+│             Phase 1: Cloudflare Origin Pulls                │
+│ (Lock perimeter against direct IP scans & botnets)          │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Encrypt yirukou <-> yifuwuqi LAN traffic
+┌──────────────────────────────▼──────────────────────────────┐
+│             Phase 2: Inter-Host Proxy mTLS                  │
+│ (Mutual auth between reverse proxy and backend server)      │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Mutually authenticate Prometheus scrapes
+┌──────────────────────────────▼──────────────────────────────┐
+│             Phase 3: Monitoring Scrape mTLS                 │
+│ (TLS metrics scraping across all host exporters)            │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Infrastructure mTLS Deployed                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 1. **Step 1: Deploy Phase 1 (Cloudflare)**
    - Test direct origin connection `curl -k https://<yirukou-public-ip>` (must be rejected with TLS handshake failure).
    - Test via Cloudflare hostname `https://fufu.land` (should succeed normally).
-2. **Step 2: Deploy Phase 2 (Inter-Host Upstream Proxy)**
+1. **Step 2: Deploy Phase 2 (Inter-Host Upstream Proxy)**
    - Validate upstream proxy connections from `yirukou` to `yifuwuqi` over HTTPS with mutual certificate verification.
-3. **Step 3: Deploy Phase 3 (Prometheus Metrics)**
+1. **Step 3: Deploy Phase 3 (Prometheus Metrics)**
    - Verify all Prometheus scrape targets report `UP` over TLS in Grafana / Prometheus web UI.
 
----
+______________________________________________________________________
 
 ## Open Questions & Review Items
 
 1. **Certificate Lifetime**: Does a 10-year Internal Service CA with 3-year host certificates suit your maintenance rotation preferences?
-2. **`step-ca` vs Sops Key Storage**: Sops + Git declarative storage provides zero runtime overhead. Would you prefer this static Sops model, or deploying `services.step-ca` as an automated CA daemon on `yifuwuqi`?
+1. **`step-ca` vs Sops Key Storage**: Sops + Git declarative storage provides zero runtime overhead. Would you prefer this static Sops model, or deploying `services.step-ca` as an automated CA daemon on `yifuwuqi`?

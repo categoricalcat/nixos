@@ -1,62 +1,97 @@
-# Monitoring
+# Monitoring & Observability Stack
 
-The monitoring stack runs a Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
+The infrastructure runs a centralized Prometheus, Grafana, Loki, and Vector monitoring stack for real-time metrics collection, dashboard visualization, and structured journal log indexing.
 
-## Current Status
+______________________________________________________________________
 
-| Module | Status | Role |
-| --- | --- | --- |
-| `prometheus.nix` | Implemented | Central time-series metrics server on `yifuwuqi`. |
-| `grafana.nix` | Implemented | Dashboards and provisioned Prometheus/Loki datasources. Declarative dashboards via Nix. |
-| `loki.nix` | Implemented | Central log aggregation server on `yifuwuqi`. |
-| `promtail.nix` | Implemented | Vector-based journald shipper. |
-| `alertmanager.nix` | Placeholder | Future alert routing. |
-| `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, fail2ban, postgres, AdGuard Home, and Unbound exporters. |
+## 1. Monitoring Topology
 
-## Topology
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                       yirukou (Edge Router)                 │
+│  ┌─────────────────────────┐     ┌───────────────────────┐  │
+│  │ Local Exporters         │     │ Vector Agent          │  │
+│  │ (node, nginx, adguard,  │     │ (ships journald logs) │  │
+│  │  unbound, smartctl)     │     └───────────┬───────────┘  │
+│  └───────────▲─────────────┘                 │              │
+└──────────────┼───────────────────────────────┼──────────────┘
+               │ Scrape (15s interval)         │ Ingest over LAN
+┌──────────────┼───────────────────────────────┼──────────────┐
+│              │                               ▼              │
+│  ┌───────────┴─────────────┐     ┌───────────────────────┐  │
+│  │ Prometheus Server       │     │ Loki Log Server       │  │
+│  │ (30d retention, :9090)  │     │ (7d retention, :3100) │  │
+│  └───────────┬─────────────┘     └───────────┬───────────┘  │
+│              │                               │              │
+│              └───────────────┬───────────────┘              │
+│                              │ Datasources                  │
+│  ┌───────────────────────────▼───────────────────────────┐  │
+│  │ Grafana Visualization Server (:3000)                  │  │
+│  │ • PostgreSQL Backend                                  │  │
+│  │ • Declarative JSON / Nix Provisioned Dashboards       │  │
+│  │ • Anonymous Viewer Access                             │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                    yifuwuqi (Core Server)                   │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Prometheus/Grafana/Loki deployment:
+- **Central Host (`yifuwuqi`)**: Hosts the storage engines (Prometheus, Loki, PostgreSQL), Grafana UI, and central scrapers.
+- **Scrape Hosts (`yirukou`, `yifuwuqi`)**: Monitored endpoints exposing Prometheus exporter ports across the trusted LAN.
+- **Log Shipping**: Vector agents on each host stream systemd journal entries directly to Loki over HTTP.
 
-- Central host, proxy host, scrape hosts, and log hosts are defined in
-  `modules/addresses.nix` under `monitoring`.
-- The central host runs Prometheus, Loki, Grafana, local exporters, and Vector.
-- The proxy host runs nginx, exporters, and Vector.
-- Prometheus scrape jobs are generated from `exporter-metadata.nix`.
-- Vector on each log host pushes journald logs to Loki with a `host` label.
-- `grafana.fufu.land` is served by nginx on the proxy host and proxies to the
-  central host's Grafana endpoint.
+______________________________________________________________________
 
-## Operational Notes
+## 2. Exporter Fleet & Metadata Specification
 
-Prometheus/Grafana/Loki is configured with:
+Exporters are declaratively registered in `modules/addresses.nix` under `allAddresses.monitoring.exporters` and dynamically instantiated on hosts via `modules/services/monitoring/exporters.nix`:
 
-- Prometheus retention: 30 days.
-- Loki retention: 7 days.
-- Grafana datasource provisioning for Prometheus and Loki.
-- Grafana dashboards are fully provisioned declaratively from `modules/services/monitoring/dashboards` (hybrid of vendored JSON and custom Nix attrsets).
-- Vendored dashboards include `adguard.json` (grafana.com 23579, classic-schema revision 3 — later revisions use the v2 dashboard API that file provisioning cannot import) and `unbound.json` (grafana.com 21006), fed by the per-host `adguard`/`unbound` exporter jobs with `instance=<host>` labels.
-- The AdGuard exporter (`modules/services/monitoring/adguard-exporter/`, module `default.nix` + package `package.nix`) scrapes the local AGH API (`:3333`, dummy Basic auth — AGH auth is disabled, VPN-only exposure) on port 9617. The vendored dashboard's ISP/GeoIP panels were removed: the exporter only resolves ISP/geo for public client IPs, and every querylog client is private (LAN/Tailscale/containers), so those panels can never render.
-- The Unbound exporter (nixpkgs `services.prometheus.exporters.unbound`) connects over the local control socket `/run/unbound/unbound.ctl`; unbound runs with `extended-statistics` for recursion-time percentiles and per-type counters.
-- The Valkey exporter (nixpkgs `services.prometheus.exporters.redis`, port 9121) runs only on the central host and reaches the shared valkey over its unix socket `/run/redis/redis.sock` (same-host local connection). The custom `valkey.json` dashboard shows the DNS cache (db0): entry count, keys with expirations, hit ratio, memory vs the 1 GiB max, and eviction/expiry rates.
-- Grafana uses anonymous Viewer access; only the required `secret_key` is a
-  SOPS secret referenced through Grafana's file provider.
-- Remote exporter ports are opened on the LAN interface for scrape hosts.
-- Promtail is not used; local nixpkgs removed it after EOL, so Vector ships
-  journald logs via structured Nix settings.
+| Exporter           | Default Port | Target Hosts          | Scrape Interval | Connection / Backend                          |
+| ------------------ | ------------ | --------------------- | --------------- | --------------------------------------------- |
+| **Node**           | `9100`       | `yifuwuqi`, `yirukou` | `15s`           | Systemd collectors enabled                    |
+| **Systemd**        | `9558`       | `yifuwuqi`, `yirukou` | `15s`           | Monitored unit state                          |
+| **Smartctl**       | `9633`       | `yifuwuqi`, `yirukou` | `60s`           | Storage drive SMART health                    |
+| **Nginx**          | `9113`       | `yirukou`             | `15s`           | `http://127.0.0.1/nginx_status`               |
+| **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`           | Local jail metrics                            |
+| **Postgres**       | `9187`       | `yifuwuqi`            | `15s`           | `postgres://postgres@127.0.0.1:5432/postgres` |
+| **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`           | Custom exporter scraping AGH API (:3333)      |
+| **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`           | Unix socket `/run/unbound/unbound.ctl`        |
+| **Redis / Valkey** | `9121`       | `yifuwuqi`            | `15s`           | Unix socket `/run/redis/redis.sock`           |
 
-## Source Files
+Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface with `FreeBind = true`.
 
-- `modules/services/monitoring/exporter-metadata.nix`
+______________________________________________________________________
+
+## 3. Grafana & Declarative Dashboards (`modules/services/monitoring/grafana.nix`)
+
+- **Domain**: `https://grafana.fufu.land` (proxied to port `3000`).
+- **Database Engine**: PostgreSQL socket connection (`type = "postgres"`, database `grafana`).
+- **Authentication**: Form login disabled, anonymous access enabled with default `Viewer` organization role.
+- **Secrets**: `services/grafana/secret-key` managed via Sops-nix.
+- **Provisioned Data Sources**:
+  - `Prometheus` (default, uid: `prometheus`, url: `http://127.0.0.1:9090`)
+  - `Loki` (uid: `loki`, url: `http://10.42.0.2:3100`)
+- **Provisioned Dashboards**:
+  - **Vendored JSON Dashboards**: `adguard.json` (grafana.com 23579 rev 3) and `unbound.json` (grafana.com 21006), sanitized during Nix build with `jq` to remove stale IDs and remap datasources.
+  - **Nix Declarative Dashboards**: `systemd-units.json`, `services-overview.json`, `fail2ban.json`, `prometheus.json`, `loki.json`, `grafana.json`, `postgres.json`, `valkey.json`.
+
+______________________________________________________________________
+
+## 4. Log Shipping with Vector (`modules/services/monitoring/promtail.nix`)
+
+Log shipping uses **Vector** (`services.vector`):
+
+- **Source**: `sources.journald.type = "journald"` with full systemd journal access.
+- **Sink**: `sinks.loki.type = "loki"` pointing to `http://10.42.0.2:3100`.
+- **Labels Attached**: `host = <hostName>`, `job = "systemd-journal"`.
+
+______________________________________________________________________
+
+## 5. Key Source Files
+
 - `modules/services/monitoring/prometheus.nix`
 - `modules/services/monitoring/grafana.nix`
-- `modules/services/monitoring/dashboards/`
 - `modules/services/monitoring/loki.nix`
 - `modules/services/monitoring/promtail.nix`
 - `modules/services/monitoring/exporters.nix`
 - `modules/services/monitoring/adguard-exporter/`
-- `modules/services/monitoring/dashboards/vendor/adguard.json`
-- `modules/services/monitoring/dashboards/vendor/unbound.json`
-- `modules/services/monitoring/dashboards/valkey.nix`
-- `hosts/yirukou/services.nix`
-- `hosts/yifuwuqi/services.nix`
-- `modules/services/nginx-proxy.nix`
+- `modules/services/monitoring/dashboards/`

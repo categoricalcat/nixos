@@ -50,6 +50,7 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 - Sync indexers to the configured applications.
 
 **Indexers to use:**
+
 - The Pirate Bay (Cardigann, base URL `https://thepiratebay.org/`)
 - Nyaa.si (Cardigann, base URL `https://nyaa.si/`)
 - LimeTorrents (Cardigann, base URL `https://www.limetorrents.lol/`)
@@ -59,6 +60,7 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 **FlareSolverr:** Cloudflare-protected indexers (e.g. EZTV) need it. Prowlarr's indexer settings show an "info_flaresolverr" note on those indexers; add a FlareSolverr indexer proxy pointing at `http://127.0.0.1:8191/` (it runs in the gluetun namespace and is published on that port). The `torrent-indexer` container uses it automatically via `FLARESOLVERR_URL` (set in `modules/services/arr/default.nix`).
 
 **Known limitation — LimeTorrents and Lidarr:** Prowlarr refuses to sync LimeTorrents to Lidarr because its sync test (keywordless query with music categories) returns no results. Workaround: in Lidarr, add it manually via **Add Indexer > Torznab**:
+
 - Name: `LimeTorrents (Prowlarr)`
 - URL: `http://localhost:9696/<LimeTorrents-id>/` (the id is the one shown in Prowlarr's indexer list; keep `apiPath` `/api`)
 
@@ -78,9 +80,9 @@ For music that torrent indexers can't provide (J-pop, indie, niche artists), the
 Setup:
 
 1. Create a free Soulseek account at <https://www.slsknet.org/> (nickname + password).
-2. Store the credentials in `secrets.yaml` under `services.slskd.username` / `services.slskd.password`, then redeploy.
-3. Add an album/artist in Lidarr (interactive search is optional — soularr picks up the wanted list automatically).
-4. Verify with `journalctl -u podman-soularr`.
+1. Store the credentials in `secrets.yaml` under `services.slskd.username` / `services.slskd.password`, then redeploy.
+1. Add an album/artist in Lidarr (interactive search is optional — soularr picks up the wanted list automatically).
+1. Verify with `journalctl -u podman-soularr`.
 
 **Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. The firewall allows containers to reach Lidarr's API for the import step (`extraInputRules` in `hosts/yifuwuqi/networking/firewall.nix`).
 
@@ -93,7 +95,8 @@ The `torrent-indexer` container scrapes Brazilian public trackers (comando_torre
 
 **2. Radarr / Sonarr Custom Formats:**
 To ensure your media applications prefer files with Brazilian voice acting:
+
 - Go to **Settings** > **Custom Formats** in Radarr/Sonarr.
 - Create rules that match release titles containing regex patterns like `(?i)\b(dublado|dual(\W)?audio|pt(\W)?br)\b`.
 - Go to your **Profiles** > **Quality Profiles** and assign a positive score to this Custom Format so the system automatically upgrades or prefers these releases.
-*(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr/default.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*
+  *(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr/default.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*

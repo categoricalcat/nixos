@@ -5,8 +5,8 @@
 Turn yifuwuqi into a build server that:
 
 1. Builds NixOS closures on every push/PR (CD, not just CI)
-2. Serves the resulting `/nix/store` paths as a binary cache over Tailscale
-3. Lets every mesh host pull pre-built closures instead of rebuilding locally
+1. Serves the resulting `/nix/store` paths as a binary cache over Tailscale
+1. Lets every mesh host pull pre-built closures instead of rebuilding locally
 
 ## Architecture
 
@@ -48,7 +48,7 @@ GitHub push/PR
 └──────────────────────────────────────┘
 ```
 
----
+______________________________________________________________________
 
 ## 1. Single Workflow Integration
 
@@ -59,15 +59,18 @@ Instead of splitting into two files, we will run the entire pipeline in `.github
 We will move the pipeline to the `self-hosted` runner (yifuwuqi) to take advantage of the persistent `/nix/store` and avoid the slow Nix installation on GitHub-hosted runners.
 
 1. **`check` job:**
+
    - **Runner:** `self-hosted` (yifuwuqi)
    - **Actions:** Run `nix fmt` and `nix flake check`.
    - *Note:* Since `nix flake check` comprehensively evaluates the flake, the old `eval` job becomes redundant and should be **removed**.
 
-2. **`generate-matrix` job:**
+1. **`generate-matrix` job:**
+
    - **Runner:** `self-hosted` (yifuwuqi)
    - **Actions:** Evaluates the flake to generate the list of hosts.
 
-3. **New `build` job:**
+1. **New `build` job:**
+
    - **Depends on:** `generate-matrix` (and optionally `check`)
    - **Runner:** `self-hosted` (yifuwuqi)
    - **Strategy:** Set `fail-fast: true` for the matrix. If any host fails to build or any earlier step fails, the entire workflow and all parallel jobs will be cancelled immediately to save resources.
@@ -81,7 +84,7 @@ We will move the pipeline to the `self-hosted` runner (yifuwuqi) to take advanta
 
 No explicit cache push step needed. Harmonia serves whatever is in the store.
 
----
+______________________________________________________________________
 
 ## 2. Self-Hosted GitHub Runner
 
@@ -90,8 +93,8 @@ The module already exists at `modules/services/github-runner.nix`.
 ### Changes needed
 
 1. **Enable:** Uncomment the import in `hosts/yifuwuqi/services.nix`
-2. **Provision token:** Ensure `tokens/github-runner-nixos` is in sops secrets
-3. **Add nix to runner packages:** The runner needs `nix` available to build
+1. **Provision token:** Ensure `tokens/github-runner-nixos` is in sops secrets
+1. **Add nix to runner packages:** The runner needs `nix` available to build
 
 ### Runner security properties (NixOS defaults)
 
@@ -106,9 +109,9 @@ The NixOS module runs as a sandboxed systemd service, not in a podman/microVM
 container. This is fine because:
 
 1. The actor gate ensures only the repo owner's code runs — no adversarial input
-2. The runner needs `/nix/store` access to build, which would punch through
+1. The runner needs `/nix/store` access to build, which would punch through
    container isolation anyway
-3. Systemd sandboxing (`DynamicUser`, `PrivateTmp`, `ProtectSystem`) already
+1. Systemd sandboxing (`DynamicUser`, `PrivateTmp`, `ProtectSystem`) already
    prevents persistent state and limits blast radius
 
 Container isolation is mainly valuable for untrusted code. If the actor gate is
@@ -116,7 +119,7 @@ ever removed (e.g., to allow collaborators), revisit this with a microVM-based
 runner like [github-nix-ci](https://github.com/juspay/github-nix-ci) or
 ephemeral podman containers.
 
----
+______________________________________________________________________
 
 ## 3. Binary Cache: Harmonia
 
@@ -187,38 +190,38 @@ nix.settings = {
 > `https://cache.fufu.land`. This provides standard TLS and avoids hardcoding
 > Tailscale IPs in the substituters list.
 
----
+______________________________________________________________________
 
 ## 4. Implementation Phases
 
 ### Phase 1: Harmonia
 
 1. Generate signing keypair on yifuwuqi
-2. Create `modules/services/harmonia.nix`
-3. Import in `hosts/yifuwuqi/services.nix`
-4. Add yifuwuqi as substituter in `modules/nix-settings.nix`
-5. Deploy to yifuwuqi, verify other hosts can pull from it
+1. Create `modules/services/harmonia.nix`
+1. Import in `hosts/yifuwuqi/services.nix`
+1. Add yifuwuqi as substituter in `modules/nix-settings.nix`
+1. Deploy to yifuwuqi, verify other hosts can pull from it
 
 ### Phase 2: Self-hosted runner
 
 1. Provision `tokens/github-runner-nixos` in sops
-2. Uncomment github-runner import in `hosts/yifuwuqi/services.nix`
-3. Add `nix` to runner's `extraPackages`
-4. Deploy, verify runner appears in GitHub repo settings
+1. Uncomment github-runner import in `hosts/yifuwuqi/services.nix`
+1. Add `nix` to runner's `extraPackages`
+1. Deploy, verify runner appears in GitHub repo settings
 
 ### Phase 3: CD workflow
 
 1. Create `.github/workflows/flake-cd.yml`
-2. Test with a push to `develop`
-3. Verify closures land in yifuwuqi's store
-4. Verify another host can pull them via harmonia
+1. Test with a push to `develop`
+1. Verify closures land in yifuwuqi's store
+1. Verify another host can pull them via harmonia
 
 ### Phase 4: Wire it all together
 
 1. Ensure `distributed-builds.nix` `builders-use-substitutes` picks up the
    harmonia substituter (it already does — builders use the host's configured
    substituters)
-2. Consider updating `system.autoUpgrade` on other hosts to benefit from
+1. Consider updating `system.autoUpgrade` on other hosts to benefit from
    pre-built closures
-3. Monitor disk usage on yifuwuqi — harmonia serves the store as-is, so
+1. Monitor disk usage on yifuwuqi — harmonia serves the store as-is, so
    `nix.gc` settings control retention

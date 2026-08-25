@@ -161,12 +161,12 @@ sops secrets/secrets.yaml
 
 Recipes:
 
-| SOPS key | Value format | How to get it |
-| --- | --- | --- |
-| `tokens/attic-server-jwt-env` | env file | Generate locally; command below |
-| `tokens/attic-push-token` | raw token | Generate with `atticd-atticadm` after `atticd` starts; command below |
-| `tokens/forgejo-runner` | raw token | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner |
-| `tokens/github-runner-nixos` | raw token | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner |
+| SOPS key                      | Value format  | How to get it                                                                         |
+| ----------------------------- | ------------- | ------------------------------------------------------------------------------------- |
+| `tokens/attic-server-jwt-env` | env file      | Generate locally; command below                                                       |
+| `tokens/attic-push-token`     | raw token     | Generate with `atticd-atticadm` after `atticd` starts; command below                  |
+| `tokens/forgejo-runner`       | raw token     | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner            |
+| `tokens/github-runner-nixos`  | raw token     | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                 |
 | `services/grafana/secret-key` | random string | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets |
 
 | `cloudflare_api_token` | env file | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>` |
@@ -198,12 +198,12 @@ Use the **least privilege** token that still authenticates:
 
 1. Open [GitHub → Settings → Developer settings → Personal access tokens →
    Fine-grained tokens](https://github.com/settings/personal-access-tokens/new).
-2. Note: e.g. `nix-flake-fetches`. Expiration: your choice.
-3. Repository access: **Public Repositories (read-only)**. Grant **no
+1. Note: e.g. `nix-flake-fetches`. Expiration: your choice.
+1. Repository access: **Public Repositories (read-only)**. Grant **no
    permissions** under Permissions — none are needed for public repo rate
    limits. Do not use a `gh` OAuth token (`gho_…`) or any token with
    repository/organization permissions.
-4. Generate and copy the token once.
+1. Generate and copy the token once.
 
 SOPS value must be a full `nix.conf` fragment (not the raw token alone):
 
@@ -240,8 +240,6 @@ sudo atticd-atticadm make-token \
   --push 'yi'
 ```
 
-
-
 ### Attic Bootstrap (After Database Resets)
 
 When resetting the database, the Attic caches are destroyed. You must manually recreate the admin token, cache, and push tokens before `attic-watch-store` or CI can push:
@@ -254,24 +252,33 @@ When resetting the database, the Attic caches are destroyed. You must manually r
      --configure-cache-retention "*" --destroy-cache "*"
    ```
 
-2. **Drop into a shell with the attic client:**
+1. **Drop into a shell with the attic client:**
+
    ```bash
    nix shell github:zhaofengli/attic#attic
    ```
-3. **Log in locally to the Attic server:**
+
+1. **Log in locally to the Attic server:**
+
    ```bash
    attic login yi http://127.0.0.1:18203 <admin-token-from-step-1>
    ```
-4. **Recreate the cache:**
+
+1. **Recreate the cache:**
+
    ```bash
    attic cache create yi --public --priority 38
    ```
-5. **Update the system's trusted public keys:**
+
+1. **Update the system's trusted public keys:**
+
    ```bash
    attic cache info yi
    ```
+
    Take the public key from the output and update `trusted-public-keys` in `modules/nix-settings.nix`.
-6. **Generate the new push token** for SOPS (using the command in the table above).
+
+1. **Generate the new push token** for SOPS (using the command in the table above).
 
 ## Rekey Safely
 

@@ -17,12 +17,25 @@ Add compose/authoring tools system-wide on `yitaishi`, declaratively fetch a sma
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  yitaishi["hosts/yitaishi/configuration.nix"] --> audionix["modules/audio.nix"]
-  audionix -->|"environment.systemPackages"| tools["compose/browse tools"]
-  audionix -->|"home-manager.users.yi.imports"| home["modules/audio-home.nix"]
-  home --> libs["~/Music/midi-library + ~/Audio/*"]
+```text
+┌─────────────────────────────────┐
+│ hosts/yitaishi/configuration.nix│
+└────────────────┬────────────────┘
+                 │ imports
+┌────────────────▼────────────────┐
+│       modules/audio.nix         │
+└───┬─────────────────────────┬───┘
+    │ environment.systemPackages│ home-manager.users.yi.imports
+    ▼                         ▼
+┌─────────────────────────┐ ┌─────────────────────────┐
+│  compose / browse tools │ │ modules/audio-home.nix  │
+│ (lmms, seq66, dexed...) │ └───────────┬─────────────┘
+└─────────────────────────┘             │ places
+                                        ▼
+                            ┌─────────────────────────┐
+                            │ ~/Music/midi-library    │
+                            │ ~/Audio/nam + ~/Audio/ir│
+                            └─────────────────────────┘
 ```
 
 ## Proposed Changes
@@ -124,12 +137,12 @@ in
 
 ## Pinned hashes
 
-| Source | Archive (pinned) | SHA256 | Verifiable upstream |
-| --- | --- | --- | --- |
-| ldrolez chords | `free-midi-chords-20260314.zip` (`v0.20260314`) | `d50d4cb3…46d93f` | yes (GitHub asset digest) |
-| Magenta Groove | `groove-v1.0.0-midionly.zip` | `651cbc52…41dcc1e` | yes (Magenta page) |
-| MAESTRO midi | `maestro-v3.0.0-midi.zip` | `70470ee2…dde12c` | yes (Magenta page) |
-| Lakh clean_midi | `clean_midi.tar.gz` | (prefetch) | none published |
+| Source          | Archive (pinned)                                | SHA256             | Verifiable upstream       |
+| --------------- | ----------------------------------------------- | ------------------ | ------------------------- |
+| ldrolez chords  | `free-midi-chords-20260314.zip` (`v0.20260314`) | `d50d4cb3…46d93f`  | yes (GitHub asset digest) |
+| Magenta Groove  | `groove-v1.0.0-midionly.zip`                    | `651cbc52…41dcc1e` | yes (Magenta page)        |
+| MAESTRO midi    | `maestro-v3.0.0-midi.zip`                       | `70470ee2…dde12c`  | yes (Magenta page)        |
+| Lakh clean_midi | `clean_midi.tar.gz`                             | (prefetch)         | none published            |
 
 `clean_midi` is the only blank: either run `nix-prefetch-url http://hog.ee.columbia.edu/craffel/lmd/clean_midi.tar.gz` once and paste the result, or switch to `lmd_aligned.tar.gz` (`2bf5400e…f6e53b`) for a fully upstream-verifiable hash. The optional ldrolez `free-midi-progressions-20260314.zip` (flattened progressions for hardware) is `b7ae4014…92526ecf` if also wanted.
 
