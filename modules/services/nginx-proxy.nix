@@ -3,6 +3,7 @@
   allAddresses,
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -85,6 +86,31 @@ in
           add_header Content-Type text/markdown;
           return 200 "fufu.land is ok";
         '';
+      };
+
+      # Host the mdBook documentation
+      "docs.fufu.land" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          root = "${pkgs.stdenv.mkDerivation {
+            name = "fleet-docs";
+            src = ../../docs;
+            nativeBuildInputs = [ pkgs.mdbook ];
+            buildPhase = ''
+              echo -e "\n## Plans\n" >> src/SUMMARY.md
+              for plan in src/plans/*.md; do
+                if [ -f "$plan" ]; then
+                  plan_name=$(basename "$plan" .md | tr '-' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
+                  echo "- [$plan_name](plans/$(basename "$plan"))" >> src/SUMMARY.md
+                fi
+              done
+              mdbook build
+            '';
+            installPhase = "cp -r book $out";
+          }}";
+          index = "index.html";
+        };
       };
 
       # Secure AdGuard Web UI

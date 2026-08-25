@@ -90,7 +90,6 @@ selected services, including:
 
 - `adguard.fufu.land` to local AdGuard Home
 - `dns.fufu.land` to local AdGuard DoH
-- `netdata.fufu.land` to Netdata parent mode on `yifuwuqi`
 - `search.fufu.land`, `prtnr.fufu.land`, and `agent.fufu.land` to `yifuwuqi`
 
 ## Source Files

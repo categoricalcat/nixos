@@ -26,32 +26,9 @@ _: {
       hostDeadWrapper = pkgs.writeShellScriptBin "host-dead" (builtins.readFile ./scripts/host-dead.sh);
       dnsWarmWrapper = pkgs.writeShellScriptBin "dns-warm" (builtins.readFile ./scripts/dns-warm.sh);
 
-      diffToCommitWrapper = pkgs.writeShellScriptBin "diff-to-commit" ''
-        diff=$(git diff --cached)
-        if [ -z "$diff" ]; then
-          echo "No staged changes found."
-          exit 1
-        fi
-
-        echo "Generating commit message..."
-        msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
-
-        msg="$(nxd-agy --print "$(cat <<EOF
-        Write a concise git commit message for this staged diff.
-        Output ONLY the commit message itself (no markdown blocks or preamble).
-
-        $diff
-        EOF
-        )")"
-
-        if [ -z "$msg" ]; then
-          echo "Failed to generate commit message."
-          exit 1
-        fi
-
-        printf '%s\n' "$msg" > "$msg_file"
-        exec git commit -e -F "$msg_file"
-      '';
+      diffToCommitWrapper = pkgs.writeShellScriptBin "diff-to-commit" (
+        builtins.readFile ./scripts/diff-to-commit.sh
+      );
 
       nxdAgyWrapper = pkgs.writeShellScriptBin "nxd-agy" ''
         exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"

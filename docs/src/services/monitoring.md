@@ -1,13 +1,11 @@
 # Monitoring
 
-The monitoring stack runs Netdata for realtime host debugging and a
-Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
+The monitoring stack runs a Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
 
 ## Current Status
 
 | Module | Status | Role |
 | --- | --- | --- |
-| `netdata.nix` | Implemented | Per-second host metrics and web UI. |
 | `prometheus.nix` | Implemented | Central time-series metrics server on `yifuwuqi`. |
 | `grafana.nix` | Implemented | Dashboards and provisioned Prometheus/Loki datasources. Declarative dashboards via Nix. |
 | `loki.nix` | Implemented | Central log aggregation server on `yifuwuqi`. |
@@ -16,19 +14,6 @@ Prometheus/Grafana/Loki stack for metrics, dashboards, and logs.
 | `exporters.nix` | Implemented | Node, systemd, smartctl, nginx, fail2ban, postgres, AdGuard Home, and Unbound exporters. |
 
 ## Topology
-
-`modules/services/monitoring/netdata.nix` supports parent and child modes
-through `yi.netdata.childMode`.
-
-Current deployment:
-
-- `yifuwuqi` runs Netdata parent mode.
-- `yirukou` runs Netdata child mode.
-- The child streams metrics to `10.42.0.2:19999`.
-- The parent allows streams from `10.42.0.1`.
-- LAN IPs come from `modules/addresses.nix`, not hardcoded literals.
-- `netdata.fufu.land` is served by `nginx` on `yirukou` and proxies to
-  `http://10.42.0.2:19999`.
 
 Prometheus/Grafana/Loki deployment:
 
@@ -42,18 +27,6 @@ Prometheus/Grafana/Loki deployment:
   central host's Grafana endpoint.
 
 ## Operational Notes
-
-Netdata is configured with:
-
-- `dbengine` memory mode
-- 1-second update interval
-- Python plugins disabled
-- FreeIPMI plugin disabled
-- Chrony synchronization wait before Netdata starts
-
-Child mode binds the web UI to localhost only. Parent mode binds to all
-interfaces but only allows direct web connections from localhost and
-`10.42.0.*`; public browser access goes through nginx and basic auth.
 
 Prometheus/Grafana/Loki is configured with:
 
@@ -73,7 +46,6 @@ Prometheus/Grafana/Loki is configured with:
 
 ## Source Files
 
-- `modules/services/monitoring/netdata.nix`
 - `modules/services/monitoring/exporter-metadata.nix`
 - `modules/services/monitoring/prometheus.nix`
 - `modules/services/monitoring/grafana.nix`
