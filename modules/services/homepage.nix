@@ -25,6 +25,7 @@ let
     cockpit = "https://${addrs.services.cockpit.domain}";
     forgejo = "https://${addrs.services.forgejo.domain}";
     attic = "https://${addrs.services.attic.domain}";
+    docs = "https://${addrs.services.docs.domain}";
   };
 
   # Network/Proxy services (via yirukou NGINX config)
@@ -248,6 +249,13 @@ in
               icon = "nixos.png";
               href = serviceDomains.attic;
               ping = serviceDomains.attic;
+            };
+          }
+          {
+            "Docs" = {
+              icon = "gitbook.png";
+              href = serviceDomains.docs;
+              ping = serviceDomains.docs;
             };
           }
         ];

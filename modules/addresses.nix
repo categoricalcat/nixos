@@ -366,6 +366,10 @@ in
           domain = "companion.fufu.land";
           port = 8000;
         };
+        docs = {
+          domain = "docs.fufu.land";
+          port = 8083;
+        };
       };
 
       nixBuild = {

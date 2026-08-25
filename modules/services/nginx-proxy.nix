@@ -3,7 +3,6 @@
   allAddresses,
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -88,28 +87,16 @@ in
         '';
       };
 
-      # Host the mdBook documentation
-      "docs.fufu.land" = {
+      # Host the mdBook documentation — proxied to yifuwuqi
+      "${yifuwuqiServices.docs.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/" = {
-          root = "${pkgs.stdenv.mkDerivation {
-            name = "fleet-docs";
-            src = ../../docs;
-            nativeBuildInputs = [ pkgs.mdbook ];
-            buildPhase = ''
-              echo -e "\n## Plans\n" >> src/SUMMARY.md
-              for plan in src/plans/*.md; do
-                if [ -f "$plan" ]; then
-                  plan_name=$(basename "$plan" .md | tr '-' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
-                  echo "- [$plan_name](plans/$(basename "$plan"))" >> src/SUMMARY.md
-                fi
-              done
-              mdbook build
-            '';
-            installPhase = "cp -r book $out";
-          }}";
-          index = "index.html";
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.docs.port}";
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+          '';
         };
       };
 

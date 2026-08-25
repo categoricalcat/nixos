@@ -78,9 +78,9 @@ ______________________________________________________________________
 ├──────────────────────────────┼──────────────────────────────┤
 │ adguard.fufu.land            │ 127.0.0.1:3333 (Local)       │
 │ dns.fufu.land                │ 127.0.0.1:3333/dns-query     │
-│ docs.fufu.land               │ /var/lib/docs (mdBook)       │
 │ goaccess.fufu.land           │ /var/lib/goaccess + :7890 ws │
 ├──────────────────────────────┼──────────────────────────────┤
+│ docs.fufu.land               │ 10.42.0.2:8083 (yifuwuqi)    │
 │ grafana.fufu.land            │ 10.42.0.2:3000 (yifuwuqi)    │
 │ cockpit.fufu.land            │ 10.42.0.2:9090 (yifuwuqi)    │
 │ search.fufu.land             │ 10.42.0.2:8888 (yifuwuqi)    │

@@ -32,7 +32,8 @@
     ../../modules/services/monitoring/loki.nix
     ../../modules/services/monitoring/promtail.nix
     ../../modules/services/monitoring/grafana.nix
-    ../../modules/services/webdav.nix
+    ../../modules/services/docs.nix
+    # ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
     ../../modules/services/valkey.nix
     ../../modules/services/firecrawl.nix

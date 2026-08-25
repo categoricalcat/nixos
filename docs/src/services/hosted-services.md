@@ -11,6 +11,7 @@ ______________________________________________________________________
 | Service          | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                        |
 | ---------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ------------------------------------------------------------------ |
 | **Homepage**     | `homepage.nix`       | `8082`        | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets       |
+| **Docs**         | `docs.nix`           | `8083`        | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                          |
 | **SearXNG**      | `searxng.nix`        | `8888`        | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                 |
 | **Valkey**       | `valkey.nix`         | `6379`        | *Internal only*         | In-Memory (1GB LRU)                 | Redis fork; shared L2 DNS cache for Unbound & SearXNG rate limiter |
 | **Cockpit**      | `cockpit.nix`        | `9090`        | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                    |
