@@ -50,23 +50,26 @@ servers.
     because sshd keeps `PasswordAuthentication off` and `PermitRootLogin`
     key-only.
 
-### 3. Client-root → server-root SSH
+### 3. Client-root → server-root SSH (reusing host keys)
 
-- **New** in `secrets/keys.nix`: `users.root.meshKeys.<client>` — the public
-  halves of `/root/.ssh/id_ed25519` generated on each client
-  (yixiaoqing, yitaishi).
-- Extend `users/scripts/setup-sops.sh` to generate a root ssh key per client
-  (`/root/.ssh/id_ed25519`) and print the public half for `secrets/keys.nix`.
-- Servers (yifuwuqi, yirukou):
-  `users.users.root.openssh.authorizedKeys.keys` = both clients' root keys.
+- **No new keys needed**: Root on clients (`yixiaoqing`, `yitaishi`) authenticates
+  using each client's existing SSH host key (`/persist/keys/ssh/ssh_host_ed25519_key`),
+  mirroring the `nix-builder` distributed build mesh pattern.
+- `secrets/keys.nix`: unchanged — `hosts.<client>.sshPublicKey` is already registered.
+- `users/scripts/setup-sops.sh`: no key generation changes needed.
+- Servers (`yifuwuqi`, `yirukou`):
+  `users.users.root.openssh.authorizedKeys.keys = [ keys.hosts.yixiaoqing.sshPublicKey keys.hosts.yitaishi.sshPublicKey ];`
 - `modules/services/ssh/default.nix`:
   - Add option `yi.ssh.permitRootKeyLogin` (bool).
   - Servers: `PermitRootLogin = "prohibit-password"` **and add `"root"` to
     `AllowUsers`** (root is not currently in `AllowUsers`, so `PermitRootLogin`
     alone would not let root in).
   - Clients: `PermitRootLogin = "no"` (unchanged).
-- `sopsAgeRecipients` in `secrets/keys.nix`: unchanged — the host key already
-  provides the root age identity; client root keys are not age identities.
+  - Add OpenSSH client match block to `programs.ssh.extraConfig` so `su -` → `ssh root@<server>` automatically uses the host key:
+    ```ssh
+    Match User root
+        IdentityFile ${keys.paths.sshHostKey}
+    ```
 
 ### 4. Tailscale SSH = lockout rescue (critical)
 
@@ -101,10 +104,8 @@ servers.
 1. **Verify Tailscale SSH rescue on servers first** — `tailscale ssh root@yifuwuqi`,
    `tailscale ssh root@yirukou` — before touching sshd.
 1. Add `passwords/root` to SOPS; apply; test `su -` on a client.
-1. Generate client root keys → register in `secrets/keys.nix` → authorize on
-   servers → test `ssh root@server` from client-root.
-1. Flip servers to `prohibit-password` + add root to `AllowUsers`; confirm `yi`
-   cannot reach root.
+1. Configure client host keys in server root `authorizedKeys` + add `Match User root` client config; flip servers to `prohibit-password` + add root to `AllowUsers`.
+1. Test client-root → server-root SSH (`su -` on client → `ssh root@server`). Confirm `yi` cannot reach root.
 1. De-wheel `yi`; clean up `@wheel` refs, access-tokens group, setup-sops.sh.
 1. Validate all hosts:
    - `yi` cannot `sudo` or act as a trusted Nix user.
@@ -115,8 +116,7 @@ servers.
 ## Files Touched
 
 - `users/users.nix`
-- `users/scripts/setup-sops.sh`
-- `secrets/keys.nix`
+- `users/scripts/setup-sops.sh` (directory permission change only)
 - `secrets/secrets.yaml` (+ sops)
 - `modules/nix-settings.nix`
 - `modules/nix-access-tokens.nix`
