@@ -6,7 +6,7 @@
 
 Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `/persist`) to **`yirukou`** using a zero-repartitioning, in-place Ext4 strategy with full rollback safety.
 
----
+______________________________________________________________________
 
 ## Current State
 
@@ -14,18 +14,19 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
    - `nvme0n1p1` (1 GB): EFI System Partition (`/boot`, VFAT, UUID `7B94-F350`)
    - `nvme0n1p2` (~239 GB): Traditional persistent root (`/`, Ext4, UUID `685d4cb2-aba3-44d5-b9ba-20a9692ff385`)
    - `nvme0n1p3` (~9 GB): Dedicated Swap (`[SWAP]`, UUID `29757075-8a2d-4171-af0f-1027608f9641`)
-2. **Memory & Performance**:
+1. **Memory & Performance**:
    - 7.8 GiB physical RAM, ~2.6 GiB active anon memory (AdGuard Home bounded by `GOMEMLIMIT=2560MiB`, Unbound, Nginx, Vector, Kea). A 2 GiB tmpfs root will consume only ~50–100 MiB of RAM since the `/nix/store` resides on disk.
-3. **Repository Pre-alignment**:
+1. **Repository Pre-alignment**:
    - `secrets/keys.nix` already sets `keysFolder = "/persist/keys"`.
    - `modules/services/ssh/default.nix` asserts that `${keys.paths.sshHostKey}` (`/persist/keys/ssh/ssh_host_ed25519_key`) exists before starting `sshd`.
    - `docs/src/services/secrets.md` documents: *"This repository assumes impermanence hosts keep private runtime identity under `/persist/keys`."*
 
----
+______________________________________________________________________
 
 ## Decisions
 
 ### 1. Root on tmpfs (Ext4 underlying `/persist`), NOT Btrfs Reformatting
+
 - **Decision**: Mount `/` as a 2 GiB `tmpfs` (`mode=755,size=2G`). Mount the existing Ext4 partition (`nvme0n1p2`) at `/persist` with `neededForBoot = true`. Bind-mount `/persist/nix` to `/nix`.
 - **Rationale**:
   - Requires **zero repartitioning or disk formatting**.
@@ -34,16 +35,18 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
   - Zero performance overhead; tmpfs uses negligible RAM (~50–100 MiB) because the Nix store remains on disk.
 
 ### 2. State Isolation & Persistence Module
+
 - **Decision**: Introduce `inputs.impermanence` (`github:nix-community/impermanence`) to manage bind mounts and symlinks under `/persist`.
 - **Rationale**: Clean, battle-tested declarative abstraction that mounts directories and files before systemd units start (`neededForBoot`), avoiding race conditions with system daemons.
 
 ### 3. Dual-Layout Key Staging
+
 - **Decision**: Copy `/persist/keys` to `/keys` on `nvme0n1p2` (`sudo cp -a /persist/keys /keys`) prior to reboot.
 - **Rationale**:
   - When `nvme0n1p2` is mounted at `/persist`, its top-level `/keys` directory will resolve to `/persist/keys`.
   - The old generation continues reading `nvme0n1p2:/persist/keys` if rolled back.
 
----
+______________________________________________________________________
 
 ## State Inventory on `yirukou`
 
@@ -73,7 +76,7 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
 └── [everything else]     -> Volatile RAM (tmp, run, etc, var/cache, root)
 ```
 
----
+______________________________________________________________________
 
 ## Phases
 
@@ -87,7 +90,7 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
      inputs.home-manager.follows = "home-manager";
    };
    ```
-2. **Wire Module** in `flake.nix`:
+1. **Wire Module** in `flake.nix`:
    ```nix
    modules = [
      inputs.impermanence.nixosModules.impermanence
@@ -96,7 +99,7 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
      ./hosts/yirukou/configuration.nix
    ];
    ```
-3. **Create `hosts/yirukou/impermanence.nix`**:
+1. **Create `hosts/yirukou/impermanence.nix`**:
    ```nix
    { ... }:
    {
@@ -144,7 +147,7 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
      };
    }
    ```
-4. **Update `hosts/yirukou/hardware.nix`**:
+1. **Update `hosts/yirukou/hardware.nix`**:
    ```nix
    fileSystems = {
      "/" = {
@@ -180,7 +183,7 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
      };
    };
    ```
-5. **Import in `hosts/yirukou/configuration.nix`**:
+1. **Import in `hosts/yirukou/configuration.nix`**:
    Add `./impermanence.nix` to imports.
 
 ### Phase 2 — Pre-Migration Disk Staging (on `yirukou`)
@@ -189,7 +192,7 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
    ```bash
    sudo cp -a /persist/keys /keys
    ```
-2. Verify that state directories exist on `nvme0n1p2` (`/var/lib/{acme,tailscale,kea,AdGuardHome,unbound,goaccess,vector,chrony}`, `/etc/machine-id`, `/home/yi`).
+1. Verify that state directories exist on `nvme0n1p2` (`/var/lib/{acme,tailscale,kea,AdGuardHome,unbound,goaccess,vector,chrony}`, `/etc/machine-id`, `/home/yi`).
 
 ### Phase 3 — Build, Stage Boot Generation & Reboot
 
@@ -199,27 +202,27 @@ Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `
    nix flake check
    nixos-rebuild dry-build --flake .#yirukou
    ```
-2. Build and set bootloader generation (do NOT `switch`):
+1. Build and set bootloader generation (do NOT `switch`):
    ```bash
    sudo nixos-rebuild boot --flake .#yirukou
    ```
-3. Reboot:
+1. Reboot:
    ```bash
    sudo reboot
    ```
 
----
+______________________________________________________________________
 
 ## Rollout Order
 
 1. **Staging**: Execute `sudo cp -a /persist/keys /keys` on `yirukou`.
-2. **Code**: Edit `flake.nix`, `hosts/yirukou/hardware.nix`, `hosts/yirukou/impermanence.nix`, `hosts/yirukou/configuration.nix`.
-3. **Build**: Run `nix flake lock --update-input impermanence` and dry-build to verify closure.
-4. **Deploy**: Run `sudo nixos-rebuild boot --flake .#yirukou` on `yirukou`.
-5. **Reboot**: Run `sudo reboot`.
-6. **Verify**: Execute verification checklist.
+1. **Code**: Edit `flake.nix`, `hosts/yirukou/hardware.nix`, `hosts/yirukou/impermanence.nix`, `hosts/yirukou/configuration.nix`.
+1. **Build**: Run `nix flake lock --update-input impermanence` and dry-build to verify closure.
+1. **Deploy**: Run `sudo nixos-rebuild boot --flake .#yirukou` on `yirukou`.
+1. **Reboot**: Run `sudo reboot`.
+1. **Verify**: Execute verification checklist.
 
----
+______________________________________________________________________
 
 ## Verification per Host
 
@@ -239,7 +242,7 @@ Following reboot on the impermanence generation:
   # Confirm /root/volatile-test is absent and /persist/persistent-test is present
   ```
 
----
+______________________________________________________________________
 
 ## Open Questions
 
