@@ -6,3 +6,7 @@ src = "src"
 
 [output.html]
 git-repository-url = "https://github.com/categoricalcat/nixos"
+
+[output.html.fold]
+enable = true
+level = 0

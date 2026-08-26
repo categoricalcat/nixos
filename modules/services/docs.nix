@@ -10,11 +10,12 @@ let
     src = ../../docs;
     nativeBuildInputs = [ pkgs.mdbook ];
     buildPhase = ''
-      echo -e "\n## Plans\n" >> src/SUMMARY.md
+      echo -e "\n# Architecture Plans & RFCs\n" >> src/SUMMARY.md
+      echo "- [Architecture Plans]()" >> src/SUMMARY.md
       for plan in src/plans/*.md; do
         if [ -f "$plan" ]; then
-          plan_name=$(basename "$plan" .md | tr '-' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
-          echo "- [$plan_name](plans/$(basename "$plan"))" >> src/SUMMARY.md
+          plan_name=$(basename "$plan" .md | tr '-' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1' | sed -E -e 's/\bNixos\b/NixOS/g' -e 's/\bMtls\b/mTLS/g' -e 's/\bIpv6\b/IPv6/g' -e 's/\bVpn\b/VPN/g' -e 's/\bDns\b/DNS/g' -e 's/\bCi\b/CI/g' -e 's/\bCd\b/CD/g' -e 's/\bSsh\b/SSH/g' -e 's/\bLan\b/LAN/g' -e 's/\bFx\b/FX/g' -e 's/\bMidi\b/MIDI/g')
+          echo "  - [$plan_name](plans/$(basename "$plan"))" >> src/SUMMARY.md
         fi
       done
       mdbook build

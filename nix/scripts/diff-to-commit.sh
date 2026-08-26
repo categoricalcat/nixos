@@ -6,19 +6,19 @@ instructions="${2:-}"
 
 diff=$(git diff --cached)
 if [ "$diff" = "" ]; then
-	echo "No staged changes found."
-	exit 1
+  echo "No staged changes found."
+  exit 1
 fi
 
 stat=$(git diff --cached --stat)
 max_diff_len=50000
 if [ "${#diff}" -gt "$max_diff_len" ]; then
-	diff="${diff:0:max_diff_len}"$'\n\n[... diff truncated due to size ...]'
+  diff="${diff:0:max_diff_len}"$'\n\n[... diff truncated due to size ...]'
 fi
 
 extra_instructions=""
-if [ -n "$instructions" ]; then
-	extra_instructions="
+if [ "$instructions" != "" ]; then
+  extra_instructions="
 Extra instructions:
 $instructions
 "
@@ -29,11 +29,11 @@ msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
 
 flags=(--print)
 if [ "$agent" = "agent" ]; then
-	flags=(--mode ask --trust --print)
+  flags=(--mode ask --trust --print)
 fi
 
 msg="$(nxd-"$agent" "${flags[@]}" "$(
-	cat <<EOF
+  cat <<EOF
 Write a concise git commit message for this staged diff.
 Output ONLY the commit message itself (no markdown blocks or preamble).
 $extra_instructions
@@ -43,11 +43,11 @@ $stat
 Diff:
 $diff
 EOF
-)" < /dev/null)"
+)" </dev/null)"
 
 if [ "$msg" = "" ]; then
-	echo "Failed to generate commit message."
-	exit 1
+  echo "Failed to generate commit message."
+  exit 1
 fi
 
 printf '%s\n' "$msg" >"$msg_file"

@@ -31,7 +31,9 @@ ______________________________________________________________________
 
 ## 3. Quick Navigation
 
-- **Host Profiles**: [yirukou](hosts/yirukou.md) · [yifuwuqi](hosts/yifuwuqi.md) · [yitaishi](hosts/yitaishi.md) · [yixiaoqing](hosts/yixiaoqing.md) · [yichuang](hosts/yichuang.md)
+- **Fleet Hosts**: [yirukou](hosts/yirukou.md) · [yifuwuqi](hosts/yifuwuqi.md) · [yitaishi](hosts/yitaishi.md) · [yixiaoqing](hosts/yixiaoqing.md) · [yichuang](hosts/yichuang.md)
 - **Networking**: [yirukou Router](networking/yirukou.md) · [Sysctl & Firewall](networking/sysctl-firewall.md) · [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md) · [Unbound Architecture](networking/unbound-integration.md)
-- **Services**: [DNS & Reverse Proxy](services/dns-and-proxy.md) · [Hosted Services](services/hosted-services.md) · [Arr Stack](services/arr-stack.md) · [Monitoring Stack](services/monitoring.md) · [AI & Local Inference](services/ai-rocm.md) · [File Sharing (Samba/WebDAV)](services/file-sharing.md) · [CI/CD Pipeline](services/ci-cd.md) · [Nix Build & Cache Mesh](services/nix-build-cache.md) · [AI-SSH Restricted Lane](services/ai-ssh.md) · [Secrets Management](services/secrets.md)
-- **Hardware & Provisioning**: [Bootstrap Runbook](hardware/bootstrap-runbook.md) · [Hardware Authentication](hardware/bootstrap.md) · [Software KVM (Lan Mouse)](hardware/lan-mouse.md) · [Pro-Audio Drums](audio/drums.md)
+- **Core Infrastructure**: [Secrets Management](services/secrets.md) · [DNS & Reverse Proxy](services/dns-and-proxy.md) · [Monitoring Stack](services/monitoring.md) · [AI-SSH Restricted Lane](services/ai-ssh.md)
+- **Applications & Storage**: [Hosted Services Directory](services/hosted-services.md) · [Arr Stack](services/arr-stack.md) · [File Sharing (Samba/WebDAV)](services/file-sharing.md) · [AI & Local Inference](services/ai-rocm.md)
+- **Nix Mesh & CI/CD**: [Nix Build & Cache Mesh](services/nix-build-cache.md) · [CI/CD Pipeline](services/ci-cd.md) · [CI & Binary Cache Bootstrap](services/ci-cache.md)
+- **Hardware & Workstation**: [Bootstrap Runbook](hardware/bootstrap-runbook.md) · [Hardware Authentication](hardware/bootstrap.md) · [Software KVM (Lan Mouse)](hardware/lan-mouse.md) · [USB Boot Delays](hardware/usb-boot-delays.md) · [Pro-Audio Drums](audio/drums.md)
