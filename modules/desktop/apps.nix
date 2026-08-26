@@ -12,6 +12,8 @@
     vesktop # uses insecure pnpm_10_29_2 at build time
     stoat-desktop
 
+    kdePackages.kdenlive
+    # davinci-resolve
     qbz
     dbeaver-bin
     github-desktop
