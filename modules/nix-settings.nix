@@ -31,6 +31,7 @@
         "nix-command"
         "flakes"
       ];
+      accept-flake-config = false;
       # download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
 
       substituters = [

@@ -27,7 +27,12 @@ fi
 echo "Generating commit message using nxd-$agent..."
 msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
 
-msg="$(nxd-"$agent" --print "$(
+flags=(--print)
+if [ "$agent" = "agent" ]; then
+	flags=(--mode ask --trust --print)
+fi
+
+msg="$(nxd-"$agent" "${flags[@]}" "$(
 	cat <<EOF
 Write a concise git commit message for this staged diff.
 Output ONLY the commit message itself (no markdown blocks or preamble).
@@ -38,7 +43,7 @@ $stat
 Diff:
 $diff
 EOF
-)")"
+)" < /dev/null)"
 
 if [ "$msg" = "" ]; then
 	echo "Failed to generate commit message."
