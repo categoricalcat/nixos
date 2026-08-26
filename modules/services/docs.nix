@@ -5,55 +5,99 @@
 }:
 
 let
-  fleetDocs = pkgs.stdenv.mkDerivation {
-    name = "fleet-docs";
-    src = ../../docs;
-    nativeBuildInputs = [ pkgs.mdbook ];
-    buildPhase = ''
-      echo -e "\n# Architecture Plans & RFCs\n" >> src/SUMMARY.md
-      echo "- [Architecture Plans]()" >> src/SUMMARY.md
-      for plan in src/plans/*.md; do
-        if [ -f "$plan" ]; then
-          plan_name=$(basename "$plan" .md | tr '-' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1' | sed -E -e 's/\bNixos\b/NixOS/g' -e 's/\bMtls\b/mTLS/g' -e 's/\bIpv6\b/IPv6/g' -e 's/\bVpn\b/VPN/g' -e 's/\bDns\b/DNS/g' -e 's/\bCi\b/CI/g' -e 's/\bCd\b/CD/g' -e 's/\bSsh\b/SSH/g' -e 's/\bLan\b/LAN/g' -e 's/\bFx\b/FX/g' -e 's/\bMidi\b/MIDI/g')
-          echo "  - [$plan_name](plans/$(basename "$plan"))" >> src/SUMMARY.md
-        fi
-      done
-      mdbook build
-    '';
-    installPhase = "cp -r book $out";
+  buildDocs = pkgs.writeShellScript "build-fleet-docs" ''
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    cp -r /var/lib/fleet-docs/src/. "$tmp/"
+    chmod -R u+w "$tmp"
+    rm -rf "$tmp/book" "$tmp/.git"
+    echo -e "\n# Architecture Plans & RFCs\n\n- [Architecture Plans]()" >> "$tmp/src/SUMMARY.md"
+    for p in "$tmp"/src/plans/*.md; do
+      [ -f "$p" ] || continue
+      case "$(basename "$p")" in .*|*~|*.tmp|*.bak|'#*'|_*) continue ;; esac
+      t=$(sed -n 's/^# //p' "$p" | head -n1 | tr -d '\r' | sed 's/\[/\\[/g; s/\]/\\]/g' | xargs)
+      echo "  - [''${t:-$(basename "$p" .md)}](plans/$(basename "$p"))" >> "$tmp/src/SUMMARY.md"
+    done
+    ${pkgs.mdbook}/bin/mdbook build "$tmp" -d "$tmp/book" >/dev/null && \
+      mkdir -p /var/lib/fleet-docs/book && \
+      ${pkgs.rsync}/bin/rsync -r --delete --no-owner --no-group "$tmp/book/" /var/lib/fleet-docs/book/
+  '';
+
+  commonHardening = {
+    User = "docs";
+    Group = "docs";
+    ProtectHome = true;
+    ProtectSystem = "strict";
+    PrivateDevices = true;
+    PrivateTmp = true;
+    ProtectProc = "invisible";
+    ProtectKernelTunables = true;
+    ProtectKernelModules = true;
+    ProtectControlGroups = true;
+    RestrictNamespaces = true;
+    LockPersonality = true;
+    MemoryDenyWriteExecute = true;
+    ReadWritePaths = [ "/var/lib/fleet-docs" ];
+    SystemCallErrorNumber = "EPERM";
+    SystemCallFilter = [
+      "@system-service"
+      "~@privileged"
+      "~@resources"
+    ];
   };
 in
 {
-  systemd.services.docs = {
-    description = "Fleet Documentation HTTP Server (darkhttpd)";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "network.target" ];
+  users.users.docs = {
+    isSystemUser = true;
+    group = "docs";
+  };
+  users.groups.docs = { };
 
-    serviceConfig = {
-      ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd ${fleetDocs} --port ${toString addresses.services.docs.port} --addr 0.0.0.0 --no-listing --no-server-id --hide-dotfiles";
-      DynamicUser = true;
-      Restart = "always";
+  fileSystems."/var/lib/fleet-docs/src" = {
+    device = "/home/yi/the.files/nixos/docs";
+    fsType = "none";
+    options = [
+      "bind"
+      "ro"
+    ];
+  };
 
-      # Core security boundary
-      CapabilityBoundingSet = "";
-      ProtectHome = true;
-      PrivateDevices = true;
-      ProtectProc = "invisible";
-      ProtectKernelTunables = true;
-      ProtectKernelModules = true;
-      ProtectControlGroups = true;
-      RestrictAddressFamilies = [
-        "AF_INET"
-        "AF_INET6"
-      ];
-      RestrictNamespaces = true;
-      LockPersonality = true;
-      MemoryDenyWriteExecute = true;
-      SystemCallFilter = [
-        "@system-service"
-        "~@privileged"
-        "~@resources"
-      ];
+  systemd = {
+    tmpfiles.rules = [
+      "d /var/lib/fleet-docs 0755 docs docs -"
+      "d /var/lib/fleet-docs/src 0755 root root -"
+      "d /var/lib/fleet-docs/book 0755 docs docs -"
+    ];
+
+    services = {
+      docs = {
+        description = "Fleet Documentation HTTP Server";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        unitConfig.RequiresMountsFor = [ "/var/lib/fleet-docs/src" ];
+        preStart = "${buildDocs}";
+        serviceConfig = commonHardening // {
+          ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/fleet-docs/book --port ${toString addresses.services.docs.port} --addr 0.0.0.0 --no-listing --no-server-id --hide-dotfiles";
+          CapabilityBoundingSet = "";
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+          ];
+          Restart = "always";
+        };
+      };
+
+      docs-watcher = {
+        description = "Fleet Documentation Real-Time Watcher";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "docs.service" ];
+        wants = [ "docs.service" ];
+        unitConfig.RequiresMountsFor = [ "/var/lib/fleet-docs/src" ];
+        serviceConfig = commonHardening // {
+          ExecStart = "${pkgs.watchexec}/bin/watchexec -w /var/lib/fleet-docs/src --debounce 1500ms --restart -- ${buildDocs}";
+          Restart = "always";
+        };
+      };
     };
   };
 }

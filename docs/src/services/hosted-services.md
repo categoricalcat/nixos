@@ -82,10 +82,18 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 - **Web UI**: `https://webdav.fufu.land`.
 - **Configuration**: Built using `pkgs.nginxModules.dav`, root directory `/srv/webdav` (mode 0775, `nginx:nginx`), unlimited client max body size (`client_max_body_size 0`), support for all standard WebDAV methods (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPFIND`, `OPTIONS`, `LOCK`, `UNLOCK`).
 
+### 2.8 Fleet Documentation (`modules/services/docs.nix`)
+
+- **Web UI**: Served at `http://10.42.0.2:8083` and proxied to `https://docs.fufu.land`.
+- **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
+- **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/fleet-docs/staging` without modifying the git repository.
+- **Serving Daemon**: `darkhttpd` serves `/var/lib/fleet-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).
+
 ______________________________________________________________________
 
 ## 3. Key Source Files
 
+- `modules/services/docs.nix`
 - `modules/services/homepage.nix`
 - `modules/services/searxng.nix`
 - `modules/services/valkey.nix`
