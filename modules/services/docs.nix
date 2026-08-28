@@ -6,6 +6,17 @@
 
 let
   buildDocs = pkgs.writeShellScript "build-fleet-docs" ''
+    set -euo pipefail
+    export PATH="${
+      pkgs.lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.gnused
+        pkgs.findutils
+        pkgs.mdbook
+        pkgs.rsync
+      ]
+    }:$PATH"
+
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     cp -r /var/lib/fleet-docs/src/. "$tmp/"
@@ -18,9 +29,9 @@ let
       t=$(sed -n 's/^# //p' "$p" | head -n1 | tr -d '\r' | sed 's/\[/\\[/g; s/\]/\\]/g' | xargs)
       echo "  - [''${t:-$(basename "$p" .md)}](plans/$(basename "$p"))" >> "$tmp/src/SUMMARY.md"
     done
-    ${pkgs.mdbook}/bin/mdbook build "$tmp" -d "$tmp/book" >/dev/null && \
+    mdbook build "$tmp" -d "$tmp/book" >/dev/null && \
       mkdir -p /var/lib/fleet-docs/book && \
-      ${pkgs.rsync}/bin/rsync -r --delete --no-owner --no-group "$tmp/book/" /var/lib/fleet-docs/book/
+      rsync -r --delete --no-owner --no-group "$tmp/book/" /var/lib/fleet-docs/book/
   '';
 
   commonHardening = {
@@ -94,7 +105,7 @@ in
         wants = [ "docs.service" ];
         unitConfig.RequiresMountsFor = [ "/var/lib/fleet-docs/src" ];
         serviceConfig = commonHardening // {
-          ExecStart = "${pkgs.watchexec}/bin/watchexec -w /var/lib/fleet-docs/src --debounce 1500ms --restart -- ${buildDocs}";
+          ExecStart = "${pkgs.watchexec}/bin/watchexec -n -w /var/lib/fleet-docs/src --debounce 1500ms --restart -- ${buildDocs}";
           Restart = "always";
         };
       };

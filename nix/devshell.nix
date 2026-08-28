@@ -26,29 +26,7 @@ _: {
       hostDeadWrapper = pkgs.writeShellScriptBin "host-dead" (builtins.readFile ./scripts/host-dead.sh);
       dnsWarmWrapper = pkgs.writeShellScriptBin "dns-warm" (builtins.readFile ./scripts/dns-warm.sh);
 
-      diffToCommitWrapper = pkgs.writeShellScriptBin "diff-to-commit" (
-        builtins.readFile ./scripts/diff-to-commit.sh
-      );
-
-      nxdAgyWrapper = pkgs.writeShellScriptBin "nxd-agy" ''
-        exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"
-      '';
-
-      nxdAgentWrapper = pkgs.writeShellScriptBin "nxd-agent" ''
-        exec nix run github:numtide/nix-ai-tools#cursor-agent -- "$@"
-      '';
-
-      nxdCursorWrapper = pkgs.writeShellScriptBin "nxd-cursor" ''
-        exec nix run github:jacopone/code-cursor-nix#cursor -- "$@"
-      '';
-
-      nxdAntigravityWrapper = pkgs.writeShellScriptBin "nxd-antigravity" ''
-        exec nix run github:jacopone/antigravity-nix#google-antigravity-ide -- "$@"
-      '';
-
-      nxdOpencodeWrapper = pkgs.writeShellScriptBin "nxd-opencode" ''
-        exec nix run github:anomalyco/opencode#opencode -- "$@"
-      '';
+      wrappers = import ../packages/wrappers.nix { inherit pkgs; };
 
       nixDevPkgs = with pkgs; [
         statix # Lints and suggestions for Nix
@@ -76,6 +54,7 @@ _: {
         packages =
           rustPkgs
           ++ nixDevPkgs
+          ++ (builtins.attrValues wrappers)
           ++ [
             pkgs.zsh
             nixosRebuildWrapper
@@ -85,12 +64,6 @@ _: {
             hostDiffWrapper
             hostDeadWrapper
             dnsWarmWrapper
-            diffToCommitWrapper
-            nxdAgyWrapper
-            nxdAgentWrapper
-            nxdCursorWrapper
-            nxdAntigravityWrapper
-            nxdOpencodeWrapper
           ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
@@ -136,7 +109,10 @@ _: {
       devShells.default = defaultShell;
       devShells.sandbox = sandboxShell;
 
-      packages.default = defaultShell;
-      packages.sandbox = sandboxShell;
+      packages = {
+        default = defaultShell;
+        sandbox = sandboxShell;
+      }
+      // wrappers;
     };
 }
