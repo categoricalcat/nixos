@@ -89,7 +89,11 @@ in
 
       btop = {
         enable = true;
-        package = pkgs.btop.override { rocmSupport = true; };
+        package =
+          if (pkgs.stdenv.hostPlatform.isLinux && pkgs.stdenv.hostPlatform.isx86_64) then
+            pkgs.btop.override { rocmSupport = true; }
+          else
+            pkgs.btop;
       };
 
       tmux = {

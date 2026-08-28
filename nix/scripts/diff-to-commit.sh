@@ -29,7 +29,7 @@ msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
 
 flags=(--print)
 if [ "$agent" = "agent" ]; then
-  flags=(--mode ask --trust --print)
+  flags=(--mode ask --trust --print --model auto-cost)
 fi
 
 msg="$(nxd-"$agent" "${flags[@]}" "$(

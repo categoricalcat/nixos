@@ -48,10 +48,12 @@ in
       ]
     );
 
-    sessionVariables = {
-      TERMINFO = "/run/current-system/sw/share/terminfo";
-      TERMINFO_DIRS = "${config.home.profileDirectory}/share/terminfo:/run/current-system/sw/share/terminfo";
-    };
+    sessionVariables = lib.mkMerge [
+      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        TERMINFO = "/run/current-system/sw/share/terminfo";
+        TERMINFO_DIRS = "${config.home.profileDirectory}/share/terminfo:/run/current-system/sw/share/terminfo";
+      })
+    ];
 
     file = lib.mkMerge [
       {

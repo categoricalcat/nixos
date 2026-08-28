@@ -50,12 +50,14 @@ in
   host = {
     desktopEnvironment = "gnome";
     vr = true;
+    workd = true;
   };
 
   home-manager = mkHome {
     inherit inputs;
     keyboardProfile = "us";
     stateVersion = global.homeVersion;
+    enableWorkd = true;
   };
 
   desktop = {

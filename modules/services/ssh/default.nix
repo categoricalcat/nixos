@@ -80,10 +80,10 @@ in
     settings = {
       AllowUsers = [
         "yi"
-        "workd"
         "nix-builder"
         "ai"
-      ];
+      ]
+      ++ lib.optional config.host.workd "workd";
       PermitRootLogin = "no";
       GatewayPorts = "yes";
       # Password auth is off globally; re-enabled only for LAN clients below.

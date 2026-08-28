@@ -3,6 +3,7 @@
   inputs,
   monitors ? [ ],
   stateVersion,
+  enableWorkd ? false,
 }:
 {
   useGlobalPkgs = true;
@@ -23,13 +24,21 @@
     }
   ];
 
-  users.yi = {
-    imports = [ ../users/home/yi.nix ];
-    home.stateVersion = stateVersion;
-  };
-
-  users.workd = {
-    imports = [ ../users/home/workd.nix ];
-    home.stateVersion = stateVersion;
-  };
+  users = {
+    yi = {
+      imports = [ ../users/home/yijia.nix ];
+      home.stateVersion = stateVersion;
+    };
+  }
+  // (
+    if enableWorkd then
+      {
+        workd = {
+          imports = [ ../users/home/workd.nix ];
+          home.stateVersion = stateVersion;
+        };
+      }
+    else
+      { }
+  );
 }

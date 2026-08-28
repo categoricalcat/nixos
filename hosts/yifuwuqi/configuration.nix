@@ -42,9 +42,13 @@ in
   home-manager = mkHome {
     inherit inputs;
     stateVersion = global.homeVersion;
+    enableWorkd = true;
   };
 
-  host.developer = true;
+  host = {
+    developer = true;
+    workd = true;
+  };
 
   services.nix-access-tokens.enable = true;
 

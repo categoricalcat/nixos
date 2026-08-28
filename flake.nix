@@ -30,6 +30,11 @@
         ];
 
         flake = {
+          homeModules = {
+            default = ./users/home/yijia.nix;
+          };
+          homeManagerModules = self.homeModules;
+
           homeConfigurations.yijia = home-manager.lib.homeManagerConfiguration {
             pkgs = import nixpkgs {
               system = "x86_64-linux";
@@ -104,7 +109,9 @@
         };
 
         perSystem = _: {
-          checks.yijia = self.homeConfigurations.yijia.activationPackage;
+          checks = {
+            yijia = self.homeConfigurations.yijia.activationPackage;
+          };
         };
 
         systems = [

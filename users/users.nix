@@ -13,70 +13,77 @@ in
     mutableUsers = true;
     defaultUserShell = pkgs.zsh;
 
-    groups = {
-      yi = {
-        gid = 1000;
-      };
-      workd = {
-        gid = 1001;
-      };
-      none = {
-        gid = 1002;
-      };
-    };
+    groups = lib.mkMerge [
+      {
+        yi = {
+          gid = 1000;
+        };
+        none = {
+          gid = 1002;
+        };
+      }
+      (lib.mkIf config.host.workd {
+        workd = {
+          gid = 1001;
+        };
+      })
+    ];
 
-    users = {
-      yi = {
-        uid = 1000;
-        isNormalUser = true;
-        description = "yi";
-        group = "yi";
-        hashedPasswordFile = config.sops.secrets."passwords/yi".path;
-        openssh.authorizedKeys.keys = keys.users.yi.sshAuthorizedKeys;
-        extraGroups = [
-          "wheel"
-          "render"
-          "video"
-          "audio"
-          "dialout"
-          "networkmanager"
-          "systemd-journal"
-          "tss"
-          "plugdev"
-          "adbusers"
-          "podman"
-        ];
-      };
+    users = lib.mkMerge [
+      {
+        yi = {
+          uid = 1000;
+          isNormalUser = true;
+          description = "yi";
+          group = "yi";
+          hashedPasswordFile = config.sops.secrets."passwords/yi".path;
+          openssh.authorizedKeys.keys = keys.users.yi.sshAuthorizedKeys;
+          extraGroups = [
+            "wheel"
+            "render"
+            "video"
+            "audio"
+            "dialout"
+            "networkmanager"
+            "systemd-journal"
+            "tss"
+            "plugdev"
+            "adbusers"
+            "podman"
+          ];
+        };
 
-      workd = {
-        uid = 1001;
-        isNormalUser = true;
-        description = "workd";
-        group = "workd";
-        hashedPasswordFile = config.sops.secrets."passwords/workd".path;
-      };
+        nix-builder = {
+          isSystemUser = true;
+          group = "nogroup";
+          description = "Nix remote builder";
+          home = "/var/lib/nix-builder";
+          createHome = true;
+          shell = pkgs.bash;
+        };
 
-      nix-builder = {
-        isSystemUser = true;
-        group = "nogroup";
-        description = "Nix remote builder";
-        home = "/var/lib/nix-builder";
-        createHome = true;
-        shell = pkgs.bash;
-      };
-
-      # Read-only AI account (see docs/src/services/ai-ssh.md).
-      # ForceCommand-gated on the sshd side: a hostile ai key can only run the
-      # whitelisted reads in modules/services/ssh/scripts/ai-gate.sh.
-      ai = {
-        isSystemUser = true;
-        group = "nogroup";
-        description = "Read-only AI agent";
-        shell = "/bin/sh";
-        openssh.authorizedKeys.keys = keys.users.ai.sshAuthorizedKeys;
-        extraGroups = [ "systemd-journal" ];
-      };
-    };
+        # Read-only AI account (see docs/src/services/ai-ssh.md).
+        # ForceCommand-gated on the sshd side: a hostile ai key can only run the
+        # whitelisted reads in modules/services/ssh/scripts/ai-gate.sh.
+        ai = {
+          isSystemUser = true;
+          group = "nogroup";
+          description = "Read-only AI agent";
+          shell = "/bin/sh";
+          openssh.authorizedKeys.keys = keys.users.ai.sshAuthorizedKeys;
+          extraGroups = [ "systemd-journal" ];
+        };
+      }
+      (lib.mkIf config.host.workd {
+        workd = {
+          uid = 1001;
+          isNormalUser = true;
+          description = "workd";
+          group = "workd";
+          hashedPasswordFile = config.sops.secrets."passwords/workd".path;
+        };
+      })
+    ];
 
     extraUsers = {
       none = {
@@ -90,18 +97,22 @@ in
     };
   };
 
-  sops.secrets = {
-    "passwords/yi" = {
-      mode = "0600";
-      owner = "yi";
-      group = "yi";
-    };
-    "passwords/workd" = {
-      mode = "0600";
-      owner = "workd";
-      group = "workd";
-    };
-  };
+  sops.secrets = lib.mkMerge [
+    {
+      "passwords/yi" = {
+        mode = "0600";
+        owner = "yi";
+        group = "yi";
+      };
+    }
+    (lib.mkIf config.host.workd {
+      "passwords/workd" = {
+        mode = "0600";
+        owner = "workd";
+        group = "workd";
+      };
+    })
+  ];
 
   programs = {
     mtr.enable = true;

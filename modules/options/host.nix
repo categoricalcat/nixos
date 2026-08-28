@@ -42,5 +42,11 @@
       default = false;
       description = "Host can run VR (SteamVR/OpenXR)";
     };
+
+    workd = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable workd isolated user environment on this host";
+    };
   };
 }

@@ -58,6 +58,7 @@ in
   host = {
     desktopEnvironment = "niri";
     desktopShell = "noctalia";
+    workd = true;
   };
 
   home-manager = mkHome {
@@ -67,6 +68,7 @@ in
       ;
     keyboardProfile = "br";
     stateVersion = global.homeVersion;
+    enableWorkd = true;
   };
 
   desktop = {
