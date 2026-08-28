@@ -81,7 +81,7 @@ in
   imports = [
     ./options/desktop.nix
     ./stylix.nix
-    ./desktop/gnome.nix
+    ./desktop/gnome
     #./desktop/hyprland.nix
     ./desktop/niri.nix
     #./desktop/cosmic.nix

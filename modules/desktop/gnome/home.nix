@@ -6,7 +6,7 @@
 }:
 
 let
-  colors = import ../theme.nix;
+  colors = import ../../theme.nix;
   panelElements = [
     {
       element = "showAppsButton";
@@ -27,7 +27,6 @@ let
       element = "taskbar";
       visible = true;
       position = "stackedTL";
-
     }
     {
       element = "dateMenu";
