@@ -48,6 +48,8 @@
       };
     };
 
+    systemd.user.services."org.freedesktop.IBus.session.GNOME".enable = false;
+
     environment.gnome.excludePackages = with pkgs; [
       gnome-tour
       gnome-user-docs
@@ -77,8 +79,19 @@
       gnomeExtensions.pip-on-top
       gnomeExtensions.impatience
       gnomeExtensions.user-themes
-      gnomeExtensions.mpris-label
-      gnomeExtensions.appindicator
+      (gnomeExtensions.mpris-label.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace players.js \
+            --replace-fail "import Gio from 'gi://Gio';" "import Gio from 'gi://Gio'; import GioUnix from 'gi://GioUnix';" \
+            --replace-fail "Gio.DesktopAppInfo" "GioUnix.DesktopAppInfo"
+        '';
+      }))
+      (gnomeExtensions.appindicator.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace trayIconsManager.js \
+            --replace-fail "Util.Logger.warning" "Util.Logger.warn"
+        '';
+      }))
       gnomeExtensions.dash-to-panel
       gnomeExtensions.weather-oclock
       # this bitch crashing: gnomeExtensions.tiling-assistant

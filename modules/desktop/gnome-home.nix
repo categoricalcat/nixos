@@ -59,6 +59,10 @@ let
   hasPaperWM = builtins.any (
     p: (p.extensionUuid or "") == pkgs.gnomeExtensions.paperwm.extensionUuid
   ) osConfig.environment.systemPackages;
+
+  monitorKeys =
+    (lib.imap0 (i: _: toString i) osConfig.desktop.monitors)
+    ++ (map (m: m.name) osConfig.desktop.monitors);
 in
 
 {
@@ -119,6 +123,10 @@ in
         animation-speed-factor = 50;
         ws-max-spacing = 16;
         ws-switcher-mode = 1;
+        panel-module = false;
+        dash-module = false;
+        layout-module = false;
+        panel-visibility = 0;
       };
 
       "org/gnome/shell/extensions/paperwm" = {
@@ -250,24 +258,15 @@ in
         leftbox-padding = 4;
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
-        panel-anchors = builtins.toJSON (
-          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: "MIDDLE")
-        );
-        panel-element-positions = builtins.toJSON (
-          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: panelElements)
-        );
+        primary-monitor = "AUS-S2LMQS085997";
+        panel-anchors = builtins.toJSON (lib.genAttrs monitorKeys (_m: "MIDDLE"));
+        panel-element-positions = builtins.toJSON (lib.genAttrs monitorKeys (_m: panelElements));
         panel-element-positions-monitors-sync = true;
-        panel-lengths = builtins.toJSON (
-          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: 100)
-        );
-        panel-positions = builtins.toJSON (
-          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: "TOP")
-        );
+        panel-lengths = builtins.toJSON (lib.genAttrs monitorKeys (_m: 100));
+        panel-positions = builtins.toJSON (lib.genAttrs monitorKeys (_m: "TOP"));
         panel-side-margins = 4;
         panel-side-padding = 4;
-        panel-sizes = builtins.toJSON (
-          lib.genAttrs (lib.imap0 (i: _: toString i) osConfig.desktop.monitors) (_m: 28)
-        );
+        panel-sizes = builtins.toJSON (lib.genAttrs monitorKeys (_m: 28));
         panel-top-bottom-padding = 0;
         panel-top-bottom-margins = 0;
         peek-mode = true;
