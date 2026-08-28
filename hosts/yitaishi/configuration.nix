@@ -29,7 +29,9 @@ in
     ../../modules/common.nix
     ../../modules/gaming.nix
     ../../modules/locale.nix
-    ../../modules/packages.nix
+    ../../modules/packages
+    ../../modules/packages/dev.nix
+    ../../modules/packages/network.nix
     ../../modules/desktop.nix
     ../../modules/boot-common.nix
     ../../modules/hardware/fanatec
@@ -38,7 +40,6 @@ in
     ../../modules/networking/sysctl-base.nix
     ../../modules/services/ssh
     ../../modules/distributed-builds.nix
-    # ../../modules/services/tailscale.nix
     ../../modules/services/samba/client.nix
   ];
 

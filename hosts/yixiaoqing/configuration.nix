@@ -38,7 +38,9 @@ in
     ../../modules/gaming.nix
     ../../modules/locale.nix
     ../../modules/desktop.nix
-    ../../modules/packages.nix
+    ../../modules/packages
+    ../../modules/packages/dev.nix
+    ../../modules/packages/network.nix
     ../../modules/boot-common.nix
     ../../modules/nix-settings.nix
     ../../modules/services/tlp.nix

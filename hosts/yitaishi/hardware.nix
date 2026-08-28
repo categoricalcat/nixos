@@ -4,6 +4,7 @@
 {
   config,
   lib,
+  pkgs,
   modulesPath,
   ...
 }:
@@ -103,4 +104,6 @@
       ];
     };
   };
+
+  environment.systemPackages = [ pkgs.amdgpu_top ];
 }

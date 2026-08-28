@@ -15,7 +15,8 @@ in
     ../../secrets/sops.nix
     ../../modules/common.nix
     ../../modules/nix-settings.nix
-    ../../modules/packages.nix
+    ../../modules/packages
+    ../../modules/packages/dev.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     # ../modules/desktop.nix

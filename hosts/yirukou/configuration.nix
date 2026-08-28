@@ -21,7 +21,8 @@ in
     ../../modules/nix-settings.nix
     ../../modules/distributed-builds.nix
     ../../modules/server-settings.nix
-    ../../modules/packages.nix
+    ../../modules/packages
+    ../../modules/packages/network.nix
   ];
 
   system.stateVersion = global.version;

@@ -25,6 +25,10 @@ _: {
       hostDiffWrapper = pkgs.writeShellScriptBin "host-diff" (builtins.readFile ./scripts/host-diff.sh);
       hostDeadWrapper = pkgs.writeShellScriptBin "host-dead" (builtins.readFile ./scripts/host-dead.sh);
       dnsWarmWrapper = pkgs.writeShellScriptBin "dns-warm" (builtins.readFile ./scripts/dns-warm.sh);
+      hostWhyWrapper = pkgs.writeShellScriptBin "host-why" (builtins.readFile ./scripts/host-why.sh);
+      hostAuditWrapper = pkgs.writeShellScriptBin "host-audit" (
+        builtins.readFile ./scripts/host-audit.sh
+      );
 
       wrappers = import ../packages/wrappers.nix { inherit pkgs; };
 
@@ -64,6 +68,8 @@ _: {
             hostDiffWrapper
             hostDeadWrapper
             dnsWarmWrapper
+            hostWhyWrapper
+            hostAuditWrapper
           ];
         shellHook = ''
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
