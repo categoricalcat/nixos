@@ -1,10 +1,27 @@
 {
   self,
   inputs,
+  lib,
   ...
 }:
 let
   addresses = import ../modules/addresses.nix;
+  keys = import ../secrets/keys.nix;
+
+  mkNode = name: {
+    hostname = addresses.hosts.${name}.network.tailscale.ipv4.host;
+    sshOpts = [
+      "-p"
+      (toString addresses.hosts.${name}.ssh.listenPort)
+      "-i"
+      keys.paths.sshHostKey
+    ];
+    profiles.system = {
+      user = "root";
+      sshUser = "root";
+      path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.${name};
+    };
+  };
 in
 {
   flake = {
@@ -12,59 +29,12 @@ in
       magicRollback = true;
       autoRollback = true;
       confirmTimeout = 30;
-      nodes = {
-        yifuwuqi = {
-          hostname = addresses.hosts.yifuwuqi.network.tailscale.ipv4.host;
-          sshOpts = [
-            "-p"
-            (toString addresses.hosts.yifuwuqi.ssh.listenPort)
-          ];
-          profiles.system = {
-            user = "root";
-            sshUser = "root";
-            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.yifuwuqi;
-          };
-        };
-
-        yirukou = {
-          hostname = addresses.hosts.yirukou.network.tailscale.ipv4.host;
-          sshOpts = [
-            "-p"
-            (toString addresses.hosts.yirukou.ssh.listenPort)
-          ];
-          profiles.system = {
-            user = "root";
-            sshUser = "root";
-            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.yirukou;
-          };
-        };
-
-        yitaishi = {
-          hostname = addresses.hosts.yitaishi.network.tailscale.ipv4.host;
-          sshOpts = [
-            "-p"
-            (toString addresses.hosts.yitaishi.ssh.listenPort)
-          ];
-          profiles.system = {
-            user = "root";
-            sshUser = "root";
-            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.yitaishi;
-          };
-        };
-
-        yixiaoqing = {
-          hostname = addresses.hosts.yixiaoqing.network.tailscale.ipv4.host;
-          sshOpts = [
-            "-p"
-            (toString addresses.hosts.yixiaoqing.ssh.listenPort)
-          ];
-          profiles.system = {
-            user = "root";
-            sshUser = "root";
-            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.yixiaoqing;
-          };
-        };
-      };
+      nodes = lib.genAttrs [
+        "yifuwuqi"
+        "yirukou"
+        "yitaishi"
+        "yixiaoqing"
+      ] mkNode;
     };
   };
 

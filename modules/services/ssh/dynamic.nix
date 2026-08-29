@@ -39,5 +39,8 @@ in
 ''
   IdentityFile ${keys.paths.userGitSshKey "~"}
 
+  Match User root
+      IdentityFile ${keys.paths.sshHostKey}
+
   ${dynamicSshConfig}
 ''

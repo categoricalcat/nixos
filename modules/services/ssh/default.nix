@@ -79,6 +79,7 @@ in
 
     settings = {
       AllowUsers = [
+        "root"
         "yi"
         "nix-builder"
         "ai"
@@ -102,6 +103,10 @@ in
       # Match Address matches the client source address.
       Match Address 10.42.0.0/24
         PasswordAuthentication yes
+
+      # Root login is strictly restricted to Tailscale connections via public key.
+      Match User root Address 100.64.0.0/10,fd7a:115c:a1e0::/48
+        PermitRootLogin prohibit-password
 
       Match User nix-builder
         AuthenticationMethods publickey

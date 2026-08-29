@@ -94,6 +94,9 @@ in
             pkgs.btop.override { rocmSupport = true; }
           else
             pkgs.btop;
+        settings = {
+          update_ms = 300;
+        };
       };
 
       tmux = {
