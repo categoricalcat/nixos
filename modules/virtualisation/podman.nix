@@ -1,7 +1,3 @@
-# Centralised Podman / container infrastructure
-# Provides: backend, podman daemon, storage, registries,
-# container defaults, volume directory, and CLI tools.
-
 {
   pkgs,
   addresses,
@@ -9,7 +5,6 @@
 }:
 
 {
-  # ── Backend ────────────────────────────────────────────────────────
   virtualisation = {
     oci-containers.backend = "podman";
 
@@ -69,12 +64,10 @@
     };
   };
 
-  # ── Dedicated volume storage ───────────────────────────────────────
   systemd.tmpfiles.rules = [
     "d /var/lib/container-volumes 0770 root podman -"
   ];
 
-  # ── CLI tools ──────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
     buildah
     dive

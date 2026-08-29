@@ -1,10 +1,16 @@
-# NixOS Build Deployment Strategy & Architecture Plan
+# NixOS Build Deployment Strategy & Architecture Plan (Tailscale-First & Zero-Ambient-Root)
 
 ## Objective
 
-Design and implement a unified, robust, and safe strategy to deploy new NixOS system builds and Home Manager closures to all hosts across the mesh (`yifuwuqi`, `yirukou`, `yitaishi`, `yixiaoqing`, `yichuang`), leveraging existing distributed builds and the Attic binary cache (`cache.fufu.land/yi`).
+Design and implement a unified, robust, safe, and effortless deployment strategy to deploy NixOS system closures and Home Manager profiles across all hosts in the mesh (`yifuwuqi`, `yirukou`, `yitaishi`, `yixiaoqing`, `yichuang`, `yijia`), leveraging distributed builds, the Attic binary cache (`cache.fufu.land/yi`), and **Tailscale mesh networking / Tailscale SSH**.
 
-**Every deploy is manual, one host at a time, via a Forgejo Actions "deploy button" that shows the diff before anything is applied.**
+This plan is explicitly engineered to be **implemented and rolled out BEFORE the unprivileged daily user and global sudo removal architecture** (\[`docs/src/plans/remove-yi-from-wheel-plan.md`\](file:///home/yi/the.files/nixos/docs/src/plans/remove-yi-from-wheel-plan.md)):
+
+- Implementing Deploy-rs first establishes a proven, reliable deployment lane protected by **Magic Rollback** across the entire mesh.
+- Once Deploy-rs is operational over Tailscale, the subsequent sensitive changes in `remove-yi-from-wheel-plan.md` (removing `yi` from `wheel`, disabling `sudo`, locking server root accounts) can be deployed safely host-by-host using Deploy-rs with zero risk of irreversible lockout.
+- All deployment traffic and authentication route over **Tailscale**: all hosts listen on SSH on their Tailscale IP (`100.69.0.x:24212`) and enable Tailscale SSH (`yi.tailscale.ssh = true`).
+- The human operator triggers deployments effortlessly from their standard user shell over Tailscale without manual multi-machine `su -` root dances.
+- **Every deploy is manual, one host at a time, preceded by verification (`deploy --dry-activate` / `nvd diff`) and protected by Deploy-rs Magic Rollback.**
 
 ______________________________________________________________________
 
@@ -15,6 +21,7 @@ ______________________________________________________________________
 │                          Git & CI                           │
 │  ┌─────────────────────────┐     ┌───────────────────────┐  │
 │  │   GitHub / Forgejo      ├────►│  CI Runner (yifuwuqi) │  │
+│  │   (Push / PR Events)    │     │  (user: nix-builder)  │  │
 │  └─────────────────────────┘     └───────────┬───────────┘  │
 └──────────────────────────────────────────────┼──────────────┘
                                                │ ci/build.sh
@@ -22,7 +29,7 @@ ______________________________________________________________________
 │                     Build & Cache Mesh                      │
 │  ┌─────────────────────────┐     ┌───────────────────────┐  │
 │  │ yifuwuqi (Build Host)   │◄───►│ yitaishi (Remote Bld) │  │
-│  │ 10.42.0.2 / 100.69.0.6  │     │ 100.69.0.4            │  │
+│  │ 100.69.0.6 / 10.42.0.2  │     │ 100.69.0.4            │  │
 │  └───────────┬─────────────┘     └───────────────────────┘  │
 │              │ push                                         │
 │  ┌───────────▼─────────────┐                                │
@@ -30,72 +37,86 @@ ______________________________________________________________________
 │  │ (cache.fufu.land/yi)    │                                │
 │  └───────────┬─────────────┘                                │
 └──────────────┼──────────────────────────────────────────────┘
-               │ substitutes over Tailscale / LAN
+               │ substitutes over Tailscale (100.69.0.0/10) & LAN
 ┌──────────────▼──────────────────────────────────────────────┐
-│                        Target Fleet                         │
-│  • yirukou (10.42.0.1 / 100.69.0.1)                         │
-│  • yixiaoqing (100.69.0.3)                                  │
-│  • yitaishi (100.69.0.4)                                    │
+│                    Tailscale Target Fleet                   │
+│  • yirukou (100.69.0.1:24212 / 10.42.0.1)                   │
+│  • yixiaoqing (100.69.0.3:24212)                            │
+│  • yitaishi (100.69.0.4:24212)                              │
+│  • yifuwuqi (100.69.0.6:24212 / 10.42.0.2)                  │
 │  • yichuang (WSL Environment)                               │
 │  • yijia (Home Manager Profile)                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 1. **Build & Cache Infrastructure**:
-   - `ci/build.sh` on `yifuwuqi` builds all `nixosConfigurations.<host>.config.system.build.toplevel` closures and offloads heavy derivations to `yitaishi` when reachable.
+   - `ci/build.sh` on `yifuwuqi` builds all `nixosConfigurations.<host>.config.system.build.toplevel` closures and offloads compilation to `yitaishi` over SSH when online.
    - Attic binary cache (`cache.fufu.land/yi`) stores pre-built derivations.
    - Every host includes `cache.fufu.land/yi` in `nix.settings.substituters` via `modules/services/attic/client.nix`.
-1. **CI (build only, never deploy)**:
-   - `.forgejo/workflows/flake-ci.yml` already declares `workflow_dispatch:`. It builds every host closure and pushes them to Attic on push/PR/manual run.
-   - There is **no deploy step anywhere** — deploying is still done by hand (`nixos-rebuild switch --build-host ... --target-host ...`, `nh os switch -H ...`).
-1. **Current Deployment Friction**:
-   - No unified tool for deploying both NixOS system closures and standalone Home Manager profiles (`yijia`).
-   - No rollback or connection verification (risk of network blackout on `yirukou`).
-   - No way to preview what a deploy will change before it happens.
+1. **CI Pipeline (Build & Cache Only)**:
+   - `.forgejo/workflows/flake-ci.yml` runs on the native runner under the unprivileged `nix-builder:nogroup` user.
+   - CI builds closures and pushes them to Attic. **CI never deploys and holds no root SSH keys or ambient deployment credentials.**
+1. **Privilege & Authentication Evolution**:
+   - With `remove-yi-from-wheel-plan.md`, `yi` is removed from `wheel`, `sudo` is disabled, and `yi` is not a trusted Nix daemon user.
+   - Legacy deploy workflows relying on `sudo nixos-rebuild` or `--use-remote-sudo` are deprecated.
+   - Tailscale mesh networking and Tailscale SSH provide cryptographic identity verification and secure transport across all machines.
 
 ______________________________________________________________________
 
 ## Decisions
 
-### 1. Manual Deploys Only, One Host At A Time
+### 1. Tailscale as the Universal Transport & Authentication Backbone
 
-- CI builds closures and pushes them to Attic — **it never deploys**.
-- Every deploy is triggered by hand, targeting exactly **one host per run** (`yixiaoqing`, `yitaishi`, `yifuwuqi`, `yirukou`, `yichuang`, or `yijia`).
-- No `deploy all`, no matrix deployment, no auto-pull agent. Deploying the fleet together risks compounding failures; a single host keeps blast radius to one machine and lets each host be verified before the next.
+- **Dedicated Tailscale IP Binding**: All fleet nodes (`yifuwuqi`, `yirukou`, `yitaishi`, `yixiaoqing`) bind OpenSSH to their Tailscale IPv4 address (`100.69.0.x:24212`) and enable Tailscale SSH (`yi.tailscale.ssh = true`).
+- **Cryptographic Tailnet Identity**: Deployments and administrative commands authenticate via Tailscale WireGuard keys and Tailscale ACLs.
+- **Zero-Trust Network Isolation**: Nodes communicate directly point-to-point over WireGuard, bypassing exposed public interfaces.
 
-### 2. Deploy Button = Forgejo Actions `workflow_dispatch`
+### 2. Clean Separation: CI Builds & Caches, Operator Deploys
 
-- A new `.forgejo/workflows/deploy.yml` renders a "Run workflow" button in the Forgejo UI with two inputs:
-  - `host` — `choice`: `yixiaoqing` | `yitaishi` | `yifuwuqi` | `yirukou` | `yichuang` | `yijia`
-  - `mode` — `choice`: `diff` | `deploy`
-- `concurrency.group: deploy-${{ inputs.host }}` ensures a host can never be double-deployed by two overlapping runs.
+- **CI / Forgejo Runner (`nix-builder`)**: Strictly responsible for continuous integration, evaluation checks (`nix flake check`), compilation (`ci/build.sh`), and pushing derivations to Attic. The runner possesses zero ambient root elevation and no deployment SSH keys.
+- **Operator-Driven Deploys**: All deployments are triggered by the human operator from their daily terminal environment.
 
-### 3. Diff Mode: See Everything Before Deploying
+### 3. Effortless Unprivileged Operator Workflow (`yi`)
 
-- `mode: diff` builds the target closure, fetches the host's current generation, and prints into the **workflow run log** (Forgejo renders ANSI/color):
-  - Package changes via `nvd diff` between the host's current system profile and the new closure (added / removed / upgraded / downgraded).
-  - Systemd unit restart summary via deploy-rs `--dry-activate` (or `nixos-rebuild --target-host ... --dry-run`).
-  - Store size delta / what will be substituted from Attic.
-- Diff mode **never deploys**. It exits after printing the plan.
+- The operator runs deployments directly from their normal user shell as `yi` using the `deploy` CLI / `deploy-rs`.
+- Because authentication and authorization are validated cryptographically via Tailscale (or OpenSSH over Tailscale), the operator does **not** need to perform complex manual `su -` root logins or password entries across multiple machines.
+- `sudo` remains completely disabled across the fleet (`security.sudo.enable = false;`).
 
-### 4. Deploy Mode: Deploy-rs With Magic Rollback
+### 4. Upstream Tooling & Zero Custom Scripts Policy
 
-- `mode: deploy` runs deploy-rs for the single selected host:
-  - **Magic Rollback**: if an update breaks networking/firewall/SSH on `yirukou` (router) or `yifuwuqi` (server), the target automatically reverts to the previous working generation within the `confirmTimeout`.
-  - **Multi-Profile Support**: `yijia` deploys as a standalone Home Manager profile; every NixOS host as a `system` profile — selected via the same single-host flow.
-  - **Zero Remote Daemon**: requires only standard SSH access and Nix store transfer.
-- Deploy mode also runs a connectivity/SSH verification before and after activation.
+To maximize reliability, avoid maintenance overhead, and preserve standard shell completions and CLI flags:
 
-### 5. Tiered Rollout Strategy (Operator Discipline, Blast Radius Containment)
+- **No Custom Wrapper Scripts**: We explicitly avoid creating custom bash deployment scripts (e.g., custom `deploy` scripts or wrappers in `nix/scripts/`).
+- **Direct Upstream CLI**: Deployments use the official `deploy-rs` CLI (`deploy`) provided directly in `devShells.default.packages`.
+- **Native Subcommands & Verification**:
+  - `deploy .#<host>`: Deploys system closure with automatic magic rollback.
+  - `deploy .#<host> --dry-activate`: Evaluates and executes dry-activation without switching system state.
+  - `deploy .#<host> --targets .#<host>.system`: Directly targets specific profiles.
+  - `nix flake check`: Validates flake evaluation and deploy-rs node schemas natively.
+  - `nvd diff <current-closure> <new-closure>`: Invoked directly when explicit package-level diffing is desired.
+- **Declarative SSH Transport**: Dynamic host resolution and port configuration (`24212`) are managed by declarative SSH configs (`programs.ssh` / `modules/services/ssh/dynamic.nix`), eliminating ad-hoc connection logic in scripts.
 
-Deployment order is manual but enforced by convention, one host at a time:
+### 5. Deploy-rs with Magic Rollback & Watchdog Protection
+
+- **Deploy-rs Targets**:
+  - `profiles.system`: Configured with `user = "root"`, `sshUser = "root"`, and `path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.<host>`.
+  - `profiles.yijia`: Configured with `user = "yi"`, `sshUser = "yi"`, and `path = deploy-rs.lib.x86_64-linux.activate.home-manager self.homeConfigurations.yijia`.
+- **Magic Rollback**:
+  - Enabled on all system profile nodes (`magicRollback = true`, `autoRollback = true`, `confirmTimeout = 30`).
+  - If a deployment breaks networking, firewall rules, routing, or SSH access (critical for `yirukou` and `yifuwuqi`), the target node automatically reverts to the previous working system generation after the 30-second watchdog timer expires.
+- **Fast Binary Substitution**: Target nodes pull pre-built derivations directly from the local Attic cache (`cache.fufu.land/yi`) over Tailscale/LAN during activation.
+
+### 6. Tiered Rollout Discipline (Operator Blast Radius Containment)
+
+Deployments are executed manually, one host at a time, adhering to a tiered rollout sequence:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │             Tier 1: Non-Critical / Dev Nodes                │
-│  • yichuang (WSL)                                           │
-│  • yijia (Home Manager)                                     │
+│  • yichuang (WSL local activation)                          │
+│  • yijia (Home Manager profile via yi)                      │
 │  • yitaishi (Workstation / Remote Builder)                  │
+│  • yixiaoqing (Laptop)                                      │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Verify stability
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -109,9 +130,18 @@ Deployment order is manual but enforced by convention, one host at a time:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Tier 1 (Dev & Workstations)**: `yichuang`, `yitaishi`, `yijia` — first to receive changes.
-- **Tier 2 (Core Server)**: `yifuwuqi` — must remain up to serve the binary cache to other hosts.
-- **Tier 3 (Perimeter / Gateway)**: `yirukou` — always deployed last; protected with Deploy-rs Magic Rollback.
+______________________________________________________________________
+
+## Fleet Target Matrix
+
+| Host             | Tailscale IP | SSH Endpoint        | Profile Type | Activation User | Rollback Watchdog              |
+| :--------------- | :----------- | :------------------ | :----------- | :-------------- | :----------------------------- |
+| **`yichuang`**   | WSL          | Local WSL           | System       | Local WSL root  | N/A                            |
+| **`yijia`**      | Mesh         | `yitaishi.ts:24212` | Home Manager | `yi`            | `autoRollback = true`          |
+| **`yitaishi`**   | `100.69.0.4` | `100.69.0.4:24212`  | System       | `root`          | `magicRollback = true`         |
+| **`yixiaoqing`** | `100.69.0.3` | `100.69.0.3:24212`  | System       | `root`          | `magicRollback = true`         |
+| **`yifuwuqi`**   | `100.69.0.6` | `100.69.0.6:24212`  | System       | `root`          | `magicRollback = true` (`30s`) |
+| **`yirukou`**    | `100.69.0.1` | `100.69.0.1:24212`  | System       | `root`          | `magicRollback = true` (`30s`) |
 
 ______________________________________________________________________
 
@@ -119,42 +149,42 @@ ______________________________________________________________________
 
 ### Phase 1: Flake Integration & Deploy-rs Schema
 
-- Add `deploy-rs` to `flake.nix` inputs.
-- Define `deploy.nodes` schema mapping all hosts (`yifuwuqi`, `yirukou`, `yitaishi`, `yixiaoqing`, `yichuang`) with a `system` profile, plus a standalone `yijia` Home Manager profile.
-- Tag each node with a `groups` entry reflecting its tier (`tier1`, `tier2`, `tier3`) for optional group filtering.
-- Configure timeouts, `autoRollback`, and `magicRollback` (keep magic rollback enabled for `yirukou` and `yifuwuqi`).
+- Add `deploy-rs` to `inputs` in `flake.nix`.
+- Define `deploy.nodes` schema in `flake.nix` covering all hosts (`yifuwuqi`, `yirukou`, `yitaishi`, `yixiaoqing`, `yijia`), binding hostnames to their Tailscale endpoints (`<host>.ts` / `100.69.0.x:24212`).
+- Configure `autoRollback = true`, `magicRollback = true`, and `confirmTimeout = 30` for system profiles.
+- Add `deployChecks` to `perSystem.checks` in `flake.nix`.
 
-### Phase 2: Forgejo Deploy Workflow (The Button)
+### Phase 2: Tailscale SSH & Listener Configuration
 
-- Create `.forgejo/workflows/deploy.yml` with `workflow_dispatch` inputs (`host` choice, `mode` choice) and per-host `concurrency.group`.
-- `mode: diff` job runs the diff script and prints results into the run log.
-- `mode: deploy` job runs the deploy script against the single selected host.
+- Verify that all hosts import `modules/services/tailscale.nix` and set `yi.tailscale.ssh = true`.
+- Ensure OpenSSH on every host binds to its Tailscale IP (`addresses.ssh.listenAddresses` includes `network.tailscale.ipv4.host` on port `24212`).
+- Ensure Tailscale ACLs authorize the operator's Tailscale identity for administrative access.
 
-### Phase 3: Deploy / Diff Runner Script
+### Phase 3: Devshell & Upstream Tooling Integration
 
-- Create `ci/deploy.sh` with two modes:
-  - `diff <host>`: build closure → read remote current profile → `nvd diff` → dry-activate unit summary → store size estimate → print, then stop.
-  - `deploy <host>`: run deploy-rs for that one host with rollback, plus SSH connectivity check before/after.
-- Add a devshell `deploy` helper (mirroring the same flow) for terminal use.
+- Add `pkgs.deploy-rs` (or `inputs.deploy-rs.packages.${pkgs.system}.default`) directly to `devShells.default` packages in `nix/devshell.nix`.
+- Do not create custom wrapper scripts; rely directly on `deploy`, `nix flake check`, `nvd`, and standard NixOS commands.
 
-### Phase 4: Validation & Canary Rollouts
+### Phase 4: Validation & Rollout Alignment
 
-- Run `mode: diff` for every host and verify the printed plan.
-- Perform live canary `mode: deploy` on `yitaishi` and `yichuang`.
-- Deploy to `yifuwuqi` and verify service health.
-- Perform safe deployment to `yirukou` with active ping verification and magic rollback armed.
+- Perform validation in synchronization with \[`docs/src/plans/remove-yi-from-wheel-plan.md`\](file:///home/yi/the.files/nixos/docs/src/plans/remove-yi-from-wheel-plan.md):
+  1. Run `nix flake check` to validate deploy schemas.
+  1. Run `deploy .#yitaishi --dry-activate` to test non-destructive remote evaluation.
+  1. Deploy canary system closure to `yitaishi` and `yixiaoqing` via `deploy .#<host>`.
+  1. Deploy to `yifuwuqi` and verify core services and Attic cache availability.
+  1. Deploy to `yirukou` with active ping verification and magic rollback armed.
 
 ______________________________________________________________________
 
 ## Rollout Order
 
-1. **`yitaishi` / `yichuang` / `yijia` (Tier 1)**: Dev & Workstation nodes — diff, verify, deploy one at a time.
-1. **`yifuwuqi` (Tier 2)**: Core services & Attic binary cache.
-1. **`yirukou` (Tier 3)**: Critical edge router & firewall (supervised with magic rollback).
+1. **`yitaishi` / `yixiaoqing` / `yichuang` / `yijia` (Tier 1)**: Dev & Workstation nodes — dry-activate, inspect, and deploy one host at a time over Tailscale.
+1. **`yifuwuqi` (Tier 2)**: Core services, Forgejo, and Attic binary cache.
+1. **`yirukou` (Tier 3)**: Critical perimeter router and gateway (supervised with magic rollback).
 
 ______________________________________________________________________
 
 ## Open Questions
 
-1. **SSH Authentication Lane**: Direct `root` SSH keys (client-root $\\to$ server-root) vs `yi` unprivileged user with passwordless sudo for activation? (Lean: `yi` + passwordless sudo, matching the existing `--target-host yi@... --use-remote-sudo` pattern.)
-1. **Deploy Gate Shape**: Forgejo has no GitHub-style approval environments. Keep the two-click flow (`mode: diff` → review log → `mode: deploy`) as the sole gate, or add an interactive confirm inside deploy mode too?
+- **Question 1 (SSH Authentication Lane)**: Resolved. All deployment transport and SSH authentication use Tailscale (Tailscale IP on port 24212 and Tailscale SSH), eliminating legacy `yi + sudo` and complex multi-machine `su -` requirements.
+- **Question 2 (Tooling and Scripts)**: Resolved. Strictly avoid authoring custom wrapper scripts. Use upstream `deploy-rs` CLI (`deploy`), `nix flake check`, and standard `nvd diff`.
