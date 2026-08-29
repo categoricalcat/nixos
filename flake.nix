@@ -27,6 +27,7 @@
           ./nix/treefmt.nix
           ./nix/git-hooks.nix
           ./nix/devshell.nix
+          ./nix/deploy.nix
         ];
 
         flake = {
@@ -124,6 +125,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     attic.url = "github:zhaofengli/attic";
     nixvim = {
       url = "github:nix-community/nixvim";

@@ -1,0 +1,46 @@
+name: Deploy Fleet
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: 'Target Host'
+        required: true
+        type: choice
+        options:
+          - yixiaoqing
+          - yitaishi
+          - yifuwuqi
+          - yirukou
+      step:
+        description: 'Pipeline Step'
+        required: true
+        type: choice
+        default: '1-diff'
+        options:
+          - '1-diff'
+          - '2-deploy'
+
+concurrency:
+  group: deploy-${{ inputs.host }}
+
+jobs:
+  diff:
+    name: 'Step 1: Dry-Run & Diff'
+    runs-on: native
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@main
+      - name: Dry-activate ${{ inputs.host }}
+        run: deploy .#"${{ inputs.host }}" --dry-activate
+
+  deploy:
+    name: 'Step 2: Live Activation & Magic Rollback'
+    needs: [diff]
+    if: inputs.step == '2-deploy'
+    runs-on: native
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@main
+      - name: Deploy ${{ inputs.host }}
+        run: deploy .#"${{ inputs.host }}" --print-build-logs

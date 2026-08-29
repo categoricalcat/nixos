@@ -23,7 +23,7 @@ in
       "network-online.target"
       "time-sync.target"
     ]
-    # ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
     ++ (lib.optional config.services.netbird.enable "netbird.service");
 
     startLimitIntervalSec = 0;

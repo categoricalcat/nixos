@@ -48,6 +48,7 @@ _: {
         nix-init # Generator for Nix packages from URLs
         comma # Run software without installing it (, <pkg>)
         nvd # Package version diff tool for Nix store paths
+        deploy-rs # Multi-profile NixOS deployment tool
         fzf # Command-line fuzzy finder
         jq # Command-line JSON processor
         dnsx # Fast and multi-purpose DNS toolkit

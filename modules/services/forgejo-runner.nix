@@ -45,6 +45,8 @@ in
         jq
         nodejs
         openssh
+        nvd
+        deploy-rs
         config.nix.package
         inputs.attic.packages.${system}.attic-client
       ];
