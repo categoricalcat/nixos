@@ -1,4 +1,5 @@
 name: Deploies
+run-name: 'Deploy ${{ inputs.host || github.event.inputs.host }} (${{ inputs.step || github.event.inputs.step }})'
 
 on:
   workflow_dispatch:
@@ -22,7 +23,8 @@ on:
           - '2-deploy'
 
 concurrency:
-  group: deploy-${{ inputs.host }}
+  group: ${{ format('deploy-{0}', inputs.host || github.event.inputs.host) }}
+  cancel-in-progress: false
 
 jobs:
   diff:

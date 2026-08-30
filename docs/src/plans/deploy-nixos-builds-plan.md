@@ -78,7 +78,7 @@ ______________________________________________________________________
   - `step`: `1-diff` (default) | `2-deploy`.
 - **Step 1 (`1-diff`)**: Runs `deploy .#<host> --dry-activate` to preview systemd unit changes and evaluation without activating.
 - **Step 2 (`2-deploy`)**: Runs the dry-run diff check first, followed immediately by live activation `deploy .#<host>` protected by Magic Rollback.
-- **Per-Host Concurrency**: `concurrency.group: deploy-${{ inputs.host }}` ensures non-overlapping execution.
+- **Per-Host Concurrency**: `concurrency.group: ${{ format('deploy-{0}', inputs.host || github.event.inputs.host) }}` ensures non-overlapping execution.
 
 ### 3. Upstream Tooling & Zero Custom Scripts Policy
 

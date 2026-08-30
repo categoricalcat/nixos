@@ -39,7 +39,7 @@ in
 ''
   IdentityFile ${keys.paths.userGitSshKey "~"}
 
-  Match User root
+  Match localuser root User root
       IdentityFile ${keys.paths.sshHostKey}
 
   ${dynamicSshConfig}

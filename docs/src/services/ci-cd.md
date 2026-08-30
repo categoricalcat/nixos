@@ -88,7 +88,7 @@ The automated fleet deployment pipeline runs via `deploy-rs` on Forgejo Actions.
 - **Private Key**: SOPS delivers a dedicated ed25519 key to `/var/lib/nix-builder/.ssh/id_ed25519` (`0400 nix-builder:nogroup`).
 - **Public Key**: Registered in `secrets/keys.nix` as `keys.ci.deployPublicKey` and authorized in `users.users.root.openssh.authorizedKeys.keys` fleet-wide.
 - **Least Privilege**: The CI deployment key is **not** an age recipient in `.sops.yaml` / `sopsAgeRecipients`. CI can activate configurations via `deploy-rs`, but cannot decrypt SOPS secrets or read host keys.
-- **Operator Lane**: Operator deployment remains root-only (`su -` then `deploy`) via `/persist/keys/ssh/ssh_host_ed25519_key`. Both keys are configured in `nix/deploy.nix` `sshOpts`.
+- **Operator Lane**: Operator deployment remains root-only (`su -` then `deploy`) via `/persist/keys/ssh/ssh_host_ed25519_key` (resolved automatically via SSH `Match localuser root User root`). CI runner uses its standard `~/.ssh/id_ed25519`.
 
 ### 5.2 Rollout & Safety
 
