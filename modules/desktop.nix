@@ -30,6 +30,7 @@ in
         "hyprland"
         "niri"
         "cosmic"
+        "mango"
       ];
       default =
         if config.host.desktopEnvironment != null then config.host.desktopEnvironment else "gnome";
@@ -63,7 +64,12 @@ in
       default =
         if config.host.desktopShell != null then
           config.host.desktopShell
-        else if config.desktop.environment == "niri" then
+        else if
+          lib.elem config.desktop.environment [
+            "niri"
+            "mango"
+          ]
+        then
           "dms"
         else
           "none";
@@ -84,6 +90,7 @@ in
     ./desktop/gnome
     #./desktop/hyprland.nix
     ./desktop/niri.nix
+    ./desktop/mango.nix
     #./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
@@ -153,6 +160,7 @@ in
             "common"
             "gnome"
             "niri"
+            "mango"
           ]
           (_: {
             "org.freedesktop.impl.portal.AppChooser" = lib.mkForce [ "gtk" ];

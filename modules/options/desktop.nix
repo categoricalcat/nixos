@@ -46,6 +46,41 @@
               default = "normal";
               description = "Monitor transform";
             };
+            connector = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "DRM connector name (e.g. DP-1, HDMI-A-1) for compositors that match on connector.";
+            };
+            vrr = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Enable variable refresh rate (VRR / Adaptive Sync / FreeSync / G-Sync)";
+            };
+            hdr = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Enable High Dynamic Range (HDR)";
+            };
+            hdrMinLum = lib.mkOption {
+              type = lib.types.nullOr (lib.types.either lib.types.float lib.types.int);
+              default = null;
+              description = "Mastering display minimum luminance in cd/m²";
+            };
+            hdrMaxLum = lib.mkOption {
+              type = lib.types.nullOr (lib.types.either lib.types.float lib.types.int);
+              default = null;
+              description = "Mastering display peak luminance in cd/m²";
+            };
+            hdrMaxAvgLum = lib.mkOption {
+              type = lib.types.nullOr (lib.types.either lib.types.float lib.types.int);
+              default = null;
+              description = "Max frame-average light level in cd/m²";
+            };
+            hdrForce = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Force HDR even if EDID does not advertise BT.2020/PQ";
+            };
           };
         }
       );

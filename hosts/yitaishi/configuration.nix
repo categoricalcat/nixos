@@ -8,6 +8,41 @@
 
 let
   greeter = "ly";
+  monitors = [
+    {
+      name = "GSM-0x000083cb";
+      connector = "DP-3";
+      mode = "2560x1080@74.991";
+      position = {
+        x = 0;
+        y = 2160;
+      };
+      scale = 1.0;
+      vrr = true;
+    }
+    {
+      name = "AUS-S2LMQS085997";
+      connector = "DP-1";
+      mode = "1920x1080@239.760";
+      position = {
+        x = 2560;
+        y = 2160;
+      };
+      scale = 1.0;
+      hdr = true;
+    }
+    {
+      name = "GSM-0x01010101";
+      connector = "HDMI-A-1";
+      mode = "3840x2160@120.000";
+      position = {
+        x = 640;
+        y = 0;
+      };
+      scale = 1.0;
+      hdr = true;
+    }
+  ];
   mkHome = import ../../modules/home-manager.nix;
   inherit (global) version;
 in
@@ -49,50 +84,22 @@ in
   system.stateVersion = version;
 
   host = {
-    desktopEnvironment = "gnome";
+    desktopEnvironment = "mango";
+    desktopShell = "dms";
     vr = true;
     workd = true;
   };
 
   home-manager = mkHome {
-    inherit inputs;
+    inherit inputs monitors;
     keyboardProfile = "us";
     stateVersion = global.homeVersion;
     enableWorkd = true;
   };
 
   desktop = {
-    inherit greeter;
+    inherit greeter monitors;
     keyboard = "us";
-    monitors = [
-      {
-        name = "GSM-0x000083cb";
-        mode = "2560x1080@74.991";
-        position = {
-          x = 0;
-          y = 2160;
-        };
-        scale = 1.0;
-      }
-      {
-        name = "AUS-S2LMQS085997";
-        mode = "1920x1080@239.760";
-        position = {
-          x = 2560;
-          y = 2160;
-        };
-        scale = 1.0;
-      }
-      {
-        name = "GSM-0x01010101";
-        mode = "3840x2160@120.000";
-        position = {
-          x = 640;
-          y = 0;
-        };
-        scale = 1.0;
-      }
-    ];
   };
 
   environment.systemPackages = [ pkgs.xclip ];

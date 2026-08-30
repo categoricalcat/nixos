@@ -73,6 +73,7 @@
                 inputs.musnix.nixosModules.musnix
                 home-manager.nixosModules.home-manager
                 inputs.lanzaboote.nixosModules.lanzaboote
+                inputs.mango.nixosModules.mango
                 ./hosts/yitaishi/configuration.nix
               ];
             };
@@ -192,6 +193,11 @@
 
     niri-float-sticky = {
       url = "github:probeldev/niri-float-sticky";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    mango = {
+      url = "github:mangowm/mango/wl-only";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

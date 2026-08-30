@@ -7,6 +7,7 @@
         lib.types.enum [
           "gnome"
           "niri"
+          "mango"
         ]
       );
       default = null;
@@ -21,7 +22,16 @@
           "none"
         ]
       );
-      default = if config.host.desktopEnvironment == "niri" then "dms" else null;
+      default =
+        if
+          lib.elem config.host.desktopEnvironment [
+            "niri"
+            "mango"
+          ]
+        then
+          "dms"
+        else
+          null;
       description = "Desktop shell running on top of the compositor.";
     };
 

@@ -19,6 +19,7 @@
     github-desktop
 
     wl-clipboard
+    qbittorrent
 
     # (bitwarden-desktop.override { electron_39 = electron; })
     prismlauncher
