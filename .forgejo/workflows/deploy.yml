@@ -1,4 +1,4 @@
-name: Deploy Fleet
+name: Deploies
 
 on:
   workflow_dispatch:
@@ -31,14 +31,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@main
+      - name: Dry-activate ${{ inputs.host }}
+        run: deploy .#"${{ inputs.host }}" --dry-activate
       - name: Diff package closures with nvd
         run: |
           TARGET_IP=$(nix eval --raw ".#deploy.nodes.${{ inputs.host }}.hostname")
-          CURRENT_SYSTEM=$(ssh -i /var/lib/nix-builder/.ssh/id_ed25519 -p 24212 -o StrictHostKeyChecking=accept-new root@"$TARGET_IP" "readlink -f /run/current-system")
-          NEW_SYSTEM=$(nix build ".#nixosConfigurations.${{ inputs.host }}.config.system.build.toplevel" --no-link --print-out-paths)
-          nvd diff "$CURRENT_SYSTEM" "$NEW_SYSTEM"
-      - name: Dry-activate ${{ inputs.host }}
-        run: deploy .#"${{ inputs.host }}" --dry-activate
+          NEW_SYSTEM=$(nix eval --raw ".#nixosConfigurations.${{ inputs.host }}.config.system.build.toplevel")
+          ssh -i /var/lib/nix-builder/.ssh/id_ed25519 -p 24212 -o StrictHostKeyChecking=accept-new root@"$TARGET_IP" \
+            "if command -v nvd >/dev/null 2>&1; then nvd diff /run/current-system \"$NEW_SYSTEM\"; elif [ -x \"$NEW_SYSTEM/sw/bin/nvd\" ]; then \"$NEW_SYSTEM/sw/bin/nvd\" diff /run/current-system \"$NEW_SYSTEM\"; else nix-store --diff-closures /run/current-system \"$NEW_SYSTEM\"; fi"
 
   deploy:
     name: 'Step 2: Live Activation & Magic Rollback'
