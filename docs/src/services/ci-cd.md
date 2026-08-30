@@ -33,7 +33,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 2. Forgejo Workflow Specification (`.forgejo/workflows/flake-ci.yml`)
+## 2. Forgejo Workflow Specification (`.forgejo/workflows/ci.yml`)
 
 The primary CI pipeline runs on Forgejo Actions:
 
@@ -78,9 +78,9 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 5. Fleet Deployment & CI/CD Deployment Key (`.forgejo/workflows/deploy.yml`)
+## 5. Fleet Deployment & CI/CD Deployment Key (`.forgejo/workflows/cd.yml`)
 
-The automated fleet deployment pipeline runs via `deploy-rs` on Forgejo Actions.
+The automated fleet deployment pipeline runs via `deploy-rs` on Forgejo Actions using `ci/deploy.sh`.
 
 ### 5.1 Identity & Security Model
 
@@ -92,8 +92,8 @@ The automated fleet deployment pipeline runs via `deploy-rs` on Forgejo Actions.
 
 ### 5.2 Rollout & Safety
 
-- **Step 1 (`1-diff`)**: Dry-runs activation (`deploy .#<host> --dry-activate`) and verifies closure differences before applying changes.
-- **Step 2 (`2-deploy`)**: Performs live activation with `magicRollback` enabled (30s confirm timeout).
+- **Step 1 (`1-diff`)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`) and verifies closure differences before applying changes (`ci/deploy.sh diff <host>`).
+- **Step 2 (`2-deploy`)**: Performs live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh deploy <host>`.
 - **Runner Host Caution**: When activating `yifuwuqi` from CI, changes that restart `gitea-runner-yifuwuqi.service` will kill the job mid-activation and trigger magic rollback. Apply runner service modifications from a local root terminal.
 
 ### 5.3 Key Rotation
@@ -118,10 +118,11 @@ ______________________________________________________________________
 
 ## 6. Key Source Files
 
-- `.forgejo/workflows/flake-ci.yml`
-- `.forgejo/workflows/deploy.yml`
+- `.forgejo/workflows/ci.yml`
+- `.forgejo/workflows/cd.yml`
 - `nix/deploy.nix`
 - `ci/build.sh`
+- `ci/deploy.sh`
 - `modules/services/forgejo-runner.nix`
 - `modules/services/github-runner.nix`
 - `modules/services/attic/server.nix`

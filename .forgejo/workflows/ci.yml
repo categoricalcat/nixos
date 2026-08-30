@@ -28,8 +28,8 @@ jobs:
         host: [yixiaoqing, yitaishi, yifuwuqi, yirukou, yichuang]
     steps:
       - uses: actions/checkout@main
-      - run: ci/build.sh ${{ matrix.host }}
-
+      - name: builds ${{ matrix.host }}
+        run: ci/build.sh ${{ matrix.host }}
 
       - name: attic push
         env:
@@ -45,5 +45,3 @@ jobs:
           attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "$ATTIC_TOKEN"
           attic push --ignore-upstream-cache-filter -j 10 "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "result-${{ matrix.host }}"
           echo "::endgroup::"
-
-

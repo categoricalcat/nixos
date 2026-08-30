@@ -1,4 +1,4 @@
-name: Deploies
+name: Continuous Deployment
 run-name: 'Deploy ${{ inputs.host || github.event.inputs.host }} (${{ inputs.step || github.event.inputs.step }})'
 
 on:
@@ -34,13 +34,9 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - name: Dry-activate ${{ inputs.host }}
-        run: deploy .#"${{ inputs.host }}" --dry-activate
+        run: ci/deploy.sh dry-activate ${{ inputs.host }}
       - name: Diff package closures with nvd
-        run: |
-          TARGET_IP=$(nix eval --raw ".#deploy.nodes.${{ inputs.host }}.hostname")
-          NEW_SYSTEM=$(nix eval --raw ".#nixosConfigurations.${{ inputs.host }}.config.system.build.toplevel")
-          ssh -i /var/lib/nix-builder/.ssh/id_ed25519 -p 24212 -o StrictHostKeyChecking=accept-new root@"$TARGET_IP" \
-            "export PATH=\"/run/current-system/sw/bin:\$PATH\"; if command -v nvd >/dev/null 2>&1; then nvd diff /run/current-system \"$NEW_SYSTEM\"; elif [ -x \"$NEW_SYSTEM/sw/bin/nvd\" ]; then \"$NEW_SYSTEM/sw/bin/nvd\" diff /run/current-system \"$NEW_SYSTEM\"; else nix store diff-closures /run/current-system \"$NEW_SYSTEM\"; fi"
+        run: ci/deploy.sh diff ${{ inputs.host }}
 
   deploy:
     name: 'Step 2: Live Activation & Magic Rollback'
@@ -51,4 +47,4 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - name: Deploy ${{ inputs.host }}
-        run: deploy .#"${{ inputs.host }}" -- --print-build-logs
+        run: ci/deploy.sh deploy ${{ inputs.host }}

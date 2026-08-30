@@ -38,7 +38,7 @@ ______________________________________________________________________
 
 ## 3. CI Matrix Build Target
 
-`yichuang` is included in the `.forgejo/workflows/flake-ci.yml` build matrix, ensuring that the WSL2 system closure is continuously evaluated, built, and pushed to the Attic binary cache on every commit.
+`yichuang` is included in the `.forgejo/workflows/ci.yml` build matrix, ensuring that the WSL2 system closure is continuously evaluated, built, and pushed to the Attic binary cache on every commit.
 
 ______________________________________________________________________
 
