@@ -51,5 +51,5 @@ echo "=== Diffing $HOST1 vs $HOST2 ==="
 if command -v nvd >/dev/null 2>&1; then
   nvd diff "$OUT1" "$OUT2"
 else
-  nix-store --diff-closures "$OUT1" "$OUT2"
+  nix store diff-closures "$OUT1" "$OUT2"
 fi
