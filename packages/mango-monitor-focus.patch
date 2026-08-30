@@ -1,0 +1,237 @@
+diff -urN a/src/dispatch/bind_define.h b/src/dispatch/bind_define.h
+--- a/src/dispatch/bind_define.h	2026-08-30 19:21:07.894284412 -0300
++++ b/src/dispatch/bind_define.h	2026-08-30 19:21:38.509748618 -0300
+@@ -1946,65 +1946,77 @@
+ 	}
+ }
+ 
+-void toggleoverview(const Arg *arg) {
++static void set_overview_mon(Monitor *mon, const Arg *arg, bool enter,
++							 bool changefocus, Monitor *focus_mon) {
+ 	Client *c = NULL;
+-	if (!selmon || grabc)
++	if (!mon || !focus_mon || (bool)mon->isoverview == enter)
+ 		return;
+ 
+-	Client *sel = arg->tc ? arg->tc : selmon->sel;
++	Client *sel = (arg->tc && arg->tc->mon == mon) ? arg->tc : mon->sel;
+ 
+-	selmon->isoverview ^= 1;
+ 	uint32_t target;
+ 	uint32_t visible_client_number = 0;
+ 
+-	if (!selmon->isoverview) {
+-		selmon->ov_tab_layout = 0;
+-		if (selmon->is_jump_mode)
+-			finish_jump_mode(selmon);
++	if (!enter) {
++		mon->ov_tab_layout = 0;
++		if (mon->is_jump_mode)
++			finish_jump_mode(mon);
+ 	}
+ 
+-	if (selmon->isoverview) {
+-		wl_list_for_each(c, &clients, link) if (c && c->mon == selmon &&
++	if (enter) {
++		wl_list_for_each(c, &clients, link) if (c && c->mon == mon &&
+ 												!client_is_unmanaged(c) &&
+ 												!client_is_x11_popup(c) &&
+ 												!c->isminimized &&
+ 												!c->isunglobal) {
+ 			visible_client_number++;
+ 		}
+-		if (visible_client_number > 0) {
+-			selmon->ovbk_current_tagset = selmon->tagset[selmon->seltags];
+-			selmon->ovbk_prev_tagset = selmon->tagset[selmon->seltags ^ 1];
+-			target = ~0 & TAGMASK;
+-		} else {
+-			selmon->isoverview ^= 1;
+-			selmon->ov_tab_layout = 0;
++		/* 无窗口的显示器不进入 overview，保持全局状态可逆 */
++		if (visible_client_number == 0) {
++			mon->ov_tab_layout = 0;
+ 			return;
+ 		}
+-	} else if (!selmon->isoverview && sel) {
+-		target = get_tags_first_tag(sel->tags);
+-	} else if (!selmon->isoverview && !sel) {
+-		target = (1 << (selmon->pertag->prevtag - 1));
+-		view(&(Arg){.ui = target}, false);
+-		fix_mon_tagset_from_overview(selmon);
+-		refresh_monitors_workspaces_status(selmon);
+-		return;
+-	}
+ 
+-	if (selmon->isoverview) {
+-		wlr_seat_pointer_clear_focus(seat);
++		if (mon != focus_mon) {
++			mon->ov_normal_mode =
++				focus_mon->is_jump_mode ? 1 : focus_mon->ov_normal_mode;
++			mon->ov_tab_layout = focus_mon->ov_tab_layout;
++		}
+ 
+-		if (cursor_hidden) {
+-			handlecursoractivity();
++		mon->isoverview = 1;
++		mon->ovbk_current_tagset = mon->tagset[mon->seltags];
++		mon->ovbk_prev_tagset = mon->tagset[mon->seltags ^ 1];
++		target = ~0 & TAGMASK;
++	} else {
++		mon->isoverview = 0;
++		if (sel) {
++			target = get_tags_first_tag(sel->tags);
+ 		} else {
+-			wlr_cursor_set_xcursor(cursor, cursor_mgr, "default");
++			target = (1 << (mon->pertag->prevtag - 1));
++			view_in_mon(&(Arg){.ui = target}, false, mon, changefocus);
++			fix_mon_tagset_from_overview(mon);
++			refresh_monitors_workspaces_status(mon);
++			return;
++		}
++	}
++
++	if (enter) {
++		if (mon == focus_mon) {
++			wlr_seat_pointer_clear_focus(seat);
++
++			if (cursor_hidden) {
++				handlecursoractivity();
++			} else {
++				wlr_cursor_set_xcursor(cursor, cursor_mgr, "default");
++			}
+ 		}
+ 
+ 		wl_list_for_each(c, &clients, link) {
+-			if (c && c->mon == selmon && !client_is_unmanaged(c) &&
++			if (c && c->mon == mon && !client_is_unmanaged(c) &&
+ 				!client_is_x11_popup(c) && !c->isunglobal && !c->isminimized &&
+ 				client_surface(c)->mapped) {
+ 				c->animation.overining = true;
+-				if (!selmon->is_jump_mode && !selmon->ov_normal_mode)
++				if (!mon->is_jump_mode && !mon->ov_normal_mode)
+ 					/* tab 布局：先跳过 view 排布，进入后统一重排时再设 */
+ 					c->animation.overview_enter_anim_set = true;
+ 				else
+@@ -2014,11 +2026,11 @@
+ 			}
+ 		}
+ 	} else {
+-		selmon->ov_normal_mode = 0; /* 退出 overview 清除热区普通模式 */
++		mon->ov_normal_mode = 0; /* 退出 overview 清除热区普通模式 */
+ 
+-		selmon->tagset[selmon->seltags] = target;
++		mon->tagset[mon->seltags] = target;
+ 		wl_list_for_each(c, &clients, link) {
+-			if (c && c->mon == selmon && !c->iskilling &&
++			if (c && c->mon == mon && !c->iskilling &&
+ 				!client_is_unmanaged(c) && !c->isunglobal && !c->isminimized &&
+ 				!client_is_x11_popup(c) && client_surface(c)->mapped) {
+ 				overview_restore(c, &(Arg){.ui = target});
+@@ -2026,27 +2038,50 @@
+ 		}
+ 	}
+ 
+-	view(&(Arg){.ui = target}, false);
++	view_in_mon(&(Arg){.ui = target}, false, mon, changefocus);
+ 
+ 	/* tab 布局：进入后重排 */
+-	if (selmon->isoverview && !selmon->is_jump_mode &&
+-		!selmon->ov_normal_mode) {
++	if (mon->isoverview && !mon->is_jump_mode && !mon->ov_normal_mode) {
+ 
+ 		Client *cc = NULL;
+ 		wl_list_for_each(cc, &clients, link) {
+-			if (cc && cc->mon == selmon && !client_is_unmanaged(cc) &&
++			if (cc && cc->mon == mon && !client_is_unmanaged(cc) &&
+ 				!client_is_x11_popup(cc))
+ 				cc->animation.overview_enter_anim_set = false;
+ 		}
+-		arrange(selmon, true, false);
++		arrange(mon, true, false);
+ 	}
+ 
+-	fix_mon_tagset_from_overview(selmon);
+-	refresh_monitors_workspaces_status(selmon);
++	fix_mon_tagset_from_overview(mon);
++	refresh_monitors_workspaces_status(mon);
+ 
+ 	return;
+ }
+ 
++void toggleoverview(const Arg *arg) {
++	Monitor *m = NULL;
++	Monitor *focus_mon = selmon; /* selmon 会被 focusclient 改写，先固定 */
++	bool any_overview = false;
++
++	if (!selmon || grabc)
++		return;
++
++	wl_list_for_each(m, &mons, link) {
++		if (!m->wlr_output || !m->wlr_output->enabled)
++			continue;
++		if (m->isoverview) {
++			any_overview = true;
++			break;
++		}
++	}
++
++	wl_list_for_each(m, &mons, link) {
++		if (!m->wlr_output || !m->wlr_output->enabled)
++			continue;
++		set_overview_mon(m, arg, !any_overview, m == focus_mon, focus_mon);
++	}
++}
++
+ void togglejump(const Arg *arg) {
+ 	if (!selmon)
+ 		return;
+diff -urN a/src/input/pointer.h b/src/input/pointer.h
+--- a/src/input/pointer.h	2026-08-30 19:21:07.896594842 -0300
++++ b/src/input/pointer.h	2026-08-30 19:22:00.659876572 -0300
+@@ -896,11 +896,10 @@
+ 		wlr_idle_notifier_v1_notify_activity(idle_notifier, seat);
+ 
+ 		/* Update selmon (even while dragging a window) */
+-		if (config.sloppyfocus) {
+-			Monitor *oldmon = selmon;
+-			selmon = xytomon(cursor->x, cursor->y);
+-			if (oldmon != selmon)
+-				printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
++		Monitor *newmon = xytomon(cursor->x, cursor->y);
++		if (newmon && newmon != selmon) {
++			selmon = newmon;
++			printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
+ 		}
+ 	}
+ 
+diff -urN a/src/input/tablet.h b/src/input/tablet.h
+--- a/src/input/tablet.h	2026-08-30 19:21:07.896657082 -0300
++++ b/src/input/tablet.h	2026-08-30 19:22:08.427272111 -0300
+@@ -278,11 +278,10 @@
+ 
+ 	motionnotify(0, NULL, 0, 0, 0, 0);
+ 
+-	if (config.sloppyfocus) {
+-		Monitor *oldmon = selmon;
+-		selmon = xytomon(cursor->x, cursor->y);
+-		if (oldmon != selmon)
+-			printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
++	Monitor *newmon = xytomon(cursor->x, cursor->y);
++	if (newmon && newmon != selmon) {
++		selmon = newmon;
++		printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
+ 	}
+ 
+ 	xytonode(cursor->x, cursor->y, &surface, &c, NULL, NULL, &sx, &sy);
+diff -urN a/src/manage/monitor.h b/src/manage/monitor.h
+--- a/src/manage/monitor.h	2026-08-30 19:21:07.898820428 -0300
++++ b/src/manage/monitor.h	2026-08-30 19:21:54.089541994 -0300
+@@ -709,6 +709,8 @@
+ 	int32_t i = 0, nmons = wl_list_length(&mons);
+ 
+ 	if (m->isoverview) {
++		/* 先清除本显示器状态，避免全局 overview 反向切换到其他显示器 */
++		m->isoverview = 0;
+ 		toggleoverview(&(Arg){0});
+ 	}
+ 

@@ -1,13 +1,14 @@
 {
   lib,
   config,
-  inputs,
   ...
 }:
 
 let
+  keybinds = import ../../modules/desktop/keybinds.nix { inherit lib; };
   desktopShell = config.host.desktopShell;
   monitors = config.desktop.monitors;
+  colors = import ../../modules/theme.nix;
 
   parseMode =
     mode:
@@ -83,8 +84,6 @@ let
       ];
     in
     lib.concatStringsSep "," parts;
-
-  dmsEmbedded = "${inputs.dms.outPath}/core/internal/config/embedded";
 in
 {
   config = lib.mkIf (config.host.desktopEnvironment == "mango") {
@@ -103,6 +102,34 @@ in
           "WLR_RENDERER,vulkan"
         ];
         hdr_depth = 2;
+
+        # Window & root colors from theme.yaml (yimoka base16)
+        rootcolor = "0x${colors.base00}ff";
+        bordercolor = "0x${colors.base03}ff";
+        focuscolor = "0x${colors.base0D}ff";
+        urgentcolor = "0x${colors.base08}ff";
+        dropcolor = "0x${colors.base0D}55";
+        splitcolor = "0x${colors.base09}ff";
+
+        # Window state-specific colors
+        maximizescreencolor = "0x${colors.base0B}ff";
+        scratchpadcolor = "0x${colors.base0C}ff";
+        globalcolor = "0x${colors.base0E}ff";
+        overlaycolor = "0x${colors.base0D}ff";
+
+        # Overview jump mode label colors
+        jump_label_decorate_fg_color = "0x${colors.base05}ff";
+        jump_label_decorate_bg_color = "0x${colors.base01}ff";
+        jump_label_decorate_focus_fg_color = "0x${colors.base00}ff";
+        jump_label_decorate_focus_bg_color = "0x${colors.base0E}ff";
+        jump_label_decorate_border_color = "0x${colors.base0D}ff";
+
+        # Tab bar (monocle layout) colors
+        group_bar_decorate_fg_color = "0x${colors.base05}ff";
+        group_bar_decorate_bg_color = "0x${colors.base01}ff";
+        group_bar_decorate_focus_fg_color = "0x${colors.base00}ff";
+        group_bar_decorate_focus_bg_color = "0x${colors.base0E}ff";
+        group_bar_decorate_border_color = "0x${colors.base0D}ff";
 
         # Disable mouse auto-focus (click-to-focus only)
         sloppyfocus = 0;
@@ -159,9 +186,10 @@ in
     ) "mango-session.target";
 
     xdg.configFile = lib.mkIf (desktopShell == "dms") {
-      "mango/dms/binds.conf".text = builtins.replaceStrings [ "{{TERMINAL_COMMAND}}" ] [ "kitty" ] (
-        builtins.readFile "${dmsEmbedded}/mango-binds.conf"
-      );
+      "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
+        terminalCommand = "kitty";
+        inherit desktopShell;
+      };
     };
   };
 }

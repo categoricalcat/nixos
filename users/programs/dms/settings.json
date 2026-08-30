@@ -687,11 +687,11 @@
         }
       ],
       "screenPreferences": [
-        "all"
+        "DP-1"
       ],
       "shadowIntensity": 0,
       "shadowOpacity": 10,
-      "showOnLastDisplay": true,
+      "showOnLastDisplay": false,
       "spacing": 0,
       "squareCorners": false,
       "transparency": 0,
