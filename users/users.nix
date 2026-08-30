@@ -38,6 +38,7 @@ in
             keys.hosts.yitaishi.sshPublicKey
             keys.hosts.yixiaoqing.sshPublicKey
             keys.hosts.yifuwuqi.sshPublicKey
+            keys.ci.deployPublicKey
           ];
         };
 

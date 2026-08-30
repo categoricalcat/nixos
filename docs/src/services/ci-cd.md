@@ -78,9 +78,49 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 5. Key Source Files
+## 5. Fleet Deployment & CI/CD Deployment Key (`.forgejo/workflows/deploy.yml`)
+
+The automated fleet deployment pipeline runs via `deploy-rs` on Forgejo Actions.
+
+### 5.1 Identity & Security Model
+
+- **Runner Identity**: `nix-builder:nogroup` on `yifuwuqi`.
+- **Private Key**: SOPS delivers a dedicated ed25519 key to `/var/lib/nix-builder/.ssh/id_ed25519` (`0400 nix-builder:nogroup`).
+- **Public Key**: Registered in `secrets/keys.nix` as `keys.ci.deployPublicKey` and authorized in `users.users.root.openssh.authorizedKeys.keys` fleet-wide.
+- **Least Privilege**: The CI deployment key is **not** an age recipient in `.sops.yaml` / `sopsAgeRecipients`. CI can activate configurations via `deploy-rs`, but cannot decrypt SOPS secrets or read host keys.
+- **Operator Lane**: Operator deployment remains root-only (`su -` then `deploy`) via `/persist/keys/ssh/ssh_host_ed25519_key`. Both keys are configured in `nix/deploy.nix` `sshOpts`.
+
+### 5.2 Rollout & Safety
+
+- **Step 1 (`1-diff`)**: Dry-runs activation (`deploy .#<host> --dry-activate`) and verifies closure differences before applying changes.
+- **Step 2 (`2-deploy`)**: Performs live activation with `magicRollback` enabled (30s confirm timeout).
+- **Runner Host Caution**: When activating `yifuwuqi` from CI, changes that restart `gitea-runner-yifuwuqi.service` will kill the job mid-activation and trigger magic rollback. Apply runner service modifications from a local root terminal.
+
+### 5.3 Key Rotation
+
+To rotate the CI deployment key:
+
+```bash
+# 1. Mint new key on yifuwuqi (or run with --rotate)
+./users/scripts/setup-sops.sh [--rotate]
+
+# 2. Update keys.ci.deployPublicKey in secrets/keys.nix
+
+# 3. Ingest private key into SOPS
+sops set secrets/secrets.yaml '["keys"]["deploy"]' "$(jq -Rs . < /run/ci-deploy-key/keys/deploy_ed25519)"
+shred -u /run/ci-deploy-key/keys/deploy_ed25519
+rm -rf /run/ci-deploy-key
+
+# 4. Sync persist secrets and deploy across fleet
+```
+
+______________________________________________________________________
+
+## 6. Key Source Files
 
 - `.forgejo/workflows/flake-ci.yml`
+- `.forgejo/workflows/deploy.yml`
+- `nix/deploy.nix`
 - `ci/build.sh`
 - `modules/services/forgejo-runner.nix`
 - `modules/services/github-runner.nix`

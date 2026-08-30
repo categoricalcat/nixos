@@ -23,6 +23,18 @@ in
     owner = "nix-builder";
   };
 
+  sops.secrets."keys/deploy" = {
+    path = "/var/lib/nix-builder/.ssh/id_ed25519";
+    owner = "nix-builder";
+    group = "nogroup";
+    mode = "0400";
+    restartUnits = [ "gitea-runner-yifuwuqi.service" ];
+  };
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/nix-builder/.ssh 0700 nix-builder nogroup -"
+  ];
+
   services.gitea-actions-runner = {
     package = pkgs.forgejo-runner;
     instances."yifuwuqi" = {
@@ -63,6 +75,14 @@ in
   };
 
   systemd.services."gitea-runner-yifuwuqi" = {
+    wants = [
+      "network-online.target"
+      "sops-nix.service"
+    ];
+    after = [
+      "network-online.target"
+      "sops-nix.service"
+    ];
     # Nix builds need full system access — chroot, mount, /nix/store writes,
     # and process namespacing.
     environment = {

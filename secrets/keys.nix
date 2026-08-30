@@ -80,6 +80,10 @@ let
     };
   };
 
+  ci = {
+    deployPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINg1PN5erwfilOhC9MEMSgEf0Mvvnh9+cv/l2oRorDuX nix-builder@yifuwuqi";
+  };
+
 in
 {
   paths = {
@@ -98,6 +102,7 @@ in
   inherit
     hosts
     users
+    ci
     ;
 
   sopsAgeRecipients = builtins.filter (x: x != null) [

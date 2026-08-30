@@ -15,6 +15,8 @@ let
       (toString addresses.hosts.${name}.ssh.listenPort)
       "-i"
       keys.paths.sshHostKey
+      "-i"
+      "/var/lib/nix-builder/.ssh/id_ed25519"
     ];
     profiles.system = {
       user = "root";

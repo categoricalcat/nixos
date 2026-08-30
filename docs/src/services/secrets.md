@@ -107,6 +107,8 @@ nix:
     # fine-grained PAT, Public Repositories (read-only), no permissions (rate-limit only)
     access-tokens: |
         access-tokens = github.com=<PAT>
+keys:
+    deploy: string
 passwords:
     nextcloud: string
 tokens:
@@ -167,6 +169,7 @@ Recipes:
 | `tokens/attic-push-token`     | raw token     | Generate with `atticd-atticadm` after `atticd` starts; command below                  |
 | `tokens/forgejo-runner`       | raw token     | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner            |
 | `tokens/github-runner-nixos`  | raw token     | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                 |
+| `keys/deploy`                 | PEM string    | Generated on `yifuwuqi` via `./users/scripts/setup-sops.sh` (or `--rotate`)           |
 | `services/grafana/secret-key` | random string | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets |
 
 | `cloudflare_api_token` | env file | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>` |
@@ -344,6 +347,42 @@ are **not** SOPS age recipients. The ai gate needs no secrets, so the ai keys
 never appear in `sopsAgeRecipients`. Generate them on each host with
 `setup-sops.sh` and paste the printed public halves into
 `secrets/keys.nix` (`users.ai.meshKeys`).
+
+## CI/CD Deployment Key (`keys/deploy`)
+
+The Forgejo runner on `yifuwuqi` (`nix-builder`) receives a dedicated ed25519
+private key delivered via SOPS to `/var/lib/nix-builder/.ssh/id_ed25519`
+(`0400 nix-builder:nogroup`).
+
+- **Purpose**: Enables `deploy-rs` running inside Forgejo CI to activate remote
+  mesh nodes and self-deploy.
+- **Authorization**: The matching public key (`keys.ci.deployPublicKey` in
+  `secrets/keys.nix`) is authorized in `users.users.root.openssh.authorizedKeys.keys`
+  across the fleet.
+- **Non-recipient**: The CI key is **not** an age recipient in `.sops.yaml` /
+  `sopsAgeRecipients`. CI has permission to deploy configurations, but cannot decrypt
+  SOPS secrets or access host age keys.
+- **Operator Lane**: Remains root-only (`su -` then `deploy`) using
+  `/persist/keys/ssh/ssh_host_ed25519_key`. `nix/deploy.nix` passes both `-i` flags
+  so both operator and CI lanes work without manual reconfiguration.
+
+### Key Generation and Rotation
+
+To mint a new key or rotate an existing one:
+
+```bash
+# 1. Generate new key in tmpfs on yifuwuqi
+./users/scripts/setup-sops.sh [--rotate]
+
+# 2. Update secrets/keys.nix with the printed `ci = { deployPublicKey = "..."; };` snippet.
+
+# 3. Ingest private key into SOPS
+sops set secrets/secrets.yaml '["keys"]["deploy"]' "$(jq -Rs . < /run/ci-deploy-key/keys/deploy_ed25519)"
+shred -u /run/ci-deploy-key/keys/deploy_ed25519
+rm -rf /run/ci-deploy-key
+
+# 4. Sync secrets to /persist/keys/sops/secrets.yaml and deploy/switch
+```
 
 ## Search (yifuwuqi)
 
