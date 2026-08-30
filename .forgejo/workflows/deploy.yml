@@ -49,4 +49,4 @@ jobs:
     steps:
       - uses: actions/checkout@main
       - name: Deploy ${{ inputs.host }}
-        run: deploy .#"${{ inputs.host }}" --print-build-logs
+        run: deploy .#"${{ inputs.host }}" -- --print-build-logs
