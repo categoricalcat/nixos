@@ -6,9 +6,12 @@
 
 let
   keybinds = import ../../modules/desktop/keybinds.nix { inherit lib; };
+  keyboard = import ../../modules/keyboard/profiles.nix;
+  keyboardProfiles = map (name: keyboard.profiles.${name}) (keyboard.order config.desktop.keyboard);
   desktopShell = config.host.desktopShell;
   monitors = config.desktop.monitors;
   colors = import ../../modules/theme.nix;
+  dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
 
   parseMode =
     mode:
@@ -102,6 +105,9 @@ in
           "WLR_RENDERER,vulkan"
         ];
         hdr_depth = 2;
+        border_radius = dmsSettings.cornerRadius;
+        xkb_rules_layout = lib.concatMapStringsSep "," (profile: profile.layout) keyboardProfiles;
+        xkb_rules_variant = lib.concatMapStringsSep "," (profile: profile.variant) keyboardProfiles;
 
         # Window & root colors from theme.yaml (yimoka base16)
         rootcolor = "0x${colors.base00}ff";

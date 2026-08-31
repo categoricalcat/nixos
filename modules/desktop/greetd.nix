@@ -2,63 +2,84 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
 {
-  config = lib.mkIf (config.desktop.greeter == "tuigreet") {
-    services.greetd = {
-      enable = true;
-      settings = {
-        default_session = {
-          # Customized tuigreet command
-          command =
-            let
-              sessions = "${config.services.displayManager.sessionData.desktops}/share";
-              themeString = lib.concatStringsSep ";" [
-                "border=lightmagenta"
-                "text=white"
-                "prompt=lightcyan"
-                "time=lightcyan"
-                "action=blue"
-                "button=lightblue"
-                "container=black"
-                "input=lightcyan"
-                "greet=lightcyan"
-                "title=lightcyan"
+  imports = [
+    inputs.dank-greeter.nixosModules.default
+  ];
+
+  config = lib.mkMerge [
+    (lib.mkIf (config.desktop.greeter == "tuigreet") {
+      services.greetd = {
+        enable = true;
+        settings = {
+          default_session = {
+            # Customized tuigreet command
+            command =
+              let
+                sessions = "${config.services.displayManager.sessionData.desktops}/share";
+                themeString = lib.concatStringsSep ";" [
+                  "border=lightmagenta"
+                  "text=white"
+                  "prompt=lightcyan"
+                  "time=lightcyan"
+                  "action=blue"
+                  "button=lightblue"
+                  "container=black"
+                  "input=lightcyan"
+                  "greet=lightcyan"
+                  "title=lightcyan"
+                ];
+              in
+              lib.concatStringsSep " " [
+                "${pkgs.tuigreet}/bin/tuigreet"
+                "--time"
+                "--asterisks"
+                "--user-menu"
+                "--sessions ${sessions}/wayland-sessions"
+                "--xsessions ${sessions}/xsessions"
+                "--greeting ${lib.escapeShellArg config.desktop.greeting}"
+                "--theme ${lib.escapeShellArg themeString}"
+                "--remember"
+                "--remember-session"
+                "--container-padding 2"
+                "--window-padding 1"
+                "--power-shutdown 'systemctl poweroff'"
+                "--power-reboot 'systemctl reboot'"
               ];
-            in
-            lib.concatStringsSep " " [
-              "${pkgs.tuigreet}/bin/tuigreet"
-              "--time"
-              "--asterisks"
-              "--user-menu"
-              "--sessions ${sessions}/wayland-sessions"
-              "--xsessions ${sessions}/xsessions"
-              "--greeting ${lib.escapeShellArg config.desktop.greeting}"
-              "--theme ${lib.escapeShellArg themeString}"
-              "--remember"
-              "--remember-session"
-              "--container-padding 2"
-              "--window-padding 1"
-              "--power-shutdown 'systemctl poweroff'"
-              "--power-reboot 'systemctl reboot'"
-            ];
-          user = "greeter";
+            user = "greeter";
+          };
         };
       };
-    };
 
-    # Ensure tuigreet has the necessary cache directory permissions and runs smoothly
-    systemd.services.greetd.serviceConfig = {
-      Type = "idle";
-      StandardInput = "tty";
-      StandardOutput = "tty";
-      StandardError = "journal"; # Without this, errors will spam on screen
-      TTYReset = true;
-      TTYVHangup = true;
-      TTYVTDisallocate = true;
-      CacheDirectory = "tuigreet";
-    };
-  };
+      # Ensure tuigreet has the necessary cache directory permissions and runs smoothly
+      systemd.services.greetd.serviceConfig = {
+        Type = "idle";
+        StandardInput = "tty";
+        StandardOutput = "tty";
+        StandardError = "journal"; # Without this, errors will spam on screen
+        TTYReset = true;
+        TTYVHangup = true;
+        TTYVTDisallocate = true;
+        CacheDirectory = "tuigreet";
+      };
+    })
+
+    (lib.mkIf (config.desktop.greeter == "dms") {
+      programs.dms-greeter = {
+        enable = true;
+        compositor.name =
+          if config.desktop.environment == "mango" then
+            "mango"
+          else if config.desktop.environment == "niri" then
+            "niri"
+          else
+            "mango";
+        configHome = "/home/yi";
+      };
+    })
+  ];
 }

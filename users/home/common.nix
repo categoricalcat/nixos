@@ -34,6 +34,7 @@ in
     ../programs/tui.nix
     ../programs/vscode-theme.nix
     ../programs/neovim.nix
+    ../programs/khal.nix
   ];
 
   home = {

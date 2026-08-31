@@ -320,6 +320,12 @@ let
         "SUPER+ALT,j"
       ];
     };
+    cycleKeyboardLayout = {
+      description = "Cycle Keyboard Layout";
+      keys = [
+        "SUPER+ALT,space"
+      ];
+    };
     increaseGaps = {
       description = "Increase Gaps";
       keys = [
@@ -593,6 +599,7 @@ let
       # === Layout ===
       ${bindList bindings.cycleWindowWidth "switch_proportion_preset"}
       ${bindList bindings.switchLayout "switch_layout"}
+      ${bindList bindings.cycleKeyboardLayout "switch_keyboard_layout"}
       ${bindList bindings.increaseGaps "incgaps,1"}
       ${bindList bindings.decreaseGaps "incgaps,-1"}
 

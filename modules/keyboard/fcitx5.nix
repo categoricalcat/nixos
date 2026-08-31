@@ -8,21 +8,22 @@
 let
   inherit (config.host) desktopEnvironment;
   keyboardProfile = config.desktop.keyboard;
-
-  keyboardProfiles = {
-    us = {
-      layout = "us";
-      variant = "intl";
-      fcitxLayout = "us-intl";
-    };
-    br = {
-      layout = "br";
-      variant = "thinkpad";
-      fcitxLayout = "br-thinkpad";
-    };
-  };
-
-  kb = keyboardProfiles.${keyboardProfile};
+  keyboard = import ./profiles.nix;
+  profileOrder = keyboard.order keyboardProfile;
+  kb = keyboard.profiles.${keyboardProfile};
+  keyboardItems = builtins.listToAttrs (
+    lib.imap0 (
+      index: profileName:
+      let
+        profile = keyboard.profiles.${profileName};
+      in
+      lib.nameValuePair "Groups/0/Items/${toString index}" {
+        Name = "keyboard-${profile.fcitxLayout}";
+        Layout = profile.fcitxLayout;
+      }
+    ) profileOrder
+  );
+  pinyinIndex = toString (builtins.length profileOrder);
   gnomeSourceId = if kb.variant != "" then "${kb.layout}+${kb.variant}" else kb.layout;
 in
 {
@@ -41,15 +42,14 @@ in
 
         settings = {
           globalOptions = {
-            "Hotkey/TriggerKeys" = {
+            "Hotkey/EnumerateForwardKeys" = {
               "0" = "Control+Shift+space";
+            };
+            "Hotkey/EnumerateBackwardKeys" = {
+              "0" = "Control+Alt+Shift+space";
             };
 
             Hotkey = {
-              EnumerateForwardKeys = "";
-              EnumerateBackwardKeys = "";
-              EnumerateGroupForwardKeys = "";
-              EnumerateGroupBackwardKeys = "";
               EnumerateSkipFirst = false;
             };
 
@@ -68,20 +68,13 @@ in
               "Default Layout" = kb.fcitxLayout;
               DefaultIM = "keyboard-${kb.fcitxLayout}";
             };
-            "Groups/0/Items/0" = {
-              Name = "keyboard-${kb.fcitxLayout}";
-              Layout = kb.fcitxLayout;
-            };
-            "Groups/0/Items/1" = {
-              Name = "keyboard-br";
-              Layout = kb.fcitxLayout;
-            };
-            "Groups/0/Items/2" = {
+            "Groups/0/Items/${pinyinIndex}" = {
               Name = "pinyin";
               Layout = "";
             };
             GroupOrder."0" = "Default";
-          };
+          }
+          // keyboardItems;
         };
       };
     };

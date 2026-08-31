@@ -6,21 +6,8 @@
 }:
 
 let
-  keyboardProfiles = {
-    us = {
-      layout = "us";
-      variant = "intl";
-      keyMap = "us-acentos";
-      fcitxLayout = "us-intl";
-    };
-    br = {
-      layout = "br";
-      variant = "thinkpad";
-      keyMap = "br-abnt2";
-      fcitxLayout = "br-thinkpad";
-    };
-  };
-  kb = keyboardProfiles.${config.desktop.keyboard};
+  keyboard = import ./keyboard/profiles.nix;
+  kb = keyboard.profiles.${config.desktop.keyboard};
 in
 {
   options.desktop = {

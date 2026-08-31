@@ -11,6 +11,12 @@ let
     patches = (old.patches or [ ]) ++ [
       ../../packages/mango-monitor-focus.patch
     ];
+
+    postInstall = (old.postInstall or "") + ''
+      substituteInPlace $out/share/wayland-sessions/mango.desktop \
+        --replace-fail "DesktopNames=mango;wlroots" \
+        "DesktopNames=mango;wlroots;X-NIXOS-SYSTEMD-AWARE"
+    '';
   });
 in
 {

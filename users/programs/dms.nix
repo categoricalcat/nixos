@@ -25,7 +25,6 @@ in
         && config.host.desktopShell == "dms"
       )
       {
-
         systemd.user.services.awww = {
           Unit = {
             Description = "awww wallpaper daemon";
@@ -74,12 +73,6 @@ in
             barConfigs = lib.mkForce (
               map (bar: bar // { screenPreferences = config.host.barScreenPreferences; }) dmsSettings.barConfigs
             );
-          };
-
-          session = builtins.fromJSON (builtins.readFile ./dms/session.json) // {
-            wallpaperPath = lib.mkForce "${../../modules/desktop/wallpaper.jpg}";
-            wallpaperPathLight = lib.mkForce "${../../modules/desktop/wallpaper.jpg}";
-            wallpaperPathDark = lib.mkForce "${../../modules/desktop/wallpaper.jpg}";
           };
         };
 

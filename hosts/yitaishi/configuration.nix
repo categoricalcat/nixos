@@ -7,7 +7,7 @@
 }:
 
 let
-  greeter = "ly";
+  greeter = "dms";
   monitors = [
     {
       name = "GSM-0x000083cb";

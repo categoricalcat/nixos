@@ -5,6 +5,7 @@
     "matugenScheme": "scheme-vibrant",
     "widgetBackgroundColor": "sc",
     "cornerRadius": 8,
+    "calendarBackend": "khal",
     "clockFormat": "24h",
     "animationSpeed": 0,
     "barElevationEnabled": false,
@@ -19,10 +20,9 @@
     "workspaceUnfocusedColorMode": "s",
     "runningAppsCurrentWorkspace": false,
     "clockDateFormat": "dddd, d MMMM",
-    "closeNiriOverviewOnWindowFocus": true,
-    "useAutoLocation": true,
     "networkPreference": "wifi",
     "iconThemeDark": "Papirus-Dark",
+    "iconThemeLight": "Papirus-Light",
     "cursorSettings": {
         "dwl": {
             "cursorHideTimeout": 0
@@ -157,7 +157,7 @@
                 }
             ],
             "screenPreferences": [
-                "all"
+                "DP-1"
             ],
             "shadowIntensity": 0,
             "shadowOpacity": 10,
@@ -170,6 +170,32 @@
             "widgetTransparency": 0.48
         }
     ],
+    "desktopClockCustomColor": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1,
+        "hsvHue": -1,
+        "hsvSaturation": 0,
+        "hsvValue": 1,
+        "hslHue": -1,
+        "hslSaturation": 0,
+        "hslLightness": 1,
+        "valid": true
+    },
+    "systemMonitorCustomColor": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1,
+        "hsvHue": -1,
+        "hsvSaturation": 0,
+        "hsvValue": 1,
+        "hslHue": -1,
+        "hslSaturation": 0,
+        "hslLightness": 1,
+        "valid": true
+    },
     "builtInPluginSettings": {
         "dms_settings_search": {
             "trigger": "?"

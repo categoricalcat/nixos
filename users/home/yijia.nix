@@ -10,9 +10,9 @@
     ../../modules/options/host.nix
     ../../modules/options/server-mode.nix
     ../../modules/options/desktop.nix
+    ../../modules/keyboard/fcitx5.nix
     ./common.nix
     ../programs/opencode.nix
-    ../programs/fcitx5.nix
     ../programs/kitty.nix
     ../programs/mprisence.nix
   ];

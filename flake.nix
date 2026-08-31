@@ -197,7 +197,12 @@
     };
 
     mango = {
-      url = "github:mangowm/mango/wl-only";
+      url = "github:mangowm/mango";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    dank-greeter = {
+      url = "github:AvengeMedia/dank-greeter";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
