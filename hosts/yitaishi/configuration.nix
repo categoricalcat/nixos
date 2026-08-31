@@ -86,6 +86,7 @@ in
   host = {
     desktopEnvironment = "mango";
     desktopShell = "dms";
+    barScreenPreferences = [ "DP-1" ];
     vr = true;
     workd = true;
   };

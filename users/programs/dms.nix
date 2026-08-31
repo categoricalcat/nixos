@@ -53,7 +53,7 @@ in
           enableVPN = true; # VPN management widget
           enableDynamicTheming = true; # Wallpaper-based theming (matugen)
           enableAudioWavelength = true; # Audio visualizer (cava)
-          enableCalendarEvents = false; # Calendar integration (khal)
+          enableCalendarEvents = true; # Calendar integration (khal)
           enableClipboardPaste = true; # Clipboard paste wtype
 
           quickshell.package = pkgs.quickshell;
@@ -63,13 +63,17 @@ in
             lockScreenInactiveColor = lib.mkForce "#${colors.base00}";
             currentThemeCategory = lib.mkForce "custom";
             customThemeFile = lib.mkForce "${config.home.homeDirectory}/.config/DankMaterialShell/themes/yimoka.json";
-            iconTheme = lib.mkForce themeAssets.icons.dark;
+            iconThemeDark = lib.mkForce themeAssets.icons.dark;
+            iconThemeLight = lib.mkForce themeAssets.icons.light;
             cursorSettings = dmsSettings.cursorSettings // {
               size = lib.mkForce themeAssets.cursor.size;
               theme = lib.mkForce themeAssets.cursor.name;
             };
             fontFamily = lib.mkForce themeAssets.fonts.sansSerif.name;
             monoFontFamily = lib.mkForce themeAssets.fonts.monospace.name;
+            barConfigs = lib.mkForce (
+              map (bar: bar // { screenPreferences = config.host.barScreenPreferences; }) dmsSettings.barConfigs
+            );
           };
 
           session = builtins.fromJSON (builtins.readFile ./dms/session.json) // {

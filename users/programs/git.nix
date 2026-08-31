@@ -86,6 +86,8 @@ let
   plusBgEmph = blend colors.base00 colors.base0B 42;
 in
 {
+  home.packages = [ pkgs.delta ];
+
   # Include the base dotfiles .gitconfig and override the signing key
   # for NixOS (uses a dedicated git signing key).
   home.file.".gitconfig" = {

@@ -238,6 +238,20 @@ let
         "SUPER+ALT,f"
       ];
     };
+    focusMonitorUp = {
+      description = "Focus Monitor Up (Arrows & Emacs P)";
+      keys = [
+        "SUPER+ALT,Up"
+        "SUPER+ALT,p"
+      ];
+    };
+    focusMonitorDown = {
+      description = "Focus Monitor Down (Arrows & Emacs N)";
+      keys = [
+        "SUPER+ALT,Down"
+        "SUPER+ALT,n"
+      ];
+    };
     moveMonitorLeft = {
       description = "Move Window to Monitor Left (Arrows & Emacs B)";
       keys = [
@@ -252,8 +266,54 @@ let
         "SUPER+ALT+SHIFT,f"
       ];
     };
+    moveMonitorUp = {
+      description = "Move Window to Monitor Up (Arrows & Emacs P)";
+      keys = [
+        "SUPER+ALT+SHIFT,Up"
+        "SUPER+ALT+SHIFT,p"
+      ];
+    };
+    moveMonitorDown = {
+      description = "Move Window to Monitor Down (Arrows & Emacs N)";
+      keys = [
+        "SUPER+ALT+SHIFT,Down"
+        "SUPER+ALT+SHIFT,n"
+      ];
+    };
+
+    # === Mouse & Interactive Controls ===
+    mouseMove = {
+      description = "Move Window with Mouse (Drag)";
+      keys = [
+        "SUPER,btn_left"
+      ];
+    };
+    mouseResize = {
+      description = "Resize Window with Mouse (Drag)";
+      keys = [
+        "SUPER,btn_right"
+      ];
+    };
+    scrollFocusPrev = {
+      description = "Focus Previous Window (Scroll Up)";
+      keys = [
+        "SUPER,UP"
+      ];
+    };
+    scrollFocusNext = {
+      description = "Focus Next Window (Scroll Down)";
+      keys = [
+        "SUPER,DOWN"
+      ];
+    };
 
     # === Layout ===
+    cycleWindowWidth = {
+      description = "Cycle Preset Window / Column Width (Niri & Mango Scroller)";
+      keys = [
+        "SUPER,r"
+      ];
+    };
     switchLayout = {
       description = "Cycle Layout";
       keys = [
@@ -515,10 +575,23 @@ let
       # === Monitor Navigation ===
       ${bindList bindings.focusMonitorLeft "focusmon,left"}
       ${bindList bindings.focusMonitorRight "focusmon,right"}
+      ${bindList bindings.focusMonitorUp "focusmon,up"}
+      ${bindList bindings.focusMonitorDown "focusmon,down"}
       ${bindList bindings.moveMonitorLeft "tagmon,left"}
       ${bindList bindings.moveMonitorRight "tagmon,right"}
+      ${bindList bindings.moveMonitorUp "tagmon,up"}
+      ${bindList bindings.moveMonitorDown "tagmon,down"}
+
+      # === Mouse Bindings ===
+      ${lib.concatMapStringsSep "\n" (k: "mousebind=${k},moveresize,curmove") bindings.mouseMove.keys}
+      ${lib.concatMapStringsSep "\n" (k: "mousebind=${k},moveresize,curresize") bindings.mouseResize.keys}
+
+      # === Mouse Wheel / Axis Bindings ===
+      ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusstack,prev") bindings.scrollFocusPrev.keys}
+      ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusstack,next") bindings.scrollFocusNext.keys}
 
       # === Layout ===
+      ${bindList bindings.cycleWindowWidth "switch_proportion_preset"}
       ${bindList bindings.switchLayout "switch_layout"}
       ${bindList bindings.increaseGaps "incgaps,1"}
       ${bindList bindings.decreaseGaps "incgaps,-1"}

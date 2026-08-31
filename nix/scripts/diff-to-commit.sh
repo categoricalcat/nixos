@@ -28,8 +28,10 @@ echo "Generating commit message using nxd-$agent..."
 msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
 
 flags=(--print)
-if [ "$agent" = "agent" ]; then
-  flags=(--mode ask --trust --print --model auto-cost)
+if [ "$agent" = "agy" ]; then
+  flags=(--dangerously-skip-permissions --print)
+elif [ "$agent" = "agent" ]; then
+  flags=(--mode ask --trust --print --model auto)
 fi
 
 msg="$(nxd-"$agent" "${flags[@]}" "$(

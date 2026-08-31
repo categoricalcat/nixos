@@ -59,7 +59,7 @@ in
 
   host = {
     desktopEnvironment = "niri";
-    desktopShell = "noctalia";
+    desktopShell = "dms";
     workd = true;
   };
 

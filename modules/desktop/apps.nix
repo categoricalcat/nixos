@@ -2,7 +2,7 @@
 
 {
   environment.systemPackages = with pkgs; [
-    vivaldi
+    brave
 
     vscode-fhs
     code-cursor-fhs

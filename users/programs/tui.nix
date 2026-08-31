@@ -54,6 +54,16 @@ in
       lazygit = {
         enable = true;
         package = pkgs.lazygit;
+        settings = {
+          git = {
+            diffRenderers = [
+              {
+                command = "${pkgs.delta}/bin/delta --dark --paging=never --diff-so-fancy";
+                colorArg = "always";
+              }
+            ];
+          };
+        };
       };
 
       gitui = {

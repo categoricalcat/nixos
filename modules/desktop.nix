@@ -106,6 +106,7 @@ in
     services = {
       # Base audio — all desktop hosts get PipeWire
       pulseaudio.enable = false;
+      gvfs.enable = true;
       pipewire = {
         enable = true;
         alsa.enable = true;

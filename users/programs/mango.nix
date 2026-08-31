@@ -160,11 +160,6 @@ in
           "id:*,layout_name:scroller"
         ];
 
-        bindr = [
-          "Super,Super_L,toggleoverview"
-          "Super,Super_R,toggleoverview"
-        ];
-
         scroller_structs = 20;
         scroller_default_proportion = 0.9;
         scroller_prefer_overspread = 1;

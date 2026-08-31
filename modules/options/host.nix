@@ -35,6 +35,13 @@
       description = "Desktop shell running on top of the compositor.";
     };
 
+    barScreenPreferences = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "all" ];
+      example = [ "DP-1" ];
+      description = "Outputs the desktop shell bar is shown on, or \"all\" for every output.";
+    };
+
     developer = lib.mkOption {
       type = lib.types.bool;
       default = config.host.desktopEnvironment != null;
