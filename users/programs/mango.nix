@@ -105,7 +105,6 @@ in
           "WLR_RENDERER,vulkan"
         ];
         hdr_depth = 2;
-        border_radius = dmsSettings.cornerRadius;
         xkb_rules_layout = lib.concatMapStringsSep "," (profile: profile.layout) keyboardProfiles;
         xkb_rules_variant = lib.concatMapStringsSep "," (profile: profile.variant) keyboardProfiles;
 
@@ -123,19 +122,21 @@ in
         globalcolor = "0x${colors.base0E}ff";
         overlaycolor = "0x${colors.base0D}ff";
 
-        # Overview jump mode label colors
+        # Overview jump mode label colors & radius
         jump_label_decorate_fg_color = "0x${colors.base05}ff";
         jump_label_decorate_bg_color = "0x${colors.base01}ff";
         jump_label_decorate_focus_fg_color = "0x${colors.base00}ff";
         jump_label_decorate_focus_bg_color = "0x${colors.base0E}ff";
         jump_label_decorate_border_color = "0x${colors.base0D}ff";
+        jump_label_decorate_corner_radius = dmsSettings.cornerRadius;
 
-        # Tab bar (monocle layout) colors
+        # Tab bar (monocle layout) colors & radius
         group_bar_decorate_fg_color = "0x${colors.base05}ff";
         group_bar_decorate_bg_color = "0x${colors.base01}ff";
         group_bar_decorate_focus_fg_color = "0x${colors.base00}ff";
         group_bar_decorate_focus_bg_color = "0x${colors.base0E}ff";
         group_bar_decorate_border_color = "0x${colors.base0D}ff";
+        group_bar_decorate_corner_radius = dmsSettings.cornerRadius;
 
         # Disable mouse auto-focus (click-to-focus only)
         sloppyfocus = 0;

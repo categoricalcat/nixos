@@ -29,7 +29,11 @@ let
         y = 2160;
       };
       scale = 1.0;
+      vrr = true;
       hdr = true;
+      hdrMaxLum = 400;
+      hdrMaxAvgLum = 400;
+      hdrMinLum = 0.0;
     }
     {
       name = "GSM-0x01010101";
@@ -40,7 +44,10 @@ let
         y = 0;
       };
       scale = 1.0;
+      vrr = true;
       hdr = true;
+      hdrMaxLum = 800;
+      hdrMinLum = 0.0;
     }
   ];
   mkHome = import ../../modules/home-manager.nix;
