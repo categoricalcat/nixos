@@ -46,7 +46,8 @@ let
       scale = 1.0;
       vrr = true;
       hdr = true;
-      hdrMaxLum = 800;
+      hdrMaxLum = 774;
+      hdrMaxAvgLum = 400;
       hdrMinLum = 0.0;
     }
   ];

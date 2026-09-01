@@ -18,11 +18,14 @@ in
       jq
       killall
       ncdu
+      p7zip
       ripgrep
       sops
       stow
       tree
+      unzip
       wget
+      zip
       zsh
     ])
     ++ (builtins.attrValues wrappers);

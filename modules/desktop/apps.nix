@@ -25,7 +25,11 @@
     prismlauncher
     gimp
     file-roller
+    xarchiver
+    unar
     zed-editor
+    gnome-calculator
+    libqalculate
 
     vial
     obsidian

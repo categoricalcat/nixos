@@ -3,6 +3,7 @@
     "currentThemeCategory": "custom",
     "customThemeFile": "~/.config/DankMaterialShell/themes/yimoka.json",
     "matugenScheme": "scheme-vibrant",
+    "centeringMode": "geometric",
     "widgetBackgroundColor": "sc",
     "cornerRadius": 8,
     "calendarBackend": "khal",
