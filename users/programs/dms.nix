@@ -43,6 +43,14 @@ in
           };
         };
 
+        systemd.user.services.dms = {
+          Service = {
+            Environment = [
+              "XDG_DATA_DIRS=/etc/profiles/per-user/${config.home.username}/share:/run/current-system/sw/share"
+            ];
+          };
+        };
+
         programs.dank-material-shell = {
           enable = true;
 
@@ -62,8 +70,8 @@ in
             lockScreenInactiveColor = lib.mkForce "#${colors.base00}";
             currentThemeCategory = lib.mkForce "custom";
             customThemeFile = lib.mkForce "${config.home.homeDirectory}/.config/DankMaterialShell/themes/yimoka.json";
-            iconThemeDark = lib.mkForce themeAssets.icons.dark;
-            iconThemeLight = lib.mkForce themeAssets.icons.light;
+            iconThemeDark = lib.mkForce "System Default";
+            iconThemeLight = lib.mkForce "System Default";
             cursorSettings = dmsSettings.cursorSettings // {
               size = lib.mkForce themeAssets.cursor.size;
               theme = lib.mkForce themeAssets.cursor.name;

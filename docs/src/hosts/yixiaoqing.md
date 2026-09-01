@@ -63,8 +63,8 @@ ______________________________________________________________________
 
 ## 3. Desktop Shell & HiDPI Configuration
 
-- **Compositor**: Niri Wayland scrollable-tiling window manager (`programs.niri.package = pkgs.niri-unstable`) paired with Noctalia desktop shell.
-- **Tuigreet Greeter**: Terminal greeter (`tuigreet`) configured with a custom color palette, remembered sessions, and power shortcuts.
+- **Compositor & Shell**: Niri Wayland scrollable-tiling window manager (`programs.niri.package = pkgs.niri-unstable`) paired with Dank Material Shell (`dms`).
+- **DMS Greeter**: Graphical greeter (`dms-greeter`) powered by Dank Material Shell on Niri.
 - **HiDPI Scaling**: 2880x1800 display rendered at **1.5 fractional scaling** (`QT_QPA_PLATFORM = "wayland"`, `NIXOS_OZONE_WL = "1"`).
 - **Stylix Theming**: Unified dark theme across Niri, GTK, Qt, and terminal utilities.
 - **Lan Mouse KVM**: Seamlessly bridges mouse cursor across left screen boundary onto desktop `yitaishi`.

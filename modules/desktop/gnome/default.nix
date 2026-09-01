@@ -56,6 +56,7 @@ in
     environment.gnome.excludePackages = with pkgs; [
       gnome-tour
       gnome-user-docs
+      nautilus
     ];
 
     home-manager.sharedModules = [ ./home.nix ];
@@ -66,7 +67,6 @@ in
         dconf-editor
 
         loupe
-        nautilus
         showtime
         snapshot
         decibels

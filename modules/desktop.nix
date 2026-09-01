@@ -94,6 +94,7 @@ in
       # Base audio — all desktop hosts get PipeWire
       pulseaudio.enable = false;
       gvfs.enable = true;
+      tumbler.enable = true;
       pipewire = {
         enable = true;
         alsa.enable = true;
@@ -120,6 +121,17 @@ in
     programs = {
       xwayland.enable = true;
       dconf.enable = true;
+      thunar = {
+        enable = true;
+        plugins = with pkgs; [
+          thunar-archive-plugin
+          thunar-volman
+        ];
+      };
+    };
+
+    xdg.mime.defaultApplications = {
+      "inode/directory" = "thunar.desktop";
     };
 
     environment.systemPackages = lib.optionals (config.desktop.environment != "gnome") [
