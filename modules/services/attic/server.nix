@@ -5,7 +5,7 @@
 #
 # Post-deploy bootstrap (on yifuwuqi):
 #   atticd-atticadm make-token --sub "*" --validity "10 years" --pull "*" --push "*" --create-cache "*" --configure-cache "*" --configure-cache-retention "*" --destroy-cache "*"
-#   attic login yi http://127.0.0.1:18203 <admin-token>
+#   attic login yi http://127.0.0.1:24203 <admin-token>
 #   attic cache create yi --public --priority 38
 #   attic cache info yi   # → update trusted-public-keys in modules/services/attic/client.nix
 #   atticd-atticadm make-token --sub "yi" --validity "10 years" --push

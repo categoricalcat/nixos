@@ -26,11 +26,11 @@ ______________________________________________________________________
 │  └───────────┬───────────┘  ││  └───────────┬───────────┘  │
 └──────────────┼──────────────┘└──────────────┼──────────────┘
                │                              │
-               │ L2 Cache (10.42.0.2:6379)    │ L2 Cache (Local Socket/LAN)
+               │ L2 Cache (10.42.0.2:24379)   │ L2 Cache (Local Socket/LAN)
                ▼                              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 Valkey Shared L2 DNS Cache                  │
-│                     (on yifuwuqi:6379)                      │
+│                     (on yifuwuqi:24379)                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -38,7 +38,7 @@ Both `yirukou` (router) and `yifuwuqi` (server) run identical, synchronized DNS 
 
 ### 1.1 AdGuard Home (The Edge Filter)
 
-- **Binding**: Listens on `0.0.0.0:53` (Web management UI on port `3333`).
+- **Binding**: Listens on `0.0.0.0:53` (Web management UI on port `24333` on `yifuwuqi`, `3333` on `yirukou`).
 - **Memory Caching**: 64 MiB in-memory cache (`cache_enabled = true`, `cache_optimistic = true`, `cache_ttl_max = 300`) with `GOMEMLIMIT = 2560MiB`.
 - **Filtering Blocklists**:
   - `Hagezi Multi PRO++` (Comprehensive tracker & malware protection)
@@ -57,7 +57,7 @@ Both `yirukou` (router) and `yifuwuqi` (server) run identical, synchronized DNS 
 ### 1.2 Unbound (The Recursive Root Resolver)
 
 - **Binding**: Listens on `127.0.0.1:5335` (`access-control = [ "127.0.0.0/8 allow" ]`).
-- **Shared Valkey L2 Cache**: Configured with `module-config: "validator cachedb iterator"`. Connects to the centralized Valkey instance on `yifuwuqi` (`10.42.0.2:6379`). Both hosts share identical cached DNS records across reboots.
+- **Shared Valkey L2 Cache**: Configured with `module-config: "validator cachedb iterator"`. Connects to the centralized Valkey instance on `yifuwuqi` (`10.42.0.2:24379`). Both hosts share identical cached DNS records across reboots.
 - **Stale-While-Revalidate (SWR)**: `serve-expired = "yes"`, `serve-expired-ttl = 86400`, `serve-expired-reply-ttl = 30` ensures queries are answered immediately from cache while background tasks revalidate expiring records.
 - **Control Socket & Metrics**: Control socket `/run/unbound/unbound.ctl` allows CLI inspection via `unbound-control` and feeds the Prometheus `unbound-exporter` with extended metrics.
 
@@ -80,17 +80,17 @@ ______________________________________________________________________
 │ dns.fufu.land                │ 127.0.0.1:3333/dns-query     │
 │ goaccess.fufu.land           │ /var/lib/goaccess + :7890 ws │
 ├──────────────────────────────┼──────────────────────────────┤
-│ docs.fufu.land               │ 10.42.0.2:8083 (yifuwuqi)    │
-│ grafana.fufu.land            │ 10.42.0.2:3000 (yifuwuqi)    │
-│ cockpit.fufu.land            │ 10.42.0.2:9090 (yifuwuqi)    │
-│ search.fufu.land             │ 10.42.0.2:8888 (yifuwuqi)    │
-│ attic.fufu.land              │ 10.42.0.2:18203 (yifuwuqi)   │
-│ git.fufu.land (Forgejo)      │ 10.42.0.2:3001 (yifuwuqi)    │
+│ docs.fufu.land               │ 10.42.0.2:24083 (yifuwuqi)   │
+│ grafana.fufu.land            │ 10.42.0.2:24030 (yifuwuqi)   │
+│ cockpit.fufu.land            │ 10.42.0.2:24091 (yifuwuqi)   │
+│ search.fufu.land             │ 10.42.0.2:24888 (yifuwuqi)   │
+│ attic.fufu.land              │ 10.42.0.2:24203 (yifuwuqi)   │
+│ git.fufu.land (Forgejo)      │ 10.42.0.2:24200 (yifuwuqi)   │
 │ prtnr.fufu.land (Portainer)  │ 10.42.0.2:9443 (yifuwuqi)    │
-│ agent.fufu.land (Opencode)   │ 10.42.0.2:3010 (yifuwuqi)    │
-│ sillytavern.fufu.land        │ 10.42.0.2:8000 (yifuwuqi)    │
-│ homepage.fufu.land           │ 10.42.0.2:8082 (yifuwuqi)    │
-│ radarr / sonarr / prowlarr...│ 10.42.0.2:7878/8989... (Arr) │
+│ agent.fufu.land (Opencode)   │ 10.42.0.2:24010 (yifuwuqi)   │
+│ sillytavern.fufu.land        │ 10.42.0.2:24000 (yifuwuqi)   │
+│ homepage.fufu.land           │ 10.42.0.2:24082 (yifuwuqi)   │
+│ radarr / sonarr / prowlarr...│ 10.42.0.2:24878/24989...(Arr)│
 └──────────────────────────────┴──────────────────────────────┘
 ```
 

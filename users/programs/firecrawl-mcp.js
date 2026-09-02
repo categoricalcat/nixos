@@ -12,7 +12,7 @@
 // Zero dependencies: plain node (>=18, global fetch), newline-delimited
 // JSON-RPC over stdio.
 
-const API = (process.env.FIRECRAWL_API_URL || "http://localhost:3002").replace(/\/$/, "");
+const API = (process.env.FIRECRAWL_API_URL || "http://localhost:24002").replace(/\/$/, "");
 
 const TOOLS = [
   {

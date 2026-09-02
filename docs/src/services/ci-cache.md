@@ -135,7 +135,7 @@ Run on `yifuwuqi` after `atticd` is running.
 cd /tmp
 nix shell github:zhaofengli/attic#attic-client
 admin_token=$(sudo atticd-atticadm make-token --sub 'admin' --validity '10 years' --pull '*' --push '*' --create-cache '*' --configure-cache '*' --configure-cache-retention '*' --destroy-cache '*' | tr -d '\r')
-attic login yi http://127.0.0.1:18203 "$admin_token"
+attic login yi http://127.0.0.1:24203 "$admin_token"
 attic cache create yi --public --priority 38
 attic cache info yi
 push_token=$(sudo atticd-atticadm make-token --sub 'yi' --validity '10 years' --push 'yi' | tr -d '\r')

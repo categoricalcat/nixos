@@ -103,8 +103,8 @@ LAN addresses through the advertised subnet, not only direct Tailscale IPs.
 - Gateway traffic: `yirukou` reverse proxy and DNS resolver traffic allowed.
 - Container least-privilege isolation:
   - DNS resolution: UDP/TCP `53` allowed from container subnets (`10.88.0.0/16`, `172.17.0.0/16`, `172.18.0.0/16`).
-  - Scoped host API access: TCP `8686` (Lidarr for soularr) and TCP `8888` (SearXNG for firecrawl) allowed explicitly.
-  - Default drop: All other host ports (SSH `24212`, Cockpit `9091`, PostgreSQL `5432`, Valkey `6379`, Prometheus `9090`, Samba `445`, Exporters) are dropped for container subnets.
+  - Scoped host API access: TCP `24686` (Lidarr for soularr) and TCP `24888` (SearXNG for firecrawl) allowed explicitly.
+  - Default drop: All other host ports (SSH `24212`, Cockpit `24091`, PostgreSQL `5432`, Valkey `24379`, Prometheus `24090`, Samba `445`, Exporters) are dropped for container subnets.
 - Forwarding isolation:
   - Containers are blocked from forwarding to private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`).
 

@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   allAddresses,
   ...
 }:
@@ -43,18 +44,22 @@ in
     radarr = {
       enable = true;
       group = "media";
+      settings.server.port = addrs.services.radarr.port;
     };
     sonarr = {
       enable = true;
       group = "media";
+      settings.server.port = addrs.services.sonarr.port;
     };
     lidarr = {
       enable = true;
       group = "media";
+      settings.server.port = addrs.services.lidarr.port;
     };
     readarr = {
       enable = true;
       group = "media";
+      settings.server.port = addrs.services.readarr.port;
     };
     bazarr = {
       enable = true;
@@ -71,6 +76,7 @@ in
     };
     prowlarr = {
       enable = true;
+      settings.server.port = addrs.services.prowlarr.port;
     };
 
     recyclarr = {
@@ -114,13 +120,13 @@ in
       # 8080 is taken by qBittorrent inside the shared namespace; the host
       # publishes this port through gluetun.
       PORT = toString addrs.services.torrent-indexer.port;
-      FLARESOLVERR_URL = "http://127.0.0.1:${toString addrs.services.flaresolverr.port}";
+      # Same netns as FlareSolverr: use the in-container listen port, not the host publish.
+      FLARESOLVERR_URL = "http://127.0.0.1:${toString addrs.services.flaresolverr.internalPort}";
     };
   };
 
   systemd.services = {
     radarr = {
-      environment.RADARR__SERVER__PORT = toString addrs.services.radarr.port;
       serviceConfig = {
         EnvironmentFile = config.sops.templates."arr-secrets.env".path;
         UMask = lib.mkForce "0002";
@@ -131,7 +137,6 @@ in
       };
     };
     sonarr = {
-      environment.SONARR__SERVER__PORT = toString addrs.services.sonarr.port;
       serviceConfig = {
         EnvironmentFile = config.sops.templates."arr-secrets.env".path;
         UMask = lib.mkForce "0002";
@@ -142,7 +147,6 @@ in
       };
     };
     lidarr = {
-      environment.LIDARR__SERVER__PORT = toString addrs.services.lidarr.port;
       serviceConfig = {
         EnvironmentFile = config.sops.templates."arr-secrets.env".path;
         UMask = lib.mkForce "0002";
@@ -153,7 +157,6 @@ in
       };
     };
     readarr = {
-      environment.READARR__SERVER__PORT = toString addrs.services.readarr.port;
       serviceConfig = {
         EnvironmentFile = config.sops.templates."arr-secrets.env".path;
         UMask = lib.mkForce "0002";
@@ -173,6 +176,19 @@ in
       };
     };
     jellyfin = {
+      # Jellyfin has no declarative port option: InternalHttpPort lives in
+      # mutable network.xml. Only rewrite listen ports on an existing file;
+      # PublicHttpPort is advertised/UPnP and stays untouched.
+      preStart = lib.mkBefore ''
+        networkXml=${lib.escapeShellArg "${config.services.jellyfin.configDir}/network.xml"}
+        port=${toString addrs.services.jellyfin.port}
+        if [ -e "$networkXml" ]; then
+          ${pkgs.gnused}/bin/sed -i \
+            -e "s|<InternalHttpPort>[0-9]*</InternalHttpPort>|<InternalHttpPort>$port</InternalHttpPort>|" \
+            -e "s|<HttpServerPortNumber>[0-9]*</HttpServerPortNumber>|<HttpServerPortNumber>$port</HttpServerPortNumber>|" \
+            "$networkXml"
+        fi
+      '';
       serviceConfig = {
         UMask = lib.mkForce "0002";
         PrivateUsers = lib.mkForce "identity";
@@ -189,7 +205,6 @@ in
       };
     };
     prowlarr = {
-      environment.PROWLARR__SERVER__PORT = toString addrs.services.prowlarr.port;
       serviceConfig = {
         EnvironmentFile = config.sops.templates."arr-secrets.env".path;
         IPAddressDeny = lib.mkForce [ ];

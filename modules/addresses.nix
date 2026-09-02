@@ -255,17 +255,17 @@ in
       services = {
         grafana = {
           domain = "grafana.fufu.land";
-          port = 3030;
+          port = 24030;
         };
         prometheus = {
-          port = 9090;
+          port = 24090;
         };
         cockpit = {
           domain = "cockpit.fufu.land";
-          port = 9091;
+          port = 24091;
         };
         loki = {
-          port = 3100;
+          port = 24100;
         };
         postgresql = rec {
           packageAttr = "postgresql_18";
@@ -280,67 +280,71 @@ in
         };
         forgejo = {
           domain = "git.fufu.land";
-          httpPort = 18200;
+          httpPort = 24200;
         };
         attic = {
           domain = "cache.fufu.land";
-          port = 18203;
+          port = 24203;
           cacheName = "yi";
         };
         radarr = {
           domain = "radarr.fufu.land";
-          port = 7878;
+          port = 24878;
         };
         sonarr = {
           domain = "sonarr.fufu.land";
-          port = 8989;
+          port = 24989;
         };
         lidarr = {
           domain = "lidarr.fufu.land";
-          port = 8686;
+          port = 24686;
         };
         readarr = {
           domain = "readarr.fufu.land";
-          port = 8787;
+          port = 24787;
         };
         prowlarr = {
           domain = "prowlarr.fufu.land";
-          port = 9696;
+          port = 24696;
         };
         torrent-indexer = {
           domain = "torrent-indexer.fufu.land";
-          port = 8181;
+          port = 24181;
         };
         bazarr = {
           domain = "bazarr.fufu.land";
-          port = 6767;
+          port = 24767;
         };
         jellyfin = {
           domain = "jellyfin.fufu.land";
-          port = 8096;
+          port = 24096;
         };
         jellyseerr = {
           domain = "jellyseerr.fufu.land";
-          port = 5055;
+          port = 24055;
         };
         flaresolverr = {
           domain = "flaresolverr.fufu.land";
-          port = 8191;
+          port = 24191;
+          # Gluetun netns listen port; host publish is `port:internalPort`.
+          internalPort = 8191;
         };
         qbittorrent = {
           domain = "qbittorrent.fufu.land";
-          port = 8080;
+          port = 24080;
         };
         slskd = {
           domain = "slskd.fufu.land";
-          port = 5030;
+          # 24030 is taken by grafana, so this one keeps its leading 5
+          port = 24530;
           listenPort = 2234;
         };
         homepage = {
           domain = "home.fufu.land";
-          port = 8082;
+          port = 24082;
         };
         adguardhome = sharedServices.adguardhome // {
+          port = 24333;
           dnsBindHosts = [
             "127.0.0.1"
             "10.42.0.2"
@@ -350,25 +354,25 @@ in
         };
         searxng = {
           domain = "search.fufu.land";
-          port = 8888;
+          port = 24888;
         };
         valkey = {
-          port = 6379;
+          port = 24379;
           host = network.lan.ipv4.host;
         };
         opencode = {
-          port = 3010;
+          port = 24010;
         };
         firecrawl = {
-          port = 3002;
+          port = 24002;
         };
         sillytavern = {
           domain = "companion.fufu.land";
-          port = 8000;
+          port = 24000;
         };
         docs = {
           domain = "docs.fufu.land";
-          port = 8083;
+          port = 24083;
         };
       };
 

@@ -8,13 +8,13 @@ This runbook documents the forwarding issue that appeared when reaching
 From a tailnet client, direct access to `yifuwuqi` over Tailscale worked:
 
 ```sh
-nc -zv 100.69.0.6 3333
+nc -zv 100.69.0.6 24333
 ```
 
 The same service over the LAN address timed out:
 
 ```sh
-nc -zv 10.42.0.2 3333 -w 4
+nc -zv 10.42.0.2 24333 -w 4
 ```
 
 The two addresses are the same destination host:
@@ -36,8 +36,8 @@ AdGuard Home on `yifuwuqi` was already listening on all IPv4 addresses:
 ```nix
 services.adguardhome = {
   host = "0.0.0.0";
-  port = 3333;
-  settings.http.address = "0.0.0.0:3333";
+  port = 24333;
+  settings.http.address = "0.0.0.0:24333";
 };
 ```
 
@@ -74,8 +74,8 @@ nix eval .#nixosConfigurations.yirukou.config.networking.firewall.extraForwardRu
 After switching `yirukou`, test from a tailnet client:
 
 ```sh
-nc -zv 10.42.0.2 3333 -w 4
-curl -I http://10.42.0.2:3333/
+nc -zv 10.42.0.2 24333 -w 4
+curl -I http://10.42.0.2:24333/
 ```
 
 If it still times out, inspect live state on `yirukou`:

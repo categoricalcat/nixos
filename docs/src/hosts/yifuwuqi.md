@@ -37,7 +37,7 @@ ______________________________________________________________________
 - **Socket Buffer Ceiling**: 64 MiB max read/write buffers (`net.core.rmem_max = 67108864`, `net.core.wmem_max = 67108864`).
 - **Nginx Tail Latency Optimization**: `net.ipv4.tcp_notsent_lowat = 16384` (16 KB bounded un-sent buffer).
 - **Foreign Route Preservation**: `ManageForeignRoutes = false` in `eno1.nix` prevents `systemd-networkd` from stripping the Keepalived default route on daemon reload.
-- **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`) to reach host DNS and specific service APIs (Lidarr 8686, SearXNG 8888) while dropping all forwarding to private subnets.
+- **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`) to reach host DNS and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets.
 
 ______________________________________________________________________
 
@@ -67,7 +67,7 @@ ______________________________________________________________________
 
 ### 3.2 Valkey In-Memory Key-Value Store
 
-- Bound to `0.0.0.0:6379` with `protected-mode no` (firewall-protected).
+- Bound to `0.0.0.0:24379` with `protected-mode no` (firewall-protected).
 - Memory limit: 1 GB with `allkeys-lru` eviction policy.
 - **DB 0**: Shared L2 DNS cache for Unbound instances on both `yifuwuqi` and `yirukou`.
 - **DB 1**: Rate limiting backend for SearXNG.
@@ -84,13 +84,13 @@ ______________________________________________________________________
 
 ### 4.1 Attic Binary Cache
 
-- **Attic Server (`atticd`)**: Port `18203` (`attic.fufu.land`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
+- **Attic Server (`atticd`)**: Port `24203` (`attic.fufu.land`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
 - **Attic Watch-Store (`attic-watch-store.service`)**: Daemon running under user `nix-builder` that watches `/nix/store` and pushes new paths in real time (`-j 10`).
 - **Attic Closure-Keeper (`attic-closure-keeper.timer`)**: Runs every 15 minutes to guarantee all `-nixos-system-` closures are pinned and pushed.
 
 ### 4.2 Git Forge & Actions Runners
 
-- **Forgejo (`git.fufu.land`)**: Port 3001, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
+- **Forgejo (`git.fufu.land`)**: Port 24200, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
 - **Forgejo Actions Runner (`gitea-runner-yifuwuqi`)**: Native host runner (`native:host` label) under `nix-builder` user. Systemd sandbox is intentionally relaxed so builds can access `/nix/store` and mount namespaces. Automatically injects Attic push credentials.
 - **GitHub Actions Runner**: Dedicated self-hosted runner targeting `categoricalcat/nixos` with `setup-ci-env` integration.
 - **Distributed Builder**: Pinned host keys in `secrets/keys.nix`, accepts up to 16 concurrent Nix build jobs.
@@ -106,22 +106,22 @@ ______________________________________________________________________
 │ llama.cpp (Vulkan)           │ qwen3.6-35b-abliterated      │
 │ (Radeon 680M APU)            │ port 11437, 16k context      │
 ├──────────────────────────────┼──────────────────────────────┤
-│ SillyTavern Web UI           │ port 8000, hardened systemd  │
+│ SillyTavern Web UI           │ port 24000, hardened systemd │
 ├──────────────────────────────┼──────────────────────────────┤
-│ SearXNG (Tor SOCKS5)         │ port 8888, "yi search"       │
+│ SearXNG (Tor SOCKS5)         │ port 24888, "yi search"      │
 ├──────────────────────────────┼──────────────────────────────┤
-│ Firecrawl (5 Containers)     │ port 3002, SearXNG search    │
+│ Firecrawl (5 Containers)     │ port 24002, SearXNG search   │
 ├──────────────────────────────┼──────────────────────────────┤
-│ Opencode Server              │ port 3010, agent daemon      │
+│ Opencode Server              │ port 24010, agent daemon     │
 └──────────────────────────────┴──────────────────────────────┘
 ```
 
 - **Vulkan llama-cpp Serving (`llama-cpp-node`)**: Runs `llama-server` instances with Vulkan acceleration (`vulkanSupport = true`) on the Radeon 680M APU.
   - Active model: **`qwen3.6-35b-abliterated`** (port `11437`, IQ2_M quantization, 16,384 context length, FlashAttention enabled, Q8 KV cache, 5-minute idle sleep).
-- **SillyTavern Companion UI**: Port 8000 (`sillytavern.fufu.land`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
-- **SearXNG Privacy Metasearch**: Port 8888 (`search.fufu.land`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
+- **SillyTavern Companion UI**: Port 24000 (`sillytavern.fufu.land`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
+- **SearXNG Privacy Metasearch**: Port 24888 (`search.fufu.land`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
-- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 3010 (`agent.fufu.land`).
+- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.fufu.land`).
 
 ______________________________________________________________________
 
@@ -130,21 +130,22 @@ ______________________________________________________________________
 Running in a secure hybrid arrangement: network-isolated containers share a ProtonVPN namespace, while management services run natively on host.
 
 - **VPN Network Namespace (Gluetun)**: OCI container running ProtonVPN WireGuard tunnel.
-  - **qBittorrent**: Web UI on port `8080` inside Gluetun namespace.
-  - **Slskd & Soularr**: Soulseek daemon (port `5030`) and automated downloader inside Gluetun namespace.
-  - **FlareSolverr & Torrent-Indexer**: Port `8191` inside Gluetun namespace.
+  - **qBittorrent**: Web UI on port `8080` inside Gluetun namespace, published on the host as `24080`.
+  - **Slskd & Soularr**: Soulseek daemon (web `24530` inside the namespace and on the host) and automated downloader inside Gluetun namespace.
+  - **FlareSolverr**: listens on `8191` inside Gluetun, published on the host as `24191`.
+  - **Torrent-Indexer**: `24181` inside Gluetun and on the host.
 - **Native Host Media Daemons**:
-  - Radarr (port 7878), Sonarr (port 8989), Lidarr (port 8686), Readarr (port 8787), Bazarr (port 6767), Prowlarr (port 9696).
-  - Jellyfin Media Server (port 8096), Jellyseerr / Seerr (port 5055).
+  - Radarr (port 24878), Sonarr (port 24989), Lidarr (port 24686), Readarr (port 24787), Bazarr (port 24767), Prowlarr (port 24696).
+  - Jellyfin Media Server (port 24096), Jellyseerr / Seerr (port 24055).
   - Recyclarr declarative quality profile sync.
 
 ______________________________________________________________________
 
 ## 7. Monitoring & Central Observability
 
-- **Prometheus**: Port 9090, 30-day retention, 15-second scrape intervals, dynamic scrape job generation for all fleet exporters.
-- **Grafana**: Port 3000 (`grafana.fufu.land`), PostgreSQL backend, anonymous Viewer role, declarative Nix-provisioned dashboards (Systemd Units, Services Overview, Fail2ban, Prometheus, Loki, Grafana, Postgres, Valkey, AdGuard, Unbound).
-- **Loki**: Port 3100, TSDB schema v13, 7-day retention period.
+- **Prometheus**: Port 24090, 30-day retention, 15-second scrape intervals, dynamic scrape job generation for all fleet exporters.
+- **Grafana**: Port 24030 (`grafana.fufu.land`), PostgreSQL backend, anonymous Viewer role, declarative Nix-provisioned dashboards (Systemd Units, Services Overview, Fail2ban, Prometheus, Loki, Grafana, Postgres, Valkey, AdGuard, Unbound).
+- **Loki**: Port 24100, TSDB schema v13, 7-day retention period.
 - **Vector**: Ships host journald logs directly to local Loki.
 - **Exporters Running**:
   - `node-exporter` (9100), `systemd-exporter` (9558), `smartctl-exporter` (9633)
@@ -156,11 +157,11 @@ ______________________________________________________________________
 
 ## 8. General Administration & Hosted Services
 
-- **Homepage Dashboard**: Port 8082 (`homepage.fufu.land`), 5-column layout with ping health checks and resource widgets.
-- **Cockpit**: Port 9090 (`cockpit.fufu.land`), server admin web console.
+- **Homepage Dashboard**: Port 24082 (`homepage.fufu.land`), 5-column layout with ping health checks and resource widgets.
+- **Cockpit**: Port 24091 (`cockpit.fufu.land`), server admin web console.
 - **Portainer CE**: Port 9443 (`prtnr.fufu.land`), Podman container management.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
-- **AdGuard Home & Unbound**: Secondary resolver instance (`10.42.0.2:53` $\\to$ `127.0.0.1:5335`).
+- **AdGuard Home & Unbound**: Secondary resolver instance (`10.42.0.2:53` $\\to$ `127.0.0.1:5335`), web UI on port 24333.
 
 ______________________________________________________________________
 

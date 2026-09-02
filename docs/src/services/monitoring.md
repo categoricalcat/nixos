@@ -20,13 +20,13 @@ ______________________________________________________________________
 │              │                               ▼              │
 │  ┌───────────┴─────────────┐     ┌───────────────────────┐  │
 │  │ Prometheus Server       │     │ Loki Log Server       │  │
-│  │ (30d retention, :9090)  │     │ (7d retention, :3100) │  │
+│  │ (30d retention, :24090) │     │ (7d retention, :24100)│  │
 │  └───────────┬─────────────┘     └───────────┬───────────┘  │
 │              │                               │              │
 │              └───────────────┬───────────────┘              │
 │                              │ Datasources                  │
 │  ┌───────────────────────────▼───────────────────────────┐  │
-│  │ Grafana Visualization Server (:3000)                  │  │
+│  │ Grafana Visualization Server (:24030)                 │  │
 │  │ • PostgreSQL Backend                                  │  │
 │  │ • Declarative JSON / Nix Provisioned Dashboards       │  │
 │  │ • Anonymous Viewer Access                             │  │
@@ -45,17 +45,17 @@ ______________________________________________________________________
 
 Exporters are declaratively registered in `modules/addresses.nix` under `allAddresses.monitoring.exporters` and dynamically instantiated on hosts via `modules/services/monitoring/exporters.nix`:
 
-| Exporter           | Default Port | Target Hosts          | Scrape Interval | Connection / Backend                          |
-| ------------------ | ------------ | --------------------- | --------------- | --------------------------------------------- |
-| **Node**           | `9100`       | `yifuwuqi`, `yirukou` | `15s`           | Systemd collectors enabled                    |
-| **Systemd**        | `9558`       | `yifuwuqi`, `yirukou` | `15s`           | Monitored unit state                          |
-| **Smartctl**       | `9633`       | `yifuwuqi`, `yirukou` | `60s`           | Storage drive SMART health                    |
-| **Nginx**          | `9113`       | `yirukou`             | `15s`           | `http://127.0.0.1/nginx_status`               |
-| **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`           | Local jail metrics                            |
-| **Postgres**       | `9187`       | `yifuwuqi`            | `15s`           | `postgres://postgres@127.0.0.1:5432/postgres` |
-| **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`           | Custom exporter scraping AGH API (:3333)      |
-| **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`           | Unix socket `/run/unbound/unbound.ctl`        |
-| **Redis / Valkey** | `9121`       | `yifuwuqi`            | `15s`           | Unix socket `/run/redis/redis.sock`           |
+| Exporter           | Default Port | Target Hosts          | Scrape Interval | Connection / Backend                              |
+| ------------------ | ------------ | --------------------- | --------------- | ------------------------------------------------- |
+| **Node**           | `9100`       | `yifuwuqi`, `yirukou` | `15s`           | Systemd collectors enabled                        |
+| **Systemd**        | `9558`       | `yifuwuqi`, `yirukou` | `15s`           | Monitored unit state                              |
+| **Smartctl**       | `9633`       | `yifuwuqi`, `yirukou` | `60s`           | Storage drive SMART health                        |
+| **Nginx**          | `9113`       | `yirukou`             | `15s`           | `http://127.0.0.1/nginx_status`                   |
+| **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`           | Local jail metrics                                |
+| **Postgres**       | `9187`       | `yifuwuqi`            | `15s`           | `postgres://postgres@127.0.0.1:5432/postgres`     |
+| **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`           | Custom exporter scraping AGH API (:24333 / :3333) |
+| **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`           | Unix socket `/run/unbound/unbound.ctl`            |
+| **Redis / Valkey** | `9121`       | `yifuwuqi`            | `15s`           | Unix socket `/run/redis/redis.sock`               |
 
 Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface with `FreeBind = true`.
 
@@ -63,13 +63,13 @@ ______________________________________________________________________
 
 ## 3. Grafana & Declarative Dashboards (`modules/services/monitoring/grafana.nix`)
 
-- **Domain**: `https://grafana.fufu.land` (proxied to port `3000`).
+- **Domain**: `https://grafana.fufu.land` (proxied to port `24030`).
 - **Database Engine**: PostgreSQL socket connection (`type = "postgres"`, database `grafana`).
 - **Authentication**: Form login disabled, anonymous access enabled with default `Viewer` organization role.
 - **Secrets**: `services/grafana/secret-key` managed via Sops-nix.
 - **Provisioned Data Sources**:
-  - `Prometheus` (default, uid: `prometheus`, url: `http://127.0.0.1:9090`)
-  - `Loki` (uid: `loki`, url: `http://10.42.0.2:3100`)
+  - `Prometheus` (default, uid: `prometheus`, url: `http://127.0.0.1:24090`)
+  - `Loki` (uid: `loki`, url: `http://10.42.0.2:24100`)
 - **Provisioned Dashboards**:
   - **Vendored JSON Dashboards**: `adguard.json` (grafana.com 23579 rev 3) and `unbound.json` (grafana.com 21006), sanitized during Nix build with `jq` to remove stale IDs and remap datasources.
   - **Nix Declarative Dashboards**: `systemd-units.json`, `services-overview.json`, `fail2ban.json`, `prometheus.json`, `loki.json`, `grafana.json`, `postgres.json`, `valkey.json`.
@@ -81,7 +81,7 @@ ______________________________________________________________________
 Log shipping uses **Vector** (`services.vector`):
 
 - **Source**: `sources.journald.type = "journald"` with full systemd journal access.
-- **Sink**: `sinks.loki.type = "loki"` pointing to `http://10.42.0.2:3100`.
+- **Sink**: `sinks.loki.type = "loki"` pointing to `http://10.42.0.2:24100`.
 - **Labels Attached**: `host = <hostName>`, `job = "systemd-journal"`.
 
 ______________________________________________________________________

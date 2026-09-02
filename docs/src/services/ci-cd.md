@@ -67,7 +67,7 @@ ______________________________________________________________________
 - **Labels**: `["native:host"]`.
 - **Execution User**: `nix-builder:nogroup`.
 - **Sandboxing Policy**: Default systemd sandboxing (`ProtectSystem`, `ProtectHome`, `PrivateUsers`, `PrivateMounts`) is explicitly relaxed so builds can interact directly with `/nix/store` and utilize Linux mount namespaces.
-- **Attic Push Integration**: Injects `ATTIC_INTERNAL_URL = "http://yifuwuqi:18203"` and `ATTIC_CACHE_NAME = "yi"` into the runner environment.
+- **Attic Push Integration**: Injects `ATTIC_INTERNAL_URL = "http://yifuwuqi:24203"` and `ATTIC_CACHE_NAME = "yi"` into the runner environment.
 
 ### 4.2 GitHub Actions Runner (`modules/services/github-runner.nix`)
 

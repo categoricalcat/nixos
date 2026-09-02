@@ -28,7 +28,7 @@ ______________________________________________________________________
           ▼                   ▼                   ▼
 ┌──────────────────┐┌──────────────────┐┌──────────────────┐
 │ SillyTavern UI   ││ Opencode Agent   ││ Firecrawl MCP    │
-│ (:8000 Web UI)   ││ (:3010 Agent)    ││ (Stdio Scraper)  │
+│ (:24000 Web UI)  ││ (:24010 Agent)   ││ (Stdio Scraper)  │
 └──────────────────┘└──────────────────┘└──────────────────┘
 ```
 
@@ -65,12 +65,12 @@ ______________________________________________________________________
 
 ### 4.1 SillyTavern Companion (`modules/services/ai/sillytavern.nix`)
 
-- **Domain**: `https://sillytavern.fufu.land` (proxied to port `8000`).
+- **Domain**: `https://sillytavern.fufu.land` (proxied to port `24000`).
 - **Security**: Strict systemd isolation under dedicated user `sillytavern`. Pre-start script automatically bootstraps default settings and enables network listening with security overrides.
 
 ### 4.2 Opencode Agent Server (`modules/services/opencode.nix`)
 
-- **Domain**: `https://agent.fufu.land` (proxied to port `3010`).
+- **Domain**: `https://agent.fufu.land` (proxied to port `24010`).
 - **Configuration**: Runs as user `yi:yi`, providing a persistent backend for autonomous coding workflows.
 
 ### 4.3 Firecrawl MCP Server (`users/programs/firecrawl-mcp.js`)

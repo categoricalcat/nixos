@@ -18,7 +18,7 @@ AdGuard Home (:53)
         ▼
 Unbound Recursive Resolver (127.0.0.1:5335)
   ├── 1. Inspects local memory RRset / message cache
-  ├── 2. Queries shared Valkey L2 Cache (on yifuwuqi:6379)
+  ├── 2. Queries shared Valkey L2 Cache (on yifuwuqi:24379)
   │      └── Both yirukou & yifuwuqi share the same L2 database
   └── 3. If cold across all caches: performs recursive root lookup
          └── Returns answer to AdGuard Home & saves to Valkey L2
@@ -32,7 +32,7 @@ ______________________________________________________________________
 - **Shared Valkey L2 Cache**: Configured via `cachedb` module (`module-config: "validator cachedb iterator"`):
   - Backend: `cachedb-backend: "redis"`
   - Server: `cachedb-host: 10.42.0.2` (on `yirukou`) or `127.0.0.1` (on `yifuwuqi`)
-  - Port: `6379`
+  - Port: `24379`
 - **Stale-While-Revalidate (SWR)**:
   - `serve-expired = "yes"`
   - `serve-expired-ttl = 86400` (1 day max stale serving window)

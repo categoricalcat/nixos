@@ -105,7 +105,7 @@ in
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:3333";
+          proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}";
         };
       };
 
@@ -114,7 +114,7 @@ in
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/dns-query" = {
-          proxyPass = "http://127.0.0.1:3333/dns-query";
+          proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}/dns-query";
         };
       };
 
@@ -159,7 +159,7 @@ in
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:8888";
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.searxng.port}";
           extraConfig = ''
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Proto $scheme;
@@ -214,7 +214,7 @@ in
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:3010";
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.opencode.port}";
           proxyWebsockets = true;
           extraConfig = ''
             proxy_set_header X-Forwarded-Host $host;

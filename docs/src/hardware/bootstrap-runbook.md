@@ -152,7 +152,7 @@ ______________________________________________________________________
 
 ```bash
 # 1. Login to Attic server
-attic login local http://127.0.0.1:18203 <admin-token>
+attic login local http://127.0.0.1:24203 <admin-token>
 
 # 2. Create the default binary cache
 attic cache create yi --public --priority 38

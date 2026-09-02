@@ -70,7 +70,7 @@ ______________________________________________________________________
 
 Every host in the fleet automatically imports `modules/services/attic/client.nix` via `modules/nix-settings.nix`:
 
-- **Substituter URL**: `https://cache.fufu.land/yi` (or direct LAN `http://10.42.0.2:18203/yi`)
+- **Substituter URL**: `https://cache.fufu.land/yi` (or direct LAN `http://10.42.0.2:24203/yi`)
 - **Pinned Public Key**: `yi:wLUC4OacKKUxGtnXwIxTFGBlLwvJ9IU4BNP5OBDQO60=`
 
 When any machine activates a new system generation, pre-built store paths are substituted from Attic rather than re-compiled locally.

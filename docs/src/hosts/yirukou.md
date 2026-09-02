@@ -114,7 +114,7 @@ ______________________________________________________________________
 ### 5.1 Primary DNS Stack
 
 - **AdGuard Home**: Listens on `0.0.0.0:53` (Web UI on `3333`). Optimistic 64 MiB caching, Hagezi Multi PRO++ and TIF blocklists, DNS rewrites (`*.fufu.land` $\\to$ `10.42.0.1`, `smb.fufu.land` $\\to$ `10.42.0.2`).
-- **Unbound**: Listens on `127.0.0.1:5335`. Handles recursive resolution, connects to remote Valkey L2 cache on `yifuwuqi` (`10.42.0.2:6379`), extended statistics via `/run/unbound/unbound.ctl`.
+- **Unbound**: Listens on `127.0.0.1:5335`. Handles recursive resolution, connects to remote Valkey L2 cache on `yifuwuqi` (`10.42.0.2:24379`), extended statistics via `/run/unbound/unbound.ctl`.
 - **Encrypted DNS**: Serves DoT, DoQ, and DoH on `dns.fufu.land` (ports 853, 3443).
 
 ### 5.2 Nginx Ingress Reverse Proxy
@@ -122,14 +122,14 @@ ______________________________________________________________________
 - Wildcard ACME certificate for `*.fufu.land` and `fufu.land` via Cloudflare DNS-01 API challenge.
 - Access control (`restrictedProxyConfig`): Allows trusted LAN (`10.42.0.0/24`) and VPN CIDRs, denies public access to internal dashboards.
 - Virtual hosts proxied to `yifuwuqi` over LAN (`10.42.0.2`):
-  - `grafana.fufu.land` $\\to$ Grafana (:3000)
-  - `cockpit.fufu.land` $\\to$ Cockpit (:9090)
-  - `search.fufu.land` $\\to$ SearXNG (:8888)
-  - `attic.fufu.land` $\\to$ Attic Binary Cache (:18203)
-  - `git.fufu.land` $\\to$ Forgejo Git (:3001)
+  - `grafana.fufu.land` $\\to$ Grafana (:24030)
+  - `cockpit.fufu.land` $\\to$ Cockpit (:24091)
+  - `search.fufu.land` $\\to$ SearXNG (:24888)
+  - `attic.fufu.land` $\\to$ Attic Binary Cache (:24203)
+  - `git.fufu.land` $\\to$ Forgejo Git (:24200)
   - `prtnr.fufu.land` $\\to$ Portainer (:9443)
-  - `agent.fufu.land` $\\to$ Opencode Server (:3010)
-  - `sillytavern.fufu.land` $\\to$ SillyTavern (:8000)
+  - `agent.fufu.land` $\\to$ Opencode Server (:24010)
+  - `sillytavern.fufu.land` $\\to$ SillyTavern (:24000)
   - `radarr.fufu.land` – `sonarr.fufu.land` – `prowlarr.fufu.land` – `jellyfin.fufu.land` – `seerr.fufu.land` – `homepage.fufu.land` (Arr & Media stack)
 - Host-local virtual hosts:
   - `adguard.fufu.land` $\\to$ Local AdGuard UI (:3333)

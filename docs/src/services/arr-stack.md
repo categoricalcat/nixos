@@ -12,6 +12,17 @@ for app in radarr sonarr lidarr readarr prowlarr; do echo "    ${app}_api_key: $
 
 Place the output under the `arr:` section in your `secrets.yaml` file. These keys will be automatically injected into the applications and Recyclarr via environment variables.
 
+## Port remap (mutable DBs)
+
+Nix only moves listen/proxy ports. After switching host ports to the `24xxx` range, update stored URLs in each UI (they are not rewritten):
+
+- qBittorrent download clients in Radarr/Sonarr/Lidarr/Readarr: `127.0.0.1:24080` (not `8080`).
+- Prowlarr FlareSolverr proxy: `http://127.0.0.1:24191/` (host). torrent-indexer still uses `8191` inside gluetun.
+- Prowlarr Generic Torznab torrent-indexer: `http://127.0.0.1:24181/api/torznab`.
+- Prowlarr application integrations: `127.0.0.1` with Radarr `24878`, Sonarr `24989`, Lidarr `24686`, Readarr `24787`. Lidarr manual Torznab: `http://localhost:24696/<id>/`.
+- Seerr / Jellyseerr: Jellyfin server URL if it still has `:8096` (listen is now `24096`).
+- Unbound on `yirukou`: confirm it can reach Valkey at `10.42.0.2:24379`.
+
 ## 1. Initial Authentication
 
 - Access each service's web UI via their respective `*.fufu.land` domains through Nginx.
@@ -39,14 +50,14 @@ For Radarr, Sonarr, Lidarr, and Readarr, configure the root folders to point to 
 In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download client:
 
 - Host: `127.0.0.1`
-- Port: `8080`
+- Port: `24080`
 - Category: `music` for Lidarr (must exist in qBittorrent)
 - Provide the WebUI credentials (localhost is auth-whitelisted, so they can be empty).
 
 ## 5. Prowlarr Configuration
 
 - In Prowlarr, add your desired indexers (see below).
-- Add application integrations for Radarr, Sonarr, Lidarr, and Readarr. Use `127.0.0.1` and their respective backend ports (`7878`, `8989`, `8686`, `8787`) with the API keys from `secrets.yaml` to link them locally.
+- Add application integrations for Radarr, Sonarr, Lidarr, and Readarr. Use `127.0.0.1` and their respective backend ports (`24878`, `24989`, `24686`, `24787`) with the API keys from `secrets.yaml` to link them locally.
 - Sync indexers to the configured applications.
 
 **Indexers to use:**
@@ -54,15 +65,15 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 - The Pirate Bay (Cardigann, base URL `https://thepiratebay.org/`)
 - Nyaa.si (Cardigann, base URL `https://nyaa.si/`)
 - LimeTorrents (Cardigann, base URL `https://www.limetorrents.lol/`)
-- `Torrent-Indexer BR` (Generic Torznab, URL `http://127.0.0.1:8181/api/torznab`) — the local container scraping Brazilian public trackers, for pt-BR content
+- `Torrent-Indexer BR` (Generic Torznab, URL `http://127.0.0.1:24181/api/torznab`) — the local container scraping Brazilian public trackers, for pt-BR content
 - `RuTracker.org` **should not be used**: since 2025 it requires a paid account for search/RSS and its Cloudflare challenge blocks automated login. FlareSolverr does not help. Remove it if present.
 
-**FlareSolverr:** Cloudflare-protected indexers (e.g. EZTV) need it. Prowlarr's indexer settings show an "info_flaresolverr" note on those indexers; add a FlareSolverr indexer proxy pointing at `http://127.0.0.1:8191/` (it runs in the gluetun namespace and is published on that port). The `torrent-indexer` container uses it automatically via `FLARESOLVERR_URL` (set in `modules/services/arr/default.nix`).
+**FlareSolverr:** Cloudflare-protected indexers (e.g. EZTV) need it. Prowlarr's indexer settings show an "info_flaresolverr" note on those indexers; add a FlareSolverr indexer proxy pointing at `http://127.0.0.1:24191/` (host publish of the gluetun mapping `24191:8191`). `torrent-indexer` shares the gluetun namespace, so it reaches FlareSolverr at `http://127.0.0.1:8191` via `FLARESOLVERR_URL` (set in `modules/services/arr/default.nix`).
 
 **Known limitation — LimeTorrents and Lidarr:** Prowlarr refuses to sync LimeTorrents to Lidarr because its sync test (keywordless query with music categories) returns no results. Workaround: in Lidarr, add it manually via **Add Indexer > Torznab**:
 
 - Name: `LimeTorrents (Prowlarr)`
-- URL: `http://localhost:9696/<LimeTorrents-id>/` (the id is the one shown in Prowlarr's indexer list; keep `apiPath` `/api`)
+- URL: `http://localhost:24696/<LimeTorrents-id>/` (the id is the one shown in Prowlarr's indexer list; keep `apiPath` `/api`)
 
 Also remove any stale manual Torznab entries in Lidarr pointing at `prowlarr.fufu.land/1` (a duplicate of The Pirate Bay).
 
@@ -91,7 +102,7 @@ Setup:
 To automatically discover and download foreign movies and TV shows with Brazilian Portuguese voice acting (Dublado / Dual Áudio):
 
 **1. Prowlarr Indexer Setup:**
-The `torrent-indexer` container scrapes Brazilian public trackers (comando_torrents, bludv, filme_torrent, etc.) and is exposed on `http://127.0.0.1:8181/api/torznab`. Add it in Prowlarr as a **Generic Torznab** indexer named `Torrent-Indexer BR` (see section 5) and sync it to Radarr and Sonarr.
+The `torrent-indexer` container scrapes Brazilian public trackers (comando_torrents, bludv, filme_torrent, etc.) and is exposed on `http://127.0.0.1:24181/api/torznab`. Add it in Prowlarr as a **Generic Torznab** indexer named `Torrent-Indexer BR` (see section 5) and sync it to Radarr and Sonarr.
 
 **2. Radarr / Sonarr Custom Formats:**
 To ensure your media applications prefer files with Brazilian voice acting:

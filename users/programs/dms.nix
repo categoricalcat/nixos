@@ -43,13 +43,30 @@ in
           };
         };
 
+        stylix.targets.dank-material-shell.image.enable = false;
+
+        home.sessionVariables = {
+          QS_ICON_THEME = themeAssets.icons.dark;
+        };
+
         systemd.user.services.dms = {
           Service = {
             Environment = [
               "XDG_DATA_DIRS=/etc/profiles/per-user/${config.home.username}/share:/run/current-system/sw/share"
+              "QS_ICON_THEME=${themeAssets.icons.dark}"
             ];
           };
         };
+
+        home.activation.makeDmsSessionMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+          target="$HOME/.local/state/DankMaterialShell/session.json"
+          if [ -L "$target" ]; then
+            store_path=$(readlink -f "$target")
+            rm -f "$target"
+            cp "$store_path" "$target"
+            chmod u+w "$target"
+          fi
+        '';
 
         programs.dank-material-shell = {
           enable = true;

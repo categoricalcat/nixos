@@ -10,15 +10,15 @@ ______________________________________________________________________
 
 | Service          | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                        |
 | ---------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ------------------------------------------------------------------ |
-| **Homepage**     | `homepage.nix`       | `8082`        | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets       |
-| **Docs**         | `docs.nix`           | `8083`        | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                          |
-| **SearXNG**      | `searxng.nix`        | `8888`        | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                 |
-| **Valkey**       | `valkey.nix`         | `6379`        | *Internal only*         | In-Memory (1GB LRU)                 | Redis fork; shared L2 DNS cache for Unbound & SearXNG rate limiter |
-| **Cockpit**      | `cockpit.nix`        | `9090`        | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                    |
+| **Homepage**     | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets       |
+| **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                          |
+| **SearXNG**      | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                 |
+| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (1GB LRU)                 | Redis fork; shared L2 DNS cache for Unbound & SearXNG rate limiter |
+| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                    |
 | **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`      | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                        |
-| **Firecrawl**    | `firecrawl.nix`      | `3002`        | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                      |
-| **SillyTavern**  | `ai/sillytavern.nix` | `8000`        | `sillytavern.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager              |
-| **Opencode**     | `opencode.nix`       | `3010`        | `agent.fufu.land`       | Native Agent Daemon                 | Autonomous AI coding agent backend                                 |
+| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                      |
+| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `sillytavern.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager              |
+| **Opencode**     | `opencode.nix`       | `24010`       | `agent.fufu.land`       | Native Agent Daemon                 | Autonomous AI coding agent backend                                 |
 | **Portainer CE** | `portainer.nix`      | `9443`        | `prtnr.fufu.land`       | Podman Socket                       | Container lifecycle & volume management web UI                     |
 | **Cloudflared**  | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*         | OCI Container                       | Zero-trust Cloudflare Tunnel connector                             |
 | **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*       | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests              |
@@ -29,7 +29,7 @@ ______________________________________________________________________
 
 ### 2.1 Homepage Dashboard (`modules/services/homepage.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:8082` and proxied to `https://homepage.fufu.land`.
+- **Web UI**: Served at `http://10.42.0.2:24082` and proxied to `https://homepage.fufu.land`.
 - **Layout Architecture**: 4-column responsive grid with 5 main service groups:
   1. **Media**: Jellyfin, Jellyseerr.
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
@@ -40,7 +40,7 @@ ______________________________________________________________________
 
 ### 2.2 SearXNG ("yi search") (`modules/services/searxng.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:8888` and proxied to `https://search.fufu.land`.
+- **Web UI**: Served at `http://10.42.0.2:24888` and proxied to `https://search.fufu.land`.
 - **Tor Proxy Routing**: All outbound search queries are forced through the local Tor SOCKS5 proxy (`socks5h://127.0.0.1:9050`) to conceal client IP addresses from upstream search providers.
 - **Engines Enabled**: DuckDuckGo (`ddg`), Mojeek (`mjk`), Google Scholar (`gs`), and arXiv (`ar`). Google web search is intentionally disabled to avoid Tor CAPTCHA blocking.
 - **Ephemeral Secret Generation**: `searx-secret-init.service` automatically generates a cryptographically random 32-byte hex secret key on boot into `/run/searx-secret/env` mode `0440`.
@@ -48,7 +48,7 @@ ______________________________________________________________________
 
 ### 2.3 Valkey Datastore (`modules/services/valkey.nix`)
 
-- **Service**: In-memory Redis-compatible key-value store running on `0.0.0.0:6379`.
+- **Service**: In-memory Redis-compatible key-value store running on `0.0.0.0:24379`.
 - **Memory Management**: 1 GB maximum RAM allocation with `allkeys-lru` eviction policy.
 - **Multi-Tenant Usage**:
   - **DB 0**: Shared L2 DNS cache for Unbound instances across `yifuwuqi` and `yirukou`.
@@ -68,13 +68,13 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.5 SillyTavern Companion UI (`modules/services/ai/sillytavern.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:8000` and proxied to `https://sillytavern.fufu.land`.
+- **Web UI**: Served at `http://10.42.0.2:24000` and proxied to `https://sillytavern.fufu.land`.
 - **Security Context**: Dedicated non-root user `sillytavern` with strict systemd filesystem isolation (`ProtectSystem = strict`, `ProtectHome = true`, `PrivateDevices = true`, `PrivateTmp = true`).
 - **Inference Integration**: Depends directly on the local `llama-cpp-qwen3-6-35b-abliterated.service` Vulkan instance.
 
 ### 2.6 Cockpit System Manager (`modules/services/cockpit.nix`)
 
-- **Web UI**: Port `9090` (`https://cockpit.fufu.land`).
+- **Web UI**: Port `24091` (`https://cockpit.fufu.land`).
 - **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin whitelisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing.
 
 ### 2.7 WebDAV Server (`modules/services/webdav.nix`)
@@ -84,7 +84,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.8 Fleet Documentation (`modules/services/docs.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:8083` and proxied to `https://docs.fufu.land`.
+- **Web UI**: Served at `http://10.42.0.2:24083` and proxied to `https://docs.fufu.land`.
 - **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
 - **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/fleet-docs/staging` without modifying the git repository.
 - **Serving Daemon**: `darkhttpd` serves `/var/lib/fleet-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).

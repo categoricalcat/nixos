@@ -264,7 +264,7 @@ When resetting the database, the Attic caches are destroyed. You must manually r
 1. **Log in locally to the Attic server:**
 
    ```bash
-   attic login yi http://127.0.0.1:18203 <admin-token-from-step-1>
+   attic login yi http://127.0.0.1:24203 <admin-token-from-step-1>
    ```
 
 1. **Recreate the cache:**
