@@ -21,17 +21,21 @@
             command =
               let
                 sessions = "${config.services.displayManager.sessionData.desktops}/share";
+                # tuigreet only takes ANSI names, not hex. Stylix console.colors
+                # maps yimoka teal (base0D) to blue/lightblue, not cyan (base0C indigo).
+                teal = "blue";
+                tealBright = "lightblue";
                 themeString = lib.concatStringsSep ";" [
-                  "border=lightmagenta"
+                  "border=${teal}"
                   "text=white"
-                  "prompt=lightcyan"
-                  "time=lightcyan"
-                  "action=blue"
-                  "button=lightblue"
+                  "prompt=${teal}"
+                  "time=${teal}"
+                  "action=${teal}"
+                  "button=${tealBright}"
                   "container=black"
-                  "input=lightcyan"
-                  "greet=lightcyan"
-                  "title=lightcyan"
+                  "input=${teal}"
+                  "greet=${teal}"
+                  "title=${teal}"
                 ];
               in
               lib.concatStringsSep " " [

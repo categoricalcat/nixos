@@ -8,7 +8,7 @@
 }:
 
 let
-  greeter = "dms";
+  greeter = "tuigreet";
   monitors = [
     {
       name = "eDP-1";

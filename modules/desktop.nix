@@ -32,13 +32,7 @@ in
         "ly"
         "none"
       ];
-      default =
-        if config.desktop.environment == "gnome" then
-          "gdm"
-        else if config.desktop.environment == "niri" then
-          "tuigreet"
-        else
-          "none";
+      default = if config.desktop.environment == "gnome" then "gdm" else "tuigreet";
       description = "Greeter to use";
     };
 
