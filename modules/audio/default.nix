@@ -53,66 +53,68 @@ in
       ];
     };
 
-    wireplumber.extraConfig."99-qbz-dac-audio" = {
-      "monitor.alsa.rules" = [
-        {
-          matches = [
-            {
-              "node.name" = "~alsa_output.usb-Feixiang_USB_HIFI_Audio-01.*";
-              "media.class" = "Audio/Sink";
-            }
-          ];
-          actions = {
-            update-props = {
-              "priority.session" = 1500;
-              "priority.driver" = 1500;
-              "audio.allowed-rates" = [
-                44100
-                48000
-                88200
-                96000
-                176400
-                192000
-              ];
-              "resample.disable" = true;
-              "channelmix.disable" = true;
+    wireplumber.extraConfig = {
+      "99-qbz-dac-audio" = {
+        "monitor.alsa.rules" = [
+          {
+            matches = [
+              {
+                "node.name" = "~alsa_output.usb-Feixiang_USB_HIFI_Audio-01.*";
+                "media.class" = "Audio/Sink";
+              }
+            ];
+            actions = {
+              update-props = {
+                "priority.session" = 1500;
+                "priority.driver" = 1500;
+                "audio.allowed-rates" = [
+                  44100
+                  48000
+                  88200
+                  96000
+                  176400
+                  192000
+                ];
+                "resample.disable" = true;
+                "channelmix.disable" = true;
+              };
             };
-          };
-        }
-      ];
-    };
+          }
+        ];
+      };
 
-    wireplumber.extraConfig."10-scarlett-pro-audio" = {
-      "device.profile.priority.rules" = [
-        {
-          matches = [
-            {
-              "device.name" = "~alsa_card.usb-Focusrite_Scarlett_4i4.*";
-            }
-          ];
-          actions = {
-            update-props = {
-              "priorities" = [ "pro-audio" ];
+      "10-scarlett-pro-audio" = {
+        "device.profile.priority.rules" = [
+          {
+            matches = [
+              {
+                "device.name" = "~alsa_card.usb-Focusrite_Scarlett_4i4.*";
+              }
+            ];
+            actions = {
+              update-props = {
+                "priorities" = [ "pro-audio" ];
+              };
             };
-          };
-        }
-      ];
-    };
+          }
+        ];
+      };
 
-    wireplumber.extraConfig."99-disable-suspend" = {
-      "monitor.alsa.rules" = [
-        {
-          matches = [
-            { "node.name" = "~alsa_input.*"; }
-            { "node.name" = "~alsa_output.*"; }
-          ];
-          actions = {
-            update-props = {
-              "session.suspend-timeout-seconds" = 0;
+      "99-disable-suspend" = {
+        "monitor.alsa.rules" = [
+          {
+            matches = [
+              { "node.name" = "~alsa_input.*"; }
+              { "node.name" = "~alsa_output.*"; }
+            ];
+            actions = {
+              update-props = {
+                "session.suspend-timeout-seconds" = 0;
+              };
             };
-          };
-        }
-      ];
+          }
+        ];
+      };
     };
   };
 

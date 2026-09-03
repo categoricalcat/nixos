@@ -93,6 +93,11 @@ let
         ln -s ${
           pkgs.writeText "valkey.json" (builtins.toJSON (import ./dashboards/valkey.nix { inherit pkgs; }))
         } $out/valkey.json
+        ln -s ${
+          pkgs.writeText "internet.json" (
+            builtins.toJSON (import ./dashboards/internet.nix { inherit pkgs; })
+          )
+        } $out/internet.json
       '';
 in
 {

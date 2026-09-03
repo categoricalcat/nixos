@@ -1,5 +1,6 @@
 {
   addresses,
+  allAddresses,
   pkgs,
   lib,
   ...
@@ -7,6 +8,7 @@
 
 let
   cfg = addresses.gatewayFailover;
+  inherit (allAddresses.monitoring) nodeTextfileDir;
 
   isDhcpSide = side: side.gateway == null;
   anyDhcp = sides: builtins.any isDhcpSide sides;
@@ -133,9 +135,11 @@ let
       state="''${3:-}"
       case "$state" in
         MASTER)
+          PRIMARY_ACTIVE=1
           resolve_primary || exit 1
           ;;
         BACKUP|FAULT|STOP)
+          PRIMARY_ACTIVE=0
           resolve_fallback || exit 1
           ;;
         *)
@@ -146,6 +150,7 @@ let
       ${routeReplace "default"}
 
       GW_STAMP_FILE="/run/gateway-failover-active-gw"
+      TEXTFILE_DIR="${nodeTextfileDir}"
       NEW_GW_KEY="$GW@$SIDE_IFACE"
 
       PREV_GW_KEY=""
@@ -157,10 +162,27 @@ let
         echo "$NEW_GW_KEY" > "$GW_STAMP_FILE"
         conntrack -F >/dev/null 2>&1 || true
       fi
+
+      # Stamp file is only rewritten on change, so its mtime is the last transition.
+      METRICS_TMP_FILE="$TEXTFILE_DIR/gateway_failover.prom.$$"
+      cat > "$METRICS_TMP_FILE" <<EOF
+      # HELP gateway_failover_primary_active Whether the primary uplink is active.
+      # TYPE gateway_failover_primary_active gauge
+      gateway_failover_primary_active{interface="$SIDE_IFACE",gateway="$GW"} $PRIMARY_ACTIVE
+      # HELP gateway_failover_last_transition_timestamp_seconds Unix time of the active gateway transition.
+      # TYPE gateway_failover_last_transition_timestamp_seconds gauge
+      gateway_failover_last_transition_timestamp_seconds $(stat -c %Y "$GW_STAMP_FILE")
+      EOF
+      chmod 0644 "$METRICS_TMP_FILE"
+      mv "$METRICS_TMP_FILE" "$TEXTFILE_DIR/gateway_failover.prom"
     '';
   };
 in
 {
+  systemd.tmpfiles.rules = [
+    "d ${nodeTextfileDir} 0755 root root - -"
+  ];
+
   services.keepalived = {
     enable = true;
     enableScriptSecurity = true;

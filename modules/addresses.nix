@@ -81,11 +81,34 @@ let
     };
   };
 
+  nodeTextfileDir = "/var/lib/prometheus-node-exporter/textfile";
+
+  internetProbes = {
+    icmp = [
+      "1.1.1.1"
+      "8.8.8.8"
+      "216.239.35.0"
+      "200.160.0.8"
+    ];
+    # 127.0.0.1:53 is the local AdGuard -> Unbound chain on both hosts.
+    dns = [
+      "1.1.1.1:53"
+      "8.8.8.8:53"
+      "127.0.0.1:53"
+    ];
+    http = [
+      "https://www.google.com/generate_204"
+      "https://cp.cloudflare.com"
+    ];
+  };
+
 in
 {
   monitoring = {
     centralHost = "yifuwuqi";
     proxyHost = "yirukou";
+    inherit nodeTextfileDir;
+    probes = internetProbes;
     scrapeHosts = [
       "yifuwuqi"
       "yirukou"
@@ -97,7 +120,34 @@ in
     exporters = {
       node = {
         hosts = "scrapeHosts";
-        settings.enabledCollectors = [ "systemd" ];
+        settings = {
+          enabledCollectors = [ "systemd" ];
+          extraFlags = [ "--collector.textfile.directory=${nodeTextfileDir}" ];
+        };
+      };
+
+      # smokeping labels its ping target `host`, which collides with our
+      # origin `host` label; Prometheus renames it `exported_host`, we
+      # expose it as `target`.
+      smokeping = {
+        hosts = "scrapeHosts";
+        settings.hosts = internetProbes.icmp;
+        metricRelabelConfigs = [
+          {
+            source_labels = [ "exported_host" ];
+            target_label = "target";
+          }
+          {
+            regex = "exported_host";
+            action = "labeldrop";
+          }
+        ];
+      };
+
+      # Probe jobs live in prometheus.nix (`probe` job, modules from blackbox.yml).
+      blackbox = {
+        hosts = "scrapeHosts";
+        settings.configFile = ./services/monitoring/blackbox.yml;
       };
 
       systemd.hosts = "scrapeHosts";

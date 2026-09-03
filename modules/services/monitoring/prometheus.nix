@@ -48,7 +48,42 @@ let
     }
     // lib.optionalAttrs (spec ? scrapeInterval) {
       scrape_interval = spec.scrapeInterval;
+    }
+    // lib.optionalAttrs (spec ? metricRelabelConfigs) {
+      metric_relabel_configs = spec.metricRelabelConfigs;
     };
+
+  # One blackbox probe job for every (scrape host x layer x target). The
+  # blackbox module name equals the layer / `monitoring.probes` key.
+  probeScrapeConfig = {
+    job_name = "probe";
+    metrics_path = "/probe";
+    static_configs = lib.concatMap (
+      host:
+      lib.mapAttrsToList (layer: targets: {
+        inherit targets;
+        labels = {
+          inherit host layer;
+          __param_module = layer;
+          __tmp_address = "${hostAddress host}:${toString config.services.prometheus.exporters.blackbox.port}";
+        };
+      }) monitoring.probes
+    ) monitoring.scrapeHosts;
+    relabel_configs = [
+      {
+        source_labels = [ "__address__" ];
+        target_label = "__param_target";
+      }
+      {
+        source_labels = [ "__param_target" ];
+        target_label = "instance";
+      }
+      {
+        source_labels = [ "__tmp_address" ];
+        target_label = "__address__";
+      }
+    ];
+  };
 in
 {
   assertions = [
@@ -102,6 +137,7 @@ in
         ];
         relabel_configs = hostRelabelConfig;
       }
+      probeScrapeConfig
     ]
     ++ lib.mapAttrsToList mkScrapeConfig exporterMetadata;
   };
