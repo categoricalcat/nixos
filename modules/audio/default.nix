@@ -40,8 +40,8 @@ in
       "stream.rules" = [
         {
           matches = [
-            { "application.process.binary" = "qbz"; }
-            { "application.name" = "PipeWire ALSA [qbz]"; }
+            { "application.process.binary" = "~.*qbz.*"; }
+            { "application.name" = "~.*[Qq]bz.*"; }
           ];
           actions = {
             update-props = {
@@ -58,12 +58,14 @@ in
         {
           matches = [
             {
-              "node.name" = "alsa_output.usb-Feixiang_USB_HIFI_Audio-01.pro-output-0";
+              "node.name" = "~alsa_output.usb-Feixiang_USB_HIFI_Audio-01.*";
               "media.class" = "Audio/Sink";
             }
           ];
           actions = {
             update-props = {
+              "priority.session" = 1500;
+              "priority.driver" = 1500;
               "audio.allowed-rates" = [
                 44100
                 48000
@@ -74,6 +76,23 @@ in
               ];
               "resample.disable" = true;
               "channelmix.disable" = true;
+            };
+          };
+        }
+      ];
+    };
+
+    wireplumber.extraConfig."10-scarlett-pro-audio" = {
+      "device.profile.priority.rules" = [
+        {
+          matches = [
+            {
+              "device.name" = "~alsa_card.usb-Focusrite_Scarlett_4i4.*";
+            }
+          ];
+          actions = {
+            update-props = {
+              "priorities" = [ "pro-audio" ];
             };
           };
         }
