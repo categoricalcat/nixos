@@ -83,6 +83,10 @@ let
 
   nodeTextfileDir = "/var/lib/prometheus-node-exporter/textfile";
 
+  # All persistent monitoring state on the central host lives under one root
+  # (grafana's DB is in postgres, see hosts.yifuwuqi.services.postgresql).
+  monitoringDataRoot = "/persist/monitoring";
+
   internetProbes = {
     icmp = [
       "1.1.1.1"
@@ -108,6 +112,12 @@ in
     centralHost = "yifuwuqi";
     proxyHost = "yirukou";
     inherit nodeTextfileDir;
+    dataRoot = monitoringDataRoot;
+    dataDirs = {
+      prometheus = "${monitoringDataRoot}/prometheus";
+      loki = "${monitoringDataRoot}/loki";
+      grafana = "${monitoringDataRoot}/grafana";
+    };
     probes = internetProbes;
     scrapeHosts = [
       "yifuwuqi"

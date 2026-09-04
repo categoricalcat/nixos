@@ -109,6 +109,7 @@ in
 
   services.grafana = {
     enable = true;
+    dataDir = monitoring.dataDirs.grafana;
 
     settings = {
       analytics.reporting_enabled = false;

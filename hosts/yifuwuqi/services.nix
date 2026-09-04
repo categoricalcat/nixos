@@ -28,6 +28,7 @@
     # ../../modules/services/monitoring/netdata.nix
     ../../modules/services/monitoring/exporters.nix
     ../../modules/services/monitoring/adguard-exporter
+    ../../modules/services/monitoring/storage.nix
     ../../modules/services/monitoring/prometheus.nix
     ../../modules/services/monitoring/loki.nix
     ../../modules/services/monitoring/promtail.nix

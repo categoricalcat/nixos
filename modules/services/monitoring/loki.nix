@@ -8,7 +8,7 @@ let
   inherit (allAddresses) monitoring;
   centralHost = allAddresses.hosts.${monitoring.centralHost};
   loki = centralHost.services.loki;
-  dataDir = config.services.loki.dataDir;
+  dataDir = monitoring.dataDirs.loki;
   retention = "168h";
 in
 {
@@ -21,6 +21,7 @@ in
 
   services.loki = {
     enable = true;
+    inherit dataDir;
 
     configuration = {
       auth_enabled = false;
