@@ -47,16 +47,18 @@
   };
 
   # Journal size limits to prevent disk filling
-  services.journald.extraConfig = ''
-    Storage=persistent
-    SystemMaxUse=800M
-    SystemMaxFileSize=50M
-    SystemKeepFree=1G
-    MaxRetentionSec=7day
-    RateLimitIntervalSec=100ms
-    RateLimitBurst=5000
-    Compress=yes
-  '';
+  services.journald.settings = {
+    Journal = {
+      Storage = "persistent";
+      SystemMaxUse = "800M";
+      SystemMaxFileSize = "50M";
+      SystemKeepFree = "1G";
+      MaxRetentionSec = "7day";
+      RateLimitIntervalSec = "100ms";
+      RateLimitBurst = 5000;
+      Compress = "yes";
+    };
+  };
 
   # Override gc retention for servers (longer than default 9d)
   nix.gc.options = lib.mkForce "--delete-older-than 30d";
