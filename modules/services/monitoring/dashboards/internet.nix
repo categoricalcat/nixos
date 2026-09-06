@@ -30,7 +30,7 @@ dashLib.mkDashboard {
     })
     (dashLib.mkTimeseries {
       title = "DNS / HTTP Probe Duration (ms)";
-      expr = "probe_duration_seconds{layer=~\"dns|http\"} * 1000";
+      expr = "probe_duration_seconds{layer=~\"(dns|http)6?\"} * 1000";
       gridPos = dashLib.mkGridPos 0 19 24 8;
       legendFormat = "{{host}} {{layer}} {{instance}}";
     })

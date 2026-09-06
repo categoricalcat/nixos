@@ -51,13 +51,13 @@ ______________________________________________________________________
 
 ### Interface Assignments
 
-| Interface    | Type        | Address / Subnet                | Role                                                                     |
-| ------------ | ----------- | ------------------------------- | ------------------------------------------------------------------------ |
-| `enp7s0`     | Physical    | Dynamic DHCPv4                  | Primary WAN uplink (Route metric 100, `UseRoutes = false`)               |
-| `enp6s0`     | Physical    | Dynamic DHCPv4                  | Secondary/Fallback WAN uplink (Route metric 200, `UseRoutes = false`)    |
-| `br0`        | Bridge      | `10.42.0.1/24`, `10.42.0.24/24` | Trusted LAN bridge enslaving physical ports `enp5s0`, `enp4s0`, `enp3s0` |
-| `enp2s0.42`  | 802.1Q VLAN | `10.42.42.1/24`                 | Untrusted / Guest VLAN 42 on parent port `enp2s0`                        |
-| `tailscale0` | Tunnel      | `100.69.0.1/32`                 | Tailscale mesh interface (`both` mode: subnet router + exit node)        |
+| Interface    | Type        | Address / Subnet                             | Role                                                                     |
+| ------------ | ----------- | -------------------------------------------- | ------------------------------------------------------------------------ |
+| `enp7s0`     | Physical    | DHCPv4 plus RA/DHCPv6-PD                     | Primary WAN uplink (route metric 100, `/56` PD hint)                     |
+| `enp6s0`     | Physical    | Dynamic DHCPv4                               | IPv4-only fallback uplink (route metric 200)                             |
+| `br0`        | Bridge      | `10.42.0.1/24`, delegated `/64` token `::1`  | Trusted LAN bridge enslaving physical ports `enp5s0`, `enp4s0`, `enp3s0` |
+| `enp2s0.42`  | 802.1Q VLAN | `10.42.42.1/24`, delegated `/64` token `::1` | Untrusted / Guest VLAN 42 on parent port `enp2s0`                        |
+| `tailscale0` | Tunnel      | `100.69.0.1/32`                              | Tailscale mesh interface (`both` mode: subnet router + exit node)        |
 
 ______________________________________________________________________
 
@@ -88,19 +88,25 @@ ______________________________________________________________________
 ### 4.1 Nftables Packet Filtering
 
 - **Allowed Ingress Ports**:
-  - `br0` (LAN): TCP `53` (DNS), `80` (HTTP), `443` (HTTPS), `853` (DoT), `24212` (SSH); UDP `53` (DNS), `67` (DHCP), `853` (DoT).
-  - `enp2s0.42` (Untrusted): TCP `53`, `80`, `443`, `853`; UDP `53`, `67`, `853` (SSH is blocked).
+  - `br0` (LAN): TCP `53` (DNS), `80` (HTTP), `443` (HTTPS), `853` (DoT/DoQ), `3443` (AGH DoH), `24212` (SSH); UDP `53` (DNS), `67` (DHCP), `853` (DoT/DoQ).
+  - `enp2s0.42` (Untrusted): TCP `53`, `80`, `443`, `853`, `3443`; UDP `53`, `67`, `853` (SSH is blocked).
   - `tailscale0`: TCP `24212` (SSH).
   - WANs (`enp7s0`, `enp6s0`): UDP `51820` (Tailscale / WireGuard).
 - **Bogon Filtering**: Raw prerouting chain drops 14 IPv4 bogon subnets (`0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, etc.) and 11 IPv6 bogon subnets entering WAN interfaces.
 - **Forwarding & NAT**:
   - Outbound NAT masquerading on WANs for LAN, VLAN 42, and Tailscale traffic.
   - Forwarding enabled between Tailscale and LAN subnet `10.42.0.0/24`.
-- **Sinkhole Drop Table**: `inet sinkhole` immediately rejects queries to `10.42.0.24` and `2001:db8::2` with `tcp reset` / `icmp host-unreachable`.
+- **IPv6 WAN policy**: DHCPv6-PD solicits independently of RA M/O flags.
+  Essential ICMPv6/ND and DHCPv6 replies bypass the primary-WAN link-local
+  bogon drop. Unsolicited inbound IPv6 and fallback-WAN IPv6 are dropped.
+- **Sinkhole Drop Table**: Static rules reject `10.42.0.24` and ULA
+  `fd75:c55f:6d19::24`. Both addresses are assigned on `br0`.
 
 ### 4.2 Sysctl Routing Hardening
 
 - `net.ipv4.ip_forward = 1`
+- `net.ipv4.conf.all.forwarding = 1`
+- `net.ipv6.conf.all.forwarding = 1`
 - `net.core.default_qdisc = "fq_codel"` (Fair Queuing Controlled Delay bufferbloat prevention)
 - `net.netfilter.nf_conntrack_max = 262144`
 - `net.netfilter.nf_conntrack_tcp_timeout_established = 7440` (optimized from 5 days)
@@ -113,9 +119,12 @@ ______________________________________________________________________
 
 ### 5.1 Primary DNS Stack
 
-- **AdGuard Home**: Listens on `0.0.0.0:53` (Web UI on `3333`). Optimistic 64 MiB caching, Hagezi Multi PRO++ and TIF blocklists, DNS rewrites (`*.fufu.land` $\\to$ `10.42.0.1`, `smb.fufu.land` $\\to$ `10.42.0.2`).
-- **Unbound**: Listens on `127.0.0.1:5335`. Handles recursive resolution, connects to remote Valkey L2 cache on `yifuwuqi` (`10.42.0.2:24379`), extended statistics via `/run/unbound/unbound.ctl`.
-- **Encrypted DNS**: Serves DoT, DoQ, and DoH on `dns.fufu.land` (ports 853, 3443).
+- **AdGuard Home**: DNS listens on configured IPv4 addresses and IPv6
+  wildcard; the Web UI remains IPv4. Custom-IP blocking uses `10.42.0.24` and
+  static ULA `fd75:c55f:6d19::24`.
+- **Unbound**: Listens on `127.0.0.1:5335` and `[::1]:5335`, with IPv6
+  iterative transport enabled. It retains the IPv4 LAN Valkey backend.
+- **Encrypted DNS**: Serves DoT, DoQ, and DoH on `dns.fufu.land` (853, 3443, nginx `/dns-query` on 443). AGH DDR advertises DoH `:3443` and DoQ `:853` for `_dns.resolver.arpa`; DoT is omitted (no IP SANs). Manual DoT to `:853` still works. No DNR / Kea DHCPv6.
 
 ### 5.2 Nginx Ingress Reverse Proxy
 

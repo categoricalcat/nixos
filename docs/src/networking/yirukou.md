@@ -6,15 +6,15 @@ ______________________________________________________________________
 
 ## 1. Address Plan
 
-| Network             | Interface    | Address             | Purpose                                   |
-| ------------------- | ------------ | ------------------- | ----------------------------------------- |
-| **LAN**             | `br0`        | `10.42.0.1/24`      | Trusted wired LAN and default gateway.    |
-| **Untrusted**       | `enp2s0.42`  | `10.42.42.1/24`     | VLAN 42 for untrusted / guest clients.    |
-| **Tailscale**       | `tailscale0` | `100.69.0.1/32`     | Tailnet access, subnet router, exit node. |
-| **Sinkhole**        | `br0` alias  | `10.42.0.24/24`     | AdGuard blocking address (IPv4).          |
-| **Sinkhole (IPv6)** | `br0` alias  | `2001:db8::2`       | AdGuard blocking address (IPv6).          |
-| **WAN primary**     | `enp7s0`     | DHCPv4 (metric 100) | Preferred uplink (`UseRoutes = false`).   |
-| **WAN fallback**    | `enp6s0`     | DHCPv4 (metric 200) | Backup uplink (`UseRoutes = false`).      |
+| Network          | Interface    | Address                                      | Purpose                                   |
+| ---------------- | ------------ | -------------------------------------------- | ----------------------------------------- |
+| **LAN**          | `br0`        | `10.42.0.1/24`, delegated `/64` token `::1`  | Trusted wired LAN and default gateway.    |
+| **Untrusted**    | `enp2s0.42`  | `10.42.42.1/24`, delegated `/64` token `::1` | VLAN 42 for untrusted / guest clients.    |
+| **Tailscale**    | `tailscale0` | `100.69.0.1/32`                              | Tailnet access, subnet router, exit node. |
+| **Sinkhole**     | `br0` alias  | `10.42.0.24/24`                              | Retained IPv4 sinkhole address.           |
+| **Sinkhole v6**  | `br0` alias  | `fd75:c55f:6d19::24/128`                     | Static ULA IPv6 sinkhole address.         |
+| **WAN primary**  | `enp7s0`     | DHCPv4 plus RA/DHCPv6-PD                     | Preferred uplink (metric 100).            |
+| **WAN fallback** | `enp6s0`     | DHCPv4 only (metric 200)                     | Backup IPv4 uplink.                       |
 
 The canonical address registry is `modules/addresses.nix`.
 
@@ -35,7 +35,14 @@ enp2s0 (VLAN parent, no IP)
 ```
 
 - IPv4 forwarding is enabled on `br0` and `enp2s0.42`.
+- IPv6 forwarding, delegated-prefix assignment, and RA are enabled on both
+  routed LAN interfaces. Subnet IDs are `0` and `1`; delegated addresses use
+  stable `::1` tokens and do not create temporary addresses.
+- Clients use SLAAC and yirukou's link-local RDNSS address; there is no DHCPv6
+  server.
 - Sinkhole IP `10.42.0.24/24` is bound directly to `br0`.
+- Sinkhole ULA `fd75:c55f:6d19::24/128` is bound to `br0` but its prefix is not
+  advertised as on-link by RA.
 
 ______________________________________________________________________
 
@@ -52,7 +59,11 @@ ______________________________________________________________________
 
 ## 4. WAN Failover & Keepalived
 
-Both WAN interfaces (`enp7s0` and `enp6s0`) acquire IP addresses via DHCPv4, but `UseRoutes = false` prevents `systemd-networkd` from creating default routes. Default routing is owned by `modules/networking/gateway-failover.nix`:
+Both WAN interfaces acquire IPv4 through DHCPv4 with `UseRoutes = false`;
+IPv4 default routing remains owned by `modules/networking/gateway-failover.nix`.
+Only `enp7s0` accepts RA and runs DHCPv6 with a `/56` PD hint. DHCPv6
+solicitation does not depend on RA M/O flags. `enp6s0` rejects RA, disables
+IPv6 link-local addressing, and has no IPv6 failover role.
 
 - **Keepalived VRRP**: Monitored by `check_enp7s0` running `wan-check`.
 - **Target Probing**: `wan-check` tests internet targets (`216.239.35.0`, `200.160.0.8`) via explicit `/32` host routes through the primary gateway.
@@ -78,9 +89,26 @@ ______________________________________________________________________
 
 ## 6. Firewall, NAT & Bogon Filtering
 
-- **Bogon Drop**: Drops 14 IPv4 bogon subnets and 11 IPv6 bogon subnets entering WAN interfaces in raw prerouting.
-- **Outbound NAT**: Postrouting masquerading for LAN (`br0`), VLAN 42 (`enp2s0.42`), and Tailscale (`tailscale0`) across active WAN interfaces.
-- **Sinkhole Drop Table**: Drops traffic targeting `10.42.0.24` and `2001:db8::2` with TCP reset and ICMP unreachable.
+- **Bogon Drop**: Named sets `wan_bogon_v4` / `wan_bogon_v6` drop spoofed
+  sources in raw prerouting, `fe80::/10` included. Essential link-local ICMPv6
+  (RA, NS, NA, errors) and DHCPv6 replies jump through `wan_ll_ok` only on
+  `enp7s0`.
+- **Fallback isolation**: IPv6 ingress and forwarding through `enp6s0` are
+  dropped.
+- **Inbound IPv6**: A pre-filter chain drops unsolicited WAN-to-internal IPv6;
+  established/related replies and ICMPv6 errors return through the NixOS
+  firewall's conntrack vmap.
+- **Outbound NAT**: NAT44 remains enabled; there is no NAT66.
+- **DNS intercept**: TCP/UDP 53 from LAN, VLAN 42, and Tailscale is redirected
+  to yirukou AdGuard Home. Exceptions: queries already aimed at AGH IPv4
+  binds, local addresses, MagicDNS (`100.100.100.100` and
+  `fd7a:115c:a1e0::53`), and yifuwuqi Unbound (`10.42.0.2` / IID `::2` on
+  `br0`). Off-net TCP/UDP 853 is dropped. DoH on 443 is not enforced. AGH DDR
+  (`handle_ddr`) advertises `dns.fufu.land` DoH on `:3443` and DoQ on `:853`;
+  DoT is not in the SVCB set (cert has no IP SANs). There is no DNR or Kea
+  DHCPv6.
+- **Sinkhole Drop Table**: Statically rejects IPv4 `10.42.0.24` and IPv6
+  `fd75:c55f:6d19::24`; no runtime prefix derivation is required.
 
 ______________________________________________________________________
 

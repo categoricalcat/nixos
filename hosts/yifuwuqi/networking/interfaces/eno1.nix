@@ -16,8 +16,13 @@
           DHCP = "no";
           DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
-          IPv6AcceptRA = "no";
-          LinkLocalAddressing = "no";
+          IPv6AcceptRA = "yes";
+          LinkLocalAddressing = "ipv6";
+        };
+        ipv6AcceptRAConfig = {
+          Token = addresses.network.lan.ipv6.interfaceId;
+          RouteMetric = 100;
+          UseDNS = false;
         };
 
         address = [

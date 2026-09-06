@@ -71,13 +71,17 @@ hosts probe them independently:
 - DNS: Cloudflare and Google public resolvers plus each host's own
   `127.0.0.1:53` (AdGuard -> Unbound chain).
 - HTTPS: Google `generate_204` and Cloudflare's captive-portal endpoint.
+- IPv6-only modules independently probe Quad9/Cloudflare ICMP, Quad9 and local
+  `[::1]:53` AAAA DNS, and the same HTTPS endpoints with IPv4 fallback
+  disabled.
 
 Blackbox modules (`blackbox.yml`) are named after the layer. A single `probe`
 scrape job fans out over host x layer x target; series carry `host` (origin,
-same meaning as every other job), `layer` (`icmp`/`dns`/`http`) and `instance`
-(target). `up{job="blackbox"}` measures exporter reachability; `probe_success`
-measures the target. Smokeping's native `host` label (the ping target) is
-relabeled to `target`.
+same meaning as every other job), `layer`
+(`icmp`/`dns`/`http`/`icmp6`/`dns6`/`http6`) and `instance` (target).
+`up{job="blackbox"}` measures exporter reachability; `probe_success` measures
+the target. Smokeping's native `host` label (the ping target) is relabeled to
+`target`.
 
 `wan-notify` atomically writes `gateway_failover.prom` for the node-exporter
 textfile collector. It exposes `gateway_failover_primary_active` and

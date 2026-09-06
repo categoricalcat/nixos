@@ -14,6 +14,5 @@ _:
     precedence 2001::/32     5      # Teredo
     precedence fc00::/7      3      # ULA
     precedence ::/96         1      # IPv4-compatible IPv6
-    precedence ::1/128       50     # localhost
   '';
 }

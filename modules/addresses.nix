@@ -87,12 +87,16 @@ let
   # (grafana's DB is in postgres, see hosts.yifuwuqi.services.postgresql).
   monitoringDataRoot = "/persist/monitoring";
 
-  internetProbes = {
+  internetProbes = rec {
     icmp = [
       "1.1.1.1"
       "8.8.8.8"
       "216.239.35.0"
       "200.160.0.8"
+    ];
+    icmp6 = [
+      "2620:fe::fe"
+      "2606:4700:4700::1111"
     ];
     # 127.0.0.1:53 is the local AdGuard -> Unbound chain on both hosts.
     dns = [
@@ -100,14 +104,25 @@ let
       "8.8.8.8:53"
       "127.0.0.1:53"
     ];
+    dns6 = [
+      "[2620:fe::fe]:53"
+      "[::1]:53"
+    ];
     http = [
       "https://www.google.com/generate_204"
       "https://cp.cloudflare.com"
     ];
+    # Same endpoints as http; the blackbox module forces IPv6.
+    http6 = http;
   };
 
 in
 {
+  tailscale.magicDns = {
+    ipv4 = "100.100.100.100";
+    ipv6 = "fd7a:115c:a1e0::53";
+  };
+
   monitoring = {
     centralHost = "yifuwuqi";
     proxyHost = "yirukou";
@@ -245,6 +260,7 @@ in
 
         lan = {
           interface = "eno1";
+          ipv6.interfaceId = "::2";
           ipv4 = rec {
             host = "10.42.0.2";
             prefixLength = 24;
@@ -255,7 +271,7 @@ in
 
         sinkhole = {
           ipv4.host = "10.42.0.24";
-          ipv6.host = "2001:db8::1";
+          ipv6.host = "fd75:c55f:6d19::24";
         };
 
         secondary = {
@@ -406,6 +422,7 @@ in
         adguardhome = sharedServices.adguardhome // {
           port = 24333;
           dnsBindHosts = [
+            "::"
             "127.0.0.1"
             "10.42.0.2"
             "100.69.0.6"
@@ -623,6 +640,7 @@ in
             "enp3s0"
             "enp2s0"
           ];
+          ipv6.interfaceId = "::1";
           ipv4 = rec {
             cidr = "10.42.0.0/24";
             host = "10.42.0.1";
@@ -640,6 +658,7 @@ in
           parentInterface = "enp2s0";
           vlanId = 42;
           interface = "${parentInterface}.${toString vlanId}";
+          ipv6.interfaceId = "::1";
           ipv4 = rec {
             cidr = "10.42.42.0/24";
             host = "10.42.42.1";
@@ -655,7 +674,7 @@ in
 
         sinkhole = {
           ipv4.host = "10.42.0.24";
-          ipv6.host = "2001:db8::2";
+          ipv6.host = "fd75:c55f:6d19::24";
         };
       };
 
@@ -703,6 +722,7 @@ in
       services = {
         adguardhome = sharedServices.adguardhome // {
           dnsBindHosts = [
+            "::"
             "127.0.0.1"
             "10.42.0.1"
             "10.42.42.1"

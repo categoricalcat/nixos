@@ -21,6 +21,7 @@ in
     ../../modules/nix-settings.nix
     ../../modules/distributed-builds.nix
     ../../modules/server-settings.nix
+    ../../modules/networking/ipv6.nix
     ../../modules/packages
     ../../modules/packages/network.nix
   ];

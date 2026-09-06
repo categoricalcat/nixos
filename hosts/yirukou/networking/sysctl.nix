@@ -6,11 +6,10 @@ _:
   ];
 
   boot.kernel.sysctl = {
-    # IPv4 routing is owned by yirukou. IPv6 forwarding waits for a PD design.
-    "net.ipv4.ip_forward" = 1;
-
-    # Enable IPv4 forwarding on all interfaces, including future router ports.
+    # IPv4 and IPv6 routing is owned by yirukou.
+    # Enable forwarding on all interfaces, including future router ports.
     "net.ipv4.conf.all.forwarding" = 1;
+    "net.ipv6.conf.all.forwarding" = 1;
 
     # Loose RPF works with WAN failover, and future fwmark/PBR.
     # nftables bogon and state rules are the router's security boundary.

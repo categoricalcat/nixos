@@ -23,13 +23,13 @@ ______________________________________________________________________
 
 ### Interface Assignments
 
-| Interface    | Type     | Address / Subnet                | Role                                                                   |
-| ------------ | -------- | ------------------------------- | ---------------------------------------------------------------------- |
-| `eno1`       | Physical | `10.42.0.2/24`, `10.42.0.24/24` | Primary LAN interface (MTU 1492, `ManageForeignRoutes = false`)        |
-| `enp4s0`     | Physical | Dynamic DHCPv4                  | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)      |
-| `wlp2s0`     | Wireless | Disabled                        | Wireless interface explicitly powered down (`ActivationPolicy = down`) |
-| `tailscale0` | Tunnel   | `100.69.0.6/32`                 | Tailscale client mode (`exitNodeHost = null`, Tailscale SSH enabled)   |
-| `netbird0`   | Tunnel   | `100.42.0.2/16`                 | NetBird mesh client                                                    |
+| Interface    | Type     | Address / Subnet                                              | Role                                                                   |
+| ------------ | -------- | ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `eno1`       | Physical | `10.42.0.2/24`, `10.42.0.24/24`, delegated-prefix token `::2` | Primary dual-stack LAN interface (MTU 1492)                            |
+| `enp4s0`     | Physical | Dynamic DHCPv4                                                | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)      |
+| `wlp2s0`     | Wireless | Disabled                                                      | Wireless interface explicitly powered down (`ActivationPolicy = down`) |
+| `tailscale0` | Tunnel   | `100.69.0.6/32`                                               | Tailscale client mode (`exitNodeHost = null`, Tailscale SSH enabled)   |
+| `netbird0`   | Tunnel   | `100.42.0.2/16`                                               | NetBird mesh client                                                    |
 
 ### Network Tuning & Sysctl
 
@@ -37,6 +37,8 @@ ______________________________________________________________________
 - **Socket Buffer Ceiling**: 64 MiB max read/write buffers (`net.core.rmem_max = 67108864`, `net.core.wmem_max = 67108864`).
 - **Nginx Tail Latency Optimization**: `net.ipv4.tcp_notsent_lowat = 16384` (16 KB bounded un-sent buffer).
 - **Foreign Route Preservation**: `ManageForeignRoutes = false` in `eno1.nix` prevents `systemd-networkd` from stripping the Keepalived default route on daemon reload.
+- **Native IPv6**: `eno1` accepts yirukou RA with stable token `::2` and route
+  metric 100. `enp4s0` and `wlp2s0` remain IPv6-disabled.
 - **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`) to reach host DNS and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets.
 
 ______________________________________________________________________
@@ -161,7 +163,11 @@ ______________________________________________________________________
 - **Cockpit**: Port 24091 (`cockpit.fufu.land`), server admin web console.
 - **Portainer CE**: Port 9443 (`prtnr.fufu.land`), Podman container management.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
-- **AdGuard Home & Unbound**: Secondary resolver instance (`10.42.0.2:53` $\\to$ `127.0.0.1:5335`), web UI on port 24333.
+- **AdGuard Home & Unbound**: Secondary resolver listens on IPv4 and IPv6;
+  local forwarding prefers `[::1]:5335` and falls back to `127.0.0.1:5335`.
+  Unbound iterative IPv6 transport is enabled. The web UI remains on IPv4
+  port 24333. AdGuard returns static ULA `fd75:c55f:6d19::24` for blocked AAAA
+  queries; only yirukou assigns that address.
 
 ______________________________________________________________________
 

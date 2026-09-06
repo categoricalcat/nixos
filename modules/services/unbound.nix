@@ -23,7 +23,10 @@ in
     localControlSocketPath = "/run/unbound/unbound.ctl";
     settings = {
       server = {
-        interface = [ "127.0.0.1" ];
+        interface = [
+          "127.0.0.1"
+          "::1"
+        ];
         port = 5335;
 
         # Enable the cachedb module (second-level cache in valkey). It sits
@@ -32,7 +35,10 @@ in
         # only the first token of an unquoted value.
         module-config = ''"validator cachedb iterator"'';
 
-        access-control = [ "127.0.0.0/8 allow" ];
+        access-control = [
+          "127.0.0.0/8 allow"
+          "::1/128 allow"
+        ];
 
         # Performance & Threading (per-host, see addresses.nix dns.threads).
         # Home QPS doesn't need a thread per core; caches are shared slabhashes,
@@ -88,7 +94,7 @@ in
         # Network & Fragmentation
         edns-buffer-size = 1232;
         do-ip4 = "yes";
-        do-ip6 = "no"; # no IPv6 connectivity on either host (verified: no default v6 route)
+        do-ip6 = "yes";
         do-udp = "yes";
         do-tcp = "yes";
       };

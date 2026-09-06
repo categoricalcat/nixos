@@ -41,10 +41,13 @@ router.
 
 Current behavior:
 
-- Enables IPv4 forwarding globally.
-- Leaves IPv6 forwarding undesigned for now.
-- Uses loose reverse-path filtering for Tailscale, WAN failover, and future
-  policy routing compatibility.
+- Enables IPv4 and IPv6 forwarding globally. RA reception is handled by
+  systemd-networkd in userspace, so no `accept_ra` sysctl is needed; fallback
+  WAN `enp6s0` disables RA and IPv6 link-local addressing in its `.network`
+  unit instead.
+- Loose reverse-path filtering is set on yirukou itself. Tailscale maps
+  `routingMode = "both"` to `useRoutingFeatures = "server"`, which does not
+  enable loose RPF. yifuwuqi inherits loose RPF from Tailscale client mode.
 - Uses `fq_codel` to reduce router egress bufferbloat.
 - Keeps router socket buffers at 16 MiB maximum.
 - Sizes packet backlog and poll budget for forwarding.
@@ -59,7 +62,11 @@ Current behavior:
 ## yirukou Firewall
 
 `hosts/yirukou/networking/firewall.nix` uses the NixOS nftables backend with
-forward filtering enabled.
+forward filtering enabled. Named nft sets (`wan_ifaces`, `internal_ifaces`,
+`wan_bogon_v4`, `wan_bogon_v6`) are shared with `nixos-fw` via `mkBefore`.
+Denies run in `yirukou-edge` (`raw` and `filter - 10`) before `nixos-fw`.
+Port opens and LAN-to-WAN accepts stay in `networking.firewall`, which is
+policy drop.
 
 Internal interfaces:
 
@@ -74,22 +81,45 @@ WAN interfaces:
 
 Allowed internal services on `br0` and `enp2s0.42`:
 
-- TCP `53`, `80`, `443`, `853`
+- TCP `53`, `80`, `443`, `853`, `3443`
 - UDP `53`, `67`, `853`
 
 Edge hardening:
 
-- Invalid WAN input and forward state is dropped.
-- ICMP and ICMPv6 are allowed from internal interfaces.
-- WAN ping is rate-limited to `5/second`.
-- Raw prerouting drops spoofed/bogon IPv4 and IPv6 sources arriving on WAN.
-- NAT masquerades traffic from internal interfaces to WAN.
+- Invalid state is dropped by `nixos-fw` itself, in both the input and forward
+  conntrack vmaps.
+- IPv4 ICMP is allowed from internal interfaces. ICMPv6 is accepted by
+  `nixos-fw` `input-allow` except redirects and node-info queries.
+- WAN IPv4 ping is rate-limited to `5/second` by an accept in
+  `networking.firewall`; WAN IPv6 ping is rate-limited by a drop in
+  `yirukou-edge`, because `nixos-fw` accepts all ICMPv6 in `input-allow`.
+- Raw prerouting drops spoofed/bogon IPv4 and IPv6 sources arriving on WAN,
+  including `fe80::/10`, and all IPv6 arriving on fallback WAN `enp6s0`.
+- Essential primary-WAN ICMPv6/ND and DHCPv6 replies are accepted in the
+  `wan_ll_ok` jump chain before `wan_bogon`. Only RA, NS, NA, and the four
+  ICMPv6 error types are exempted, and only on `enp7s0`.
+- A pre-filter edge chain runs before the NixOS ICMPv6 accept rules. It drops
+  unsolicited WAN-to-internal IPv6 and all IPv6 forwarding through fallback
+  WAN `enp6s0`.
+- NAT44 masquerades traffic from internal interfaces to WAN; NAT66 is absent.
+- Plain DNS (TCP/UDP 53) from `br0`, VLAN 42, and `tailscale0` is redirected
+  to local AdGuard Home unless the destination is already an AGH bind address,
+  a local address, or Tailscale MagicDNS (`100.100.100.100` or
+  `fd7a:115c:a1e0::53`). yifuwuqi Unbound iteration (`10.42.0.2` and IPv6 IID
+  `::2` arriving on `br0`) is not redirected.
+- Off-net DoT/DoQ (TCP/UDP 853) from those interfaces to WAN is dropped.
+  DoH on 443 is not intercepted. AGH DDR advertises DoH on TCP 3443 (open on
+  LAN/VLAN) and DoQ on 853.
 
 Forwarding behavior:
 
-- Internal interfaces may forward to WAN.
-- Tailscale clients may reach the LAN subnet `10.42.0.0/24`.
-- Established LAN replies back to Tailscale subnet clients are allowed.
+- Internal IPv4 may forward to either WAN; internal IPv6 may forward only to
+  primary WAN `enp7s0`.
+- Established/related IPv6 replies, including ICMPv6 errors and PMTU messages,
+  return through the `nixos-fw` forward conntrack vmap; unsolicited inbound
+  IPv6 is dropped in `yirukou-edge`.
+- Tailscale clients may reach the LAN subnet `10.42.0.0/24`. Established LAN
+  replies return through the `nixos-fw` forward conntrack vmap.
 
 That explicit Tailscale forwarding is what makes tailnet clients able to reach
 LAN addresses through the advertised subnet, not only direct Tailscale IPs.

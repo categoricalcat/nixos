@@ -34,12 +34,27 @@ in
         address = [
           lan.ipv4.address
           "${addresses.network.sinkhole.ipv4.host}/${toString lan.ipv4.prefixLength}"
+          "${addresses.network.sinkhole.ipv6.host}/128"
         ];
         networkConfig = {
-          DHCP = "no";
-          IPv6AcceptRA = "no";
-          LinkLocalAddressing = "no";
+          LinkLocalAddressing = "ipv6";
           IPv4Forwarding = true;
+          IPv6Forwarding = true;
+          IPv6AcceptRA = "no";
+          DHCPPrefixDelegation = true;
+          IPv6SendRA = true;
+        };
+        dhcpPrefixDelegationConfig = {
+          UplinkInterface = addresses.network.wan.primary.interface;
+          SubnetId = 0;
+          Token = lan.ipv6.interfaceId;
+          Announce = true;
+          Assign = true;
+          ManageTemporaryAddress = false;
+        };
+        ipv6SendRAConfig = {
+          EmitDNS = true;
+          DNS = "_link_local";
         };
         linkConfig.RequiredForOnline = "routable";
       };

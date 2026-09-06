@@ -19,7 +19,7 @@ ______________________________________________________________________
 │  │ 64MB Cache, Hagezi    │  ││  │ 64MB Cache, Hagezi    │  │
 │  │ Local DNS Rewrites    │  ││  │ Local DNS Rewrites    │  │
 │  └───────────┬───────────┘  ││  └───────────┬───────────┘  │
-│              │ 127.0.0.1:5335│              │ 127.0.0.1:5335
+│              │ [::1]:5335    │              │ [::1]:5335
 │  ┌───────────▼───────────┐  ││  ┌───────────▼───────────┐  │
 │  │ Unbound Resolver      │  ││  │ Unbound Resolver      │  │
 │  │ (Recursive DNS)       │  ││  │ (Recursive DNS)       │  │
@@ -38,7 +38,9 @@ Both `yirukou` (router) and `yifuwuqi` (server) run identical, synchronized DNS 
 
 ### 1.1 AdGuard Home (The Edge Filter)
 
-- **Binding**: Listens on `0.0.0.0:53` (Web management UI on port `24333` on `yifuwuqi`, `3333` on `yirukou`).
+- **Binding**: DNS listens on explicit IPv4 addresses plus IPv6 wildcard.
+  Web management remains IPv4 on port `24333` on `yifuwuqi` and `3333` on
+  `yirukou`.
 - **Memory Caching**: 64 MiB in-memory cache (`cache_enabled = true`, `cache_optimistic = true`, `cache_ttl_max = 300`) with `GOMEMLIMIT = 2560MiB`.
 - **Filtering Blocklists**:
   - `Hagezi Multi PRO++` (Comprehensive tracker & malware protection)
@@ -49,14 +51,21 @@ Both `yirukou` (router) and `yifuwuqi` (server) run identical, synchronized DNS 
   - `smb.fufu.land` $\\to$ `10.42.0.2` (Points SMB file share directly to `yifuwuqi`)
   - Dynamic host rewrites generated for all bare machine names and `.lan`/`.local`/`.ts`/`.nb` aliases.
 - **Encrypted DNS Endpoints**:
-  - DNS-over-TLS (DoT): Port `853` on `dns.fufu.land`
+  - DNS-over-TLS (DoT): Port `853` on `dns.fufu.land` (manual clients; AGH DDR omits DoT without IP SANs on the ACME cert)
   - DNS-over-QUIC (DoQ): Port `853` on `dns.fufu.land`
-  - DNS-over-HTTPS (DoH): Port `3443` and HTTPS reverse proxy endpoint `https://dns.fufu.land/dns-query`
-- **Upstream Forwarding**: All non-blocked queries are forwarded to the local Unbound instance at `127.0.0.1:5335`.
+  - DNS-over-HTTPS (DoH): Port `3443` (what DDR advertises) and nginx `https://dns.fufu.land/dns-query` on 443
+- **DDR**: `dns.handle_ddr = true`. AGH answers SVCB for `_dns.resolver.arpa` with target `dns.fufu.land` (DoH `:3443`, DoQ `:853`). The `:53` intercept still delivers those queries to AGH. Unbound does not serve this name. There is no DNR (Kea stays DHCPv4-only; RA is RDNSS only).
+- **Upstream Forwarding**: Queries prefer local Unbound at `[::1]:5335` with
+  `127.0.0.1:5335` retained as fallback.
+- **Blocking**: Custom-IP blocking returns `10.42.0.24` for A and the
+  static ULA `fd75:c55f:6d19::24` for AAAA. Only yirukou assigns the ULA;
+  both AdGuard instances return it.
 
 ### 1.2 Unbound (The Recursive Root Resolver)
 
-- **Binding**: Listens on `127.0.0.1:5335` (`access-control = [ "127.0.0.0/8 allow" ]`).
+- **Binding**: Listens on `127.0.0.1:5335` and `[::1]:5335`; ACLs allow only
+  IPv4 and IPv6 loopback.
+- **Transport**: IPv4 and IPv6 iterative DNS transport are enabled.
 - **Shared Valkey L2 Cache**: Configured with `module-config: "validator cachedb iterator"`. Connects to the centralized Valkey instance on `yifuwuqi` (`10.42.0.2:24379`). Both hosts share identical cached DNS records across reboots.
 - **Stale-While-Revalidate (SWR)**: `serve-expired = "yes"`, `serve-expired-ttl = 86400`, `serve-expired-reply-ttl = 30` ensures queries are answered immediately from cache while background tasks revalidate expiring records.
 - **Control Socket & Metrics**: Control socket `/run/unbound/unbound.ctl` allows CLI inspection via `unbound-control` and feeds the Prometheus `unbound-exporter` with extended metrics.

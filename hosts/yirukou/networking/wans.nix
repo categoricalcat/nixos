@@ -14,13 +14,22 @@ in
     "10-${primary.interface}" = {
       matchConfig.Name = primary.interface;
       networkConfig = {
-        DHCP = "ipv4";
+        DHCP = "yes";
         IPv6AcceptRA = "yes";
       };
       dhcpV4Config = {
         RouteMetric = primary.routeMetric;
         UseDNS = true;
         UseRoutes = false;
+      };
+      dhcpV6Config = {
+        PrefixDelegationHint = "::/56";
+        UseDNS = false;
+        WithoutRA = "solicit";
+      };
+      ipv6AcceptRAConfig = {
+        RouteMetric = primary.routeMetric;
+        UseDNS = false;
       };
       linkConfig.RequiredForOnline = "routable";
     };
@@ -29,7 +38,8 @@ in
       matchConfig.Name = fallback.interface;
       networkConfig = {
         DHCP = "ipv4";
-        IPv6AcceptRA = "yes";
+        IPv6AcceptRA = "no";
+        LinkLocalAddressing = "no";
       };
       dhcpV4Config = {
         RouteMetric = fallback.routeMetric;
