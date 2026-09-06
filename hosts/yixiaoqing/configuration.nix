@@ -58,7 +58,7 @@ in
   system.stateVersion = global.version;
 
   host = {
-    desktopEnvironment = "niri";
+    desktopEnvironment = "mango";
     desktopShell = "dms";
     workd = true;
   };

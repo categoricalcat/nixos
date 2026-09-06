@@ -13,13 +13,14 @@ Client (LAN / Mesh)
 AdGuard Home (:53)
   ├── 1. Matches against Hagezi blocklists & local .fufu.land rewrites
   ├── 2. Answers immediately from 64MB optimistic RAM cache if hot
-  └── 3. If unblocked & cold: forwards to 127.0.0.1:5335
+  └── 3. If unblocked & cold: forwards to [::1]:5335
+        (127.0.0.1:5335 fallback)
         │
         ▼
-Unbound Recursive Resolver (127.0.0.1:5335)
+Unbound Recursive Resolver ([::1]:5335 + 127.0.0.1:5335)
   ├── 1. Inspects local memory RRset / message cache
-  ├── 2. Queries shared Valkey L2 Cache (on yifuwuqi:24379)
-  │      └── Both yirukou & yifuwuqi share the same L2 database
+  ├── 2. Queries host-local Valkey L2 Cache (/run/redis/redis.sock)
+  │      └── Each host owns its own L2 database; nothing crosses the LAN
   └── 3. If cold across all caches: performs recursive root lookup
          └── Returns answer to AdGuard Home & saves to Valkey L2
 ```
@@ -28,11 +29,18 @@ ______________________________________________________________________
 
 ## 2. Configuration & Module Features (`modules/services/unbound.nix`)
 
-- **Binding**: Listens on loopback `127.0.0.1:5335` with `access-control = [ "127.0.0.0/8 allow" ]`.
-- **Shared Valkey L2 Cache**: Configured via `cachedb` module (`module-config: "validator cachedb iterator"`):
+- **Binding**: Listens on `[::1]:5335` and `127.0.0.1:5335`, with loopback-only ACLs. AdGuard prefers IPv6 and uses IPv4 as fallback.
+- **Host-local Valkey L2 Cache**: Configured via `cachedb` module (`module-config: "validator cachedb iterator"`):
   - Backend: `cachedb-backend: "redis"`
-  - Server: `cachedb-host: 10.42.0.2` (on `yirukou`) or `127.0.0.1` (on `yifuwuqi`)
-  - Port: `24379`
+  - Server: `redis-server-path: /run/redis/redis.sock` — the unix socket of the
+    valkey instance on the *same* host. No TCP, no LAN.
+  - `redis-timeout: 100` (ms)
+  - The cache is deliberately **not** shared between hosts. `cachedb` talks to
+    redis synchronously and the thread waiting on it cannot serve other DNS
+    queries, so upstream warns that frequent timeouts make Unbound "effectively
+    unusable with this backend" (`unbound.conf(5)`, cachedb section). Pointing
+    one host's cachedb at another host's LAN address stalled the resolver
+    whenever that link dropped, which is why each host now owns its instance.
 - **Stale-While-Revalidate (SWR)**:
   - `serve-expired = "yes"`
   - `serve-expired-ttl = 86400` (1 day max stale serving window)

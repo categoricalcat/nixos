@@ -8,6 +8,7 @@
     ../../modules/services/samba/client.nix
     ../../modules/services/adguardhome.nix
     ../../modules/services/unbound.nix
+    ../../modules/services/valkey.nix
     ../../modules/services/nginx-proxy.nix
     # ../../modules/services/monitoring/netdata.nix
     ../../modules/services/monitoring/exporters.nix

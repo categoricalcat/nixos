@@ -8,20 +8,20 @@ ______________________________________________________________________
 
 ## 1. Services Overview Table
 
-| Service          | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                        |
-| ---------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ------------------------------------------------------------------ |
-| **Homepage**     | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets       |
-| **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                          |
-| **SearXNG**      | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                 |
-| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (1GB LRU)                 | Redis fork; shared L2 DNS cache for Unbound & SearXNG rate limiter |
-| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                    |
-| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`      | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                        |
-| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                      |
-| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `sillytavern.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager              |
-| **Opencode**     | `opencode.nix`       | `24010`       | `agent.fufu.land`       | Native Agent Daemon                 | Autonomous AI coding agent backend                                 |
-| **Portainer CE** | `portainer.nix`      | `9443`        | `prtnr.fufu.land`       | Podman Socket                       | Container lifecycle & volume management web UI                     |
-| **Cloudflared**  | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*         | OCI Container                       | Zero-trust Cloudflare Tunnel connector                             |
-| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*       | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests              |
+| Service          | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                            |
+| ---------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| **Homepage**     | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets           |
+| **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                              |
+| **SearXNG**      | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                     |
+| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (LRU, per-host size)      | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter |
+| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                        |
+| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`      | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                            |
+| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                          |
+| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `sillytavern.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                  |
+| **Opencode**     | `opencode.nix`       | `24010`       | `agent.fufu.land`       | Native Agent Daemon                 | Autonomous AI coding agent backend                                     |
+| **Portainer CE** | `portainer.nix`      | `9443`        | `prtnr.fufu.land`       | Podman Socket                       | Container lifecycle & volume management web UI                         |
+| **Cloudflared**  | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*         | OCI Container                       | Zero-trust Cloudflare Tunnel connector                                 |
+| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*       | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                  |
 
 ______________________________________________________________________
 
@@ -48,11 +48,11 @@ ______________________________________________________________________
 
 ### 2.3 Valkey Datastore (`modules/services/valkey.nix`)
 
-- **Service**: In-memory Redis-compatible key-value store running on `0.0.0.0:24379`.
-- **Memory Management**: 1 GB maximum RAM allocation with `allkeys-lru` eviction policy.
+- **Service**: In-memory Redis-compatible key-value store. Runs on **both** `yifuwuqi` and `yirukou`, bound to `127.0.0.1` only; every consumer is host-local and connects over the unix socket `/run/redis/redis.sock`. Nothing reaches it across the LAN.
+- **Memory Management**: `allkeys-lru` eviction, sized per host in `modules/addresses.nix` — 1 GB on `yifuwuqi`, 512 MB on `yirukou`.
 - **Multi-Tenant Usage**:
-  - **DB 0**: Shared L2 DNS cache for Unbound instances across `yifuwuqi` and `yirukou`.
-  - **DB 1**: Rate limiting token bucket storage for SearXNG accessed over unix socket `/run/redis/redis.sock`.
+  - **DB 0**: L2 DNS cache for that host's own Unbound. Not shared between hosts — see [Unbound Architecture](../networking/unbound-integration.md) for why cachedb must not cross a link.
+  - **DB 1**: Rate limiting token bucket storage for SearXNG (`yifuwuqi` only), over the same unix socket.
 
 ### 2.4 Firecrawl Web Scraper Stack (`modules/services/firecrawl.nix`)
 

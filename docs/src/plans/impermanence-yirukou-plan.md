@@ -114,6 +114,9 @@ ______________________________________________________________________
          # DNS, Web Analytics & Clock Drift (Tier 2)
          "/var/lib/AdGuardHome"
          "/var/lib/unbound"
+         # yirukou runs its own valkey as Unbound's L2 cache; without this the
+         # RDB snapshot is lost on every boot and the cache starts cold.
+         "/var/lib/redis"
          "/var/lib/goaccess"
          "/var/lib/chrony"
 

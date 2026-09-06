@@ -12,6 +12,7 @@ _:
         networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = "no";
+          LinkLocalAddressing = "no";
         };
       };
     };

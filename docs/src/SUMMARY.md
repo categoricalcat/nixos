@@ -12,6 +12,7 @@
   - [yichuang (WSL2 Development)](hosts/yichuang.md)
 - [Networking & Perimeter](<>)
   - [yirukou Router & Edge](networking/yirukou.md)
+  - [IPv6 ULA vs GUA](networking/ipv6-ula-gua.md)
   - [Sysctl and Firewall Hardening](networking/sysctl-firewall.md)
   - [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md)
   - [Unbound Recursive DNS & L2 Cache](networking/unbound-integration.md)

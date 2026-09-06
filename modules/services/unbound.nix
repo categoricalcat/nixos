@@ -1,19 +1,24 @@
 {
   pkgs,
   config,
-  lib,
   allAddresses,
   ...
 }:
 
-let
-  # Shared DNS cache: single valkey on yifuwuqi, reached over the LAN from
-  # both hosts. Survives unbound restarts (and reboots, via RDB snapshots)
-  # and lets both instances share one cache.
-  cacheDb = allAddresses.hosts.yifuwuqi.services.valkey;
-in
-
 {
+  # The L2 cache is per-host and local: this module requires a valkey instance
+  # on the same machine (modules/services/valkey.nix). It is deliberately not
+  # shared between hosts -- see the cachedb comment below.
+  assertions = [
+    {
+      assertion = config.services.redis.servers ? "";
+      message = ''
+        modules/services/unbound.nix needs a host-local valkey for its cachedb
+        L2 cache. Import modules/services/valkey.nix on this host.
+      '';
+    }
+  ];
+
   services.unbound = {
     enable = true;
 
@@ -99,37 +104,44 @@ in
         do-tcp = "yes";
       };
 
-      # Second-level cache (valkey, shared with the other unbound instance).
-      # Low timeout so a hung valkey degrades to memory-cache-only resolution
-      # instead of stalling DNS. secret-seed stays at the default on both
-      # hosts so keys are identical and shareable.
+      # Second-level cache: the host-local valkey, over its unix socket.
+      #
+      # This must never cross a network link. cachedb speaks to redis
+      # synchronously and the thread waiting on it cannot serve other DNS
+      # queries, so upstream states that frequent timeouts make unbound
+      # "effectively unusable with this backend" (unbound.conf(5), cachedb).
+      # Pointing this at another host's LAN address stalled the resolver
+      # whenever that link dropped.
       #
       # redis-expire-records: redis_store SETs with EX = clamped_ttl +
       # serve-expired-ttl (cachedb/redis.c: ttl += cfg->serve_expired_ttl),
       # i.e. 7d1h-14d. Keys thus expire exactly when the read side
       # (good_expiry_and_qinfo) would refuse them (older than expiry +
       # serve-expired-ttl). Turning EX off would desync L2 from the 7d stale
-      # window and grow the db until the 1 GiB LRU cap.
+      # window and grow the db until the LRU cap.
       cachedb = {
         backend = "redis";
-        redis-server-host = cacheDb.host;
-        redis-server-port = cacheDb.port;
+        redis-server-path = config.services.redis.servers."".unixSocket;
         redis-timeout = 100;
         redis-expire-records = "yes";
       };
     };
   };
 
+  # The socket is mode 0660 owned redis:redis, so unbound needs the group to
+  # open it (same reason searx joins it in modules/services/searxng.nix).
+  users.users.${config.services.unbound.user}.extraGroups = [ "redis" ];
+
   # unbound's cachedb redis_init probes SET-with-EX only once at startup and
-  # never re-checks on reconnect (cachedb/redis.c). If it boots before the
-  # valkey host is reachable, every store falls back to plain SET for the
-  # process lifetime -- no key TTLs, LRU-only eviction. Wait for the network
-  # (and the local valkey, when one exists) so redis_init succeeds.
+  # never re-checks on reconnect (cachedb/redis.c). If it boots before valkey
+  # is up, every store falls back to plain SET for the process lifetime -- no
+  # key TTLs, LRU-only eviction. Wait for the local valkey so redis_init
+  # succeeds.
   systemd.services.unbound = {
     wants = [ "network-online.target" ];
     after = [
       "network-online.target"
-    ]
-    ++ lib.optionals (config.services.redis.servers ? "") [ "redis.service" ];
+      "redis.service"
+    ];
   };
 }

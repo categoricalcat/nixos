@@ -58,7 +58,7 @@ Exporters are declaratively registered in `modules/addresses.nix` under `allAddr
 | **Postgres**       | `9187`       | `yifuwuqi`            | `15s`             | `postgres://postgres@127.0.0.1:5432/postgres`     |
 | **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`             | Custom exporter scraping AGH API (:24333 / :3333) |
 | **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/unbound/unbound.ctl`            |
-| **Redis / Valkey** | `9121`       | `yifuwuqi`            | `15s`             | Unix socket `/run/redis/redis.sock`               |
+| **Redis / Valkey** | `9121`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/redis/redis.sock`               |
 
 Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface with `FreeBind = true`.
 
@@ -71,14 +71,16 @@ hosts probe them independently:
 - DNS: Cloudflare and Google public resolvers plus each host's own
   `127.0.0.1:53` (AdGuard -> Unbound chain).
 - HTTPS: Google `generate_204` and Cloudflare's captive-portal endpoint.
-- IPv6-only modules independently probe Quad9/Cloudflare ICMP, Quad9 and local
-  `[::1]:53` AAAA DNS, and the same HTTPS endpoints with IPv4 fallback
-  disabled.
+- IPv6-only modules assert LAN reachability, not internet reachability, because
+  there is no IPv6 egress. `icmp6` pings `fd75:c55f:6d19:1::1` and
+  `fd75:c55f:6d19:1::2`; `dns6` queries `[::1]:53` and both LAN ULA resolvers
+  for AAAA. Public IPv6 targets and the `http6` module were removed: they would
+  fail permanently by design and only generate noise.
 
 Blackbox modules (`blackbox.yml`) are named after the layer. A single `probe`
 scrape job fans out over host x layer x target; series carry `host` (origin,
 same meaning as every other job), `layer`
-(`icmp`/`dns`/`http`/`icmp6`/`dns6`/`http6`) and `instance` (target).
+(`icmp`/`dns`/`http`/`icmp6`/`dns6`) and `instance` (target).
 `up{job="blackbox"}` measures exporter reachability; `probe_success` measures
 the target. Smokeping's native `host` label (the ping target) is relabeled to
 `target`.

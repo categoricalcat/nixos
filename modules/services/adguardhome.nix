@@ -49,7 +49,15 @@ in
         bind_hosts = allAddresses.hosts.${config.networking.hostName}.services.adguardhome.dnsBindHosts;
 
         # Forward everything to local Unbound
-        upstream_dns = [
+        upstream_dns = [ "[::1]:5335" ];
+        fallback_dns = [ "127.0.0.1:5335" ];
+
+        bootstrap_prefer_ipv6 = false;
+        bootstrap_dns = [
+          "[::1]:5335"
+          "127.0.0.1:5335"
+        ];
+        local_ptr_upstreams = [
           "[::1]:5335"
           "127.0.0.1:5335"
         ];
@@ -57,18 +65,7 @@ in
         # load_balance: weighted random algorithm to select the best upstream server.
         # parallel: Parallel queries to all configured upstream servers to speed up resolving.
         # fastest_addr: It finds an IP address with the lowest latency and returns this IP address in DNS response.
-        upstream_mode = "parallel";
-
-        bootstrap_prefer_ipv6 = true;
-        bootstrap_dns = [
-          "[::1]:5335"
-          "127.0.0.1:5335"
-        ];
-        # fallback_dns = [];
-        local_ptr_upstreams = [
-          "[::1]:5335"
-          "127.0.0.1:5335"
-        ];
+        # upstream_mode = "parallel";
 
         edns_client_subnet = {
           enabled = true;

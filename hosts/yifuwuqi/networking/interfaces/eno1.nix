@@ -16,17 +16,12 @@
           DHCP = "no";
           DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
-          IPv6AcceptRA = "yes";
+          IPv6AcceptRA = "no";
           LinkLocalAddressing = "ipv6";
-        };
-        ipv6AcceptRAConfig = {
-          Token = addresses.network.lan.ipv6.interfaceId;
-          RouteMetric = 100;
-          UseDNS = false;
         };
 
         address = [
-          # addresses.network.lan.ipv6.address
+          addresses.network.lan.ipv6.address
           addresses.network.lan.ipv4.address
           "${addresses.network.sinkhole.ipv4.host}/24"
         ];

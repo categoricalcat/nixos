@@ -10,6 +10,7 @@ let
   keys = import ../../../secrets/keys.nix;
   listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
   listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
+  formatListenAddr = addr: if lib.hasInfix ":" addr then "[${addr}]" else addr;
   dynamicSshConfig = import ./dynamic.nix { inherit lib allAddresses keys; };
 
   aiGate = pkgs.writeShellScript "ai-gate" (builtins.readFile ./scripts/ai-gate.sh);
@@ -51,7 +52,7 @@ in
 
     listenAddresses =
       (map (addr: {
-        inherit addr;
+        addr = formatListenAddr addr;
         port = addresses.ssh.listenPort;
       }) addresses.ssh.listenAddresses)
       ++ (
@@ -69,7 +70,7 @@ in
         if listenWildcardIPv6 != null then
           [
             {
-              addr = listenWildcardIPv6;
+              addr = formatListenAddr listenWildcardIPv6;
               port = addresses.ssh.listenPort;
             }
           ]

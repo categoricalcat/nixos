@@ -87,7 +87,7 @@ let
   # (grafana's DB is in postgres, see hosts.yifuwuqi.services.postgresql).
   monitoringDataRoot = "/persist/monitoring";
 
-  internetProbes = rec {
+  internetProbes = {
     icmp = [
       "1.1.1.1"
       "8.8.8.8"
@@ -95,8 +95,8 @@ let
       "200.160.0.8"
     ];
     icmp6 = [
-      "2620:fe::fe"
-      "2606:4700:4700::1111"
+      "fd75:c55f:6d19:1::1"
+      "fd75:c55f:6d19:1::2"
     ];
     # 127.0.0.1:53 is the local AdGuard -> Unbound chain on both hosts.
     dns = [
@@ -105,15 +105,14 @@ let
       "127.0.0.1:53"
     ];
     dns6 = [
-      "[2620:fe::fe]:53"
       "[::1]:53"
+      "[fd75:c55f:6d19:1::1]:53"
+      "[fd75:c55f:6d19:1::2]:53"
     ];
     http = [
       "https://www.google.com/generate_204"
       "https://cp.cloudflare.com"
     ];
-    # Same endpoints as http; the blackbox module forces IPv6.
-    http6 = http;
   };
 
 in
@@ -212,11 +211,12 @@ in
         };
       };
 
-      # Shared valkey (unbound cachedb DNS cache + searxng). Runs only on the
-      # central host, reaches the instance locally over its unix socket. Key name must match the
-      # nixpkgs exporter module (services.prometheus.exporters.redis).
+      # Per-host valkey (unbound cachedb DNS cache, plus searxng on yifuwuqi).
+      # Every resolver host runs its own instance and reaches it over the local
+      # unix socket. Key name must match the nixpkgs exporter module
+      # (services.prometheus.exporters.redis).
       redis = {
-        hosts = "centralHost";
+        hosts = "scrapeHosts";
         settings = {
           # Runs as the valkey server user so it can open the unix socket
           # (owned redis:redis mode 660, under /run/redis).
@@ -236,9 +236,14 @@ in
 
       dns = {
         threads = 6; # unbound num-threads on this host
+        # Local AdGuard -> Unbound first: this list is also applied to enp4s0,
+        # which keeps the default route when eno1 is down. Leading with
+        # yirukou would stall every lookup on an unreachable address.
         systemNameservers = [
-          "10.42.0.1"
+          "::1"
           "127.0.0.1"
+          "fd75:c55f:6d19:1::1"
+          "10.42.0.1"
         ];
         domain = "vpn";
       }
@@ -260,7 +265,12 @@ in
 
         lan = {
           interface = "eno1";
-          ipv6.interfaceId = "::2";
+          ipv6 = rec {
+            cidr = "fd75:c55f:6d19:1::/64";
+            host = "fd75:c55f:6d19:1::2";
+            prefixLength = 64;
+            address = "${host}/${toString prefixLength}";
+          };
           ipv4 = rec {
             host = "10.42.0.2";
             prefixLength = 24;
@@ -322,6 +332,7 @@ in
         listenAddresses = [
           network.tailscale.ipv4.host
           network.netbird.ipv4.host
+          network.lan.ipv6.host
           network.lan.ipv4.host
         ];
         listenWildcardIPv4 = null;
@@ -426,6 +437,7 @@ in
           # AGH is not listening there.
           dnsBindHosts = [
             "::1"
+            network.lan.ipv6.host
             "127.0.0.1"
             "10.42.0.2"
             "100.69.0.6"
@@ -438,7 +450,7 @@ in
         };
         valkey = {
           port = 24379;
-          host = network.lan.ipv4.host;
+          maxMemory = "1gb";
         };
         opencode = {
           port = 24010;
@@ -588,7 +600,10 @@ in
 
       dns = {
         threads = 6; # unbound num-threads on this host
-        systemNameservers = [ "127.0.0.1" ];
+        systemNameservers = [
+          "::1"
+          "127.0.0.1"
+        ];
         lanServers = [
           "10.42.0.1"
           "10.42.0.2"
@@ -643,7 +658,12 @@ in
             "enp3s0"
             "enp2s0"
           ];
-          ipv6.interfaceId = "::1";
+          ipv6 = rec {
+            cidr = "fd75:c55f:6d19:1::/64";
+            host = "fd75:c55f:6d19:1::1";
+            prefixLength = 64;
+            address = "${host}/${toString prefixLength}";
+          };
           ipv4 = rec {
             cidr = "10.42.0.0/24";
             host = "10.42.0.1";
@@ -661,7 +681,12 @@ in
           parentInterface = "enp2s0";
           vlanId = 42;
           interface = "${parentInterface}.${toString vlanId}";
-          ipv6.interfaceId = "::1";
+          ipv6 = rec {
+            cidr = "fd75:c55f:6d19:2::/64";
+            host = "fd75:c55f:6d19:2::1";
+            prefixLength = 64;
+            address = "${host}/${toString prefixLength}";
+          };
           ipv4 = rec {
             cidr = "10.42.42.0/24";
             host = "10.42.42.1";
@@ -708,6 +733,7 @@ in
         listenAddresses = [
           network.tailscale.ipv4.host
           network.netbird.ipv4.host
+          network.lan.ipv6.host
           network.lan.ipv4.host
         ];
         listenWildcardIPv4 = null;
@@ -724,11 +750,21 @@ in
 
       services = {
         adguardhome = sharedServices.adguardhome // {
-          # Wildcard alone. It covers IPv4 and the RA-advertised br0/VLAN
-          # link-local RDNSS targets, whose addresses are not expressible here.
-          # Listing specific addresses alongside it makes the DoT/DoQ listener
-          # on 853 fail with EADDRINUSE and aborts the whole DNS server.
-          dnsBindHosts = [ "::" ];
+          dnsBindHosts = [
+            "::1"
+            network.lan.ipv6.host
+            network.untrusted.ipv6.host
+            "127.0.0.1"
+            network.lan.ipv4.host
+            network.untrusted.ipv4.host
+            network.tailscale.ipv4.host
+          ];
+        };
+        # Smaller than yifuwuqi's: this box has 7.5 GiB total and already
+        # carries unbound's 300m msg + 600m rrset in-memory caches.
+        valkey = {
+          port = 24379;
+          maxMemory = "512mb";
         };
       };
     };
@@ -740,7 +776,25 @@ in
       path = [
         "network"
         "lan"
+        "ipv6"
+        "host"
+      ];
+    }
+    {
+      suffix = "lan";
+      path = [
+        "network"
+        "lan"
         "ipv4"
+        "host"
+      ];
+    }
+    {
+      suffix = "local";
+      path = [
+        "network"
+        "lan"
+        "ipv6"
         "host"
       ];
     }

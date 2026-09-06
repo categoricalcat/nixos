@@ -2,372 +2,339 @@
 
 ## Status
 
-**IMPLEMENTED IN CONFIGURATION — not applied or runtime-verified.** Phases A-C
-are declared. Phase D and the CPE/ISP delegation gate still require staged
-deployment and live validation.
+**The previous native dual-stack design was deployed and failed live
+verification. The ULA revision is implemented in the working tree and awaits
+deployment and live verification.**
+
+DHCPv6-PD is abandoned. The primary CPE advertises a WAN `/64` by RA and
+offers a single `/128` by DHCPv6, but delegates no prefix, so the project
+gate requiring at least two `/64`s was never met. Native IPv6 is now out of
+scope: no IPv6 internet egress, no global addresses on any interface, and no
+dependency on the ISP, a VPS, or a tunnel broker.
+
+Tailscale is not part of the IPv6 address plan. Its overlay ULA
+`fd7a:115c:a1e0::/48` remains as-is for mesh hosts, but it cannot be handed
+to physical LAN clients, so it does not solve LAN addressing. Tailscale
+subnet routing and exit-node use stay IPv4-only exactly as today.
 
 Implementation choices:
 
-- request a `/56` PD hint; the CPE may return another size, but rollout stops
-  unless at least two `/64`s are delegated;
-- use subnet IDs `0` (`br0`) and `1` (VLAN 42);
-- use static ULA `fd75:c55f:6d19::24/128` for IPv6 sinkholing, assigned only
-  on yirukou and not advertised by RA;
-- keep AdGuard administration on IPv4 while DNS listens on IPv4 and IPv6;
-- include DHCPv6 replies from a link-local server in the primary-WAN raw-chain
-  exemption, in addition to essential ICMPv6;
-- solicit DHCPv6-PD independently of upstream RA M/O flags;
-- enforce fallback isolation and unsolicited-inbound policy in a pre-filter
-  chain before the NixOS firewall's general ICMPv6 accepts.
+- use the static ULA `fd75:c55f:6d19::/48` already used for the sinkhole;
+- give each segment one statically configured `/64`; nothing is delegated;
+- advertise prefix and RDNSS by RA with router lifetime `0`, so clients
+  autoconfigure addresses and DNS but install no IPv6 default route;
+- give both servers static addresses instead of having them accept RA;
+- remove IPv6 from both yirukou WANs and from yifuwuqi's fallback and Wi-Fi;
+- keep IPv4 as the only internet transport, with NAT44, DHCPv4, keepalived
+  failover, nginx, Valkey, and monitoring unchanged.
+
+## Live verification of the previous attempt (2026-09-06)
+
+| Check                                   | Result                                                                         |
+| --------------------------------------- | ------------------------------------------------------------------------------ |
+| yirukou `enp7s0` global address         | present by SLAAC (`2804:229c:8201:145b:…`), plus a temporary address           |
+| yirukou DHCPv6 prefix delegation        | none; only a conflicting `/128` address offer                                  |
+| yirukou `br0` / VLAN 42 delegated `/64` | never assigned; only link-local and the sinkhole `/128`                        |
+| yirukou IPv6 egress                     | `ping -6 2620:fe::fe` succeeded from the router only                           |
+| yifuwuqi `eno1` global address          | none, despite an RA default route via `br0`'s link-local                       |
+| yifuwuqi IPv6 egress                    | failed, as expected with no usable source address                              |
+| privacy addresses                       | active (`use_tempaddr = 2`) on both hosts despite `tempAddresses = "disabled"` |
+| yirukou AdGuard DNS bind                | `::` wildcard, relying entirely on the firewall for WAN exposure               |
+| Unbound `::1` listener and AAAA answers | working on both hosts                                                          |
+| blocked AAAA sinkhole answer            | correct (`fd75:c55f:6d19::24`)                                                 |
+| fallback WAN IPv6 isolation             | correct; no address and no route                                               |
+
+Two findings carry into this revision. Privacy addresses were enabled
+because systemd-networkd defaults `IPv6PrivacyExtensions` to true in
+nixpkgs, which overrides `networking.tempAddresses = "disabled"`. The RA
+that yirukou emitted with no prefix gave every RA-accepting LAN client a
+dead IPv6 default route pointing at a router with no usable path.
 
 ## Objective and scope
 
-Enable native dual-stack networking through yirukou's primary WAN and on the
-LANs it serves. Native IPv6 is preferred by RFC 6724 address selection when it
-is usable; existing static IPv4 addresses, DHCPv4, NAT44, and IPv4 failover
-remain available.
-
-IPv6 addressing uses a dynamic ISP-delegated prefix with stable interface IDs:
-
-- yirukou router: `<delegated-/64>::1`
-- yifuwuqi server: `<delegated-/64>::2`
-
-Here `::1` and `::2` are host tokens appended to a delegated `/64`. They are
-not complete addresses, and router token `::1` is not IPv6 loopback `::1/128`.
-The full global addresses change if the ISP rotates the prefix. The sinkhole
-uses the prefix-independent ULA `fd75:c55f:6d19::24/128`.
+Provide stable, prefix-independent IPv6 addressing on the LANs yirukou
+serves, for host-to-host and host-to-service traffic only. IPv6 never leaves
+the LAN. Because the prefix is locally assigned and permanent, complete
+addresses can live in Nix instead of being derived from a delegated prefix.
 
 In scope:
 
-- yirukou primary WAN `enp7s0`, LAN bridge `br0`, and VLAN 42;
-- yifuwuqi LAN interface `eno1`;
-- shared Unbound and AdGuard Home IPv6 transport and listeners;
-- firewall, address-model, monitoring, and failover verification needed for
-  those paths.
+- yirukou LAN bridge `br0` and VLAN 42: static ULA `/64` plus RA;
+- yifuwuqi `eno1`: static ULA address;
+- removal of all IPv6 from yirukou `enp7s0` and `enp6s0`;
+- Unbound and AdGuard listeners, address-selection policy, sinkhole,
+  firewall, and monitoring for those paths.
 
 Intentionally out of scope:
 
-- IPv6 on fallback WANs `enp6s0` and yifuwuqi `enp4s0`;
-- DHCPv6 service for LAN clients, NAT66, or an IPv6 tunnel broker;
+- any form of IPv6 internet egress, including NAT66, NPTv6, NDP proxying of
+  the CPE `/64`, tunnel brokers, and IPv6 through Tailscale exit nodes;
+- DHCPv6 service for LAN clients; clients use SLAAC and RDNSS;
 - IPv6 Tailscale/NetBird subnet advertisement;
-- converting Valkey, nginx backends, internal DNS rewrites, or all monitoring
-  traffic from IPv4 when retained IPv4 is sufficient;
-- yixiaoqing and yitaishi rollout details, although both already import the
-  common IPv6 policy module and may receive LAN RA when connected.
-
-## Verified pre-implementation repository state
-
-1. Neither yirukou WAN interface had a global IPv6 address or IPv6 default
-   route when last checked. Only primary `enp7s0` is in scope. Its
-   last-observed CPE was `192.168.1.1`, but the current gateway must be read
-   from the live DHCP lease rather than assumed from the repository. `enp6s0`
-   stays IPv4-only.
-1. yirukou already has `net.ipv6.conf.all.forwarding = 1` at runtime because
-   the NixOS Tailscale module sets it when `useRoutingFeatures` is `server` or
-   `both`. `yi.tailscale.routingMode = "both"` selects that mode. The final
-   configuration owns global forwarding explicitly. systemd-networkd receives
-   RA in userspace, and `IPv6AcceptRA = "yes"` maps its managed interface to
-   the required kernel behavior; no separate `accept_ra = 2` sysctl is needed.
-1. `hosts/yirukou/networking/wans.nix` currently sets
-   `IPv6AcceptRA = "yes"` on both WANs, but `DHCP = "ipv4"` starts no DHCPv6
-   client. The primary needs RA plus DHCPv6-PD; the fallback must explicitly
-   disable RA.
-1. yirukou's `br0` and VLAN 42 interfaces disable IPv6 link-local addressing.
-   yifuwuqi's `eno1`, `enp4s0`, and `wlp2s0` reject RA; only `eno1` is in scope
-   to change.
-1. `modules/services/unbound.nix` explicitly sets `do-ip6 = "no"` and listens
-   only on `127.0.0.1`. `modules/services/adguardhome.nix` already has
-   `ipv6_disabled = false`, but uses IPv4 loopback for Unbound and has
-   `bootstrap_prefer_ipv6 = false`.
-1. `modules/networking/sinkhole.nix` already has IPv6 nftables rules.
-   `2001:db8::/32` is an RFC 3849 documentation prefix, so its current
-   `2001:db8::1` and `2001:db8::2` placeholders must not survive rollout.
-1. The yirukou raw-prerouting bogon set drops `fe80::/10` on WAN. Upstream
-   router advertisements and neighbor discovery use link-local source
-   addresses, so essential ICMPv6 must be accepted before that drop on the
-   primary WAN. The normal NixOS firewall already admits core ICMPv6 in its
-   filter chain, but that happens after this raw-prerouting rule.
-1. Kea is DHCPv4-only. No DHCPv6 server is required: LAN clients use SLAAC and
-   RDNSS. There is no IPv6 equivalent of the IPv4 `.100-.250` pool.
-1. `modules/networking/ipv6.nix` enables IPv6, disables privacy addresses, and
-   gives native IPv6 higher RFC 6724 precedence than IPv4-mapped addresses.
-   yifuwuqi imports it; yirukou currently does not.
-1. `modules/addresses.nix` has no LAN IPv6 schema. Its `.lan`, `.local`, `.ts`,
-   and `.nb` aliases point to IPv4 fields, both AdGuard `dnsBindHosts` lists are
-   IPv4-only, and the sinkhole values are RFC 3849 placeholders.
-1. yifuwuqi's firewall trust and container rules use IPv4 `ip saddr`/`ip daddr` expressions. Its keepalived-managed default route and fallback
-   `enp4s0` path are IPv4-only.
-1. `modules/services/adguardhome.nix` uses IPv4-only admin and DNS upstream
-   endpoints. Its local rewrites return IPv4 addresses. nginx proxies to
-   yifuwuqi over IPv4, and Valkey listens on yifuwuqi's static IPv4 LAN
-   address.
-1. `modules/addresses.nix` internet probes and
-   `modules/services/monitoring/blackbox.yml` are IPv4-preferred and test DNS
-   type A. The Unbound dashboard can display IPv6 query counters, but no
-   automated IPv6 path probe exists.
+- converting Valkey, nginx backends, Prometheus scrapes, or the `.lan`,
+  `.local`, `.ts`, and `.nb` wildcard answers away from IPv4;
+- yixiaoqing and yitaishi, which keep importing the common IPv6 policy
+  module and will autoconfigure a LAN ULA when physically connected.
 
 ## Address and routing design
 
-- The ISP delegates a prefix to yirukou over `enp7s0` using DHCPv6-PD.
-- systemd-networkd automatically assigns one `/64` to `br0` and one `/64` to
-  VLAN 42 and advertises them using RA.
-- Ordinary clients receive addresses, routes, and DNS information
-  automatically through SLAAC/RDNSS.
-- Only delegated interface IDs are fixed: yirukou `::1` and yifuwuqi `::2`.
-  Use networkd's `dhcpPrefixDelegationConfig.Token` and `Assign` so the
-  delegated prefix remains automatic.
-- Advertise yirukou's link-local address as RDNSS using networkd's
-  `ipv6SendRAConfig.DNS = "_link_local"` instead of embedding a rotating GUA.
-  Existing DHCPv4 continues to advertise the static IPv4 DNS servers.
-- Bind services that may receive traffic on a rotating GUA to IPv6 wildcard
-  or link-local addresses and use the firewall as the exposure boundary.
-- AdGuard `blocking_ipv6` uses static ULA `fd75:c55f:6d19::24`. yirukou
-  assigns it as `/128` on `br0`; yifuwuqi returns the same DNS answer but does
-  not assign it, avoiding duplicate-address detection.
-- The ULA prefix is not advertised as on-link in RA. Dual-stack clients send
-  it to their default router, where yirukou's nftables input chain rejects it.
-- Do not leave `2001:db8::/32` placeholders active.
-- No NAT66.
+- `fd75:c55f:6d19::/48` is locally assigned and permanent. Full addresses,
+  not interface identifiers, belong in `modules/addresses.nix`.
+- `fd75:c55f:6d19::/64` stays unadvertised and holds only the existing
+  sinkhole address, which does not change.
+- Each served segment gets its own advertised `/64`.
+- RA carries the on-link prefix and RDNSS with `RouterLifetimeSec = 0`.
+  Clients therefore get an address and a DNS server but no IPv6 default
+  route, which is what keeps IPv6 confined to the LAN.
+- Both servers are statically configured and accept no RA, so no stray
+  upstream advertisement can install a default route or a second address.
+- RDNSS advertises yirukou's static segment address rather than its
+  link-local address. Because it is stable and expressible in Nix, AdGuard
+  can bind explicit addresses instead of the `::` wildcard.
+- DHCPv4 keeps advertising the static IPv4 DNS servers.
+- No NAT66, no NPTv6, no IPv6 default route on any interface.
 
-| Segment             | Delegated prefix | Router token | Server token | Clients |
-| ------------------- | ---------------- | ------------ | ------------ | ------- |
-| LAN (`br0`)         | first `/64`      | `::1`        | `::2`        | SLAAC   |
-| Untrusted (VLAN 42) | second `/64`     | `::1`        | —            | SLAAC   |
-| Spare               | remaining `/64`s | —            | —            | —       |
+| Segment             | Prefix                  | Router                | Server                | Clients        |
+| ------------------- | ----------------------- | --------------------- | --------------------- | -------------- |
+| LAN (`br0`)         | `fd75:c55f:6d19:1::/64` | `fd75:c55f:6d19:1::1` | `fd75:c55f:6d19:1::2` | SLAAC          |
+| Untrusted (VLAN 42) | `fd75:c55f:6d19:2::/64` | `fd75:c55f:6d19:2::1` | —                     | SLAAC          |
+| Sinkhole only       | `fd75:c55f:6d19::/64`   | `fd75:c55f:6d19::24`  | —                     | not advertised |
 
-The separate sinkhole address is `fd75:c55f:6d19::24/128`.
+Because clients have no IPv6 default route, a blocked AAAA answer of
+`fd75:c55f:6d19::24` is off-link and unreachable, so the client fails
+immediately and locally without a round trip. This replaces the previous
+mechanism, where the answer was expected to reach yirukou and be rejected by
+nftables. The static nftables sinkhole rules stay for hosts that can route
+to the address, which is yirukou itself.
 
-The PD must contain at least two `/64`s for both current segments. A single
-upstream `/64` cannot be routed onto both LANs without an undesirable
-workaround.
+There is no longer any prefix-size gate, project gate, or CPE dependency.
 
-### Project gates
+## Phase A — remove ISP-dependent IPv6
 
-Read the current primary gateway with `networkctl status enp7s0` or
-`networkctl dhcp-lease enp7s0`, then check that CPE and the ISP:
+1. In `hosts/yirukou/networking/wans.nix`, set both WANs to `DHCP = "ipv4"`
+   with `IPv6AcceptRA = "no"` and `LinkLocalAddressing = "no"`. Delete
+   `dhcpV6Config`, `PrefixDelegationHint`, and `ipv6AcceptRAConfig`.
 
-| Primary CPE/ISP result                   | Action                                    |
-| ---------------------------------------- | ----------------------------------------- |
-| Delegates at least two `/64`s to yirukou | Continue with Phases A-D                  |
-| Has IPv6 but offers no downstream PD     | Stop; do not deploy NAT66                 |
-| Has no IPv6                              | Stop or separately design a tunnel broker |
+1. In `hosts/yirukou/networking/firewall.nix`, drop IPv6 unconditionally on
+   both WAN interfaces for input, output, and forwarding. Remove the
+   raw-prerouting link-local exemption chain for RA, ND, and DHCPv6, the
+   LAN-to-primary-WAN IPv6 forward accept, and the unsolicited-inbound IPv6
+   rule, all of which existed only to support WAN RA and PD.
 
-Before Phase B, record the delegated prefix length and whether it remains
-stable across lease renewal and CPE reboot. Prefix stability does not change
-the token design, but determines how disruptive literal-address consumers
-would be.
+1. In `modules/networking/ipv6.nix`, set
+   `systemd.network.config.networkConfig.IPv6PrivacyExtensions = false` so
+   the declared `networking.tempAddresses = "disabled"` is actually honored,
+   and rewrite the address-selection policy so that the local ULA outranks
+   IPv4, and IPv4 outranks all remaining IPv6:
 
-## Phase A — primary WAN receive and PD
+   - `fd75:c55f:6d19::/48` above IPv4-mapped addresses;
+   - IPv4-mapped addresses above `::/0`;
+   - Tailscale's `fd7a:115c:a1e0::/48` left at its low default precedence so
+     tailnet traffic keeps preferring IPv4, as documented today.
 
-1. In `hosts/yirukou/networking/firewall.nix`, exempt only essential
-   primary-WAN ICMPv6 link-local traffic before the raw `fe80::/10` bogon drop.
-   Include RA, NS, NA, and required error/PMTU messages. Keep ordinary
-   link-local traffic blocked and reject all IPv6 ingress/forwarding on
-   fallback `enp6s0`. This must precede reliance on WAN RA or PD.
+1. Keep `net.ipv6.conf.all.forwarding = 1` in
+   `hosts/yirukou/networking/sysctl.nix`. It is still required for Tailscale
+   and for routing between the two LAN ULA segments.
 
-1. Import `modules/networking/ipv6.nix` on yirukou so both servers use the same
-   IPv6-enabled, no-privacy-address, IPv6-before-IPv4 policy.
-
-1. In `hosts/yirukou/networking/sysctl.nix`, explicitly own:
-
-   - `net.ipv6.conf.all.forwarding = 1`
-
-   Let systemd-networkd own per-interface forwarding and RA behavior.
-   `IPv6AcceptRA = "yes"` uses networkd's userspace RA client on `enp7s0`;
-   do not add kernel `accept_ra` sysctls. `enp6s0` remains IPv6-disabled.
-
-1. In `hosts/yirukou/networking/wans.nix`:
-
-   - primary `enp7s0`: enable DHCPv6 as well as DHCPv4, retain
-     `IPv6AcceptRA = "yes"`, request PD with
-     `dhcpV6Config.PrefixDelegationHint`, set
-     `dhcpV6Config.WithoutRA = "solicit"`, set `dhcpV6Config.UseDNS = false`
-     and `ipv6AcceptRAConfig.UseDNS = false`, and retain the local resolver;
-   - fallback `enp6s0`: retain `DHCP = "ipv4"` and set
-     `IPv6AcceptRA = "no"` and `LinkLocalAddressing = "no"`.
-
-   `dhcpV6Config.PrefixDelegation = true` is not a valid networkd option.
-   `PrefixDelegationHint` requests the PD; downstream interfaces consume it
-   with `networkConfig.DHCPPrefixDelegation = true`.
-
-1. Apply yirukou and verify `enp7s0` receives a global address, a default route,
-   and a delegated prefix. Verify `enp6s0` has no learned IPv6 default route.
+1. Apply yirukou and confirm no interface has a global address, temporary
+   address, or IPv6 default route.
 
 ```sh
-ip -6 address show dev enp7s0
+ip -6 address show
 ip -6 route show
-networkctl status enp7s0
-journalctl -u systemd-networkd
+networkctl status enp7s0 enp6s0
 ```
 
-No PD means stop at the project gate.
+## Phase B — yirukou LAN and VLAN ULA
 
-## Phase B — yirukou LAN routing and RA
+1. In `modules/addresses.nix`, replace `lan.ipv6.interfaceId` and
+   `untrusted.ipv6.interfaceId` with complete `host`, `prefixLength`,
+   `address`, and `cidr` fields for both segments on both hosts. Leave
+   `sinkhole.ipv6.host` unchanged.
 
 1. In `hosts/yirukou/networking/bridge.nix`, configure `br0` with:
 
-   - `LinkLocalAddressing = "ipv6"`
-   - `IPv6AcceptRA = "no"` (it is a router-facing LAN interface)
-   - `IPv6Forwarding = true`
-   - `DHCPPrefixDelegation = true`
-   - `IPv6SendRA = true`
-   - a deterministic `dhcpPrefixDelegationConfig.SubnetId`
-   - `dhcpPrefixDelegationConfig.Announce = true`
-   - `dhcpPrefixDelegationConfig.Assign = true` and yirukou's `::1` token
-   - `dhcpPrefixDelegationConfig.ManageTemporaryAddress = false`
-   - `ipv6SendRAConfig.EmitDNS = true` with `DNS = "_link_local"`
+   - `LinkLocalAddressing = "ipv6"` and `IPv6Forwarding = true`;
+   - `IPv6AcceptRA = "no"`;
+   - the static `fd75:c55f:6d19:1::1/64` address, keeping the existing IPv4
+     addresses and the sinkhole `/128`;
+   - `IPv6SendRA = true` with `ipv6SendRAConfig.RouterLifetimeSec = 0`,
+     `EmitDNS = true`, and `DNS = "fd75:c55f:6d19:1::1"`;
+   - no `DHCPPrefixDelegation` and no `dhcpPrefixDelegationConfig`; delete
+     the `UplinkInterface`, `SubnetId`, `Token`, `Announce`, and `Assign`
+     settings entirely.
 
-   Keep link-local addressing disabled on the bridge member ports; addresses
-   belong on `br0`.
+   Bridge member ports keep link-local addressing disabled.
 
-1. Apply the same downstream-PD and RA design to VLAN 42 in
-   `hosts/yirukou/networking/untrusted.nix`, using a different subnet ID.
-   Keep link-local addressing disabled on the VLAN parent `enp2s0`.
+1. Apply the same static design to VLAN 42 in
+   `hosts/yirukou/networking/untrusted.nix` using
+   `fd75:c55f:6d19:2::1/64` and its own RDNSS value. The VLAN parent
+   `enp2s0` keeps link-local addressing disabled.
 
-1. In `modules/addresses.nix`, record stable interface IDs separately from
-   complete addresses. Do not construct a full GUA in Nix from an unknown
-   delegated prefix. Replace the RFC 3849 sinkhole placeholders with static
-   ULA `fd75:c55f:6d19::24`. `dnsBindHosts` is defined here, not in
-   `hosts/yirukou/services.nix`.
+1. Extend `hosts/yirukou/networking/firewall.nix` so IPv6 matches the
+   existing IPv4 posture rather than inheriting a router-only default:
 
-1. Bind yirukou AdGuard Home DNS on IPv6 wildcard and link-local as required,
-   then enforce exposure by interface in the firewall. Audit both
-   `services.adguardhome.host`/`http.address` and `dns.bind_hosts`; they are
-   separate listeners and currently use IPv4.
+   - allow LAN and VLAN ULA traffic to yirukou's own services on the same
+     terms as IPv4;
+   - mirror the IPv4 untrusted-VLAN isolation for `ip6`, so VLAN 42 cannot
+     reach the LAN `/64`;
+   - keep required ICMPv6 on internal interfaces;
+   - keep the MagicDNS `fd7a:115c:a1e0::53` DNS-interception exemption;
+   - replace the delegated-IID DNS exemption for yifuwuqi with a plain
+     match on `fd75:c55f:6d19:1::2`, which is now static.
 
-1. Assign `fd75:c55f:6d19::24/128` only to yirukou `br0`, configure both
-   AdGuard instances to return it for blocked AAAA queries, and reject it in
-   the static nftables sinkhole table. Do not advertise its ULA prefix by RA
-   and do not assign it on yifuwuqi.
+1. Replace yirukou's `dnsBindHosts = [ "::" ]` in `modules/addresses.nix`
+   with an explicit list: IPv4 loopback and LAN addresses, the Tailscale
+   address, `::1`, and both segment ULAs. The wildcard existed only because
+   the RDNSS targets were rotating link-local addresses; static ULAs remove
+   that constraint and stop AdGuard from binding WAN addresses at all.
 
-1. Audit `hosts/yirukou/networking/firewall.nix` for:
-
-   - LAN-to-primary-WAN IPv6 forwarding;
-   - established/related return traffic;
-   - required ICMPv6 and PMTU discovery;
-   - no IPv6 forwarding through `enp6s0`;
-   - pre-filter enforcement before NixOS's general ICMPv6 accepts;
-   - DNS interception exemptions for Tailscale MagicDNS at
-     `100.100.100.100` and `fd7a:115c:a1e0::53`;
-   - yifuwuqi's dynamic-prefix IID `::2` DNS exemption scoped to `br0`.
-
-1. Verify one ordinary LAN client receives a GUA, default route, and RDNSS
-   automatically. Verify it has no manually assigned address.
-
-1. Verify a VLAN 42 client independently; do not infer VLAN behavior from
-   `br0`.
+1. Verify a LAN client and a VLAN 42 client independently. Each must
+   autoconfigure an address in its own `/64`, receive the segment RDNSS
+   address, and have no IPv6 default route.
 
 ## Phase C — yifuwuqi and DNS
 
-1. In `hosts/yifuwuqi/networking/interfaces/eno1.nix`, enable IPv6 link-local
-   addressing and RA. Set `ipv6AcceptRAConfig.Token` to stable `::2` while
-   learning the prefix and default route automatically. Set an explicit RA
-   route metric so the IPv6 route is unambiguous alongside IPv4 keepalived.
+1. In `hosts/yifuwuqi/networking/interfaces/eno1.nix`, add the static
+   address `fd75:c55f:6d19:1::2/64`, set `LinkLocalAddressing = "ipv6"`, and
+   set `IPv6AcceptRA = "no"`. Remove `ipv6AcceptRAConfig` and its `Token`.
+   This eliminates the dead RA default route observed during verification.
+
 1. Keep IPv6 disabled on yifuwuqi `enp4s0` and `wlp2s0`.
-1. In `modules/services/unbound.nix`, set `do-ip6 = "yes"` and listen on both
-   `127.0.0.1` and loopback `::1`. Add `::1/128 allow` to `access-control`.
-1. In `modules/services/adguardhome.nix`, use IPv6 loopback Unbound endpoints
-   before IPv4 loopback using bracketed `[::1]:5335` syntax and set
-   `bootstrap_prefer_ipv6 = true`. This preference is meaningful only after
-   Unbound listens on `::1`; the current bootstrap target is local Unbound,
-   not Quad9.
-1. Bind yifuwuqi AdGuard DNS on IPv6 wildcard rather than putting a dynamic
-   full GUA in `modules/addresses.nix`. Extend its default-deny firewall only
-   for the intended LAN DNS and management paths; keep container isolation and
-   unrelated services unchanged.
-1. Deploy shared Unbound and AdGuard module changes to yirukou first, verify
-   them, then yifuwuqi. Both hosts import these modules, so a shared edit must
-   not be treated as a single-host change.
-1. Verify both Unbound instances make outbound IPv6 queries. Returning an AAAA
-   record alone is insufficient because DNS transport could still be IPv4.
 
-## Phase D — end-to-end and fallback verification
+1. In `modules/services/unbound.nix`, keep `do-ip6 = "yes"`, the `::1`
+   listener, and `::1/128 allow`. Setting `do-ip6 = "no"` would also disable
+   the `::1` listener that AdGuard uses as `[::1]:5335`. Outbound IPv6
+   resolution stops on its own because neither host has an IPv6 default
+   route.
 
-1. Both servers have a global IPv6 address and default route through yirukou.
-1. Separate LAN and VLAN 42 clients each receive a GUA, default route, and
-   yirukou link-local RDNSS automatically.
-1. `ping -6 2620:fe::fe` works from both servers and a LAN client.
-1. Both `dig @127.0.0.1 AAAA github.com` and `dig @::1 AAAA github.com` work.
-   Unbound statistics or packet capture confirms outbound IPv6 transport.
-1. AdGuard Home listens on IPv6 and filter downloads work with IPv6 preferred.
-1. A blocked AAAA query returns `fd75:c55f:6d19::24`. Verify ordinary clients
-   receive an immediate nftables rejection from yirukou.
-1. Native IPv6 has higher address-selection precedence than IPv4 on both
-   servers. Test a dual-stack destination, not only an IPv6-only destination.
-1. Disable or disconnect primary-WAN IPv6 and verify dual-stack applications
-   continue over IPv4. Address selection alone does not guarantee instant
-   fallback; applications without Happy Eyeballs may wait for IPv6 failure.
-1. Confirm the fallback WAN never acquires a global IPv6 address or IPv6
-   default route.
-1. Trigger yifuwuqi's IPv4 fallback to `enp4s0` while IPv6 remains on `eno1`.
-   Confirm IPv4 and IPv6 take their intended independent paths without
-   reverse-path or firewall drops.
-1. Evaluate both NixOS configurations before each deployment and add
-   IPv6-specific ICMP, AAAA, and transport probes after manual validation.
+1. In `modules/services/adguardhome.nix`, set
+   `bootstrap_prefer_ipv6 = false`, keep `ipv6_disabled = false` so ULA AAAA
+   answers still work, and keep `blocking_ipv6` pointed at
+   `fd75:c55f:6d19::24`. Use `[::1]:5335` as the primary upstream and
+   `127.0.0.1:5335` as fallback, so the local AdGuard-to-Unbound hop prefers
+   IPv6 without losing IPv4 support. List IPv6 before IPv4 for bootstrap and
+   local PTR queries.
+
+1. Add `fd75:c55f:6d19:1::2` to yifuwuqi's explicit `dnsBindHosts` list.
+
+1. Add AAAA answers for the per-host `.lan` and `.local` names so internal
+   names resolve to the LAN ULA. Leave the `fufu.land` and `*.fufu.land`
+   wildcards IPv4-only, because nginx and its backends stay on IPv4.
+
+1. Prefer IPv6 for host DNS queries. On yifuwuqi, order system nameservers as
+   `fd75:c55f:6d19:1::1`, `::1`, then the existing IPv4 servers. On yirukou,
+   order them as `::1`, then `127.0.0.1`. RDNSS advertises the segment ULA to
+   SLAAC clients. Kea DHCPv4 option 6 remains IPv4-only because it cannot
+   carry IPv6 addresses.
+
+1. Deploy the shared Unbound and AdGuard changes to yirukou first, verify,
+   then yifuwuqi. Both hosts import these modules, so a shared edit is never
+   a single-host change.
+
+## Phase D — verification
+
+1. No interface on either host has a global address, a temporary address, or
+   an IPv6 default route. Both WANs and yifuwuqi's fallback and Wi-Fi links
+   have no IPv6 address at all.
+1. Both servers reach each other over the LAN ULA, in both directions.
+1. A LAN client and a VLAN 42 client each autoconfigure an address and receive
+   the correct RDNSS. The LAN client reaches both servers over IPv6. The VLAN
+   client reaches yirukou on its segment ULA but cannot reach yifuwuqi or the
+   LAN `/64`, matching the existing untrusted-segment isolation.
+1. `ping -6 2620:fe::fe` fails from every host. This is the intended result,
+   not a regression.
+1. `dig @127.0.0.1 AAAA github.com` and `dig @::1 AAAA github.com` still
+   work, DNS reaches AdGuard over the LAN ULA on both hosts, and the system
+   resolver lists ULA or `::1` before IPv4.
+1. Public dual-stack destinations are contacted over IPv4, while internal
+   names carrying an AAAA record are contacted over the ULA.
+1. A blocked AAAA query returns `fd75:c55f:6d19::24` and fails immediately
+   on the client for lack of a route.
+1. AdGuard filter downloads still succeed over IPv4, and no AdGuard or
+   Unbound listener is bound to a WAN address.
+1. IPv4 WAN failover on yirukou and yifuwuqi's `enp4s0` fallback behave
+   exactly as before; LAN IPv6 is unaffected by either transition, because
+   it does not depend on any uplink.
+1. Evaluate both configurations before each deployment.
 
 ## Global IPv6/IP6 audit
 
-| Existing setting / alias                   | Final state                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------------ |
-| yirukou primary WAN RA/DHCPv6-PD           | enabled                                                                  |
-| yirukou fallback WAN RA/DHCPv6             | disabled intentionally                                                   |
-| yirukou WAN ICMPv6/ND before bogon drop    | essential primary-WAN traffic allowed                                    |
-| yirukou `br0` and VLAN 42                  | IPv6 forwarding, delegated `/64`, RA enabled                             |
-| bridge member ports / VLAN parent          | link-local disabled intentionally                                        |
-| yifuwuqi `eno1`                            | RA plus stable `::2` token enabled                                       |
-| yifuwuqi `enp4s0`, `wlp2s0`                | IPv6 disabled intentionally                                              |
-| `networking.enableIPv6` / RFC 6724 policy  | enabled on both hosts                                                    |
-| temporary/privacy IPv6 addresses           | disabled on both hosts, including delegated LAN/VLAN addresses           |
-| Unbound `do-ip6`, loopback `::1`, ACL      | enabled on both hosts                                                    |
-| AdGuard `ipv6_disabled`                    | already false                                                            |
-| AdGuard DNS bind and `[::1]:5335` upstream | enabled; wildcard exposure firewall-gated                                |
-| AdGuard admin `host` / `http.address`      | explicitly reviewed; not implied by DNS bind                             |
-| AdGuard A/AAAA rewrites                    | existing internal rewrites remain IPv4 unless designed                   |
-| Sinkhole `ip6` / ICMPv6 rules              | static ULA `fd75:c55f:6d19::24`; assigned only on yirukou                |
-| `.lan`, `.local`, `.ts`, `.nb` aliases     | existing IPv4 answers retained; AAAA added only with runtime current GUA |
-| Kea DHCPv4 / SLAAC / RDNSS                 | DHCPv4 retained; no Kea DHCPv6 server                                    |
-| keepalived                                 | IPv4-only intentionally                                                  |
-| Tailscale/NetBird LAN route advertisement  | IPv4-only intentionally; overlay IPv6 remains                            |
-| qBittorrent VPN `disable_ipv6=1`           | retained intentionally to prevent VPN leaks                              |
-| SSH `listenWildcardIPv6 = null`            | retained; no broad IPv6 SSH exposure                                     |
-| yifuwuqi firewall `ip` rules               | retained; explicit `ip6` additions only where required                   |
-| nginx proxy/backend and Valkey transport   | retained on static IPv4                                                  |
-| Podman `ipv6_enabled = true`               | already enabled; no container-GUA rollout implied                        |
-| Avahi `nssmdns6 = true`                    | already enabled                                                          |
-| `AF_INET6` service sandbox allowances      | already present where required                                           |
-| ICMP/DNS/HTTP monitoring probes            | existing IPv4 probes retained; dedicated IPv6 probes added               |
+| Existing setting / alias                 | Final state                                                     |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| yirukou primary WAN RA/DHCPv6-PD         | removed; IPv4-only                                              |
+| yirukou fallback WAN RA/DHCPv6           | remains disabled                                                |
+| yirukou WAN ICMPv6/ND/DHCPv6 exemptions  | removed with WAN IPv6                                           |
+| yirukou `br0` and VLAN 42                | static ULA `/64`, RA with router lifetime 0, IPv6 forwarding    |
+| bridge member ports / VLAN parent        | link-local disabled intentionally                               |
+| yifuwuqi `eno1`                          | static ULA `::2`; accepts no RA                                 |
+| yifuwuqi `enp4s0`, `wlp2s0`              | IPv6 disabled intentionally                                     |
+| `networking.enableIPv6`                  | enabled on both hosts                                           |
+| address-selection policy                 | local ULA above IPv4, IPv4 above all other IPv6                 |
+| temporary/privacy IPv6 addresses         | disabled for real, via networkd `IPv6PrivacyExtensions = false` |
+| Unbound `do-ip6`, loopback `::1`, ACL    | retained; outbound IPv6 dies with the default route             |
+| AdGuard `ipv6_disabled`                  | stays false so ULA AAAA works                                   |
+| AdGuard → Unbound                        | `[::1]:5335` primary; IPv4 loopback fallback                    |
+| AdGuard DNS bind                         | explicit addresses only; `::` wildcard removed                  |
+| AdGuard `bootstrap_prefer_ipv6`          | false                                                           |
+| AdGuard rewrites                         | per-host `.lan`/`.local` gain AAAA; wildcards stay IPv4         |
+| Host resolver order                      | LAN ULA / `::1` before IPv4                                     |
+| Sinkhole `ip6` / ICMPv6 rules            | address unchanged; now unreachable client-side by design        |
+| `.lan`, `.local`, `.ts`, `.nb` aliases   | IPv4 answers retained                                           |
+| Kea DHCPv4 / SLAAC / RDNSS               | DHCPv4 retained; no DHCPv6 server                               |
+| keepalived                               | IPv4-only intentionally                                         |
+| Tailscale/NetBird route advertisement    | IPv4-only intentionally; overlay IPv6 untouched                 |
+| IPv6 internet egress                     | none, by design                                                 |
+| qBittorrent VPN `disable_ipv6=1`         | retained                                                        |
+| SSH `listenWildcardIPv6 = null`          | retained                                                        |
+| yifuwuqi firewall `ip` rules             | retained; explicit `ip6` additions only where required          |
+| nginx proxy/backend and Valkey transport | retained on static IPv4                                         |
+| Podman `ipv6_enabled = true`             | already enabled                                                 |
+| Avahi `nssmdns6 = true`                  | already enabled; now resolves ULA                               |
+| ICMP/DNS/HTTP monitoring probes          | public IPv6 probes removed; ULA probes added                    |
 
-## Failure and failover behavior
+## Monitoring
 
-keepalived remains IPv4-only. IPv6 exists only through primary `enp7s0`; there
-is no IPv6 route through fallback `enp6s0`. During IPv4 WAN failover, IPv6 must
-be withdrawn from LAN clients promptly and dual-stack applications fall back
-to IPv4. Verify RA router/prefix lifetimes and withdrawal behavior rather than
-assuming address precedence alone handles the transition.
+Public IPv6 targets in `modules/addresses.nix` and the `http6` module in
+`modules/services/monitoring/blackbox.yml` must be removed: they would fail
+permanently by design and generate noise. Keep the IPv6-forcing `icmp6` and
+`dns6` blackbox modules but point them at `fd75:c55f:6d19:1::1` and
+`fd75:c55f:6d19:1::2` and at a local AAAA query, so the probes assert LAN
+ULA reachability instead of internet reachability. All existing IPv4 probes
+stay.
 
-yifuwuqi can simultaneously use IPv4 through fallback `enp4s0` and IPv6
-through yirukou on `eno1`. This is intentional independent dual-stack routing,
-but must be tested for application behavior, reverse-path filtering, and
-firewall asymmetry. Loss of primary IPv6 must not remove or rewrite existing
-static IPv4 addresses.
+## Failure behavior
+
+LAN IPv6 no longer depends on any uplink, so WAN failover cannot withdraw
+addresses or prefixes from clients, and the RA lifetime concerns from the
+delegated-prefix design no longer apply. Losing an uplink affects IPv4 only.
+
+Because clients hold no IPv6 default route, they never attempt IPv6 for
+internet destinations, so there is no Happy Eyeballs delay to mitigate. The
+only IPv6 failure mode left is a local one: if yirukou stops advertising a
+segment, clients keep their address until the prefix lifetime expires and
+lose nothing else, since IPv4 carries all external traffic.
 
 ## Rollout order
 
-Primary CPE/ISP check → Phase A primary WAN → Phase B yirukou LAN/VLAN →
-Phase C yifuwuqi/DNS → Phase D IPv6 preference and IPv4 fallback. Apply and
-verify each phase before continuing.
+Phase A yirukou WAN IPv6 removal and policy → Phase B yirukou LAN and VLAN
+ULA with RA → Phase C yifuwuqi and DNS → Phase D verification. Apply and
+verify each phase before continuing. Shared DNS module changes go to yirukou
+first.
 
 ## Documentation follow-up
 
-After implementation, update current-state documentation rather than marking
-future behavior as already deployed:
+After implementation, update current-state documentation, describing an
+intentionally egress-free LAN IPv6 fabric rather than an incomplete native
+rollout:
 
 - `docs/src/networking/yirukou.md`
+- `docs/src/networking/ipv6-ula-gua.md`
 - `docs/src/networking/sysctl-firewall.md`
 - `docs/src/hosts/yirukou.md`
 - `docs/src/hosts/yifuwuqi.md`
 - `docs/src/services/dns-and-proxy.md`
 - `docs/src/services/monitoring.md`
 
-Keep IPv4-only components documented as intentional, not as incomplete IPv6
-conversion.
+Keep IPv4-only components documented as intentional, and record that no IPv6
+egress exists so a future reader does not treat it as a missing feature.

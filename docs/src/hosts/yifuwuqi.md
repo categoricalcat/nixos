@@ -23,13 +23,13 @@ ______________________________________________________________________
 
 ### Interface Assignments
 
-| Interface    | Type     | Address / Subnet                                              | Role                                                                   |
-| ------------ | -------- | ------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `eno1`       | Physical | `10.42.0.2/24`, `10.42.0.24/24`, delegated-prefix token `::2` | Primary dual-stack LAN interface (MTU 1492)                            |
-| `enp4s0`     | Physical | Dynamic DHCPv4                                                | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)      |
-| `wlp2s0`     | Wireless | Disabled                                                      | Wireless interface explicitly powered down (`ActivationPolicy = down`) |
-| `tailscale0` | Tunnel   | `100.69.0.6/32`                                               | Tailscale client mode (`exitNodeHost = null`, Tailscale SSH enabled)   |
-| `netbird0`   | Tunnel   | `100.42.0.2/16`                                               | NetBird mesh client                                                    |
+| Interface    | Type     | Address / Subnet                                          | Role                                                                   |
+| ------------ | -------- | --------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `eno1`       | Physical | `10.42.0.2/24`, `10.42.0.24/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492)                            |
+| `enp4s0`     | Physical | Dynamic DHCPv4                                            | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)      |
+| `wlp2s0`     | Wireless | Disabled                                                  | Wireless interface explicitly powered down (`ActivationPolicy = down`) |
+| `tailscale0` | Tunnel   | `100.69.0.6/32`                                           | Tailscale client mode (`exitNodeHost = null`, Tailscale SSH enabled)   |
+| `netbird0`   | Tunnel   | `100.42.0.2/16`                                           | NetBird mesh client                                                    |
 
 ### Network Tuning & Sysctl
 
@@ -37,8 +37,17 @@ ______________________________________________________________________
 - **Socket Buffer Ceiling**: 64 MiB max read/write buffers (`net.core.rmem_max = 67108864`, `net.core.wmem_max = 67108864`).
 - **Nginx Tail Latency Optimization**: `net.ipv4.tcp_notsent_lowat = 16384` (16 KB bounded un-sent buffer).
 - **Foreign Route Preservation**: `ManageForeignRoutes = false` in `eno1.nix` prevents `systemd-networkd` from stripping the Keepalived default route on daemon reload.
-- **Native IPv6**: `eno1` accepts yirukou RA with stable token `::2` and route
-  metric 100. `enp4s0` and `wlp2s0` remain IPv6-disabled.
+- **LAN-only IPv6**: `eno1` holds the static ULA `fd75:c55f:6d19:1::2/64` and
+  sets `IPv6AcceptRA = "no"`, so no advertisement can install a default route
+  or a second address. There is no global address and no IPv6 egress; IPv6 is
+  used only for host-to-host and host-to-service traffic on the LAN. `enp4s0`
+  and `wlp2s0` remain IPv6-disabled, and temporary/privacy addresses are off.
+  Why the ISP GUA is unused: [IPv6 ULA vs GUA](../networking/ipv6-ula-gua.md).
+- **Resolver order**: system nameservers are `::1`, `127.0.0.1`,
+  `fd75:c55f:6d19:1::1`, then `10.42.0.1`. IPv6 is preferred within each tier,
+  but the local AdGuard/Unbound chain comes first: the same list is applied to
+  `enp4s0`, which holds the default route whenever `eno1` is down, so leading
+  with yirukou would stall every lookup on an unreachable address.
 - **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`) to reach host DNS and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets.
 
 ______________________________________________________________________
@@ -69,9 +78,9 @@ ______________________________________________________________________
 
 ### 3.2 Valkey In-Memory Key-Value Store
 
-- Bound to `0.0.0.0:24379` with `protected-mode no` (firewall-protected).
+- Bound to `127.0.0.1` only; consumers use the unix socket `/run/redis/redis.sock`.
 - Memory limit: 1 GB with `allkeys-lru` eviction policy.
-- **DB 0**: Shared L2 DNS cache for Unbound instances on both `yifuwuqi` and `yirukou`.
+- **DB 0**: L2 DNS cache for this host's own Unbound. `yirukou` runs a separate instance and does not connect here.
 - **DB 1**: Rate limiting backend for SearXNG.
 
 ### 3.3 Samba File Server
@@ -164,10 +173,11 @@ ______________________________________________________________________
 - **Portainer CE**: Port 9443 (`prtnr.fufu.land`), Podman container management.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **AdGuard Home & Unbound**: Secondary resolver binds explicit addresses
-  (its IPv4 addresses plus `::1`, not a wildcard, so aardvark-dns keeps the
-  container bridges);
+  (`::1`, the LAN ULA `fd75:c55f:6d19:1::2`, and its IPv4 addresses, not a
+  wildcard, so aardvark-dns keeps the container bridges);
   local forwarding prefers `[::1]:5335` and falls back to `127.0.0.1:5335`.
-  Unbound iterative IPv6 transport is enabled. The web UI remains on IPv4
+  Unbound keeps `do-ip6` on for the `::1` listener, while outbound iteration is
+  IPv4 for lack of an IPv6 default route. The web UI remains on IPv4
   port 24333. AdGuard returns static ULA `fd75:c55f:6d19::24` for blocked AAAA
   queries; only yirukou assigns that address.
 

@@ -32,6 +32,7 @@ in
       "20-${lan.interface}" = {
         matchConfig.Name = lan.interface;
         address = [
+          lan.ipv6.address
           lan.ipv4.address
           "${addresses.network.sinkhole.ipv4.host}/${toString lan.ipv4.prefixLength}"
           "${addresses.network.sinkhole.ipv6.host}/128"
@@ -41,21 +42,14 @@ in
           IPv4Forwarding = true;
           IPv6Forwarding = true;
           IPv6AcceptRA = "no";
-          DHCPPrefixDelegation = true;
           IPv6SendRA = true;
         };
-        dhcpPrefixDelegationConfig = {
-          UplinkInterface = addresses.network.wan.primary.interface;
-          SubnetId = 0;
-          Token = lan.ipv6.interfaceId;
-          Announce = true;
-          Assign = true;
-          ManageTemporaryAddress = false;
-        };
         ipv6SendRAConfig = {
+          RouterLifetimeSec = 0;
           EmitDNS = true;
-          DNS = "_link_local";
+          DNS = lan.ipv6.host;
         };
+        ipv6Prefixes = [ { Prefix = lan.ipv6.cidr; } ];
         linkConfig.RequiredForOnline = "routable";
       };
     }

@@ -16,13 +16,13 @@ let
     launcher = {
       description = "Application Launcher (Spotlight)";
       keys = [
-        "SUPER,space"
+        "ALT,space"
       ];
     };
     launcherBar = {
       description = "Spotlight Bar";
       keys = [
-        "ALT,space"
+        "SUPER,space"
       ];
     };
     clipboard = {

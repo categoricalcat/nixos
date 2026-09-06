@@ -25,27 +25,23 @@ in
 
       "40-${untrusted.interface}" = {
         matchConfig.Name = untrusted.interface;
-        address = [ untrusted.ipv4.address ];
+        address = [
+          untrusted.ipv6.address
+          untrusted.ipv4.address
+        ];
         networkConfig = {
           LinkLocalAddressing = "ipv6";
           IPv4Forwarding = true;
           IPv6Forwarding = true;
           IPv6AcceptRA = "no";
-          DHCPPrefixDelegation = true;
           IPv6SendRA = true;
         };
-        dhcpPrefixDelegationConfig = {
-          UplinkInterface = addresses.network.wan.primary.interface;
-          SubnetId = 1;
-          Token = untrusted.ipv6.interfaceId;
-          Announce = true;
-          Assign = true;
-          ManageTemporaryAddress = false;
-        };
         ipv6SendRAConfig = {
+          RouterLifetimeSec = 0;
           EmitDNS = true;
-          DNS = "_link_local";
+          DNS = untrusted.ipv6.host;
         };
+        ipv6Prefixes = [ { Prefix = untrusted.ipv6.cidr; } ];
         linkConfig.RequiredForOnline = "no";
       };
     };

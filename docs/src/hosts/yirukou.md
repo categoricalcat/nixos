@@ -40,7 +40,8 @@ ______________________________________________________________________
                         │   └──────────────────────────────┘   │
                         │   ┌──────────────────────────────┐   │
                         │   │ VLAN 42 (enp2s0.42)          │   │
-                        │   │ └── 10.42.42.1/24 (Guest/IoT)│   │
+                        │   │ ├── 10.42.42.1/24            │   │
+                        │   │ └── fd75:c55f:6d19:2::1/64  │   │
                         │   └──────────────────────────────┘   │
                         │   ┌──────────────────────────────┐   │
                         │   │ Tailscale (100.69.0.1/32)    │   │
@@ -51,13 +52,21 @@ ______________________________________________________________________
 
 ### Interface Assignments
 
-| Interface    | Type        | Address / Subnet                             | Role                                                                     |
-| ------------ | ----------- | -------------------------------------------- | ------------------------------------------------------------------------ |
-| `enp7s0`     | Physical    | DHCPv4 plus RA/DHCPv6-PD                     | Primary WAN uplink (route metric 100, `/56` PD hint)                     |
-| `enp6s0`     | Physical    | Dynamic DHCPv4                               | IPv4-only fallback uplink (route metric 200)                             |
-| `br0`        | Bridge      | `10.42.0.1/24`, delegated `/64` token `::1`  | Trusted LAN bridge enslaving physical ports `enp5s0`, `enp4s0`, `enp3s0` |
-| `enp2s0.42`  | 802.1Q VLAN | `10.42.42.1/24`, delegated `/64` token `::1` | Untrusted / Guest VLAN 42 on parent port `enp2s0`                        |
-| `tailscale0` | Tunnel      | `100.69.0.1/32`                              | Tailscale mesh interface (`both` mode: subnet router + exit node)        |
+| Interface    | Type        | Address / Subnet                          | Role                                                                     |
+| ------------ | ----------- | ----------------------------------------- | ------------------------------------------------------------------------ |
+| `enp7s0`     | Physical    | Dynamic DHCPv4, IPv6 disabled             | Primary WAN uplink (route metric 100)                                    |
+| `enp6s0`     | Physical    | Dynamic DHCPv4, IPv6 disabled             | IPv4-only fallback uplink (route metric 200)                             |
+| `br0`        | Bridge      | `10.42.0.1/24`, `fd75:c55f:6d19:1::1/64`  | Trusted LAN bridge enslaving physical ports `enp5s0`, `enp4s0`, `enp3s0` |
+| `enp2s0.42`  | 802.1Q VLAN | `10.42.42.1/24`, `fd75:c55f:6d19:2::1/64` | Untrusted / Guest VLAN 42 on parent port `enp2s0`                        |
+| `tailscale0` | Tunnel      | `100.69.0.1/32`                           | Tailscale mesh interface (`both` mode: subnet router + exit node)        |
+
+Both WANs are IPv4-only (`DHCP = "ipv4"`, `IPv6AcceptRA = "no"`,
+`LinkLocalAddressing = "no"`). IPv6 exists only on the LAN segments as a static
+ULA out of `fd75:c55f:6d19::/48`, advertised by RA with `RouterLifetimeSec = 0`
+plus RDNSS, so clients get an address and a resolver but no IPv6 default route.
+There is no prefix delegation, no global IPv6 address, and no IPv6 internet
+egress by design; privacy/temporary addresses are disabled. See
+[IPv6 ULA vs GUA](../networking/ipv6-ula-gua.md).
 
 ______________________________________________________________________
 
@@ -92,21 +101,24 @@ ______________________________________________________________________
   - `enp2s0.42` (Untrusted): TCP `53`, `80`, `443`, `853`, `3443`; UDP `53`, `67`, `853` (SSH is blocked).
   - `tailscale0`: TCP `24212` (SSH).
   - WANs (`enp7s0`, `enp6s0`): UDP `51820` (Tailscale / WireGuard).
-- **Bogon Filtering**: Raw prerouting chain drops 14 IPv4 bogon subnets (`0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, etc.) and 11 IPv6 bogon subnets entering WAN interfaces.
+- **Bogon Filtering**: Raw prerouting chain drops 14 IPv4 bogon subnets (`0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, etc.) entering WAN interfaces. No IPv6 bogon set is needed.
 - **Forwarding & NAT**:
-  - Outbound NAT masquerading on WANs for LAN, VLAN 42, and Tailscale traffic.
+  - Outbound NAT44 masquerading on WANs for LAN, VLAN 42, and Tailscale traffic; no NAT66.
   - Forwarding enabled between Tailscale and LAN subnet `10.42.0.0/24`.
-- **IPv6 WAN policy**: DHCPv6-PD solicits independently of RA M/O flags.
-  Essential ICMPv6/ND and DHCPv6 replies bypass the primary-WAN link-local
-  bogon drop. Unsolicited inbound IPv6 and fallback-WAN IPv6 are dropped.
+  - LAN and VLAN 42 IPv6 are isolated from each other, mirroring the IPv4 rules.
+- **IPv6 WAN policy**: IPv6 is dropped on both WANs in prerouting, input,
+  output, and forwarding. No WAN RA, ND, or DHCPv6 handling remains, and no
+  IPv6 traffic can enter or leave the edge.
 - **Sinkhole Drop Table**: Static rules reject `10.42.0.24` and ULA
-  `fd75:c55f:6d19::24`. Both addresses are assigned on `br0`.
+  `fd75:c55f:6d19::24`. Both addresses are assigned on `br0`; the sinkhole
+  `/64` is unadvertised, so clients without an IPv6 route fail blocked AAAA
+  answers locally.
 
 ### 4.2 Sysctl Routing Hardening
 
 - `net.ipv4.ip_forward = 1`
 - `net.ipv4.conf.all.forwarding = 1`
-- `net.ipv6.conf.all.forwarding = 1`
+- `net.ipv6.conf.all.forwarding = 1` (Tailscale plus routing between LAN ULA segments)
 - `net.core.default_qdisc = "fq_codel"` (Fair Queuing Controlled Delay bufferbloat prevention)
 - `net.netfilter.nf_conntrack_max = 262144`
 - `net.netfilter.nf_conntrack_tcp_timeout_established = 7440` (optimized from 5 days)
@@ -119,11 +131,19 @@ ______________________________________________________________________
 
 ### 5.1 Primary DNS Stack
 
-- **AdGuard Home**: DNS listens on configured IPv4 addresses and IPv6
-  wildcard; the Web UI remains IPv4. Custom-IP blocking uses `10.42.0.24` and
-  static ULA `fd75:c55f:6d19::24`.
-- **Unbound**: Listens on `127.0.0.1:5335` and `[::1]:5335`, with IPv6
-  iterative transport enabled. It retains the IPv4 LAN Valkey backend.
+- **AdGuard Home**: DNS binds an explicit address list (`::1`, both segment
+  ULAs `fd75:c55f:6d19:1::1` and `fd75:c55f:6d19:2::1`, `127.0.0.1`,
+  `10.42.0.1`, `10.42.42.1`, and the Tailscale IPv4 address); the `::`
+  wildcard is gone, so
+  no listener touches a WAN address. The Web UI remains IPv4. Upstream is
+  `[::1]:5335` with `127.0.0.1:5335` as fallback. Custom-IP blocking uses
+  `10.42.0.24` and static ULA `fd75:c55f:6d19::24`.
+- **Unbound**: Listens on `127.0.0.1:5335` and `[::1]:5335`, with `do-ip6`
+  kept on so the `::1` listener exists. Outbound iteration is IPv4 in practice
+  because the host holds no IPv6 default route. It retains the IPv4 LAN Valkey
+  backend.
+- **System resolver**: `::1` first, then `127.0.0.1`. Kea DHCPv4 option 6
+  stays IPv4-only; SLAAC clients get the segment ULA through RDNSS.
 - **Encrypted DNS**: Serves DoT, DoQ, and DoH on `dns.fufu.land` (853, 3443, nginx `/dns-query` on 443). AGH DDR advertises DoH `:3443` and DoQ `:853` for `_dns.resolver.arpa`; DoT is omitted (no IP SANs). Manual DoT to `:853` still works. No DNR / Kea DHCPv6.
 
 ### 5.2 Nginx Ingress Reverse Proxy

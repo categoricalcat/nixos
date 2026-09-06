@@ -10,7 +10,12 @@
 
     servers."" = {
       enable = true;
-      bind = addresses.services.valkey.host;
+      # Loopback only. Every consumer is host-local and uses the unix socket;
+      # nothing connects across the LAN, so this instance never needs to be
+      # reachable off-box. unbound's cachedb is synchronous and blocks a worker
+      # thread per query, which is why it must not traverse a link that can go
+      # down (see modules/services/unbound.nix).
+      bind = "127.0.0.1";
       port = addresses.services.valkey.port;
       # unbound SETs keys with EX = clamped DNS TTL + serve-expired-ttl
       # (7d1h-14d), so the db normally self-cleans. maxmemory + allkeys-lru
@@ -18,15 +23,12 @@
       # probes SET-with-EX once at startup and never re-probes on reconnect,
       # so booting before valkey is reachable means plain SET for the whole
       # process lifetime. Note allkeys-lru evicts across logical DBs,
-      # including SearXNG's db1. protected-mode is off so unbound can reach
-      # it from yirukou over the LAN; default-deny firewall permits yirukou gateway.
+      # including SearXNG's db1 on yifuwuqi.
       extraParams = [
         "--maxmemory"
-        "1gb"
+        addresses.services.valkey.maxMemory
         "--maxmemory-policy"
         "allkeys-lru"
-        "--protected-mode"
-        "no"
       ];
     };
   };

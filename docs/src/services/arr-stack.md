@@ -21,7 +21,7 @@ Nix only moves listen/proxy ports. After switching host ports to the `24xxx` ran
 - Prowlarr Generic Torznab torrent-indexer: `http://127.0.0.1:24181/api/torznab`.
 - Prowlarr application integrations: `127.0.0.1` with Radarr `24878`, Sonarr `24989`, Lidarr `24686`, Readarr `24787`. Lidarr manual Torznab: `http://localhost:24696/<id>/`.
 - Seerr / Jellyseerr: Jellyfin server URL if it still has `:8096` (listen is now `24096`).
-- Unbound on `yirukou`: confirm it can reach Valkey at `10.42.0.2:24379`.
+- Unbound on `yirukou`: confirm it can reach its own Valkey at `/run/redis/redis.sock` (host-local; it no longer connects to `yifuwuqi`).
 
 ## 1. Initial Authentication
 

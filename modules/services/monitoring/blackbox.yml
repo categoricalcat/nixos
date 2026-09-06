@@ -39,12 +39,3 @@ modules:
       follow_redirects: true
       preferred_ip_protocol: ip4
       ip_protocol_fallback: false
-  http6:
-    prober: http
-    timeout: 5s
-    http:
-      method: GET
-      valid_status_codes: [204]
-      follow_redirects: true
-      preferred_ip_protocol: ip6
-      ip_protocol_fallback: false

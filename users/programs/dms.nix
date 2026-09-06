@@ -9,7 +9,41 @@
 let
   themeAssets = import ../../modules/theme-assets.nix { inherit inputs pkgs; };
   colors = import ../../modules/theme.nix;
+  c = name: "#${colors.${name}}";
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
+  yimokaTheme = {
+    dark = {
+      name = "Yimoka Dark";
+      primary = c "base0D";
+      primaryText = c "base00";
+      primaryContainer = c "base02";
+      secondary = c "base0E";
+      secondaryContainer = c "base02";
+      tertiary = c "base0C";
+      tertiaryContainer = c "base02";
+      surface = c "base00";
+      surfaceText = c "base05";
+      surfaceVariant = c "base01";
+      surfaceVariantText = c "base05";
+      surfaceTint = c "base0D";
+      background = c "base00";
+      backgroundText = c "base05";
+      outline = c "base03";
+      outlineVariant = c "base04";
+      surfaceContainerLowest = c "base00";
+      surfaceContainerLow = c "base01";
+      surfaceContainer = c "base01";
+      surfaceContainerHigh = c "base02";
+      surfaceContainerHighest = c "base03";
+      surfaceBright = c "base03";
+      surfaceDim = c "base00";
+      error = c "base08";
+      warning = c "base0A";
+      success = c "base0B";
+      info = c "base0D";
+      matugen_type = "scheme-expressive";
+    };
+  };
 in
 {
   imports = [
@@ -101,6 +135,6 @@ in
           };
         };
 
-        xdg.configFile."DankMaterialShell/themes/yimoka.json".source = ./dms/themes/yimoka.json;
+        xdg.configFile."DankMaterialShell/themes/yimoka.json".text = builtins.toJSON yimokaTheme;
       };
 }

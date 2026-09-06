@@ -6,7 +6,7 @@
 }:
 
 # Packet policy layers, earliest first:
-#   raw (-300)      yirukou-edge prerouting (bogon / fallback-WAN IPv6)
+#   raw (-300)      yirukou-edge prerouting (bogon / WAN IPv6)
 #   mangle + 10     nixos-fw rpfilter
 #   dstnat (-100)   yirukou-dns (plain DNS redirect)
 #   filter - 10     yirukou-edge input/forward denies
@@ -61,19 +61,6 @@ let
     "224.0.0.0/4"
     "240.0.0.0/4"
   ];
-  wanBogonV6 = join [
-    "::/128"
-    "::1/128"
-    "64:ff9b::/96"
-    "100::/64"
-    "2001:2::/48"
-    "2001:10::/28"
-    "2001:db8::/32"
-    "2002::/16"
-    "fc00::/7"
-    "fe80::/10"
-    "ff00::/8"
-  ];
   yifuwuqi = allAddresses.hosts.yifuwuqi.network;
   magicDns = allAddresses.tailscale.magicDns;
   ourDnsV4 = join [
@@ -82,6 +69,11 @@ let
     addresses.network.vpn.ipv4.host
     yifuwuqi.lan.ipv4.host
     yifuwuqi.vpn.ipv4.host
+  ];
+  ourDnsV6 = join [
+    lan.ipv6.host
+    untrusted.ipv6.host
+    yifuwuqi.lan.ipv6.host
   ];
   ifaceSets = ''
     set wan_ifaces {
@@ -131,7 +123,6 @@ in
         iifname @wan_ifaces ip protocol icmp icmp type echo-request limit rate 5/second accept comment "rate-limited wan ping"
       '';
       extraForwardRules = ''
-        iifname @internal_ifaces oifname "${wan.primary.interface}" meta nfproto ipv6 accept comment "internal ipv6 to primary wan"
         iifname @internal_ifaces oifname @wan_ifaces meta nfproto ipv4 accept comment "internal ipv4 to wan"
         iifname "${vpn}" oifname "${lan.interface}" ip daddr ${lan.ipv4.cidr} accept comment "tailscale to lan subnet"
       '';
@@ -151,50 +142,37 @@ in
               flags interval
               elements = { ${wanBogonV4} }
             }
-            set wan_bogon_v6 {
-              type ipv6_addr
-              flags interval
-              elements = { ${wanBogonV6} }
-            }
-
-            chain wan_ll_ok {
-              ip6 saddr fe80::/10 icmpv6 type {
-                destination-unreachable,
-                packet-too-big,
-                time-exceeded,
-                parameter-problem,
-                nd-router-advert,
-                nd-neighbor-solicit,
-                nd-neighbor-advert
-              } accept comment "essential primary wan icmpv6"
-              ip6 saddr fe80::/10 udp sport 547 udp dport 546 accept comment "primary wan dhcpv6"
-            }
-
             chain wan_bogon {
               ip saddr @wan_bogon_v4 drop comment "spoofed ipv4 on wan"
-              ip6 saddr @wan_bogon_v6 drop comment "spoofed ipv6 on wan"
             }
 
             chain prerouting {
               type filter hook prerouting priority raw; policy accept;
 
-              iifname "${wan.fallback.interface}" meta nfproto ipv6 drop comment "disable ipv6 on fallback wan"
-              iifname "${wan.primary.interface}" jump wan_ll_ok
+              iifname @wan_ifaces meta nfproto ipv6 drop comment "disable ipv6 on wan"
               iifname @wan_ifaces jump wan_bogon
             }
 
             chain input {
               type filter hook input priority filter - 10; policy accept;
 
-              iifname @wan_ifaces icmpv6 type echo-request limit rate over 5/second drop comment "rate-limit wan ping6"
+              iifname @wan_ifaces meta nfproto ipv6 drop comment "disable ipv6 input on wan"
+            }
+
+            chain output {
+              type filter hook output priority filter - 10; policy accept;
+
+              oifname @wan_ifaces meta nfproto ipv6 drop comment "disable ipv6 output on wan"
             }
 
             chain forward {
               type filter hook forward priority filter - 10; policy accept;
 
               iifname @dns_client_ifaces oifname @wan_ifaces meta l4proto { tcp, udp } th dport 853 drop comment "no off-net DoT/DoQ"
-              oifname "${wan.fallback.interface}" meta nfproto ipv6 drop comment "disable ipv6 forwarding through fallback wan"
-              iifname @wan_ifaces oifname @internal_ifaces meta nfproto ipv6 ct state { invalid, new, untracked } drop comment "drop unsolicited inbound ipv6"
+              iifname @wan_ifaces meta nfproto ipv6 drop comment "disable inbound ipv6 forwarding on wan"
+              oifname @wan_ifaces meta nfproto ipv6 drop comment "disable outbound ipv6 forwarding on wan"
+              iifname "${untrusted.interface}" oifname "${lan.interface}" ip6 daddr ${lan.ipv6.cidr} drop comment "isolate untrusted ipv6 from lan"
+              iifname "${lan.interface}" oifname "${untrusted.interface}" ip6 daddr ${untrusted.ipv6.cidr} drop comment "isolate lan ipv6 from untrusted"
             }
           '';
         };
@@ -207,6 +185,10 @@ in
               type ipv4_addr
               elements = { ${ourDnsV4} }
             }
+            set our_dns_v6 {
+              type ipv6_addr
+              elements = { ${ourDnsV6} }
+            }
 
             chain prerouting {
               type nat hook prerouting priority dstnat; policy accept;
@@ -214,9 +196,10 @@ in
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip daddr ${magicDns.ipv4} return
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip6 daddr ${magicDns.ipv6} return
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip daddr @our_dns_v4 return
+              iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip6 daddr @our_dns_v6 return
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 fib daddr type local return
               iifname @dns_client_ifaces ip saddr ${yifuwuqi.lan.ipv4.host} meta l4proto { tcp, udp } th dport 53 return
-              iifname "${lan.interface}" ip6 saddr & ::ffff:ffff:ffff:ffff == ${yifuwuqi.lan.ipv6.interfaceId} meta l4proto { tcp, udp } th dport 53 return
+              iifname "${lan.interface}" ip6 saddr ${yifuwuqi.lan.ipv6.host} meta l4proto { tcp, udp } th dport 53 return
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 redirect to :53
             }
           '';

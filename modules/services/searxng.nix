@@ -18,7 +18,7 @@ in
   # finish before either of them, otherwise EnvironmentFile= fails on first
   # boot and `searx-init` never writes /run/searx/settings.yml.
 
-  # The shared valkey's unix socket is owned redis:redis mode 660; searx needs
+  # The local valkey's unix socket is owned redis:redis mode 660; searx needs
   # group access to use it (rate-limiter keys live on logical db 1).
   users.users.searx.extraGroups = [ "redis" ];
 
@@ -28,8 +28,8 @@ in
     environmentFile = secretEnv;
 
     settings = {
-      # Shared valkey on yifuwuqi (also backing unbound's cachedb); rate
-      # limiter keys live in logical db 1, separate from the DNS cache.
+      # Host-local valkey (also backing unbound's cachedb); rate limiter keys
+      # live in logical db 1, separate from the DNS cache.
       valkey.url = "unix://${config.services.redis.servers."".unixSocket}?db=1";
 
       general = {

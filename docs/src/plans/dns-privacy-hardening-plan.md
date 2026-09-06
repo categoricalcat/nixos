@@ -147,8 +147,8 @@ servers. CDNs already geo-steer on each host's WAN egress IP.
 So a Rio `custom_ip` is a **privacy** change (unbound stops seeing
 LAN/Tailscale client subnets), **not** geo-steering. Real RJ steering would
 need unbound's `subnetcache` module plus `send-client-subnet` for selected
-authorities, fragmenting the shared valkey key space across both instances —
-out of scope, and pointless if both WAN egresses are already in RJ.
+authorities, fragmenting each host's valkey key space — out of scope, and
+pointless if both WAN egresses are already in RJ.
 
 Chosen `custom_ip`: **`200.20.186.76`** (`d.st1.ntp.br`). Reasons it is a
 reliable static pick:

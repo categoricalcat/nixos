@@ -32,7 +32,7 @@ ______________________________________________________________________
 ## 3. Quick Navigation
 
 - **Fleet Hosts**: [yirukou](hosts/yirukou.md) · [yifuwuqi](hosts/yifuwuqi.md) · [yitaishi](hosts/yitaishi.md) · [yixiaoqing](hosts/yixiaoqing.md) · [yichuang](hosts/yichuang.md)
-- **Networking**: [yirukou Router](networking/yirukou.md) · [Sysctl & Firewall](networking/sysctl-firewall.md) · [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md) · [Unbound Architecture](networking/unbound-integration.md)
+- **Networking**: [yirukou Router](networking/yirukou.md) · [IPv6 ULA vs GUA](networking/ipv6-ula-gua.md) · [Sysctl & Firewall](networking/sysctl-firewall.md) · [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md) · [Unbound Architecture](networking/unbound-integration.md)
 - **Core Infrastructure**: [Secrets Management](services/secrets.md) · [DNS & Reverse Proxy](services/dns-and-proxy.md) · [Monitoring Stack](services/monitoring.md) · [AI-SSH Restricted Lane](services/ai-ssh.md)
 - **Applications & Storage**: [Hosted Services Directory](services/hosted-services.md) · [Arr Stack](services/arr-stack.md) · [File Sharing (Samba/WebDAV)](services/file-sharing.md) · [AI & Local Inference](services/ai-rocm.md)
 - **Nix Mesh & CI/CD**: [Nix Build & Cache Mesh](services/nix-build-cache.md) · [CI/CD Pipeline](services/ci-cd.md) · [CI & Binary Cache Bootstrap](services/ci-cache.md)
