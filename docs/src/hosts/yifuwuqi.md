@@ -163,7 +163,9 @@ ______________________________________________________________________
 - **Cockpit**: Port 24091 (`cockpit.fufu.land`), server admin web console.
 - **Portainer CE**: Port 9443 (`prtnr.fufu.land`), Podman container management.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
-- **AdGuard Home & Unbound**: Secondary resolver listens on IPv4 and IPv6;
+- **AdGuard Home & Unbound**: Secondary resolver binds explicit addresses
+  (its IPv4 addresses plus `::1`, not a wildcard, so aardvark-dns keeps the
+  container bridges);
   local forwarding prefers `[::1]:5335` and falls back to `127.0.0.1:5335`.
   Unbound iterative IPv6 transport is enabled. The web UI remains on IPv4
   port 24333. AdGuard returns static ULA `fd75:c55f:6d19::24` for blocked AAAA

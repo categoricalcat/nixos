@@ -42,8 +42,10 @@ in
       };
 
       dns = {
-        # Wildcard so plain DNS / DoT / DoQ / DoH stay reachable on the dynamic fallback WAN IP.
-        # Plain DNS on port 53 is gated to internal interfaces by the host firewall.
+        # Per-host, see addresses.nix. A wildcard entry must not be combined
+        # with specific addresses: only the plain-DNS listeners set
+        # SO_REUSEADDR, so the TLS listener would fail to bind both.
+        # Exposure is gated per interface by the host firewall.
         bind_hosts = allAddresses.hosts.${config.networking.hostName}.services.adguardhome.dnsBindHosts;
 
         # Forward everything to local Unbound

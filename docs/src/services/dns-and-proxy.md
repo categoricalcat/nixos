@@ -38,8 +38,13 @@ Both `yirukou` (router) and `yifuwuqi` (server) run identical, synchronized DNS 
 
 ### 1.1 AdGuard Home (The Edge Filter)
 
-- **Binding**: DNS listens on explicit IPv4 addresses plus IPv6 wildcard.
-  Web management remains IPv4 on port `24333` on `yifuwuqi` and `3333` on
+- **Binding**: `yirukou` uses the IPv6 wildcard alone, which also covers IPv4
+  and the link-local addresses it advertises as RDNSS; exposure is gated per
+  interface by the firewall. `yifuwuqi` binds explicit addresses (IPv4 plus
+  `::1`) so it does not contend with aardvark-dns on the container bridges. A
+  wildcard cannot be mixed with explicit addresses, because only the plain-DNS
+  listeners set `SO_REUSEADDR` and the DoT/DoQ listener on `853` would fail to
+  bind. Web management remains IPv4 on port `24333` on `yifuwuqi` and `3333` on
   `yirukou`.
 - **Memory Caching**: 64 MiB in-memory cache (`cache_enabled = true`, `cache_optimistic = true`, `cache_ttl_max = 300`) with `GOMEMLIMIT = 2560MiB`.
 - **Filtering Blocklists**:

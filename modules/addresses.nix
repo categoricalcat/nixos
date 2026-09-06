@@ -421,8 +421,11 @@ in
         };
         adguardhome = sharedServices.adguardhome // {
           port = 24333;
+          # Explicit addresses only: aardvark-dns owns 172.17.x:53 on the
+          # container bridges, and the firewall's container isolation assumes
+          # AGH is not listening there.
           dnsBindHosts = [
-            "::"
+            "::1"
             "127.0.0.1"
             "10.42.0.2"
             "100.69.0.6"
@@ -721,14 +724,11 @@ in
 
       services = {
         adguardhome = sharedServices.adguardhome // {
-          dnsBindHosts = [
-            "::"
-            "127.0.0.1"
-            "10.42.0.1"
-            "10.42.42.1"
-            "100.69.0.1"
-            "100.42.0.1"
-          ];
+          # Wildcard alone. It covers IPv4 and the RA-advertised br0/VLAN
+          # link-local RDNSS targets, whose addresses are not expressible here.
+          # Listing specific addresses alongside it makes the DoT/DoQ listener
+          # on 853 fail with EADDRINUSE and aborts the whole DNS server.
+          dnsBindHosts = [ "::" ];
         };
       };
     };
