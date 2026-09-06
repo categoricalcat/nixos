@@ -79,7 +79,7 @@ ______________________________________________________________________
 ### 3.2 Valkey In-Memory Key-Value Store
 
 - Bound to `127.0.0.1` only; consumers use the unix socket `/run/redis/redis.sock`.
-- Memory limit: 1 GB with `allkeys-lru` eviction policy.
+- Memory limit: 512 MB with `allkeys-lru` eviction policy.
 - **DB 0**: L2 DNS cache for this host's own Unbound. `yirukou` runs a separate instance and does not connect here.
 - **DB 1**: Rate limiting backend for SearXNG.
 

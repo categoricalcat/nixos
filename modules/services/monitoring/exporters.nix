@@ -59,12 +59,20 @@ in
     lib.mkIf (!isCentral)
       (lib.mapAttrsToList (name: _: config.services.prometheus.exporters.${name}.port) enabledExporters);
 
-  systemd.services = lib.mkIf (!isCentral) (
-    lib.mapAttrs' (
-      name: _:
-      lib.nameValuePair "prometheus-${name}-exporter" {
-        serviceConfig.FreeBind = true;
-      }
-    ) enabledExporters
-  );
+  systemd.services = lib.mkMerge [
+    (lib.mkIf (!isCentral) (
+      lib.mapAttrs' (
+        name: _:
+        lib.nameValuePair "prometheus-${name}-exporter" {
+          serviceConfig.FreeBind = true;
+        }
+      ) enabledExporters
+    ))
+    (lib.mkIf (enabledHere "smokeping" exporterMetadata.smokeping) {
+      prometheus-smokeping-exporter = {
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+      };
+    })
+  ];
 }

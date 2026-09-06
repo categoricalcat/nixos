@@ -13,7 +13,7 @@ ______________________________________________________________________
 | **Homepage**     | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets           |
 | **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                              |
 | **SearXNG**      | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                     |
-| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (LRU, per-host size)      | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter |
+| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (LRU, per-host cap)       | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter |
 | **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                        |
 | **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`      | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                            |
 | **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                          |
@@ -49,7 +49,7 @@ ______________________________________________________________________
 ### 2.3 Valkey Datastore (`modules/services/valkey.nix`)
 
 - **Service**: In-memory Redis-compatible key-value store. Runs on **both** `yifuwuqi` and `yirukou`, bound to `127.0.0.1` only; every consumer is host-local and connects over the unix socket `/run/redis/redis.sock`. Nothing reaches it across the LAN.
-- **Memory Management**: `allkeys-lru` eviction, sized per host in `modules/addresses.nix` — 1 GB on `yifuwuqi`, 512 MB on `yirukou`.
+- **Memory Management**: `allkeys-lru` eviction, sized in `modules/addresses.nix` — 1 GB on `yirukou` (primary resolver), 512 MB on `yifuwuqi`.
 - **Multi-Tenant Usage**:
   - **DB 0**: L2 DNS cache for that host's own Unbound. Not shared between hosts — see [Unbound Architecture](../networking/unbound-integration.md) for why cachedb must not cross a link.
   - **DB 1**: Rate limiting token bucket storage for SearXNG (`yifuwuqi` only), over the same unix socket.

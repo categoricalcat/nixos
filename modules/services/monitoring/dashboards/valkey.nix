@@ -13,49 +13,53 @@ dashLib.mkDashboard {
       title = "DNS Cache Entries (db0)";
       expr = "redis_db_keys{db=\"db0\"}";
       gridPos = dashLib.mkGridPos 0 0 6 4;
+      legendFormat = "{{host}}";
       unit = "short";
     })
     (dashLib.mkGauge {
       title = "Cache Hit Ratio";
       expr = "redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) * 100";
       gridPos = dashLib.mkGridPos 6 0 6 4;
+      legendFormat = "{{host}}";
       unit = "percent";
     })
     (dashLib.mkStat {
       title = "Memory Used";
       expr = "redis_memory_used_bytes";
       gridPos = dashLib.mkGridPos 12 0 6 4;
+      legendFormat = "{{host}}";
       unit = "bytes";
     })
     (dashLib.mkStat {
       title = "Keys Expiring (db0)";
       expr = "redis_db_keys_expiring{db=\"db0\"}";
       gridPos = dashLib.mkGridPos 18 0 6 4;
+      legendFormat = "{{host}}";
       unit = "short";
     })
     (dashLib.mkTimeseries {
       title = "Memory Used (MiB)";
       expr = "redis_memory_used_bytes / 1024 / 1024";
       gridPos = dashLib.mkGridPos 0 4 12 8;
-      legendFormat = "used";
+      legendFormat = "{{host}}";
     })
     (dashLib.mkTimeseries {
       title = "Memory Max (MiB)";
       expr = "redis_memory_max_bytes / 1024 / 1024";
       gridPos = dashLib.mkGridPos 12 4 12 8;
-      legendFormat = "max";
+      legendFormat = "{{host}}";
     })
     (dashLib.mkTimeseries {
       title = "Evictions + Expired / sec";
       expr = "rate(redis_evicted_keys_total[5m]) + rate(redis_expired_keys_total[5m])";
       gridPos = dashLib.mkGridPos 0 12 12 8;
-      legendFormat = "rate";
+      legendFormat = "{{host}}";
     })
     (dashLib.mkTimeseries {
       title = "Cache Hits / sec";
       expr = "rate(redis_keyspace_hits_total[5m])";
       gridPos = dashLib.mkGridPos 12 12 12 8;
-      legendFormat = "hits";
+      legendFormat = "{{host}}";
     })
   ];
 }

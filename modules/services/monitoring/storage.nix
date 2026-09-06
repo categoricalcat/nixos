@@ -25,18 +25,9 @@ in
   ];
 
   # nixpkgs only exposes `stateDir` as a name below /var/lib (StateDirectory +
-  # hardcoded --storage.tsdb.path), so relocate it with a bind mount. Declared
-  # as a unit rather than fileSystems so a missing source dir fails only
-  # prometheus.service, not local-fs.target/boot.
-  systemd.mounts = [
-    {
-      what = dataDirs.prometheus;
-      where = prometheusStateDir;
-      type = "none";
-      options = "bind";
-      after = [ "systemd-tmpfiles-setup.service" ];
-      before = [ "prometheus.service" ];
-      requiredBy = [ "prometheus.service" ];
-    }
+  # hardcoded --storage.tsdb.path), so redirect it inside the unit's mount
+  # namespace. A standalone mount unit would deadlock local-fs.target at boot.
+  systemd.services.prometheus.serviceConfig.BindPaths = [
+    "${dataDirs.prometheus}:${prometheusStateDir}"
   ];
 }

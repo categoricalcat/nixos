@@ -155,7 +155,7 @@ in
       # expose it as `target`.
       smokeping = {
         hosts = "scrapeHosts";
-        settings.hosts = internetProbes.icmp;
+        settings.hosts = internetProbes.icmp ++ internetProbes.icmp6;
         metricRelabelConfigs = [
           {
             source_labels = [ "exported_host" ];
@@ -450,7 +450,7 @@ in
         };
         valkey = {
           port = 24379;
-          maxMemory = "1gb";
+          maxMemory = "512mb";
         };
         opencode = {
           port = 24010;
@@ -760,11 +760,14 @@ in
             network.tailscale.ipv4.host
           ];
         };
-        # Smaller than yifuwuqi's: this box has 7.5 GiB total and already
-        # carries unbound's 300m msg + 600m rrset in-memory caches.
+        # yirukou is the primary LAN resolver, so it gets the larger L2 cap.
+        # Ceiling, not a reservation: the db self-cleans via unbound's EX TTLs
+        # and sits far below this (~1-15 MiB) unless a key flood outpaces
+        # expiry. This box has 7.5 GiB total and also carries unbound's 300m
+        # msg + 600m rrset in-memory caches.
         valkey = {
           port = 24379;
-          maxMemory = "512mb";
+          maxMemory = "1gb";
         };
       };
     };
