@@ -89,9 +89,50 @@ tailscale debug prefs
 Also confirm that Tailscale has accepted the advertised `10.42.0.0/24` route in
 the admin console.
 
+## yifuwuqi As Subnet Router For The Fallback Uplink Router
+
+`192.168.0.1` is the router on yifuwuqi's fallback uplink, on the wire only at
+`enp4s0`. `hosts/yifuwuqi/services.nix` exposes its admin UI to the tailnet:
+
+```nix
+yi.tailscale = {
+  routingMode = "server";
+  advertiseRoutes = [ addresses.network.secondary.ipv4.gatewayRoute ];
+  acceptRoutes = false;
+};
+```
+
+- The advertised prefix is the `/32`, not `192.168.0.0/24`: a roaming client
+  that sits on its own `192.168.0.0/24` would otherwise route that whole
+  subnet through this host.
+- tailscaled masquerades subnet-route traffic to the `enp4s0` address
+  (`--snat-subnet-routes` defaults to true), so the router needs no route back.
+- `modules/services/tailscale.nix` only emits `--accept-routes` and the
+  exit-node flags in `client` mode, so `acceptRoutes = false` is inert here.
+  It matches the daemon's saved pref anyway (`tailscale debug prefs` shows
+  `RouteAll: false`, no exit node), which is what the exit-node comment next
+  to it requires.
+- `routingMode = "server"` maps to `useRoutingFeatures = "server"`, which
+  turns on `net.ipv6.conf.all.forwarding` on this host (it was `0`). Nothing
+  advertises an IPv6 route towards the LAN ULA, so no IPv6 actually transits.
+
+Reach is limited to tailnet devices that accept routes. LAN clients at
+`10.42.0.x` have no path to `192.168.0.1`: their default gateway is yirukou,
+which neither accepts this route nor forwards `br0 -> tailscale0`.
+
+The route needs approval in the Tailscale admin console. Verify from a tailnet
+client:
+
+```sh
+tailscale status          # route listed under yifuwuqi
+ip route show table 52    # 192.168.0.1/32 dev tailscale0
+curl -I http://192.168.0.1/
+```
+
 ## Source Files
 
 - `hosts/yirukou/networking/firewall.nix`
 - `hosts/yirukou/services.nix`
+- `hosts/yifuwuqi/services.nix`
 - `modules/services/tailscale.nix`
 - `modules/services/adguardhome.nix`

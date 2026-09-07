@@ -32,6 +32,10 @@ in
 
     base16Scheme = import ./theme.nix;
 
+    opacity = {
+      terminal = 0.90;
+    };
+
     targets.chromium.enable = false;
   };
 

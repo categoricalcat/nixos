@@ -1,4 +1,8 @@
-{ addresses, ... }:
+{
+  addresses,
+  pkgs,
+  ...
+}:
 {
   imports = [
     ./networking/firewall.nix
@@ -31,4 +35,20 @@
 
   };
 
+  # Subnet routing forwards tunnel traffic through these NICs, and tailscaled
+  # warns on start until the kernel can coalesce it. Same service as on
+  # yirukou (hosts/yirukou/networking/wans.nix).
+  systemd.services.tailscale-udp-gro = {
+    description = "Enable UDP GRO forwarding for Tailscale";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.ethtool}/bin/ethtool -K ${addresses.network.lan.interface} rx-udp-gro-forwarding on rx-gro-list off || true
+      ${pkgs.ethtool}/bin/ethtool -K ${addresses.network.secondary.interface} rx-udp-gro-forwarding on rx-gro-list off || true
+    '';
+  };
 }

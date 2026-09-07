@@ -607,8 +607,10 @@ let
       ${workspaceBinds}
 
       # === Touchpad Gestures ===
-      gesturebind=none,right,3,viewtoleft_have_client
-      gesturebind=none,left,3,viewtoright_have_client
+      gesturebind=none,left,3,focusdir,right
+      gesturebind=none,right,3,focusdir,left
+      gesturebind=none,up,3,viewtoright
+      gesturebind=none,down,3,viewtoleft
       gesturebind=none,up,4,toggleoverview
       gesturebind=none,down,4,toggleoverview
     '';

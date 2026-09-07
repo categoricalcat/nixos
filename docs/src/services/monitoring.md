@@ -64,26 +64,45 @@ Non-central hosts automatically open firewall TCP ports for all enabled exporter
 
 ### Internet Probing & Failover
 
-Targets live in `monitoring.probes` (`modules/addresses.nix`); both scrape
-hosts probe them independently:
+Probes are generated from `probePeers` (`modules/addresses.nix`). Every peer is
+dual-stack, so v4 and v6 always measure the same machine and stay comparable:
 
-- ICMP: `1.1.1.1`, `8.8.8.8`, `216.239.35.0`, and `200.160.0.8`.
-- DNS: Cloudflare and Google public resolvers plus each host's own
-  `127.0.0.1:53` (AdGuard -> Unbound chain).
-- HTTPS: Google `generate_204` and Cloudflare's captive-portal endpoint.
-- IPv6-only modules assert LAN reachability, not internet reachability, because
-  there is no IPv6 egress. `icmp6` pings `fd75:c55f:6d19:1::1` and
-  `fd75:c55f:6d19:1::2`; `dns6` queries `[::1]:53` and both LAN ULA resolvers
-  for AAAA. Public IPv6 targets and the `http6` module were removed: they would
-  fail permanently by design and only generate noise.
+| Peer         | Scope      | IPv4          | IPv6                   | Layers          |
+| ------------ | ---------- | ------------- | ---------------------- | --------------- |
+| `cloudflare` | `internet` | `1.1.1.1`     | `2606:4700:4700::1111` | icmp, dns, http |
+| `google`     | `internet` | `8.8.8.8`     | `2001:4860:4860::8888` | icmp, dns, http |
+| `ntpbr`      | `internet` | `200.160.0.8` | `2001:12ff::8`         | icmp            |
+| `yirukou`    | `lan`      | `10.42.0.1`   | `fd75:c55f:6d19:1::1`  | icmp, dns       |
+| `yifuwuqi`   | `lan`      | `10.42.0.2`   | `fd75:c55f:6d19:1::2`  | icmp, dns       |
 
-Blackbox modules (`blackbox.yml`) are named after the layer. A single `probe`
-scrape job fans out over host x layer x target; series carry `host` (origin,
-same meaning as every other job), `layer`
-(`icmp`/`dns`/`http`/`icmp6`/`dns6`) and `instance` (target).
-`up{job="blackbox"}` measures exporter reachability; `probe_success` measures
-the target. Smokeping's native `host` label (the ping target) is relabeled to
-`target`.
+DNS peers are the resolvers (AdGuard -> Unbound on the two LAN peers, public
+resolvers otherwise); HTTPS uses one URL per peer (Cloudflare's captive-portal
+endpoint, Google `generate_204`) with the family pinned by the blackbox module.
+
+Two rules trim the fan-out:
+
+- `monitoring.ipv6Egress` is `false`, so `internet` peers are probed over IPv4
+  only. There is no IPv6 path off-net
+  (see [IPv6: ULA now, GUA later](../networking/ipv6-ula-gua.md)), and probing
+  it would only produce permanently failing series. The `lan` peers keep both
+  families, which is where the v4-vs-v6 comparison lives. Flipping the flag to
+  `true` restores the mirrored internet probes and smokeping targets.
+- A host never probes its own peer entry, in blackbox or smokeping. Its own
+  AdGuard -> Unbound chain is already measured by the `adguard` and `unbound`
+  exporters, so each host probes the other host plus the internet peers: 11
+  blackbox probes and 5 smokeping targets per host.
+
+Blackbox modules (`blackbox.yml`) are named after the layer and all set
+`ip_protocol_fallback: false`, so a module never silently answers over the other
+family. A single `probe` scrape job fans out over host x probe; series carry
+`host` (origin, same meaning as every other job), `layer`
+(`icmp`/`dns`/`http`/`icmp6`/`dns6`/`http6`), `family` (`v4`/`v6`), `peer`,
+`scope` (`internet`/`lan`) and `instance` (target). `up{job="blackbox"}`
+measures exporter reachability; `probe_success` measures the target. Smokeping's
+target list is built per host in `exporters.nix` from the same peer table; its
+native `host` label (the ping target) is relabeled to `target`, and metric
+relabeling derives the same `peer`, `family` and `scope` labels from the address
+so latency panels can plot both families together.
 
 `wan-notify` atomically writes `gateway_failover.prom` for the node-exporter
 textfile collector. It exposes `gateway_failover_primary_active` and
@@ -92,8 +111,10 @@ the source `host` label. On `yirukou`, primary means its primary WAN; on
 `yifuwuqi`, it means the LAN route through `yirukou` rather than its direct
 fallback.
 
-The provisioned **Internet** dashboard combines probe availability, layer and
-exporter state, DNS/HTTP duration, ICMP percentiles/loss, and failover state.
+The provisioned **Internet** dashboard is split by scope, not by family: each
+panel (availability, reachability, ICMP/DNS/HTTPS duration, smokeping
+percentiles and loss) plots v4 and v6 of the same peers together, with exporter
+state and failover state alongside.
 
 ______________________________________________________________________
 

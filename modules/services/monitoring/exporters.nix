@@ -39,6 +39,15 @@ let
 
   enabledExporters = lib.filterAttrs enabledHere exporterMetadata;
 
+  # Ping every peer except this host itself, over the families that have a
+  # path (internet v6 only once `ipv6Egress` is true).
+  smokepingPeers = builtins.filter (peer: peer.name != hostName) monitoring.probePeers;
+  smokepingHosts =
+    map (peer: peer.v4) smokepingPeers
+    ++ map (peer: peer.v6) (
+      builtins.filter (peer: monitoring.ipv6Egress || peer.scope != "internet") smokepingPeers
+    );
+
   mkExporter =
     name: spec:
     {
@@ -46,6 +55,7 @@ let
       openFirewall = false;
     }
     // (spec.settings or { })
+    // lib.optionalAttrs (name == "smokeping") { hosts = smokepingHosts; }
     // (if name == "fail2ban" then { host = listenAddress; } else { inherit listenAddress; });
 in
 {

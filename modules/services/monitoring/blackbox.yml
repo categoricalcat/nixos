@@ -17,6 +17,7 @@ modules:
     dns:
       transport_protocol: udp
       preferred_ip_protocol: ip4
+      ip_protocol_fallback: false
       query_name: example.com
       query_type: A
       valid_rcodes: [NOERROR]
@@ -38,4 +39,13 @@ modules:
       valid_status_codes: [204]
       follow_redirects: true
       preferred_ip_protocol: ip4
+      ip_protocol_fallback: false
+  http6:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [204]
+      follow_redirects: true
+      preferred_ip_protocol: ip6
       ip_protocol_fallback: false

@@ -142,6 +142,10 @@ in
         sloppyfocus = 0;
         edge_scroller_pointer_focus = 0;
 
+        tap_to_click = 1;
+        trackpad_natural_scrolling = 1;
+        swipe_min_threshold = 15;
+
         # Smooth window and layer animations (no bottom slide)
         animations = 1;
         layer_animations = 1;

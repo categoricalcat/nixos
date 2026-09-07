@@ -22,6 +22,7 @@ in
         window_padding_width = 2;
         font_family = "family='${themeAssets.fonts.monospace.name}' style=Light";
         confirm_os_window_close = 0;
+        dynamic_background_opacity = "yes";
       };
       keybindings = {
         "ctrl+shift+t" = "launch --type=os-window ${lib.getExe config.programs.zellij.package}";

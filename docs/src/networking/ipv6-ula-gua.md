@@ -152,8 +152,12 @@ Do not re-enable WAN RA or LAN GUA until **all** of these are true:
 1. `gai.conf` is revisited: GUA should outrank IPv4 for destinations that
    have both, **without** ranking dead `::/0` over IPv4 before the default
    route works. ULA should remain preferred for on-net names that have AAAA.
-1. Monitoring may add public `icmp6` / `dns6` only after egress exists.
-   Until then those probes are noise (`http6` was removed for that reason).
+1. Monitoring's probe peers are dual-stack, but `monitoring.ipv6Egress` is
+   `false`, so internet peers are probed over IPv4 only and the v4/v6
+   comparison runs on the `lan` scope (see
+   [monitoring](../services/monitoring.md)). Flipping that flag to `true` is
+   part of passing this gate: it restores public `icmp6` / `dns6` / `http6`
+   against the same peers as IPv4, plus the matching smokeping targets.
 1. Happy Eyeballs is tested from a LAN client to a dual-stack public name.
    If IPv6 is slower or blackholes, keep IPv4 preference until it does not.
 

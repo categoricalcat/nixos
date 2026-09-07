@@ -1,6 +1,7 @@
 # Services configuration module
 
 {
+  addresses,
   pkgs,
   ...
 }:
@@ -49,7 +50,16 @@
     ../../modules/services/ai/sillytavern.nix
   ];
   yi.tailscale = {
-    routingMode = "client";
+    # Subnet router for the fallback uplink's router only: enp4s0 is the sole
+    # tailnet foothold in 192.168.0.0/24, so advertising that one address
+    # exposes its admin UI to tailnet devices. A /32 rather than the /24 keeps
+    # a roaming client that sits on its own 192.168.0.0/24 from routing that
+    # whole subnet here. tailscaled SNATs subnet-route traffic to the enp4s0
+    # address by default, so the router needs no route back. The route needs
+    # approval in the Tailscale admin console, and only peers with
+    # acceptRoutes use it - plain LAN clients have no path here.
+    routingMode = "server";
+    advertiseRoutes = [ addresses.network.secondary.ipv4.gatewayRoute ];
     # Servers must NOT use an exit node. With one set, tailscaled installs
     # `default dev tailscale0` (and, with --exit-node-allow-lan-access=false,
     # captures RFC1918 subnets too) into route table 52. Replies to LAN

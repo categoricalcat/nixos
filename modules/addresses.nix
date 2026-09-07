@@ -87,33 +87,84 @@ let
   # (grafana's DB is in postgres, see hosts.yifuwuqi.services.postgresql).
   monitoringDataRoot = "/persist/monitoring";
 
-  internetProbes = {
-    icmp = [
-      "1.1.1.1"
-      "8.8.8.8"
-      "216.239.35.0"
-      "200.160.0.8"
-    ];
-    icmp6 = [
-      "fd75:c55f:6d19:1::1"
-      "fd75:c55f:6d19:1::2"
-    ];
-    # 127.0.0.1:53 is the local AdGuard -> Unbound chain on both hosts.
-    dns = [
-      "1.1.1.1:53"
-      "8.8.8.8:53"
-      "127.0.0.1:53"
-    ];
-    dns6 = [
-      "[::1]:53"
-      "[fd75:c55f:6d19:1::1]:53"
-      "[fd75:c55f:6d19:1::2]:53"
-    ];
-    http = [
-      "https://www.google.com/generate_204"
-      "https://cp.cloudflare.com"
-    ];
+  # There is no IPv6 path off-net (docs/src/networking/ipv6-ula-gua.md), so
+  # internet peers are probed v4-only. Flip to true once a GUA exists: the
+  # mirrored v6 probes and smokeping targets come back with it.
+  ipv6Egress = false;
+
+  # Every probe peer is dual-stack: v4 and v6 always hit the same machine, so
+  # the two families stay comparable on one graph. With `ipv6Egress = false`,
+  # `lan` peers are the only ones measured over both families.
+  probePeers = [
+    {
+      name = "cloudflare";
+      scope = "internet";
+      v4 = "1.1.1.1";
+      v6 = "2606:4700:4700::1111";
+      resolver = true;
+      url = "https://cp.cloudflare.com";
+    }
+    {
+      name = "google";
+      scope = "internet";
+      v4 = "8.8.8.8";
+      v6 = "2001:4860:4860::8888";
+      resolver = true;
+      url = "https://www.google.com/generate_204";
+    }
+    {
+      # a.ntp.br, regional latency reference.
+      name = "ntpbr";
+      scope = "internet";
+      v4 = "200.160.0.8";
+      v6 = "2001:12ff::8";
+    }
+    {
+      name = "yirukou";
+      scope = "lan";
+      v4 = "10.42.0.1";
+      v6 = "fd75:c55f:6d19:1::1";
+      resolver = true;
+    }
+    {
+      # Each host's own AdGuard -> Unbound chain is reached over its LAN
+      # address, which loopback probes could not express for both families.
+      name = "yifuwuqi";
+      scope = "lan";
+      v4 = "10.42.0.2";
+      v6 = "fd75:c55f:6d19:1::2";
+      resolver = true;
+    }
+  ];
+
+  mkProbe = layer: family: peer: target: {
+    inherit layer family target;
+    inherit (peer) scope;
+    peer = peer.name;
   };
+
+  resolverPeers = builtins.filter (peer: peer.resolver or false) probePeers;
+  httpPeers = builtins.filter (peer: peer ? url) probePeers;
+
+  probeEnabled = probe: ipv6Egress || probe.family == "v4" || probe.scope != "internet";
+
+  internetProbes = builtins.filter probeEnabled (
+    builtins.concatMap (peer: [
+      (mkProbe "icmp" "v4" peer peer.v4)
+      (mkProbe "icmp6" "v6" peer peer.v6)
+    ]) probePeers
+    ++ builtins.concatMap (peer: [
+      (mkProbe "dns" "v4" peer "${peer.v4}:53")
+      (mkProbe "dns6" "v6" peer "[${peer.v6}]:53")
+    ]) resolverPeers
+    # Same URL both ways: the blackbox module pins the family.
+    ++ builtins.concatMap (peer: [
+      (mkProbe "http" "v4" peer peer.url)
+      (mkProbe "http6" "v6" peer peer.url)
+    ]) httpPeers
+  );
+
+  escapeRegex = builtins.replaceStrings [ "." ] [ "\\." ];
 
 in
 {
@@ -133,6 +184,7 @@ in
       grafana = "${monitoringDataRoot}/grafana";
     };
     probes = internetProbes;
+    inherit ipv6Egress probePeers;
     scrapeHosts = [
       "yifuwuqi"
       "yirukou"
@@ -152,14 +204,44 @@ in
 
       # smokeping labels its ping target `host`, which collides with our
       # origin `host` label; Prometheus renames it `exported_host`, we
-      # expose it as `target`.
+      # expose it as `target`. `peer` and `family` are derived from the
+      # target address so both families of a peer join on one series set.
+      # Ping targets are per-host (a host does not ping itself), so they are
+      # built in exporters.nix from `probePeers`.
       smokeping = {
         hosts = "scrapeHosts";
-        settings.hosts = internetProbes.icmp ++ internetProbes.icmp6;
         metricRelabelConfigs = [
           {
             source_labels = [ "exported_host" ];
             target_label = "target";
+          }
+        ]
+        ++ builtins.concatMap (peer: [
+          {
+            source_labels = [ "exported_host" ];
+            regex = "${escapeRegex peer.v4}|${escapeRegex peer.v6}";
+            target_label = "peer";
+            replacement = peer.name;
+          }
+          {
+            source_labels = [ "exported_host" ];
+            regex = "${escapeRegex peer.v4}|${escapeRegex peer.v6}";
+            target_label = "scope";
+            replacement = peer.scope;
+          }
+        ]) probePeers
+        ++ [
+          {
+            source_labels = [ "exported_host" ];
+            regex = "[^:]*";
+            target_label = "family";
+            replacement = "v4";
+          }
+          {
+            source_labels = [ "exported_host" ];
+            regex = ".*:.*";
+            target_label = "family";
+            replacement = "v6";
           }
           {
             regex = "exported_host";
@@ -284,8 +366,17 @@ in
           ipv6.host = "fd75:c55f:6d19::24";
         };
 
+        # Fallback uplink. The host address is DHCP-assigned; only the subnet
+        # and its router are fixed. That router's admin UI is advertised to
+        # the tailnet from here (see hosts/yifuwuqi/services.nix).
         secondary = {
           interface = "enp4s0";
+          ipv4 = rec {
+            cidr = "192.168.0.0/24";
+            prefixLength = 24;
+            gateway = "192.168.0.1";
+            gatewayRoute = "${gateway}/32";
+          };
         };
 
         tailscale = {

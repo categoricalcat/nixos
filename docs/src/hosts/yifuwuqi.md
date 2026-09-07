@@ -23,13 +23,13 @@ ______________________________________________________________________
 
 ### Interface Assignments
 
-| Interface    | Type     | Address / Subnet                                          | Role                                                                   |
-| ------------ | -------- | --------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `eno1`       | Physical | `10.42.0.2/24`, `10.42.0.24/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492)                            |
-| `enp4s0`     | Physical | Dynamic DHCPv4                                            | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)      |
-| `wlp2s0`     | Wireless | Disabled                                                  | Wireless interface explicitly powered down (`ActivationPolicy = down`) |
-| `tailscale0` | Tunnel   | `100.69.0.6/32`                                           | Tailscale client mode (`exitNodeHost = null`, Tailscale SSH enabled)   |
-| `netbird0`   | Tunnel   | `100.42.0.2/16`                                           | NetBird mesh client                                                    |
+| Interface    | Type     | Address / Subnet                                          | Role                                                                                                             |
+| ------------ | -------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `eno1`       | Physical | `10.42.0.2/24`, `10.42.0.24/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492)                                                                      |
+| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`                        | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)                                                |
+| `wlp2s0`     | Wireless | Disabled                                                  | Wireless interface explicitly powered down (`ActivationPolicy = down`)                                           |
+| `tailscale0` | Tunnel   | `100.69.0.6/32`                                           | Tailscale subnet router for `192.168.0.1/32` (`exitNodeHost = null`, no route acceptance, Tailscale SSH enabled) |
+| `netbird0`   | Tunnel   | `100.42.0.2/16`                                           | NetBird mesh client                                                                                              |
 
 ### Network Tuning & Sysctl
 
@@ -49,6 +49,15 @@ ______________________________________________________________________
   `enp4s0`, which holds the default route whenever `eno1` is down, so leading
   with yirukou would stall every lookup on an unreachable address.
 - **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`) to reach host DNS and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets.
+- **Tailscale UDP GRO**: `tailscale-udp-gro.service` sets
+  `rx-udp-gro-forwarding on rx-gro-list off` on `eno1` and `enp4s0` at boot,
+  which tailscaled asks for once the host forwards tunnel traffic.
+- **Fallback Uplink Subnet Route**: `enp4s0` is the only tailnet foothold in
+  `192.168.0.0/24`, so this host advertises `192.168.0.1/32` (that link's
+  router) to the tailnet, making its admin UI reachable from tailnet devices
+  that accept routes. tailscaled masquerades subnet-route traffic to the
+  `enp4s0` address
+  ([Tailscale subnet forwarding](../networking/tailscale-subnet-forwarding.md)).
 
 ______________________________________________________________________
 

@@ -29,6 +29,7 @@ let
       expr,
       gridPos,
       legendFormat ? "{{instance}}",
+      unit ? "none",
     }:
     {
       type = "timeseries";
@@ -41,6 +42,7 @@ let
       ];
       fieldConfig = {
         defaults = {
+          inherit unit;
           custom = {
             drawStyle = "line";
             lineInterpolation = "linear";

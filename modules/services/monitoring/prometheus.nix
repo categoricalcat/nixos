@@ -53,21 +53,29 @@ let
       metric_relabel_configs = spec.metricRelabelConfigs;
     };
 
-  # One blackbox probe job for every (scrape host x layer x target). The
-  # blackbox module name equals the layer / `monitoring.probes` key.
+  # One blackbox probe job for every (scrape host x probe), minus the host's
+  # own peer entry: pinging itself measures nothing the adguard and unbound
+  # exporters do not already cover. The blackbox module name equals the
+  # probe's layer.
   probeScrapeConfig = {
     job_name = "probe";
     metrics_path = "/probe";
     static_configs = lib.concatMap (
       host:
-      lib.mapAttrsToList (layer: targets: {
-        inherit targets;
+      map (probe: {
+        targets = [ probe.target ];
         labels = {
-          inherit host layer;
-          __param_module = layer;
+          inherit host;
+          inherit (probe)
+            layer
+            family
+            peer
+            scope
+            ;
+          __param_module = probe.layer;
           __tmp_address = "${hostAddress host}:${toString config.services.prometheus.exporters.blackbox.port}";
         };
-      }) monitoring.probes
+      }) (lib.filter (probe: probe.peer != host) monitoring.probes)
     ) monitoring.scrapeHosts;
     relabel_configs = [
       {
