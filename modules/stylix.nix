@@ -33,7 +33,7 @@ in
     base16Scheme = import ./theme.nix;
 
     opacity = {
-      terminal = 0.90;
+      terminal = 0.94;
     };
 
     targets.chromium.enable = false;

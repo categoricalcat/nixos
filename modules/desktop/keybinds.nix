@@ -531,13 +531,13 @@ let
       # === Brightness Controls ===
       ${bindList bindings.brightnessUp (
         if desktopShell == "dms" then
-          "spawn,dms ipc call brightness increment 5"
+          "spawn,dms ipc call brightness increment 5 \"\""
         else
           "spawn,brightnessctl set +5%"
       )}
       ${bindList bindings.brightnessDown (
         if desktopShell == "dms" then
-          "spawn,dms ipc call brightness decrement 5"
+          "spawn,dms ipc call brightness decrement 5 \"\""
         else
           "spawn,brightnessctl set 5%-"
       )}
@@ -597,7 +597,7 @@ let
       ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusstack,next") bindings.scrollFocusNext.keys}
 
       # === Layout ===
-      ${bindList bindings.cycleWindowWidth "switch_proportion_preset"}
+      ${bindList bindings.cycleWindowWidth "switch_proportion_preset,next"}
       ${bindList bindings.switchLayout "switch_layout"}
       ${bindList bindings.cycleKeyboardLayout "switch_keyboard_layout"}
       ${bindList bindings.increaseGaps "incgaps,1"}
