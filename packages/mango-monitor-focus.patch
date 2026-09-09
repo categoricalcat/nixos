@@ -1,21 +1,14 @@
 diff --git a/src/dispatch/bind.c b/src/dispatch/bind.c
-index 98a46a1..62ddcd8 100644
 --- a/src/dispatch/bind.c
 +++ b/src/dispatch/bind.c
-@@ -2205,7 +2205,7 @@ void fix_mon_tagset_from_overview(Monitor *m) {
- 	}
+@@ -2336,10 +2336,34 @@
  }
  
--void toggle_overview(const Arg *arg) {
-+static void toggle_overview_one(const Arg *arg) {
- 	Client *c = NULL;
- 	if (!server.selected_monitor || server.grab_client)
- 		return;
-@@ -2327,6 +2327,37 @@ void toggle_overview(const Arg *arg) {
- 	return;
- }
- 
-+void toggle_overview(const Arg *arg) {
+ void toggle_overview(const Arg *arg) {
+-	if (!server.selected_monitor || server.grab_client)
+-		return;
+-
+-	set_overview(arg, !server.selected_monitor->isoverview);
 +	Monitor *m = NULL, *focus = server.selected_monitor;
 +	Client *sel;
 +	bool enter;
@@ -26,17 +19,17 @@ index 98a46a1..62ddcd8 100644
 +	sel = focus->sel;
 +	enter = !focus->isoverview;
 +
-+	toggle_overview_one(arg);
++	set_overview(arg, enter);
 +
 +	wl_list_for_each(m, &server.monitors, link) {
 +		if (m == focus || !m->wlr_output || !m->wlr_output->enabled)
 +			continue;
 +		if ((bool)m->isoverview == enter)
 +			continue;
-+		/* toggle_overview_one() and client_focus() work off selected_monitor,
++		/* set_overview() and client_focus() work off selected_monitor,
 +		 * so drive it per monitor and restore it afterwards. */
 +		server.selected_monitor = m;
-+		toggle_overview_one(&(Arg){0});
++		set_overview(&(Arg){0}, enter);
 +	}
 +
 +	server.selected_monitor = focus;
@@ -44,16 +37,13 @@ index 98a46a1..62ddcd8 100644
 +		client_focus(sel, 1);
 +	else
 +		client_focus(client_focus_top(focus), 1);
-+}
-+
- void toggle_jump(const Arg *arg) {
- 	if (!server.selected_monitor)
- 		return;
+ }
+ 
+ void enter_overview(const Arg *arg) {
 diff --git a/src/input/pointer.c b/src/input/pointer.c
-index 2a9160a..615bf31 100644
 --- a/src/input/pointer.c
 +++ b/src/input/pointer.c
-@@ -664,12 +664,10 @@ void pointer_process_motion(uint32_t time, struct wlr_input_device *device,
+@@ -540,12 +540,10 @@
  		wlr_idle_notifier_v1_notify_activity(server.idle_notifier, server.seat);
  
  		/* Update selected_monitor (even while dragging a window) */
@@ -63,10 +53,11 @@ index 2a9160a..615bf31 100644
 -				monitor_at_point(server.cursor->x, server.cursor->y);
 -			if (oldmon != server.selected_monitor)
 -				printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
+-		}
 +		Monitor *newmon = monitor_at_point(server.cursor->x, server.cursor->y);
 +		if (newmon && newmon != server.selected_monitor) {
 +			server.selected_monitor = newmon;
 +			printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
- 		}
++		}
  	}
  

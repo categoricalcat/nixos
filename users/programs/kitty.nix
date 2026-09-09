@@ -14,6 +14,7 @@ in
       enable = true;
       package = pkgs.kitty;
       settings = {
+        allow_remote_control = "no";
         remember_window_size = "no";
         initial_window_width = "90c";
         initial_window_height = "34c";

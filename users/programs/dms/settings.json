@@ -3,12 +3,11 @@
     "currentThemeCategory": "custom",
     "customThemeFile": "~/.config/DankMaterialShell/themes/yimoka.json",
     "matugenScheme": "scheme-vibrant",
-    "centeringMode": "geometric",
     "widgetBackgroundColor": "sc",
     "cornerRadius": 8,
     "calendarBackend": "khal",
     "clockFormat": "24h",
-    "animationSpeed": 0,
+    "springBounce": 0,
     "barElevationEnabled": false,
     "showWorkspaceIndex": true,
     "showWorkspaceName": true,
@@ -20,10 +19,9 @@
     "workspaceOccupiedColorMode": "sec",
     "workspaceUnfocusedColorMode": "s",
     "runningAppsCurrentWorkspace": false,
+    "centeringMode": "geometric",
     "clockDateFormat": "dddd, d MMMM",
     "networkPreference": "wifi",
-    "iconThemeDark": "Papirus-Dark",
-    "iconThemeLight": "Papirus-Light",
     "cursorSettings": {
         "dwl": {
             "cursorHideTimeout": 0
@@ -42,6 +40,7 @@
     },
     "fontFamily": "Maple Mono NF CN",
     "monoFontFamily": "Maple Mono NF CN",
+    "soundLogin": true,
     "fadeToLockEnabled": false,
     "fadeToDpmsEnabled": false,
     "terminalsAlwaysDark": true,
@@ -55,8 +54,10 @@
     "lockScreenInactiveColor": "#09090b",
     "barConfigs": [
         {
+            "attachToScreenEdge": false,
             "autoHide": false,
             "autoHideDelay": 250,
+            "barLengthPadding": 4,
             "borderColor": "surfaceText",
             "borderEnabled": false,
             "borderOpacity": 1,
@@ -66,12 +67,13 @@
                 {
                     "enabled": true,
                     "id": "music",
-                    "mediaSize": 1
+                    "mediaSize": 2
                 },
                 {
                     "clockCompactMode": false,
                     "enabled": true,
-                    "id": "clock"
+                    "id": "clock",
+                    "clockDateOrder": "timeFirst"
                 },
                 "weather"
             ],
@@ -80,8 +82,12 @@
             "gothCornerRadiusOverride": false,
             "gothCornerRadiusValue": 12,
             "gothCornersEnabled": false,
+            "hoverPopoutDelay": 249,
+            "hoverPopouts": true,
+            "iconScale": 1,
             "id": "default",
-            "innerPadding": -4,
+            "innerPadding": -7,
+            "island": false,
             "leftWidgets": [
                 {
                     "enabled": true,
@@ -93,7 +99,9 @@
                 },
                 {
                     "enabled": true,
-                    "focusedWindowCompactMode": false,
+                    "focusedWindowCompactMode": true,
+                    "focusedWindowShowIcon": true,
+                    "focusedWindowSize": 0,
                     "id": "focusedWindow"
                 }
             ],
@@ -127,7 +135,7 @@
                 {
                     "enabled": true,
                     "id": "spacer",
-                    "size": 20
+                    "size": 5
                 },
                 {
                     "enabled": true,
@@ -155,20 +163,27 @@
                     "showNetworkIcon": true,
                     "showPrinterIcon": false,
                     "showVpnIcon": true
+                },
+                {
+                    "enabled": true,
+                    "id": "powerMenuButton"
                 }
             ],
             "screenPreferences": [
                 "DP-1"
             ],
             "shadowIntensity": 0,
-            "shadowOpacity": 10,
+            "shadowOpacity": 60,
             "showOnLastDisplay": false,
             "spacing": 0,
             "squareCorners": false,
             "transparency": 0,
             "visible": true,
+            "widgetOutlineColor": "surfaceText",
             "widgetOutlineEnabled": false,
-            "widgetTransparency": 0.48
+            "widgetOutlineOpacity": 0.01,
+            "widgetOutlineThickness": 1,
+            "widgetTransparency": 0.4
         }
     ],
     "desktopClockCustomColor": {
@@ -202,5 +217,7 @@
             "trigger": "?"
         }
     },
-    "configVersion": 16
+    "barInsetPaddingShared": 0,
+    "barInsetPaddingSyncAll": true,
+    "configVersion": 18
 }
