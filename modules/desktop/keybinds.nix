@@ -31,6 +31,12 @@ let
         "SUPER,v"
       ];
     };
+    emojiPicker = {
+      description = "Emoji Picker";
+      keys = [
+        "SUPER,period"
+      ];
+    };
     taskManager = {
       description = "Task Manager";
       keys = [
@@ -430,6 +436,7 @@ let
     {
       terminalCommand ? "kitty",
       desktopShell ? "dms",
+      emojiCommand ? "smile",
     }:
     let
       bind =
@@ -458,6 +465,7 @@ let
       ${bindList bindings.launcher (appCmd "spotlight toggle")}
       ${bindList bindings.launcherBar (appCmd "spotlight-bar toggle")}
       ${bindList bindings.clipboard (appCmd "clipboard toggle")}
+      ${bindList bindings.emojiPicker "spawn,${emojiCommand}"}
       ${bindList bindings.taskManager (appCmd "processlist focusOrToggle")}
       ${bindList bindings.settings (appCmd "settings focusOrToggle")}
       ${bindList bindings.notifications (appCmd "notifications toggle")}

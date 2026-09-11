@@ -110,11 +110,15 @@
           };
         };
 
-        perSystem = _: {
-          checks = {
-            yijia = self.homeConfigurations.yijia.activationPackage;
+        perSystem =
+          { pkgs, ... }:
+          {
+            checks = {
+              yijia = pkgs.runCommand "check-yijia-eval" { } ''
+                echo "${builtins.unsafeDiscardStringContext self.homeConfigurations.yijia.activationPackage.drvPath}" > "$out"
+              '';
+            };
           };
-        };
 
         systems = [
           "x86_64-linux"

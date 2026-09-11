@@ -6,6 +6,25 @@
 }:
 
 let
+  keybinds = import ../keybinds.nix { inherit lib; };
+
+  toGnomeKey =
+    keyStr:
+    let
+      parts = lib.splitString "," keyStr;
+      modsPart = lib.elemAt parts 0;
+      keyPart = lib.elemAt parts 1;
+      modMap = {
+        "SUPER" = "<Super>";
+        "CTRL" = "<Ctrl>";
+        "ALT" = "<Alt>";
+        "SHIFT" = "<Shift>";
+      };
+      mods = lib.filter (m: m != "" && m != "none") (lib.splitString "+" modsPart);
+      gnomeMods = lib.concatMapStrings (m: modMap.${m} or "<${m}>") mods;
+    in
+    "${gnomeMods}${keyPart}";
+
   colors = import ../../theme.nix;
   panelElements = [
     {
@@ -98,11 +117,11 @@ in
       };
 
       "org/gnome/desktop/wm/keybindings" = {
-        close = [ "<Super>q" ];
+        close = [ (toGnomeKey (lib.head keybinds.bindings.closeWindow.keys)) ];
         switch-windows = [ "<Alt>Tab" ];
         switch-windows-backward = [ "<Shift><Alt>Tab" ];
-        switch-applications = [ "<Super>Tab" ];
-        switch-applications-backward = [ "<Shift><Super>Tab" ];
+        switch-applications = [ (toGnomeKey (lib.head keybinds.bindings.focusNext.keys)) ];
+        switch-applications-backward = [ (toGnomeKey (lib.head keybinds.bindings.focusPrev.keys)) ];
       };
 
       "org/gnome/mutter" = {
@@ -310,7 +329,7 @@ in
         display-mode = 0;
         history-size = 50;
         notify-on-copy = false;
-        toggle-menu = [ "<Super>v" ];
+        toggle-menu = [ (toGnomeKey (lib.head keybinds.bindings.clipboard.keys)) ];
       };
 
       "org/gnome/system/location" = {
@@ -331,7 +350,7 @@ in
       };
 
       "org/gnome/settings-daemon/plugins/media-keys" = {
-        mic-mute = [ "F12" ];
+        mic-mute = [ (toGnomeKey (builtins.elemAt keybinds.bindings.micMute.keys 1)) ];
         custom-keybindings = [
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
@@ -340,19 +359,19 @@ in
       };
 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
-        binding = "<Super>period";
+        binding = toGnomeKey (lib.head keybinds.bindings.emojiPicker.keys);
         command = "smile";
         name = "Smile Emoji Picker";
       };
 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
-        binding = "Print";
+        binding = toGnomeKey (lib.head keybinds.bindings.screenshotInteractive.keys);
         command = "ksnip -r";
         name = "Ksnip Screenshot";
       };
 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
-        binding = "<Super>t";
+        binding = toGnomeKey (lib.head keybinds.bindings.terminal.keys);
         command = "kitty";
         name = "Kitty Terminal";
       };
