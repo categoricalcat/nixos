@@ -23,9 +23,12 @@ dashLib.mkDashboard {
     })
     (dashLib.mkTimeseries {
       title = "Unit State Changes / Restarts";
-      expr = "sum by(name) (changes(node_systemd_unit_state{state=\"active\"}[1h])) > 0";
+      expr = "sum by(host, name) (changes(node_systemd_unit_state{state=\"active\"}[1h])) > 0";
       gridPos = dashLib.mkGridPos 0 4 24 10;
-      legendFormat = "{{name}}";
+      legendFormat = "{{host}} {{name}}";
+      links = [
+        (dashLib.mkLokiDataLink { })
+      ];
     })
   ];
 }

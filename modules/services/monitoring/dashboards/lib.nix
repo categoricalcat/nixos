@@ -30,6 +30,7 @@ let
       gridPos,
       legendFormat ? "{{instance}}",
       unit ? "none",
+      links ? [ ],
     }:
     {
       type = "timeseries";
@@ -49,7 +50,8 @@ let
             lineWidth = 1;
             fillOpacity = 10;
           };
-        };
+        }
+        // (if links != [ ] then { inherit links; } else { });
       };
     };
 
@@ -60,6 +62,7 @@ let
       gridPos,
       legendFormat ? "{{instance}}",
       unit ? "none",
+      links ? [ ],
     }:
     {
       type = "stat";
@@ -74,7 +77,8 @@ let
         defaults = {
           inherit unit;
           mappings = [ ];
-        };
+        }
+        // (if links != [ ] then { inherit links; } else { });
       };
     };
 
@@ -111,6 +115,7 @@ let
       expr,
       gridPos,
       legendFormat ? "{{instance}}",
+      links ? [ ],
     }:
     {
       type = "state-timeline";
@@ -153,8 +158,29 @@ let
               type = "value";
             }
           ];
-        };
+        }
+        // (if links != [ ] then { inherit links; } else { });
       };
+    };
+
+  mkLokiDataLink =
+    {
+      title ? "View logs in Loki",
+      host ? "\${__field.labels.host}",
+      unit ? "\${__field.labels.name}",
+      queryExtra ? "",
+    }:
+    let
+      query =
+        if queryExtra != "" then
+          "{host=\\\"${host}\\\",unit=\\\"${unit}\\\"} ${queryExtra}"
+        else
+          "{host=\\\"${host}\\\",unit=\\\"${unit}\\\"}";
+    in
+    {
+      inherit title;
+      url = "/explore?schemaVersion=1&panes={\"a\":{\"datasource\":\"loki\",\"queries\":[{\"datasource\":{\"type\":\"loki\",\"uid\":\"loki\"},\"editorMode\":\"code\",\"expr\":\"${query}\",\"queryType\":\"range\",\"refId\":\"A\"}],\"range\":{\"from\":\"\${__from}\",\"to\":\"\${__to}\"}}}";
+      targetBlank = true;
     };
 
 in
@@ -166,5 +192,6 @@ in
     mkStat
     mkGauge
     mkStateTimeline
+    mkLokiDataLink
     ;
 }

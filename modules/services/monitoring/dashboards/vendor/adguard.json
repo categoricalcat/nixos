@@ -1233,29 +1233,15 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
-            "axisPlacement": "auto",
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
             },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
+            "filterable": true,
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -1263,12 +1249,56 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "domain"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Blocked Domain"
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "AdGuard Query Log (${__data.fields.domain})",
+                    "url": "https://adguard.fufu.land/#logs?search=${__data.fields.domain}"
+                  },
+                  {
+                    "targetBlank": true,
+                    "title": "Explore Loki Logs (${__data.fields.domain})",
+                    "url": "/explore?schemaVersion=1&panes={\"a\":{\"datasource\":\"loki\",\"queries\":[{\"datasource\":{\"type\":\"loki\",\"uid\":\"loki\"},\"editorMode\":\"code\",\"expr\":\"{host=\\\"${host}\\\",unit=\\\"adguardhome.service\\\"} |= \\\"${__data.fields.domain}\\\"\",\"queryType\":\"range\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Blocks"
+              },
+              {
+                "id": "custom.align",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -1278,18 +1308,22 @@
       },
       "id": 10,
       "options": {
-        "legend": {
-          "calcs": [
-            "max"
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": true,
+          "fields": "",
+          "reducer": [
+            "sum"
           ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "show": true
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Blocks"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
       "targets": [
@@ -1299,14 +1333,37 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "topk(10, adguard_top_blocked_domain_total{host=\"$host\"})",
-          "legendFormat": "{{domain}}",
-          "range": true,
+          "expr": "sort_desc(adguard_top_blocked_domain_total{host=\"$host\"})",
+          "format": "table",
+          "instant": true,
+          "range": false,
           "refId": "A"
         }
       ],
-      "title": "🚫 Top Blocked Domains",
-      "type": "timeseries"
+      "title": "🚫 Blocked Domains (Searchable)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "host": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "domain": 0,
+              "Value": 1
+            },
+            "renameByName": {
+              "Value": "Blocks",
+              "domain": "Blocked Domain"
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "collapsed": false,

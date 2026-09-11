@@ -111,6 +111,12 @@ in
     enable = true;
     dataDir = monitoring.dataDirs.grafana;
 
+    declarativePlugins = with pkgs.grafanaPlugins; [
+      grafana-lokiexplore-app
+      grafana-metricsdrilldown-app
+      grafana-pyroscope-app
+    ];
+
     settings = {
       analytics.reporting_enabled = false;
       log = {
@@ -128,7 +134,7 @@ in
       auth.disable_login_form = true;
       "auth.anonymous" = {
         enabled = true;
-        org_role = "Viewer";
+        org_role = "Admin";
       };
 
       security = {

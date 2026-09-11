@@ -31,7 +31,7 @@ in
       server = {
         http_listen_address = centralHost.network.lan.ipv4.host;
         http_listen_port = loki.port;
-        grpc_listen_address = "127.0.0.1";
+        grpc_listen_address = "0.0.0.0";
         grpc_listen_port = 9096;
       };
 

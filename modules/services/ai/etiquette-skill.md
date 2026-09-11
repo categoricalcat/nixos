@@ -1,6 +1,6 @@
 ---
 name: etiquette
-description: Agent work etiquette — the rules for where plans go and what agents never do (git commit/push, sudo, nixos-rebuild switch, raw ssh, reading secrets). Always active.
+description: Agent work etiquette — the rules for where plans go, finding files with fd/rg, and what agents never do (git commit/push, sudo, nixos-rebuild switch, raw ssh, reading secrets). Always active.
 alwaysApply: true
 ---
 
@@ -33,3 +33,9 @@ alwaysApply: true
 - Never run `sops`, never decrypt or read secrets, keys, or tokens — what is locked stays locked.
 - That includes `secrets/secrets.yaml`, sops-encrypted files, SSH/age key material, `~/.ssh/`, `/persist/keys/`.
 - Reference secrets by path only, never by content; never print or commit them. Trust is built by what we refuse to look at.
+
+## 6. Finding files and folders
+
+- Always use `fd` or `rg` to find folders and files — `fd <pattern>` for paths/directories and `rg` (ripgrep) for searching content or listing files (`rg --files`).
+- Avoid slow, noisy traversal tools like legacy `find`, `grep -r`, or recursive `ls`.
+- Both `fd` and `rg` respect `.gitignore` and keep discovery swift — swift eyes see clearly without rummaging.
