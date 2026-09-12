@@ -6,6 +6,14 @@
       };
     });
 
+    vector = prev.vector.overrideAttrs (oldAttrs: {
+      doCheck = false;
+      env = (oldAttrs.env or { }) // {
+        RUSTFLAGS = "--cap-lints warn";
+        CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "16";
+        CARGO_PROFILE_RELEASE_LTO = "thin";
+      };
+    });
   })
 
   (_final: prev: {
