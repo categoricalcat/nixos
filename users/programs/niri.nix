@@ -272,9 +272,8 @@ let
   dmsEmbedded = "${inputs.dms.outPath}/core/internal/config/embedded";
 in
 {
-  # homeModules.config is auto-imported via home-manager.sharedModules by the
-  # niri NixOS module for NixOS hosts, and via flake.nix for homeConfigurations.yijia.
   imports = [
+    inputs.niri.homeModules.config
     inputs.dms.homeModules.niri
     ./niri-dms.nix
   ];

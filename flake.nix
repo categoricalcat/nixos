@@ -47,7 +47,6 @@
             };
             modules = [
               ./users/home/yijia.nix
-              inputs.niri.homeModules.config
               { home.stateVersion = global.homeVersion; }
             ];
           };
@@ -60,7 +59,7 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                inputs.niri.nixosModules.niri
+                inputs.mango.nixosModules.mango
                 ./hosts/yixiaoqing/configuration.nix
               ];
             };
@@ -128,13 +127,22 @@
     );
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+    };
+
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    attic.url = "github:zhaofengli/attic";
+
+    attic = {
+      url = "github:zhaofengli/attic";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixvim = {
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";

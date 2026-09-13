@@ -18,8 +18,13 @@
 
   (_final: prev: {
     # Workaround for niri-flake expecting libdisplay-info_0_2
-    libdisplay-info_0_2 =
-      inputs.attic.inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system}.libdisplay-info_0_2;
+    libdisplay-info_0_2 = prev.callPackage (import
+      "${prev.path}/pkgs/by-name/li/libdisplay-info/generic.nix"
+      {
+        version = "0.2.0";
+        hash = "sha256-6xmWBrPHghjok43eIDGeshpUEQTuwWLXNHg7CnBUt3Q=";
+      }
+    ) { };
   })
 
   inputs.niri.overlays.niri

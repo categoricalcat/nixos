@@ -24,7 +24,7 @@
     }
   ];
 
-  nix.package = lib.mkForce pkgs.lix;
+  nix.package = lib.mkForce pkgs.lixPackageSets.stable.lix;
   nixpkgs.config.allowUnfree = true;
   nixpkgs.overlays = import ../nix/overlays.nix { inherit inputs; };
   environment.defaultPackages = lib.mkForce [ ];
