@@ -11,7 +11,7 @@ ______________________________________________________________________
 | Service          | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                            |
 | ---------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
 | **Homepage**     | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets           |
-| **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Fleet documentation & architectural plans                              |
+| **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Gang documentation & architectural plans                               |
 | **SearXNG**      | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                     |
 | **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (LRU, per-host cap)       | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter |
 | **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                        |
@@ -82,12 +82,12 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 - **Web UI**: `https://webdav.fufu.land`.
 - **Configuration**: Built using `pkgs.nginxModules.dav`, root directory `/srv/webdav` (mode 0775, `nginx:nginx`), unlimited client max body size (`client_max_body_size 0`), support for all standard WebDAV methods (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPFIND`, `OPTIONS`, `LOCK`, `UNLOCK`).
 
-### 2.8 Fleet Documentation (`modules/services/docs.nix`)
+### 2.8 Gang Documentation (`modules/services/docs.nix`)
 
 - **Web UI**: Served at `http://10.42.0.2:24083` and proxied to `https://docs.fufu.land`.
 - **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
-- **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/fleet-docs/staging` without modifying the git repository.
-- **Serving Daemon**: `darkhttpd` serves `/var/lib/fleet-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).
+- **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/gang-docs/staging` without modifying the git repository.
+- **Serving Daemon**: `darkhttpd` serves `/var/lib/gang-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).
 
 ______________________________________________________________________
 

@@ -127,7 +127,7 @@ ______________________________________________________________________
 
 ### 2.2 Access Control & Security
 
-- `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (`10.42.0.0/24`) and Tailscale/NetBird VPNs, followed by `deny all;`.
+- `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`) and Tailscale/NetBird VPNs, followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts to ensure untrusted VLAN and external networks cannot access backend services.
 - WebSocket proxying (`proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) enabled for Grafana, Cockpit, GoAccess, SillyTavern, and Arr apps.
 
 ______________________________________________________________________

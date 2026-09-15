@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains the maintained documentation for this NixOS fleet.
+This directory contains the maintained documentation for this NixOS gang.
 
 The source is an mdBook:
 

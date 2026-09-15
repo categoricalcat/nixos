@@ -32,7 +32,7 @@ in
     users = lib.mkMerge [
       {
         root = {
-          # Clients (yitaishi, yixiaoqing) and core server (yifuwuqi) can admin the fleet,
+          # Clients (yitaishi, yixiaoqing) and core server (yifuwuqi) can admin the gang,
           # but perimeter gateway (yirukou) cannot SSH into other nodes as root.
           openssh.authorizedKeys.keys = [
             keys.hosts.yitaishi.sshPublicKey

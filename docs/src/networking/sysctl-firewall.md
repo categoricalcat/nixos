@@ -87,10 +87,10 @@ WAN interfaces:
 - `enp7s0`
 - `enp6s0`
 
-Allowed internal services on `br0` and `enp2s0.42`:
+Allowed internal services:
 
-- TCP `53`, `80`, `443`, `853`, `3443`
-- UDP `53`, `67`, `853`
+- `br0` (LAN): TCP `53`, `80`, `443`, `853`, `3443`, `24212` (SSH); UDP `53`, `67`, `853`
+- `enp2s0.42` (Untrusted): TCP `53`, `853`, `3443`; UDP `53`, `67`, `853` (HTTP, HTTPS, and SSH are blocked)
 
 Edge hardening:
 
@@ -124,9 +124,9 @@ Forwarding behavior:
 
 - Internal IPv4 may forward to either WAN; internal IPv6 may not forward to a
   WAN in either direction, so LAN IPv6 stays on the LAN.
-- The LAN `/64` (`fd75:c55f:6d19:1::/64`) and the untrusted VLAN `/64`
-  (`fd75:c55f:6d19:2::/64`) are isolated from each other for `ip6`, mirroring
-  the IPv4 posture.
+- The LAN (`10.42.0.0/24` and `fd75:c55f:6d19:1::/64`) and the untrusted VLAN
+  (`10.42.42.0/24` and `fd75:c55f:6d19:2::/64`) are isolated from each other
+  across all forwarding traffic.
 - Tailscale clients may reach the LAN subnet `10.42.0.0/24`. Established LAN
   replies return through the `nixos-fw` forward conntrack vmap.
 

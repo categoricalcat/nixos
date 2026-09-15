@@ -1,6 +1,6 @@
 # Software KVM (Lan Mouse)
 
-To share a single keyboard and mouse across multiple desktop machines, the fleet uses `lan-mouse` (`modules/services/lan-mouse.nix`).
+To share a single keyboard and mouse across multiple desktop machines, the gang uses `lan-mouse` (`modules/services/lan-mouse.nix`).
 
 Currently, this is configured between `yitaishi` (desktop) and `yixiaoqing` (laptop).
 

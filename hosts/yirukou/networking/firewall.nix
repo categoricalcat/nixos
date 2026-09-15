@@ -28,10 +28,15 @@ let
     wan.primary.interface
     wan.fallback.interface
   ];
-  internalTcpPorts = [
+  lanTcpPorts = [
     53
     80
     443
+    853
+    3443 # AGH DoH (DDR advertises port_https, not nginx 443)
+  ];
+  untrustedTcpPorts = [
+    53
     853
     3443 # AGH DoH (DDR advertises port_https, not nginx 443)
   ];
@@ -101,11 +106,11 @@ in
       checkReversePath = "loose";
       interfaces = {
         ${lan.interface} = {
-          allowedTCPPorts = internalTcpPorts ++ [ addresses.ssh.listenPort ];
+          allowedTCPPorts = lanTcpPorts ++ [ addresses.ssh.listenPort ];
           allowedUDPPorts = internalUdpPorts;
         };
         ${untrusted.interface} = {
-          allowedTCPPorts = internalTcpPorts;
+          allowedTCPPorts = untrustedTcpPorts;
           allowedUDPPorts = internalUdpPorts;
         };
         ${vpn} = {
@@ -171,8 +176,8 @@ in
               iifname @dns_client_ifaces oifname @wan_ifaces meta l4proto { tcp, udp } th dport 853 drop comment "no off-net DoT/DoQ"
               iifname @wan_ifaces meta nfproto ipv6 drop comment "disable inbound ipv6 forwarding on wan"
               oifname @wan_ifaces meta nfproto ipv6 drop comment "disable outbound ipv6 forwarding on wan"
-              iifname "${untrusted.interface}" oifname "${lan.interface}" ip6 daddr ${lan.ipv6.cidr} drop comment "isolate untrusted ipv6 from lan"
-              iifname "${lan.interface}" oifname "${untrusted.interface}" ip6 daddr ${untrusted.ipv6.cidr} drop comment "isolate lan ipv6 from untrusted"
+              iifname "${untrusted.interface}" oifname "${lan.interface}" drop comment "isolate untrusted from lan"
+              iifname "${lan.interface}" oifname "${untrusted.interface}" drop comment "isolate lan from untrusted"
             }
           '';
         };

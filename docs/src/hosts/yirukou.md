@@ -98,14 +98,14 @@ ______________________________________________________________________
 
 - **Allowed Ingress Ports**:
   - `br0` (LAN): TCP `53` (DNS), `80` (HTTP), `443` (HTTPS), `853` (DoT/DoQ), `3443` (AGH DoH), `24212` (SSH); UDP `53` (DNS), `67` (DHCP), `853` (DoT/DoQ).
-  - `enp2s0.42` (Untrusted): TCP `53`, `80`, `443`, `853`, `3443`; UDP `53`, `67`, `853` (SSH is blocked).
+  - `enp2s0.42` (Untrusted): TCP `53`, `853`, `3443`; UDP `53`, `67`, `853` (HTTP, HTTPS, and SSH are blocked).
   - `tailscale0`: TCP `24212` (SSH).
   - WANs (`enp7s0`, `enp6s0`): UDP `51820` (Tailscale / WireGuard).
 - **Bogon Filtering**: Raw prerouting chain drops 14 IPv4 bogon subnets (`0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, etc.) entering WAN interfaces. No IPv6 bogon set is needed.
 - **Forwarding & NAT**:
   - Outbound NAT44 masquerading on WANs for LAN, VLAN 42, and Tailscale traffic; no NAT66.
   - Forwarding enabled between Tailscale and LAN subnet `10.42.0.0/24`.
-  - LAN and VLAN 42 IPv6 are isolated from each other, mirroring the IPv4 rules.
+  - LAN and VLAN 42 are isolated from each other across all forwarding traffic.
 - **IPv6 WAN policy**: IPv6 is dropped on both WANs in prerouting, input,
   output, and forwarding. No WAN RA, ND, or DHCPv6 handling remains, and no
   IPv6 traffic can enter or leave the edge.

@@ -1,10 +1,10 @@
-# Fleet Documentation
+# Gang Documentation
 
-This book provides the technical reference, network topologies, hosted service specifications, hardware profiles, and bootstrap runbooks for the NixOS fleet.
+This book provides the technical reference, network topologies, hosted service specifications, hardware profiles, and bootstrap runbooks for the NixOS gang.
 
 ______________________________________________________________________
 
-## 1. Maintained Fleet Hosts
+## 1. Maintained Gang Hosts
 
 | Host             | Primary Role                                              | IP / Network                                                                 | Hardware & Key Architecture                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Profile                                   |
 | ---------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
@@ -31,7 +31,7 @@ ______________________________________________________________________
 
 ## 3. Quick Navigation
 
-- **Fleet Hosts**: [yirukou](hosts/yirukou.md) · [yifuwuqi](hosts/yifuwuqi.md) · [yitaishi](hosts/yitaishi.md) · [yixiaoqing](hosts/yixiaoqing.md) · [yichuang](hosts/yichuang.md)
+- **Gang Hosts**: [yirukou](hosts/yirukou.md) · [yifuwuqi](hosts/yifuwuqi.md) · [yitaishi](hosts/yitaishi.md) · [yixiaoqing](hosts/yixiaoqing.md) · [yichuang](hosts/yichuang.md)
 - **Networking**: [yirukou Router](networking/yirukou.md) · [IPv6 ULA vs GUA](networking/ipv6-ula-gua.md) · [Sysctl & Firewall](networking/sysctl-firewall.md) · [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md) · [Unbound Architecture](networking/unbound-integration.md)
 - **Core Infrastructure**: [Secrets Management](services/secrets.md) · [DNS & Reverse Proxy](services/dns-and-proxy.md) · [Monitoring Stack](services/monitoring.md) · [AI-SSH Restricted Lane](services/ai-ssh.md)
 - **Applications & Storage**: [Hosted Services Directory](services/hosted-services.md) · [Arr Stack](services/arr-stack.md) · [File Sharing (Samba/WebDAV)](services/file-sharing.md) · [AI & Local Inference](services/ai-rocm.md)

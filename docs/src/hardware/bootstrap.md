@@ -1,6 +1,6 @@
 # Hardware Authentication & Token Bootstrap
 
-This page provides the imperative initialization steps for biometric, hardware security token, and Secure Boot features across the fleet.
+This page provides the imperative initialization steps for biometric, hardware security token, and Secure Boot features across the gang.
 
 ______________________________________________________________________
 

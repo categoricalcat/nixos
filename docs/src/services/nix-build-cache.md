@@ -1,6 +1,6 @@
 # Nix Distributed Builds & Binary Cache Mesh
 
-This guide documents the distributed build infrastructure, pinned host-key mesh authentication, and binary cache integration across the NixOS fleet.
+This guide documents the distributed build infrastructure, pinned host-key mesh authentication, and binary cache integration across the NixOS gang.
 
 ______________________________________________________________________
 
@@ -68,7 +68,7 @@ ______________________________________________________________________
 
 ## 3. Attic Binary Cache Integration
 
-Every host in the fleet automatically imports `modules/services/attic/client.nix` via `modules/nix-settings.nix`:
+Every host in the gang automatically imports `modules/services/attic/client.nix` via `modules/nix-settings.nix`:
 
 - **Substituter URL**: `https://cache.fufu.land/yi` (or direct LAN `http://10.42.0.2:24203/yi`)
 - **Pinned Public Key**: `yi:wLUC4OacKKUxGtnXwIxTFGBlLwvJ9IU4BNP5OBDQO60=`

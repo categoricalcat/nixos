@@ -28,7 +28,7 @@ in
     extraConfig = {
       pipewire."10-low-latency" = {
         "context.properties" = {
-          "default.clock.rate" = 48000;
+          "default.clock.rate" = 96000;
           "default.clock.allowed-rates" = [
             44100
             48000
@@ -37,12 +37,10 @@ in
             176400
             192000
           ];
-          "default.clock.quantum" = 128;
-          "default.clock.min-quantum" = 32;
-          "default.clock.max-quantum" = 128;
-        };
-        "stream.properties" = {
-          "resample.quality" = 7;
+          "default.clock.quantum" = 256;
+          "default.clock.min-quantum" = 256;
+          "default.clock.max-quantum" = 256;
+          "clock.force-quantum" = 256;
         };
       };
 
@@ -66,7 +64,7 @@ in
     };
 
     wireplumber.extraConfig = {
-      # Scarlett 4i4: Pro Audio Profile & ALSA low period buffer
+      # Scarlett 4i4: Pro Audio Profile & Default Priority
       "10-scarlett-pro-audio" = {
         "device.profile.priority.rules" = [
           {
@@ -85,21 +83,29 @@ in
         "monitor.alsa.rules" = [
           {
             matches = [
-              {
-                "node.name" = "~alsa_input.usb-Focusrite_Scarlett_4i4.*";
-              }
+              { "device.name" = "~alsa_card.usb-Focusrite_Scarlett_4i4.*"; }
             ];
             actions = {
               update-props = {
-                "api.alsa.period-size" = 128;
-                "api.alsa.headroom" = 64;
+                "device.profile" = "pro-audio";
+              };
+            };
+          }
+          {
+            matches = [
+              { "node.name" = "~alsa_.*usb-Focusrite_Scarlett_4i4.*"; }
+            ];
+            actions = {
+              update-props = {
+                "priority.session" = 1500;
+                "priority.driver" = 1500;
               };
             };
           }
         ];
       };
 
-      # Feixiang DAC: Highest priority default system sink with dynamic sample rates & bitperfect
+      # Feixiang DAC: Bitperfect output for Hi-Fi audio player
       "99-qbz-dac-audio" = {
         "monitor.alsa.rules" = [
           {
@@ -281,5 +287,26 @@ in
     pkgs.easyeffects
     pkgs.pavucontrol
     pkgs.alsa-scarlett-gui
+  ];
+
+  security.pam.loginLimits = [
+    {
+      domain = "@audio";
+      item = "rtprio";
+      type = "-";
+      value = "95";
+    }
+    {
+      domain = "@audio";
+      item = "nice";
+      type = "-";
+      value = "-11";
+    }
+    {
+      domain = "@audio";
+      item = "memlock";
+      type = "-";
+      value = "unlimited";
+    }
   ];
 }

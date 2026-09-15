@@ -1,6 +1,6 @@
-# Fleet Host Provisioning & Bootstrap Runbook
+# Gang Host Provisioning & Bootstrap Runbook
 
-This runbook provides the definitive, step-by-step procedure for onboarding a new machine into the NixOS fleet.
+This runbook provides the definitive, step-by-step procedure for onboarding a new machine into the NixOS gang.
 
 ______________________________________________________________________
 

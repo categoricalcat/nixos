@@ -2,9 +2,9 @@
 
 [Overview](README.md)
 
-# Fleet & Architecture
+# Gang & Architecture
 
-- [Fleet Hosts](<>)
+- [Gang Hosts](<>)
   - [yirukou (Edge Router & Gateway)](hosts/yirukou.md)
   - [yifuwuqi (Core Server & Services)](hosts/yifuwuqi.md)
   - [yitaishi (Workstation & Studio)](hosts/yitaishi.md)
@@ -37,7 +37,7 @@
 # Hardware & Workstation
 
 - [Hardware & Provisioning](<>)
-  - [Fleet Provisioning Runbook](hardware/bootstrap-runbook.md)
+  - [Gang Provisioning Runbook](hardware/bootstrap-runbook.md)
   - [Hardware Authentication & Tokens](hardware/bootstrap.md)
   - [Software KVM (Lan Mouse)](hardware/lan-mouse.md)
   - [Troubleshooting USB Boot Delays](hardware/usb-boot-delays.md)

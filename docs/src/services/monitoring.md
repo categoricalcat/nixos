@@ -42,7 +42,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 2. Exporter Fleet & Metadata Specification
+## 2. Exporter Gang & Metadata Specification
 
 Exporters are declaratively registered in `modules/addresses.nix` under `allAddresses.monitoring.exporters` and dynamically instantiated on hosts via `modules/services/monitoring/exporters.nix`:
 

@@ -358,7 +358,7 @@ private key delivered via SOPS to `/var/lib/nix-builder/.ssh/id_ed25519`
   mesh nodes and self-deploy.
 - **Authorization**: The matching public key (`keys.ci.deployPublicKey` in
   `secrets/keys.nix`) is authorized in `users.users.root.openssh.authorizedKeys.keys`
-  across the fleet.
+  across the gang.
 - **Non-recipient**: The CI key is **not** an age recipient in `.sops.yaml` /
   `sopsAgeRecipients`. CI has permission to deploy configurations, but cannot decrypt
   SOPS secrets or access host age keys.

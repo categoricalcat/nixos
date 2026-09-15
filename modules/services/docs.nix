@@ -5,7 +5,7 @@
 }:
 
 let
-  buildDocs = pkgs.writeShellScript "build-fleet-docs" ''
+  buildDocs = pkgs.writeShellScript "build-gang-docs" ''
     set -euo pipefail
     export PATH="${
       pkgs.lib.makeBinPath [
@@ -19,7 +19,7 @@ let
 
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
-    cp -r /var/lib/fleet-docs/src/. "$tmp/"
+    cp -r /var/lib/gang-docs/src/. "$tmp/"
     chmod -R u+w "$tmp"
     rm -rf "$tmp/book" "$tmp/.git"
     echo -e "\n# Architecture Plans & RFCs\n\n- [Architecture Plans]()" >> "$tmp/src/SUMMARY.md"
@@ -30,8 +30,8 @@ let
       echo "  - [''${t:-$(basename "$p" .md)}](plans/$(basename "$p"))" >> "$tmp/src/SUMMARY.md"
     done
     mdbook build "$tmp" -d "$tmp/book" >/dev/null && \
-      mkdir -p /var/lib/fleet-docs/book && \
-      rsync -r --delete --no-owner --no-group "$tmp/book/" /var/lib/fleet-docs/book/
+      mkdir -p /var/lib/gang-docs/book && \
+      rsync -r --delete --no-owner --no-group "$tmp/book/" /var/lib/gang-docs/book/
   '';
 
   commonHardening = {
@@ -48,7 +48,7 @@ let
     RestrictNamespaces = true;
     LockPersonality = true;
     MemoryDenyWriteExecute = true;
-    ReadWritePaths = [ "/var/lib/fleet-docs" ];
+    ReadWritePaths = [ "/var/lib/gang-docs" ];
     SystemCallErrorNumber = "EPERM";
     SystemCallFilter = [
       "@system-service"
@@ -64,7 +64,7 @@ in
   };
   users.groups.docs = { };
 
-  fileSystems."/var/lib/fleet-docs/src" = {
+  fileSystems."/var/lib/gang-docs/src" = {
     device = "/home/yi/the.files/nixos/docs";
     fsType = "none";
     options = [
@@ -75,20 +75,20 @@ in
 
   systemd = {
     tmpfiles.rules = [
-      "d /var/lib/fleet-docs 0755 docs docs -"
-      "d /var/lib/fleet-docs/src 0755 root root -"
-      "d /var/lib/fleet-docs/book 0755 docs docs -"
+      "d /var/lib/gang-docs 0755 docs docs -"
+      "d /var/lib/gang-docs/src 0755 root root -"
+      "d /var/lib/gang-docs/book 0755 docs docs -"
     ];
 
     services = {
       docs = {
-        description = "Fleet Documentation HTTP Server";
+        description = "Gang Documentation HTTP Server";
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
-        unitConfig.RequiresMountsFor = [ "/var/lib/fleet-docs/src" ];
+        unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
         preStart = "${buildDocs}";
         serviceConfig = commonHardening // {
-          ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/fleet-docs/book --port ${toString addresses.services.docs.port} --addr 0.0.0.0 --no-listing --no-server-id --hide-dotfiles";
+          ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/gang-docs/book --port ${toString addresses.services.docs.port} --addr 0.0.0.0 --no-listing --no-server-id --hide-dotfiles";
           CapabilityBoundingSet = "";
           RestrictAddressFamilies = [
             "AF_INET"
@@ -99,13 +99,13 @@ in
       };
 
       docs-watcher = {
-        description = "Fleet Documentation Real-Time Watcher";
+        description = "Gang Documentation Real-Time Watcher";
         wantedBy = [ "multi-user.target" ];
         after = [ "docs.service" ];
         wants = [ "docs.service" ];
-        unitConfig.RequiresMountsFor = [ "/var/lib/fleet-docs/src" ];
+        unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
         serviceConfig = commonHardening // {
-          ExecStart = "${pkgs.watchexec}/bin/watchexec -n -w /var/lib/fleet-docs/src --debounce 1500ms --restart -- ${buildDocs}";
+          ExecStart = "${pkgs.watchexec}/bin/watchexec -n -w /var/lib/gang-docs/src --debounce 1500ms --restart -- ${buildDocs}";
           Restart = "always";
         };
       };

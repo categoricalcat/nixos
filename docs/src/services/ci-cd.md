@@ -78,15 +78,15 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 5. Fleet Deployment & CI/CD Deployment Key (`.forgejo/workflows/cd.yml`)
+## 5. Gang Deployment & CI/CD Deployment Key (`.forgejo/workflows/cd.yml`)
 
-The automated fleet deployment pipeline runs via `deploy-rs` on Forgejo Actions using `ci/deploy.sh`.
+The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions using `ci/deploy.sh`.
 
 ### 5.1 Identity & Security Model
 
 - **Runner Identity**: `nix-builder:nogroup` on `yifuwuqi`.
 - **Private Key**: SOPS delivers a dedicated ed25519 key to `/var/lib/nix-builder/.ssh/id_ed25519` (`0400 nix-builder:nogroup`).
-- **Public Key**: Registered in `secrets/keys.nix` as `keys.ci.deployPublicKey` and authorized in `users.users.root.openssh.authorizedKeys.keys` fleet-wide.
+- **Public Key**: Registered in `secrets/keys.nix` as `keys.ci.deployPublicKey` and authorized in `users.users.root.openssh.authorizedKeys.keys` gang-wide.
 - **Least Privilege**: The CI deployment key is **not** an age recipient in `.sops.yaml` / `sopsAgeRecipients`. CI can activate configurations via `deploy-rs`, but cannot decrypt SOPS secrets or read host keys.
 - **Operator Lane**: Operator deployment remains root-only (`su -` then `deploy`) via `/persist/keys/ssh/ssh_host_ed25519_key` (resolved automatically via SSH `Match localuser root User root`). CI runner uses its standard `~/.ssh/id_ed25519`.
 
@@ -111,7 +111,7 @@ sops set secrets/secrets.yaml '["keys"]["deploy"]' "$(jq -Rs . < /run/ci-deploy-
 shred -u /run/ci-deploy-key/keys/deploy_ed25519
 rm -rf /run/ci-deploy-key
 
-# 4. Sync persist secrets and deploy across fleet
+# 4. Sync persist secrets and deploy across gang
 ```
 
 ______________________________________________________________________

@@ -163,7 +163,7 @@ ______________________________________________________________________
 
 ## 7. Monitoring & Central Observability
 
-- **Prometheus**: Port 24090, 30-day retention, 15-second scrape intervals, dynamic scrape job generation for all fleet exporters.
+- **Prometheus**: Port 24090, 30-day retention, 15-second scrape intervals, dynamic scrape job generation for all gang exporters.
 - **Grafana**: Port 24030 (`grafana.fufu.land`), PostgreSQL backend, anonymous Viewer role, declarative Nix-provisioned dashboards (Systemd Units, Services Overview, Fail2ban, Prometheus, Loki, Grafana, Postgres, Valkey, AdGuard, Unbound).
 - **Loki**: Port 24100, TSDB schema v13, 7-day retention period.
 - **Vector**: Ships host journald logs directly to local Loki.

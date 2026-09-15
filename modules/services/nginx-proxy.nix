@@ -11,6 +11,7 @@ let
   yifuwuqiServices = allAddresses.hosts.yifuwuqi.services;
   trustedProxyCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
+    allAddresses.hosts.yirukou.network.lan.ipv6.cidr
     # allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
     allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr
   ];
@@ -96,6 +97,7 @@ in
           extraConfig = ''
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Proto $scheme;
+            ${restrictedProxyConfig}
           '';
         };
       };
@@ -106,6 +108,7 @@ in
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}";
+          extraConfig = restrictedProxyConfig;
         };
       };
 
@@ -115,6 +118,7 @@ in
         forceSSL = true;
         locations."/dns-query" = {
           proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}/dns-query";
+          extraConfig = restrictedProxyConfig;
         };
       };
 
@@ -140,6 +144,7 @@ in
         locations."/" = {
           proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.grafana.port}";
           proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
         };
       };
 
@@ -163,6 +168,7 @@ in
           extraConfig = ''
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Proto $scheme;
+            ${restrictedProxyConfig}
           '';
         };
       };
@@ -205,6 +211,7 @@ in
             proxy_read_timeout 1d;
             proxy_send_timeout 1d;
             client_max_body_size 1G;
+            ${restrictedProxyConfig}
           '';
         };
       };
@@ -222,6 +229,7 @@ in
             proxy_read_timeout 1d;
             proxy_send_timeout 1d;
             client_max_body_size 1G;
+            ${restrictedProxyConfig}
           '';
         };
       };
@@ -234,6 +242,7 @@ in
         locations."/" = {
           root = "/var/lib/goaccess";
           index = "index.html";
+          extraConfig = restrictedProxyConfig;
         };
 
         locations."/ws" = {
@@ -242,6 +251,7 @@ in
           extraConfig = ''
             proxy_read_timeout 3600;
             proxy_send_timeout 3600;
+            ${restrictedProxyConfig}
           '';
         };
       };
