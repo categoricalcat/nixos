@@ -11,7 +11,7 @@ jobs:
     runs-on: native
     timeout-minutes: 500
     steps:
-      - uses: actions/checkout@main
+      - uses: https://github.com/actions/checkout@main
       - run: |
           echo "::group::nix flake check"
           nix flake check --no-build --print-build-logs --show-trace -v
@@ -27,7 +27,7 @@ jobs:
       matrix:
         host: [yixiaoqing, yitaishi, yifuwuqi, yirukou, yichuang]
     steps:
-      - uses: actions/checkout@main
+      - uses: https://github.com/actions/checkout@main
       - name: builds ${{ matrix.host }}
         run: ci/build.sh ${{ matrix.host }}
 

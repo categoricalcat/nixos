@@ -32,7 +32,7 @@ jobs:
     runs-on: native
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@main
+      - uses: https://github.com/actions/checkout@main
       - name: Dry-activate ${{ inputs.host }}
         run: ci/deploy.sh dry-activate ${{ inputs.host }}
       - name: Diff package closures with nvd
@@ -45,6 +45,6 @@ jobs:
     runs-on: native
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@main
+      - uses: https://github.com/actions/checkout@main
       - name: Deploy ${{ inputs.host }}
         run: ci/deploy.sh deploy ${{ inputs.host }}
