@@ -23,4 +23,6 @@
   nxd-opencode = pkgs.writeShellScriptBin "nxd-opencode" ''
     exec nix run github:anomalyco/opencode#opencode -- "$@"
   '';
+
+  seenix = import ./see.nix { inherit pkgs; };
 }

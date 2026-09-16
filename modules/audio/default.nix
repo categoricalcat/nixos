@@ -11,9 +11,16 @@ in
     rtcqs.enable = true;
     rtirq = {
       enable = true;
-      highList = "snd_usb_audio snd_hda_intel";
+      # USB first so the Scarlett's xhci_hcd IRQ thread (95..90) outranks
+      # PipeWire/JACK RT threads (88); HDA lands at 90.
+      nameList = "usb snd i8042";
+      prioHigh = 95;
     };
   };
+
+  # rtirq parses `chrt -p` output with awk '/priority/'; under a pt_BR locale the
+  # parse yields an empty priority and the script re-prioritizes every IRQ thread.
+  systemd.services.rtirq.environment.LC_ALL = "C";
 
   security.rtkit.enable = true;
   services.pulseaudio.enable = false;
@@ -37,10 +44,11 @@ in
             176400
             192000
           ];
-          "default.clock.quantum" = 256;
-          "default.clock.min-quantum" = 256;
-          "default.clock.max-quantum" = 256;
-          "clock.force-quantum" = 256;
+          # 384 @ 96k = 4.0 ms; pipewire would round non-power-of-two quanta down.
+          "default.clock.quantum" = 384;
+          "default.clock.min-quantum" = 384;
+          "default.clock.max-quantum" = 384;
+          "clock.power-of-two-quantum" = false;
         };
       };
 
@@ -64,7 +72,10 @@ in
     };
 
     wireplumber.extraConfig = {
-      # Scarlett 4i4: Pro Audio Profile & Default Priority
+      # Scarlett 4i4: Pro Audio Profile & preferred default.
+      # No priority.driver override: WirePlumber defaults (capture 2500 > playback 1500)
+      # keep the graph capture-driven. No api.alsa.headroom: it raises the follower
+      # target and multiplies resyncs when the JACK client runs late.
       "10-scarlett-pro-audio" = {
         "device.profile.priority.rules" = [
           {
@@ -93,12 +104,21 @@ in
           }
           {
             matches = [
-              { "node.name" = "~alsa_.*usb-Focusrite_Scarlett_4i4.*"; }
+              { "node.name" = "~alsa_output.usb-Focusrite_Scarlett_4i4.*"; }
             ];
             actions = {
               update-props = {
-                "priority.session" = 1500;
-                "priority.driver" = 1500;
+                "priority.session" = 1600;
+              };
+            };
+          }
+          {
+            matches = [
+              { "node.name" = "~alsa_input.usb-Focusrite_Scarlett_4i4.*"; }
+            ];
+            actions = {
+              update-props = {
+                "priority.session" = 2600;
               };
             };
           }

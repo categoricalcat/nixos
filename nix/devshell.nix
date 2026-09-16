@@ -116,10 +116,6 @@ _: {
       devShells.default = defaultShell;
       devShells.sandbox = sandboxShell;
 
-      packages = {
-        default = defaultShell;
-        sandbox = sandboxShell;
-      }
-      // wrappers;
+      packages = wrappers;
     };
 }

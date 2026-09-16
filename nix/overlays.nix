@@ -25,6 +25,9 @@
         hash = "sha256-6xmWBrPHghjok43eIDGeshpUEQTuwWLXNHg7CnBUt3Q=";
       }
     ) { };
+
+    # Workaround for sops-nix referencing buildGo125Module removed from nixpkgs
+    buildGo125Module = prev.buildGo126Module;
   })
 
   inputs.niri.overlays.niri

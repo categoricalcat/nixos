@@ -112,6 +112,11 @@
         perSystem =
           { pkgs, ... }:
           {
+            packages = {
+              zero-parades = pkgs.callPackage ./packages/zero-parades { };
+              default = self.packages.x86_64-linux.zero-parades;
+            };
+
             checks = {
               yijia = pkgs.runCommand "check-yijia-eval" { } ''
                 echo "${builtins.unsafeDiscardStringContext self.homeConfigurations.yijia.activationPackage.drvPath}" > "$out"

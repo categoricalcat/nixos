@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zero Parades — Voiceover Player</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <h1>ZERO PARADES</h1>
+        <span class="header-subtitle">VOICEOVER ARCHIVE</span>
+      </div>
+      <div class="header-stats" id="header-stats">
+        Loading metadata...
+      </div>
+    </header>
+
+    <!-- Sticky Audio Player Bar -->
+    <section class="now-playing-bar" id="player-bar">
+      <div class="playing-info">
+        <div class="playing-tags">
+          <span class="speaker-badge" id="playing-speaker">Select a dialogue line below</span>
+          <span class="meta-tag" id="playing-meta"></span>
+          <span class="check-tag" id="playing-check" style="display:none;"></span>
+        </div>
+        <div class="playing-text" id="playing-text">
+          Click any line or press Space/Enter to stream and play recorded voice acting.
+        </div>
+      </div>
+      <div class="player-controls">
+        <audio id="audio-element" controls preload="auto"></audio>
+        <div class="status-indicator" id="audio-status">READY</div>
+      </div>
+    </section>
+
+    <!-- Search & Filter Controls -->
+    <section class="controls-bar">
+      <div class="search-box">
+        <svg class="icon" viewBox="0 0 24 24" width="18" height="18">
+          <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search dialogue text or card ID (e.g. 'ghost gäng', 'coincidence')..." autocomplete="off">
+        <button id="clear-search" title="Clear search">✕</button>
+      </div>
+      <div class="filter-group">
+        <select id="speaker-select">
+          <option value="">All Speakers (Loading...)</option>
+        </select>
+        <label class="filter-checkbox-label" title="Only display dialogue lines that have recorded voice acting">
+          <input type="checkbox" id="vo-only-check" checked>
+          <span>Voiced only</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Dialogue List Table -->
+    <main class="content-area">
+      <div class="table-container">
+        <table class="dialogue-table">
+          <thead>
+            <tr>
+              <th class="th-action"></th>
+              <th class="th-speaker">Speaker</th>
+              <th class="th-text">Dialogue Text</th>
+              <th class="th-check">Check / Type</th>
+              <th class="th-ids">Flow / Card ID</th>
+            </tr>
+          </thead>
+          <tbody id="dialogue-tbody">
+            <tr>
+              <td colspan="5" class="empty-state">Loading dialogue lines...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Pagination Footer -->
+    <footer class="pagination-footer">
+      <div class="pagination-info" id="pagination-info">
+        Showing 0 - 0 of 0 lines
+      </div>
+      <div class="pagination-buttons">
+        <button id="btn-prev" disabled>◀ Previous</button>
+        <span id="page-indicator">Page 1</span>
+        <button id="btn-next" disabled>Next ▶</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
