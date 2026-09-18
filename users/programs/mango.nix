@@ -12,6 +12,8 @@ let
   monitors = config.desktop.monitors;
   colors = import ../../modules/theme.nix;
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
+  animRate = config.desktop.animationRate;
+  scale = ms: if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (ms * animRate));
 
   parseMode =
     mode:
@@ -142,27 +144,30 @@ in
         sloppyfocus = 0;
         edge_scroller_pointer_focus = 0;
 
+        # Disable mouse acceleration (flat acceleration profile)
+        mouse_accel_profile = 1;
+
         tap_to_click = 1;
         trackpad_natural_scrolling = 1;
         swipe_min_threshold = 15;
 
         # Smooth window and layer animations (no bottom slide)
-        animations = 1;
-        layer_animations = 1;
+        animations = if animRate <= 0.0 then 0 else 1;
+        layer_animations = if animRate <= 0.0 then 0 else 1;
         animation_type_open = "zoom";
         animation_type_close = "zoom";
         layer_animation_type_open = "fade";
         layer_animation_type_close = "fade";
         zoom_initial_ratio = 0.8;
         zoom_end_ratio = 0.85;
-        animation_fade_in = 1;
-        animation_fade_out = 1;
+        animation_fade_in = if animRate <= 0.0 then 0 else 1;
+        animation_fade_out = if animRate <= 0.0 then 0 else 1;
         fadein_begin_opacity = 0.3;
         fadeout_begin_opacity = 0.3;
-        animation_duration_open = 200;
-        animation_duration_close = 200;
-        animation_duration_move = 250;
-        animation_duration_tag = 200;
+        animation_duration_open = scale 200;
+        animation_duration_close = scale 200;
+        animation_duration_move = scale 250;
+        animation_duration_tag = scale 200;
         tag_animation_direction = 1;
 
         monitorrule = map formatMonitorRule monitors;

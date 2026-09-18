@@ -1,8 +1,8 @@
 diff --git a/src/dispatch/bind.c b/src/dispatch/bind.c
-index 417a2e5..fb4d8f8 100644
+index 453bc3e..a174455 100644
 --- a/src/dispatch/bind.c
 +++ b/src/dispatch/bind.c
-@@ -2347,10 +2347,34 @@ static void set_overview(const Arg *arg, bool enter) {
+@@ -2327,10 +2327,34 @@ static void set_overview(const Arg *arg, bool enter) {
  }
  
  int32_t toggle_overview(const Arg *arg) {
@@ -40,7 +40,7 @@ index 417a2e5..fb4d8f8 100644
  }
  
 diff --git a/src/input/pointer.c b/src/input/pointer.c
-index 84b9108..5b54c46 100644
+index 630e7d6..e6c9c1b 100644
 --- a/src/input/pointer.c
 +++ b/src/input/pointer.c
 @@ -983,12 +983,10 @@ void pointer_process_motion(uint32_t time, struct wlr_input_device *device,
@@ -49,14 +49,14 @@ index 84b9108..5b54c46 100644
  		/* Update selected_monitor (even while dragging a window) */
 -		if (config.sloppyfocus) {
 -			Monitor *oldmon = server.selected_monitor;
--			server.selected_monitor =
--				monitor_at_point(server.cursor->x, server.cursor->y);
+-			set_selected_monitor(
+-				monitor_at_point(server.cursor->x, server.cursor->y));
 -			if (oldmon != server.selected_monitor)
 -				printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
 -		}
 +		Monitor *newmon = monitor_at_point(server.cursor->x, server.cursor->y);
 +		if (newmon && newmon != server.selected_monitor) {
-+			server.selected_monitor = newmon;
++			set_selected_monitor(newmon);
 +			printstatus(IPC_WATCH_MONITOR | IPC_WATCH_ALL_MONITORS);
 +		}
  	}

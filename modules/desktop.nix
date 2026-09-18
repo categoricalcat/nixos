@@ -104,7 +104,12 @@ in
         desktopManager.runXdgAutostartIfNone = true;
       };
 
-      libinput.enable = true;
+      libinput = {
+        enable = true;
+        mouse = {
+          accelProfile = "flat";
+        };
+      };
       gnome.gnome-keyring.enable = true;
     };
 

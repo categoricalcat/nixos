@@ -102,5 +102,11 @@
       default = "us";
       description = "Keyboard layout profile";
     };
+
+    animationRate = lib.mkOption {
+      type = lib.types.float;
+      default = 0.5;
+      description = "global animation rate";
+    };
   };
 }

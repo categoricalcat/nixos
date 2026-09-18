@@ -2,6 +2,7 @@
   keyboardProfile ? "us",
   inputs,
   monitors ? [ ],
+  animationRate ? null,
   stateVersion,
   enableWorkd ? false,
 }:
@@ -18,10 +19,30 @@
   };
 
   sharedModules = [
-    {
-      desktop.monitors = monitors;
-      desktop.keyboard = keyboardProfile;
-    }
+    (
+      {
+        osConfig ? null,
+        lib,
+        ...
+      }:
+      {
+        desktop = {
+          inherit monitors;
+          keyboard = keyboardProfile;
+        }
+        // lib.optionalAttrs (animationRate != null) {
+          inherit animationRate;
+        }
+        //
+          lib.optionalAttrs
+            (
+              animationRate == null && osConfig != null && osConfig ? desktop && osConfig.desktop ? animationRate
+            )
+            {
+              animationRate = osConfig.desktop.animationRate;
+            };
+      }
+    )
   ];
 
   users = {

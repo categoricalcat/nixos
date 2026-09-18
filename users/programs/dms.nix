@@ -11,6 +11,8 @@ let
   colors = import ../../modules/theme.nix;
   c = name: "#${colors.${name}}";
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
+  animRate = config.desktop.animationRate;
+  scale = ms: if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (ms * animRate));
   yimokaTheme = {
     dark = {
       name = "Yimoka Dark";
@@ -132,6 +134,13 @@ in
             barConfigs = lib.mkForce (
               map (bar: bar // { screenPreferences = config.host.barScreenPreferences; }) dmsSettings.barConfigs
             );
+            animationSpeed = lib.mkForce (if animRate <= 0.0 then 0 else 4);
+            customAnimationDuration = lib.mkForce (scale 250);
+            popoutAnimationSpeed = lib.mkForce (if animRate <= 0.0 then 0 else 4);
+            popoutCustomAnimationDuration = lib.mkForce (scale 150);
+            modalAnimationSpeed = lib.mkForce (if animRate <= 0.0 then 0 else 4);
+            modalCustomAnimationDuration = lib.mkForce (scale 150);
+            syncComponentAnimationSpeeds = lib.mkForce true;
           };
         };
 

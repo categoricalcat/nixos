@@ -9,6 +9,7 @@
 let
   noctaliaPackage = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
   noctaliaConfig = fromTOML (builtins.readFile ./config.toml);
+  animRate = config.desktop.animationRate;
 in
 {
   config =
@@ -19,7 +20,14 @@ in
           enable = true;
           package = noctaliaPackage;
 
-          settings = lib.mkForce noctaliaConfig;
+          settings = lib.mkForce (
+            lib.recursiveUpdate noctaliaConfig {
+              shell.animation = {
+                enabled = animRate > 0.0;
+                speed = if animRate > 0.0 then (1.0 / animRate) else 0.0;
+              };
+            }
+          );
 
           customPalettes.yimoka =
             let

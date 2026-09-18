@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  config,
   osConfig,
   ...
 }:
@@ -26,6 +27,8 @@ let
     "${gnomeMods}${keyPart}";
 
   colors = import ../../theme.nix;
+  animRate = config.desktop.animationRate;
+  scale = ms: if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (ms * animRate));
   panelElements = [
     {
       element = "showAppsButton";
@@ -109,7 +112,7 @@ in
         clock-show-date = true;
         clock-show-seconds = false;
         clock-show-weekday = true;
-        enable-animations = true;
+        enable-animations = animRate > 0.0;
       };
 
       "org/gnome/desktop/wm/preferences" = {
@@ -138,7 +141,8 @@ in
       };
 
       "org/gnome/shell/extensions/vertical-workspaces" = {
-        animation-speed-factor = 50;
+        animation-speed-factor =
+          if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (50 * animRate));
         ws-max-spacing = 16;
         ws-switcher-mode = 1;
         panel-module = false;
@@ -202,6 +206,9 @@ in
       };
 
       # Input and touchpad
+      "org/gnome/desktop/peripherals/mouse" = {
+        accel-profile = "flat";
+      };
       "org/gnome/desktop/peripherals/touchpad" = {
         tap-to-click = true;
         natural-scroll = true;
@@ -228,20 +235,20 @@ in
       };
 
       "org/gnome/shell/extensions/dash-to-panel" = {
-        animate-app-switch = true;
-        animate-appicon-hover = true;
+        animate-app-switch = animRate > 0.0;
+        animate-appicon-hover = animRate > 0.0;
         animate-appicon-hover-animation-duration = [
           (lib.hm.gvariant.mkDictionaryEntry [
             "RIPPLE"
-            70
+            (scale 70)
           ])
           (lib.hm.gvariant.mkDictionaryEntry [
             "PLANK"
-            60
+            (scale 60)
           ])
           (lib.hm.gvariant.mkDictionaryEntry [
             "SIMPLE"
-            80
+            (scale 80)
           ])
         ];
         animate-appicon-hover-animation-extent = [
@@ -258,7 +265,7 @@ in
             1
           ])
         ];
-        animate-window-launch = true;
+        animate-window-launch = animRate > 0.0;
         appicon-margin = 0;
         appicon-padding = 6;
         appicon-style = "NORMAL";
@@ -272,7 +279,7 @@ in
         global-border-radius = 8;
         hotkeys-overlay-combo = "TEMPORARILY";
         intellihide = false;
-        intellihide-animation-time = 80;
+        intellihide-animation-time = scale 80;
         leftbox-padding = 4;
         location-clock = "BUTTONSLEFT";
         multi-monitors = false;
@@ -307,7 +314,7 @@ in
         trans-use-custom-opacity = true;
         trans-use-dynamic-opacity = false;
         tray-padding = 4;
-        window-preview-animation-time = 80;
+        window-preview-animation-time = scale 80;
         window-preview-title-position = "TOP";
       };
 

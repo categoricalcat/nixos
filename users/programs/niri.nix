@@ -10,6 +10,7 @@ let
   desktopShell = config.host.desktopShell;
   monitors = config.desktop.monitors;
   colors = import ../../modules/theme.nix;
+  animRate = config.desktop.animationRate;
 
   parseMode =
     mode:
@@ -311,7 +312,15 @@ in
 
       overview.backdrop-color = "#${colors.base00}";
 
+      animations = {
+        enable = animRate > 0.0;
+        slowdown = if animRate > 0.0 then animRate else 1.0;
+      };
+
       input = {
+        mouse = {
+          accel-profile = "flat";
+        };
         touchpad = {
           tap = true;
           natural-scroll = true;
