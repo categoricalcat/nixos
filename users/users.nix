@@ -61,6 +61,7 @@ in
             "plugdev"
             "adbusers"
             "podman"
+            "docker"
           ];
         };
 

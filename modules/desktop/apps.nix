@@ -15,7 +15,7 @@
 
     kdePackages.kdenlive
     # davinci-resolve
-    qbz
+    high-tide
     dbeaver-bin
     github-desktop
 

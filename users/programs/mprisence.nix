@@ -77,12 +77,12 @@ let
         allow_streaming = true;
       };
 
-      qbz = {
+      "io.github.nokse22.high-tide" = {
         ignore = false;
         allow_streaming = true;
       };
 
-      qbz-player = {
+      high-tide = {
         ignore = false;
         allow_streaming = true;
       };

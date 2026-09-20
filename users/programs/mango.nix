@@ -179,7 +179,7 @@ in
         scroller_structs = 20;
         scroller_default_proportion = 0.666667;
         scroller_prefer_overspread = 1;
-        scroller_proportion_preset = "0.333333,0.5,0.666667,0.75";
+        scroller_proportion_preset = "0.333333,0.5,0.666667,1.0";
 
         source-optional = [
           "~/.config/mango/dms/binds.conf"

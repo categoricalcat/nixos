@@ -14,6 +14,14 @@
         CARGO_PROFILE_RELEASE_LTO = "thin";
       };
     });
+
+    high-tide = prev.high-tide.overrideAttrs (oldAttrs: {
+      postPatch = (oldAttrs.postPatch or "") + ''
+        substituteInPlace src/lib/utils.py \
+          --replace-fail "IMG_DIR.mkdir(exist_ok=True)" "IMG_DIR.mkdir(parents=True, exist_ok=True)" \
+          --replace-fail "MUSIC_DIR.mkdir(exist_ok=True)" "MUSIC_DIR.mkdir(parents=True, exist_ok=True)"
+      '';
+    });
   })
 
   (_final: prev: {

@@ -167,4 +167,8 @@ in
     routingMode = "client";
     exitNodeHost = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
   };
+
+  virtualisation.docker = {
+    enable = true;
+  };
 }

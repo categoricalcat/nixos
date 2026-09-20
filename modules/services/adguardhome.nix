@@ -185,7 +185,7 @@ in
       querylog = {
         enabled = true;
         file_enabled = true;
-        interval = "720h";
+        interval = "168h";
         size_memory = 10485760; # 10MiB
       };
 

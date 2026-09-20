@@ -53,12 +53,12 @@ in
       };
 
       # Bitperfect stream matching for dedicated Hi-Fi audio player
-      client."99-qbz-bitperfect-audio" = {
+      client."99-high-tide-bitperfect-audio" = {
         "stream.rules" = [
           {
             matches = [
-              { "application.process.binary" = "~.*qbz.*"; }
-              { "application.name" = "~.*[Qq]bz.*"; }
+              { "application.process.binary" = "~.*high-tide.*"; }
+              { "application.name" = "~.*[Hh]igh-[Tt]ide.*"; }
             ];
             actions = {
               update-props = {
@@ -126,7 +126,7 @@ in
       };
 
       # Feixiang DAC: Bitperfect output for Hi-Fi audio player
-      "99-qbz-dac-audio" = {
+      "99-high-tide-dac-audio" = {
         "monitor.alsa.rules" = [
           {
             matches = [
