@@ -7,6 +7,7 @@
 
 let
   keys = import ../secrets/keys.nix;
+  hostName = config.networking.hostName;
 in
 {
   users = {
@@ -32,14 +33,7 @@ in
     users = lib.mkMerge [
       {
         root = {
-          # Clients (yitaishi, yixiaoqing) and core server (yifuwuqi) can admin the gang,
-          # but perimeter gateway (yirukou) cannot SSH into other nodes as root.
-          openssh.authorizedKeys.keys = [
-            keys.hosts.yitaishi.sshPublicKey
-            keys.hosts.yixiaoqing.sshPublicKey
-            keys.hosts.yifuwuqi.sshPublicKey
-            keys.ci.deployPublicKey
-          ];
+          openssh.authorizedKeys.keys = keys.access.root.${hostName};
         };
 
         yi = {
@@ -48,7 +42,7 @@ in
           description = "yi";
           group = "yi";
           hashedPasswordFile = config.sops.secrets."passwords/yi".path;
-          openssh.authorizedKeys.keys = keys.users.yi.sshAuthorizedKeys;
+          openssh.authorizedKeys.keys = keys.access.yi.${hostName};
           extraGroups = [
             "wheel"
             "render"
@@ -82,7 +76,7 @@ in
           group = "nogroup";
           description = "Read-only AI agent";
           shell = "/bin/sh";
-          openssh.authorizedKeys.keys = keys.users.ai.sshAuthorizedKeys;
+          openssh.authorizedKeys.keys = keys.access.ai.${hostName};
           extraGroups = [ "systemd-journal" ];
         };
       }

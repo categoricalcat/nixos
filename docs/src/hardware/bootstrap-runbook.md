@@ -106,13 +106,26 @@ ______________________________________________________________________
 
 ## 4. Step 3: Registering Keys & Addresses
 
-Open `secrets/keys.nix` on your workstation and add the generated public keys:
+Open `secrets/keys.nix` on your workstation, paste the generated machine block,
+and add the hostname to the `keyed` list:
 
 ```nix
 # secrets/keys.nix
-keys.hosts.<hostname> = {
-  sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
-  agePublicKey = "age1...";
+<hostname> = {
+  host = {
+    ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+    age = "age1...";
+  };
+  yi = {
+    ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+    age = "age1...";
+  };
+  ai.ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+  allow = {
+    root = rootAdmins;
+    yi = [ ];
+    ai = aiAgent;
+  };
 };
 ```
 

@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 # Dedicated CI/CD Deployment Key Management
-# Mints a deployment keypair in tmpfs on yifuwuqi when missing from secrets/keys.nix (or on --rotate),
+# Mints a deployment keypair in tmpfs when missing from secrets/keys.nix (or on --rotate),
 # and prints SOPS ingestion instructions.
 
 ensure_ci_key() {
   local hostname="$1"
   local rotate="$2"
-
-  if [ "$hostname" != "yifuwuqi" ]; then
-    return 0
-  fi
 
   local ci_dir="/run/ci-deploy-key"
   local ci_keys_dir="$ci_dir/keys"
@@ -31,7 +27,7 @@ ensure_ci_key() {
 
     echo "-> Generating CI deployment key in tmpfs ($ci_priv)..."
     rm -f "$ci_priv" "$ci_pub"
-    ssh-keygen -t ed25519 -N "" -f "$ci_priv" -C "nix-builder@yifuwuqi"
+    ssh-keygen -t ed25519 -N "" -f "$ci_priv" -C "nix-builder@$hostname"
     chmod 0600 "$ci_priv"
     chmod 0644 "$ci_pub"
     chown -R "$target_user:$target_group" "$ci_dir"

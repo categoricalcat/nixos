@@ -101,7 +101,7 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 To rotate the CI deployment key:
 
 ```bash
-# 1. Mint new key on yifuwuqi (or run with --rotate)
+# 1. Mint a new key on any configured host
 ./users/scripts/setup-sops.sh [--rotate]
 
 # 2. Update keys.ci.deployPublicKey in secrets/keys.nix

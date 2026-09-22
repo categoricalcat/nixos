@@ -97,21 +97,11 @@ if [ "$NEEDS_INSTRUCTIONS" = "true" ]; then
 
   echo ""
   echo "=========================================="
-  echo "    Add to secrets/keys.nix (hosts)       "
+  echo "   Add to secrets/keys.nix (machines)     "
   echo "=========================================="
-  printf '    %s = {\n      sshPublicKey = "%s";\n      ageRecipient = "%s";\n    };\n' "$HOSTNAME" "$HOST_PUB" "$HOST_AGE"
-
-  echo ""
-  echo "=========================================="
-  echo "   Add to secrets/keys.nix (users.yi)     "
-  echo "=========================================="
-  printf '      %s = {\n        sshPublicKey = "%s";\n        ageRecipient = "%s";\n      };\n' "$HOSTNAME" "$MESH_PUB" "$MESH_AGE"
-
-  echo ""
-  echo "=========================================="
-  echo "   Add to secrets/keys.nix (users.ai)     "
-  echo "=========================================="
-  printf '      %s = {\n        sshPublicKey = "%s";\n      };\n' "$HOSTNAME" "$AI_PUB"
+  printf '    %s = {\n      host = {\n        ssh = "%s";\n        age = "%s";\n      };\n      yi = {\n        ssh = "%s";\n        age = "%s";\n      };\n      ai.ssh = "%s";\n      allow = {\n        root = rootAdmins;\n        yi = [ ];\n        ai = aiAgent;\n      };\n    };\n' \
+    "$HOSTNAME" "$HOST_PUB" "$HOST_AGE" "$MESH_PUB" "$MESH_AGE" "$AI_PUB"
+  echo "-> Add \"$HOSTNAME\" to the keyed machine list."
 fi
 
 ensure_ci_key "$HOSTNAME" "$ROTATE"
@@ -127,15 +117,13 @@ echo "-> host pkey:   $HOST_PUB"
 echo "-> mesh pkey:   $MESH_PUB"
 echo "-> git pkey:    $GIT_PUB"
 echo "-> ai pkey:     $AI_PUB"
-if [ "$HOSTNAME" = "yifuwuqi" ]; then
-  if [ -f "/run/ci-deploy-key/keys/deploy_ed25519.pub" ]; then
-    CI_PUB=$(cat "/run/ci-deploy-key/keys/deploy_ed25519.pub")
-  else
-    CI_PUB=$(grep -oE 'deployPublicKey\s*=\s*"[^"]+' secrets/keys.nix 2>/dev/null | sed 's/.*"//' || true)
-  fi
-  if [ "$CI_PUB" != "" ]; then
-    echo "-> ci pkey:     $CI_PUB"
-  fi
+if [ -f "/run/ci-deploy-key/keys/deploy_ed25519.pub" ]; then
+  CI_PUB=$(cat "/run/ci-deploy-key/keys/deploy_ed25519.pub")
+else
+  CI_PUB=$(grep -oE 'deployPublicKey\s*=\s*"[^"]+' secrets/keys.nix 2>/dev/null | sed 's/.*"//' || true)
+fi
+if [ "$CI_PUB" != "" ]; then
+  echo "-> ci pkey:     $CI_PUB"
 fi
 echo ""
 

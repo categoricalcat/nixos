@@ -64,20 +64,42 @@ Non-central hosts automatically open firewall TCP ports for all enabled exporter
 
 ### Internet Probing & Failover
 
-Probes are generated from `probePeers` (`modules/addresses.nix`). Every peer is
-dual-stack, so v4 and v6 always measure the same machine and stay comparable:
+Probes are generated from `probePeers` (`modules/addresses.nix`). The peers form
+a **failure-domain ladder**: each rung sits one step further out, so an outage
+localises to the first rung that stops answering. `tier` carries the rung and is
+numerically prefixed so Grafana, which sorts label values lexicographically,
+orders the series by distance:
 
-| Peer         | Scope      | IPv4          | IPv6                   | Layers          |
-| ------------ | ---------- | ------------- | ---------------------- | --------------- |
-| `cloudflare` | `internet` | `1.1.1.1`     | `2606:4700:4700::1111` | icmp, dns, http |
-| `google`     | `internet` | `8.8.8.8`     | `2001:4860:4860::8888` | icmp, dns, http |
-| `ntpbr`      | `internet` | `200.160.0.8` | `2001:12ff::8`         | icmp            |
-| `yirukou`    | `lan`      | `10.42.0.1`   | `fd75:c55f:6d19:1::1`  | icmp, dns       |
-| `yifuwuqi`   | `lan`      | `10.42.0.2`   | `fd75:c55f:6d19:1::2`  | icmp, dns       |
+| Peer         | Tier         | Scope      | IPv4          | IPv6                   | Layers          | RTT    |
+| ------------ | ------------ | ---------- | ------------- | ---------------------- | --------------- | ------ |
+| `yirukou`    | `1-lan`      | `lan`      | `10.42.0.1`   | `fd75:c55f:6d19:1::1`  | icmp, dns       | \<1 ms |
+| `yifuwuqi`   | `1-lan`      | `lan`      | `10.42.0.2`   | `fd75:c55f:6d19:1::2`  | icmp, dns       | \<1 ms |
+| `redebr`     | `2-isp`      | `internet` | `45.68.81.57` | `2001:12f8:0:2::53:57` | icmp            | ~3 ms  |
+| `ntpbr`      | `3-country`  | `internet` | `200.160.0.8` | `2001:12ff::8`         | icmp            | ~10 ms |
+| `cloudflare` | `4-external` | `internet` | `1.1.1.1`     | `2606:4700:4700::1111` | icmp, dns, http | ~11 ms |
+
+- `redebr` is our ISP, AS264111. The probed address is its border interface on
+  the IX.br Rio exchange, published in PeeringDB. RedeBr's in-path internal
+  hops answer neither echo nor TTL-exceeded, so this is the nearest ISP-owned
+  address that can be probed at all.
+- `ntpbr` is `a.ntp.br` (NIC.br, São Paulo), unicast rather than anycast, so the
+  rung genuinely measures the path out of the state.
+- `cloudflare` is the external anycast baseline and the only peer carrying all
+  three layers. It tests service reachability rather than geographic distance.
+- IX.br **São Paulo** route servers are deliberately absent: they answer ICMP
+  only from within the exchange LAN.
+
+A peer may omit `v6` when its origin publishes no IPv6 address; that drops the
+family for that peer rather than inventing a counterpart. Every peer currently
+has both.
 
 DNS peers are the resolvers (AdGuard -> Unbound on the two LAN peers, public
 resolvers otherwise); HTTPS uses one URL per peer (Cloudflare's captive-portal
-endpoint, Google `generate_204`) with the family pinned by the blackbox module.
+endpoint) with the family pinned by the blackbox module.
+
+Smokeping sends one ICMP request to each target every 5 seconds. Prometheus
+scrapes every 15 seconds, so each scrape contains roughly three new samples and
+each dashboard 5-minute percentile window contains roughly 60.
 
 Two rules trim the fan-out:
 
@@ -86,10 +108,11 @@ Two rules trim the fan-out:
   (see [IPv6: ULA now, GUA later](../networking/ipv6-ula-gua.md)), and probing
   it would only produce permanently failing series. The `lan` peers keep both
   families, which is where the v4-vs-v6 comparison lives. Flipping the flag to
-  `true` restores the mirrored internet probes and smokeping targets.
+  `true` restores the mirrored internet probes and smokeping targets for peers
+  that have `v6`.
 - A host never probes its own peer entry, in blackbox or smokeping. Its own
   AdGuard -> Unbound chain is already measured by the `adguard` and `unbound`
-  exporters, so each host probes the other host plus the internet peers: 11
+  exporters, so each host probes the other host plus the internet peers: 9
   blackbox probes and 5 smokeping targets per host.
 
 Blackbox modules (`blackbox.yml`) are named after the layer and all set
@@ -97,12 +120,13 @@ Blackbox modules (`blackbox.yml`) are named after the layer and all set
 family. A single `probe` scrape job fans out over host x probe; series carry
 `host` (origin, same meaning as every other job), `layer`
 (`icmp`/`dns`/`http`/`icmp6`/`dns6`/`http6`), `family` (`v4`/`v6`), `peer`,
-`scope` (`internet`/`lan`) and `instance` (target). `up{job="blackbox"}`
+`scope` (`internet`/`lan`), `tier` (the ladder rung) and `instance` (target).
+`up{job="blackbox"}`
 measures exporter reachability; `probe_success` measures the target. Smokeping's
 target list is built per host in `exporters.nix` from the same peer table; its
 native `host` label (the ping target) is relabeled to `target`, and metric
-relabeling derives the same `peer`, `family` and `scope` labels from the address
-so latency panels can plot both families together.
+relabeling derives the same `peer`, `family`, `scope` and `tier` labels from the
+address so latency panels can plot both families together and sort by rung.
 
 `wan-notify` atomically writes `gateway_failover.prom` for the node-exporter
 textfile collector. It exposes `gateway_failover_primary_active` and

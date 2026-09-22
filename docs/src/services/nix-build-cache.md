@@ -46,9 +46,16 @@ Nix distributed builds authenticate over SSH using the dedicated `nix-builder` u
 
 ### 2.2 Adding a Host to the Mesh
 
-1. **Record the Host's Public SSH Key in `secrets/keys.nix`**:
+1. **Record the machine block printed by `setup-sops.sh` in
+   `secrets/keys.nix` and add its name to `keyed`**:
    ```nix
-   keys.hosts.newhost.sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+   newhost = {
+     host = {
+       ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
+       age = "age1...";
+     };
+     # yi, ai, and allow are printed by setup-sops.sh
+   };
    ```
 1. **Configure `nixBuild` in `modules/addresses.nix`**:
    ```nix

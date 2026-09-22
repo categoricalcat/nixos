@@ -4,16 +4,20 @@
 let
   inherit (pkgs) lib;
   dashLib = import ./lib.nix { inherit lib; };
-  # Every peer is probed over both families, so each panel holds v4 and v6
-  # for the same machines and the two are directly comparable. `internet`
-  # v6 stays down until IPv6 egress exists; that gap is the signal.
+  # Dual-stack peers plot v4 and v6 together. `internet` v6 stays down until
+  # IPv6 egress exists; a peer with no `v6` never grows a v6 series.
   probeLegend = "{{peer}} {{family}} {{host}}";
+  # `internet` peers are a failure-domain ladder, so their legends lead with
+  # the rung: sorted, the series read in diagnostic order and the first one
+  # that breaks localises the outage. `tier` is constant per peer, so adding
+  # it to the aggregations below does not change their grouping.
+  tierLegend = "{{tier}} {{peer}} {{family}} {{host}}";
   smokepingQuantile =
     q: scope:
-    "histogram_quantile(${q}, sum by (le, host, peer, family) (rate(smokeping_response_duration_seconds_bucket{scope=\"${scope}\"}[5m]))) * 1000";
+    "histogram_quantile(${q}, sum by (le, host, peer, tier, family) (rate(smokeping_response_duration_seconds_bucket{scope=\"${scope}\"}[5m]))) * 1000";
   smokepingLoss =
     scope:
-    "(1 - sum by (host, peer, family) (rate(smokeping_response_duration_seconds_count{scope=\"${scope}\"}[5m])) / sum by (host, peer, family) (rate(smokeping_requests_total{scope=\"${scope}\"}[5m]))) * 100";
+    "(1 - sum by (host, peer, tier, family) (rate(smokeping_response_duration_seconds_count{scope=\"${scope}\"}[5m])) / sum by (host, peer, tier, family) (rate(smokeping_requests_total{scope=\"${scope}\"}[5m]))) * 100";
   probeDuration =
     layers: scope: "probe_duration_seconds{layer=~\"${layers}\", scope=\"${scope}\"} * 1000";
 in
@@ -39,7 +43,7 @@ dashLib.mkDashboard {
       title = "Internet Reachability (v4 vs v6)";
       expr = "probe_success{scope=\"internet\"}";
       gridPos = dashLib.mkGridPos 0 5 12 8;
-      legendFormat = "{{peer}} {{family}} {{layer}} {{host}}";
+      legendFormat = "{{tier}} {{peer}} {{family}} {{layer}} {{host}}";
     })
     (dashLib.mkStateTimeline {
       title = "LAN Reachability (v4 vs v6)";
@@ -57,7 +61,7 @@ dashLib.mkDashboard {
       title = "Internet ICMP Probe Duration";
       expr = probeDuration "icmp|icmp6" "internet";
       gridPos = dashLib.mkGridPos 0 19 12 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "ms";
     })
     (dashLib.mkTimeseries {
@@ -71,7 +75,7 @@ dashLib.mkDashboard {
       title = "Internet DNS Probe Duration";
       expr = probeDuration "dns|dns6" "internet";
       gridPos = dashLib.mkGridPos 0 27 12 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "ms";
     })
     (dashLib.mkTimeseries {
@@ -85,14 +89,14 @@ dashLib.mkDashboard {
       title = "Internet HTTPS Probe Duration";
       expr = probeDuration "http|http6" "internet";
       gridPos = dashLib.mkGridPos 0 35 24 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "ms";
     })
     (dashLib.mkTimeseries {
       title = "Internet ICMP Latency p50";
       expr = smokepingQuantile "0.50" "internet";
       gridPos = dashLib.mkGridPos 0 43 12 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "ms";
     })
     (dashLib.mkTimeseries {
@@ -106,7 +110,7 @@ dashLib.mkDashboard {
       title = "Internet ICMP Latency p95";
       expr = smokepingQuantile "0.95" "internet";
       gridPos = dashLib.mkGridPos 0 51 12 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "ms";
     })
     (dashLib.mkTimeseries {
@@ -120,7 +124,7 @@ dashLib.mkDashboard {
       title = "Internet ICMP Latency p99";
       expr = smokepingQuantile "0.99" "internet";
       gridPos = dashLib.mkGridPos 0 59 12 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "ms";
     })
     (dashLib.mkTimeseries {
@@ -134,7 +138,7 @@ dashLib.mkDashboard {
       title = "Internet ICMP Packet Loss";
       expr = smokepingLoss "internet";
       gridPos = dashLib.mkGridPos 0 67 12 8;
-      legendFormat = probeLegend;
+      legendFormat = tierLegend;
       unit = "percent";
     })
     (dashLib.mkTimeseries {

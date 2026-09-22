@@ -92,36 +92,21 @@ let
   # mirrored v6 probes and smokeping targets come back with it.
   ipv6Egress = false;
 
-  # Every probe peer is dual-stack: v4 and v6 always hit the same machine, so
-  # the two families stay comparable on one graph. With `ipv6Egress = false`,
-  # `lan` peers are the only ones measured over both families.
+  # The peers form a failure-domain ladder, each rung one step further out, so
+  # an outage localises to the first rung that stops answering. `tier` carries
+  # the rung and is numerically prefixed because Grafana sorts label values
+  # lexicographically and the useful order is by distance.
+  #
+  # Dual-stack peers share a machine across families so the two stay
+  # comparable; `v6` may be omitted for an origin that publishes no IPv6
+  # address, which drops that family for the peer rather than inventing a
+  # counterpart. With `ipv6Egress = false`, `lan` peers are the only ones
+  # measured over both families; internet v6 comes back with the flag.
   probePeers = [
-    {
-      name = "cloudflare";
-      scope = "internet";
-      v4 = "1.1.1.1";
-      v6 = "2606:4700:4700::1111";
-      resolver = true;
-      url = "https://cp.cloudflare.com";
-    }
-    {
-      name = "google";
-      scope = "internet";
-      v4 = "8.8.8.8";
-      v6 = "2001:4860:4860::8888";
-      resolver = true;
-      url = "https://www.google.com/generate_204";
-    }
-    {
-      # a.ntp.br, regional latency reference.
-      name = "ntpbr";
-      scope = "internet";
-      v4 = "200.160.0.8";
-      v6 = "2001:12ff::8";
-    }
     {
       name = "yirukou";
       scope = "lan";
+      tier = "1-lan";
       v4 = "10.42.0.1";
       v6 = "fd75:c55f:6d19:1::1";
       resolver = true;
@@ -131,15 +116,45 @@ let
       # address, which loopback probes could not express for both families.
       name = "yifuwuqi";
       scope = "lan";
+      tier = "1-lan";
       v4 = "10.42.0.2";
       v6 = "fd75:c55f:6d19:1::2";
       resolver = true;
+    }
+    {
+      # RedeBr AS264111, our ISP: its border interface on the IX.br Rio
+      # exchange, as published in PeeringDB. Their in-path internal hops
+      # answer neither echo nor TTL-exceeded, so this is the nearest
+      # ISP-owned address that can be probed at all.
+      name = "redebr";
+      scope = "internet";
+      tier = "2-isp";
+      v4 = "45.68.81.57";
+      v6 = "2001:12f8:0:2::53:57";
+    }
+    {
+      # a.ntp.br (NIC.br, São Paulo). Unicast rather than anycast, so this
+      # rung genuinely measures the path out of the state.
+      name = "ntpbr";
+      scope = "internet";
+      tier = "3-country";
+      v4 = "200.160.0.8";
+      v6 = "2001:12ff::8";
+    }
+    {
+      name = "cloudflare";
+      scope = "internet";
+      tier = "4-external";
+      v4 = "1.1.1.1";
+      v6 = "2606:4700:4700::1111";
+      resolver = true;
+      url = "https://cp.cloudflare.com";
     }
   ];
 
   mkProbe = layer: family: peer: target: {
     inherit layer family target;
-    inherit (peer) scope;
+    inherit (peer) scope tier;
     peer = peer.name;
   };
 
@@ -148,23 +163,52 @@ let
 
   probeEnabled = probe: ipv6Egress || probe.family == "v4" || probe.scope != "internet";
 
+  # v4 is mandatory; v6 only exists for peers that carry an address there.
+  peerFamilies = peer: [ "v4" ] ++ (if peer ? v6 then [ "v6" ] else [ ]);
+
+  # One entry per layer: which peers it covers and how each family renders its
+  # target. The blackbox module is the layer name, suffixed `6` for IPv6
+  # (blackbox.yml), which is what pins the family per probe.
+  probeLayers = [
+    {
+      layer = "icmp";
+      peers = probePeers;
+      v4 = peer: peer.v4;
+      v6 = peer: peer.v6;
+    }
+    {
+      layer = "dns";
+      peers = resolverPeers;
+      v4 = peer: "${peer.v4}:53";
+      v6 = peer: "[${peer.v6}]:53";
+    }
+    {
+      layer = "http";
+      peers = httpPeers;
+      # Same URL both ways.
+      v4 = peer: peer.url;
+      v6 = peer: peer.url;
+    }
+  ];
+
   internetProbes = builtins.filter probeEnabled (
-    builtins.concatMap (peer: [
-      (mkProbe "icmp" "v4" peer peer.v4)
-      (mkProbe "icmp6" "v6" peer peer.v6)
-    ]) probePeers
-    ++ builtins.concatMap (peer: [
-      (mkProbe "dns" "v4" peer "${peer.v4}:53")
-      (mkProbe "dns6" "v6" peer "[${peer.v6}]:53")
-    ]) resolverPeers
-    # Same URL both ways: the blackbox module pins the family.
-    ++ builtins.concatMap (peer: [
-      (mkProbe "http" "v4" peer peer.url)
-      (mkProbe "http6" "v6" peer peer.url)
-    ]) httpPeers
+    builtins.concatMap (
+      spec:
+      builtins.concatMap (
+        peer:
+        map (
+          family:
+          mkProbe (if family == "v4" then spec.layer else "${spec.layer}6") family peer (spec.${family} peer)
+        ) (peerFamilies peer)
+      ) spec.peers
+    ) probeLayers
   );
 
   escapeRegex = builtins.replaceStrings [ "." ] [ "\\." ];
+
+  # Both of a peer's addresses collapse onto one peer label.
+  peerAddressRegex =
+    peer: builtins.concatStringsSep "|" (map (family: escapeRegex peer.${family}) (peerFamilies peer));
 
 in
 {
@@ -204,32 +248,44 @@ in
 
       # smokeping labels its ping target `host`, which collides with our
       # origin `host` label; Prometheus renames it `exported_host`, we
-      # expose it as `target`. `peer` and `family` are derived from the
-      # target address so both families of a peer join on one series set.
+      # expose it as `target`. `peer`, `scope`, `tier` and `family` are
+      # derived from the target address so both families of a peer join on
+      # one series set and match the blackbox labels.
       # Ping targets are per-host (a host does not ping itself), so they are
       # built in exporters.nix from `probePeers`.
       smokeping = {
         hosts = "scrapeHosts";
+        settings.pingInterval = "5s";
         metricRelabelConfigs = [
           {
             source_labels = [ "exported_host" ];
             target_label = "target";
           }
         ]
-        ++ builtins.concatMap (peer: [
-          {
-            source_labels = [ "exported_host" ];
-            regex = "${escapeRegex peer.v4}|${escapeRegex peer.v6}";
-            target_label = "peer";
-            replacement = peer.name;
-          }
-          {
-            source_labels = [ "exported_host" ];
-            regex = "${escapeRegex peer.v4}|${escapeRegex peer.v6}";
-            target_label = "scope";
-            replacement = peer.scope;
-          }
-        ]) probePeers
+        ++ builtins.concatMap (
+          peer:
+          map
+            (label: {
+              source_labels = [ "exported_host" ];
+              regex = peerAddressRegex peer;
+              target_label = label.name;
+              replacement = label.value;
+            })
+            [
+              {
+                name = "peer";
+                value = peer.name;
+              }
+              {
+                name = "scope";
+                value = peer.scope;
+              }
+              {
+                name = "tier";
+                value = peer.tier;
+              }
+            ]
+        ) probePeers
         ++ [
           {
             source_labels = [ "exported_host" ];
@@ -561,6 +617,7 @@ in
 
       nixBuild = {
         enable = true;
+        useRemoteBuilders = false;
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
@@ -633,6 +690,7 @@ in
 
       nixBuild = {
         enable = true;
+        useRemoteBuilders = true;
         remoteBuilder = false;
         systems = [ "x86_64-linux" ];
         maxJobs = 8;
@@ -679,6 +737,7 @@ in
 
       nixBuild = {
         enable = true;
+        useRemoteBuilders = true;
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
@@ -833,6 +892,7 @@ in
 
       nixBuild = {
         enable = true;
+        useRemoteBuilders = true;
         remoteBuilder = false;
         systems = [ "x86_64-linux" ];
         maxJobs = 1;

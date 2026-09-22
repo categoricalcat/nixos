@@ -45,7 +45,9 @@ let
   smokepingHosts =
     map (peer: peer.v4) smokepingPeers
     ++ map (peer: peer.v6) (
-      builtins.filter (peer: monitoring.ipv6Egress || peer.scope != "internet") smokepingPeers
+      builtins.filter (
+        peer: peer ? v6 && (monitoring.ipv6Egress || peer.scope != "internet")
+      ) smokepingPeers
     );
 
   mkExporter =

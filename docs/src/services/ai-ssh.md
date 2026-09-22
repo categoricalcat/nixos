@@ -51,11 +51,11 @@ path allowlist and additionally unreadable to the `ai` user.
 ## Provisioning a new host
 
 1. On the new mesh host run `./users/scripts/setup-sops.sh <host>`, which
-   generates `~yi/.ssh/id_ai_ed25519` and prints its public half.
-1. Paste that `sshPublicKey` into `secrets/keys.nix` under
-   `users.ai.meshKeys.<host>` (replacing the `null` placeholder).
-1. Rebuild the host — every mesh host authorizes all non-null `ai` keys, so
-   the new key works from every host at once.
+   generates `~yi/.ssh/id_ai_ed25519` and prints the complete machine block.
+1. Paste that block into `machines` in `secrets/keys.nix`, add the hostname to
+   `keyed`, and set each destination's `allow.ai` policy.
+1. Rebuild the affected destinations. Currently only yifuwuqi's AI key is
+   authorized by the mesh.
 
 ## Threat model
 

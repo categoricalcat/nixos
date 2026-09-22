@@ -157,7 +157,8 @@ Do not re-enable WAN RA or LAN GUA until **all** of these are true:
    comparison runs on the `lan` scope (see
    [monitoring](../services/monitoring.md)). Flipping that flag to `true` is
    part of passing this gate: it restores public `icmp6` / `dns6` / `http6`
-   against the same peers as IPv4, plus the matching smokeping targets.
+   against every peer that has a `v6` address, plus the matching smokeping
+   targets.
 1. Happy Eyeballs is tested from a LAN client to a dual-stack public name.
    If IPv6 is slower or blackholes, keep IPv4 preference until it does not.
 

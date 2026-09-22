@@ -71,6 +71,7 @@ let
             family
             peer
             scope
+            tier
             ;
           __param_module = probe.layer;
           __tmp_address = "${hostAddress host}:${toString config.services.prometheus.exporters.blackbox.port}";

@@ -11,15 +11,19 @@ let
   inherit (allAddresses) hosts;
 
   localBuild = hosts.${hostName}.nixBuild;
-  builderNames = lib.pipe hosts [
-    (lib.filterAttrs (
-      name: host: name != hostName && host.nixBuild.enable && host.nixBuild.remoteBuilder
-    ))
-    builtins.attrNames
-  ];
+  builderNames = lib.optionals localBuild.useRemoteBuilders (
+    lib.pipe hosts [
+      (lib.filterAttrs (
+        name: host: name != hostName && host.nixBuild.enable && host.nixBuild.remoteBuilder
+      ))
+      builtins.attrNames
+    ]
+  );
 
   clientNames = lib.pipe hosts [
-    (lib.filterAttrs (name: host: name != hostName && host.nixBuild.enable))
+    (lib.filterAttrs (
+      name: host: name != hostName && host.nixBuild.enable && host.nixBuild.useRemoteBuilders
+    ))
     builtins.attrNames
   ];
 
