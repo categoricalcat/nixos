@@ -81,11 +81,9 @@ in
         cache_size = 67108864; # 64 MiB (default is 4 MiB)
         # cache_ttl_max caps stored AND served TTLs at 5m (dnsproxy clamps
         # every upstream response via setMinMaxTTL), so a hot name re-queries
-        # unbound ~every 300s and lands in prefetch's last-10%-of-TTL window
-        # (>= 360s on a cache-min-ttl=1h record). unbound (>=1h / <=7d) and
-        # valkey (EX = clamped TTL + 7d) keep the long copy; clients see at
-        # most 5m of edge staleness. cache_ttl_min stays 0 (unset): unbound
-        # already floors TTLs at >= 1h.
+        # unbound ~every 300s. Unbound and valkey respect upstream TTLs without
+        # artificial minimum floors (cache-min-ttl = 0), preventing CDN edge
+        # staleness.
         cache_ttl_max = 300;
         # Optimistic refresh: on expiry AGH serves the stale answer (with TTL
         # cache_optimistic_answer_ttl) and re-resolves in the background on
@@ -197,6 +195,8 @@ in
   };
 
   systemd.services.adguardhome = {
+    bindsTo = lib.optional config.services.unbound.enable "unbound.service";
+    partOf = lib.optional config.services.unbound.enable "unbound.service";
     wants = [
       "network-online.target"
       "unbound.service"

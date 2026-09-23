@@ -1,6 +1,7 @@
 {
   pkgs,
   config,
+  lib,
   allAddresses,
   ...
 }:
@@ -56,14 +57,16 @@
         msg-cache-size = "300m";
         rrset-cache-size = "600m"; # 2x msg-cache-size (docs ratio)
 
-        # Stale-while-revalidate: hold popular records long, refresh in background,
-        # serve stale instantly on expiry, keep stale entries alive on refresh failure
-        cache-min-ttl = 3600;
-        cache-max-ttl = 604800; # 7 days, chosen cap (default 86400; not a hard max)
+        # Stale-while-revalidate: hold popular records, refresh in background,
+        # serve stale instantly on expiry, keep stale entries alive on refresh failure.
+        # cache-min-ttl is 0 so dynamic CDN/video records (e.g. googlevideo.com) with
+        # short authoritative TTLs are not pinned to stale or drained cache nodes.
+        cache-min-ttl = 0;
+        cache-max-ttl = 86400; # 1 day max TTL cap
         prefetch = "yes";
         prefetch-key = "yes";
         serve-expired = "yes";
-        serve-expired-ttl = 604800; # stale window aligned with cache-max-ttl
+        serve-expired-ttl = 86400; # 1 day stale window (aligned with RFC 8767)
         serve-expired-ttl-reset = "yes";
         # failed refresh -> stale TTL resets to the
         # serve-expired-ttl window (SWR resilience)
@@ -92,6 +95,11 @@
         harden-glue = "yes";
         harden-dnssec-stripped = "yes";
 
+        # Infrastructure Cache & Resilience
+        # Prevent temporary network hiccups/boot races from blacklisting upstreams for 15m.
+        infra-host-ttl = 60;
+        infra-keep-probing = "yes";
+
         # Extended statistics (required by prometheus-unbound-exporter for
         # per-query-type counters and recursion time percentiles)
         extended-statistics = "yes";
@@ -99,7 +107,11 @@
         # Network & Fragmentation
         edns-buffer-size = 1232;
         do-ip4 = "yes";
-        do-ip6 = "yes";
+        do-ip6 = "yes"; # keeps ::1 loopback listener active
+        prefer-ip4 = "yes";
+        # WAN has no IPv6 egress. Stop Unbound from querying internet authoritative
+        # servers over IPv6 to avoid packet drops, timeouts, and intermittent SERVFAIL.
+        do-not-query-address = [ "::/0" ];
         do-udp = "yes";
         do-tcp = "yes";
       };
@@ -115,9 +127,9 @@
       #
       # redis-expire-records: redis_store SETs with EX = clamped_ttl +
       # serve-expired-ttl (cachedb/redis.c: ttl += cfg->serve_expired_ttl),
-      # i.e. 7d1h-14d. Keys thus expire exactly when the read side
+      # i.e. TTL + 1d. Keys thus expire exactly when the read side
       # (good_expiry_and_qinfo) would refuse them (older than expiry +
-      # serve-expired-ttl). Turning EX off would desync L2 from the 7d stale
+      # serve-expired-ttl). Turning EX off would desync L2 from the 1d stale
       # window and grow the db until the LRU cap.
       cachedb = {
         backend = "redis";
@@ -143,5 +155,6 @@
       "network-online.target"
       "redis.service"
     ];
+    before = lib.optional config.services.adguardhome.enable "adguardhome.service";
   };
 }

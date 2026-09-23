@@ -35,6 +35,10 @@ in
 
   systemd.network = {
     enable = true;
-    wait-online.anyInterface = true;
+    wait-online = {
+      anyInterface = false;
+      ignoredInterfaces = [ addresses.network.wan.fallback.interface ];
+      timeout = 30;
+    };
   };
 }

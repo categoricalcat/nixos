@@ -38,7 +38,7 @@ in
         UseDNS = true;
         UseRoutes = false;
       };
-      linkConfig.RequiredForOnline = "routable";
+      linkConfig.RequiredForOnline = "no";
     };
   };
 
