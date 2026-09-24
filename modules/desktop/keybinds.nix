@@ -489,13 +489,13 @@ let
 
       # === Screenshots ===
       ${bindList bindings.screenshotInteractive (
-        if desktopShell == "dms" then "spawn,dms screenshot" else "spawn,grimshot copy area"
+        if desktopShell == "dms" then "spawn,shot area" else "spawn,grimshot copy area"
       )}
       ${bindList bindings.screenshotFull (
-        if desktopShell == "dms" then "spawn,dms screenshot full" else "spawn,grimshot copy screen"
+        if desktopShell == "dms" then "spawn,shot full" else "spawn,grimshot copy screen"
       )}
       ${bindList bindings.screenshotWindow (
-        if desktopShell == "dms" then "spawn,dms screenshot window" else "spawn,grimshot copy window"
+        if desktopShell == "dms" then "spawn,shot window" else "spawn,grimshot copy window"
       )}
 
       # === Audio Controls ===

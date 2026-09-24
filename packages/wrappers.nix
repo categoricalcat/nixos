@@ -1,5 +1,17 @@
 { pkgs }:
 {
+  shot = pkgs.writeShellApplication {
+    name = "shot";
+    runtimeInputs = with pkgs; [
+      grim
+      slurp
+      jq
+      ffmpeg
+      ksnip
+    ];
+    text = builtins.readFile ../nix/scripts/shot.sh;
+  };
+
   diff-to-commit = pkgs.writeShellScriptBin "diff-to-commit" (
     builtins.readFile ../nix/scripts/diff-to-commit.sh
   );
