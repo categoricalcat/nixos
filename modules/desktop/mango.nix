@@ -21,7 +21,7 @@ let
     ];
   });
 
-  # Multi-monitor overview carry-patch, only wanted on the multi-head host.
+  # Monitor focus tracking carry-patch, only wanted on the multi-head host.
   mangoPackage = if config.networking.hostName == "yitaishi" then patchedMango else baseMango;
 in
 {
