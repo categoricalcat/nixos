@@ -182,6 +182,8 @@ in
         scroller_proportion_preset = "0.333333,0.5,0.666667,1.0";
 
         source-optional = [
+          "~/.config/mango/binds.conf"
+          "~/.config/mango/noctalia.conf"
           "~/.config/mango/dms/binds.conf"
           "~/.config/mango/dms/colors.conf"
           "~/.config/mango/dms/layout.conf"
@@ -192,11 +194,19 @@ in
       };
     };
 
+    wayland.systemd.target = "mango-session.target";
+
     programs.dank-material-shell.systemd.target = lib.mkIf (
       desktopShell == "dms"
     ) "mango-session.target";
 
-    xdg.configFile = lib.mkIf (desktopShell == "dms") {
+    xdg.configFile = {
+      "mango/binds.conf".text = keybinds.generateMangoConfig {
+        terminalCommand = "kitty";
+        inherit desktopShell;
+      };
+    }
+    // lib.optionalAttrs (desktopShell == "dms") {
       "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
         terminalCommand = "kitty";
         inherit desktopShell;

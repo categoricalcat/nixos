@@ -12,13 +12,25 @@ let
   animRate = config.desktop.animationRate;
 in
 {
+  imports = [
+    inputs.noctalia.homeModules.default
+  ];
+
   config =
-    lib.mkIf (config.host.desktopEnvironment == "niri" && config.host.desktopShell == "noctalia")
+    lib.mkIf
+      (
+        lib.elem config.host.desktopEnvironment [
+          "niri"
+          "mango"
+        ]
+        && config.host.desktopShell == "noctalia"
+      )
       {
 
         programs.noctalia = {
           enable = true;
           package = noctaliaPackage;
+          systemd.enable = true;
 
           settings = lib.mkForce (
             lib.recursiveUpdate noctaliaConfig {

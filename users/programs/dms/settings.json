@@ -95,7 +95,16 @@
                 },
                 {
                     "enabled": true,
-                    "id": "workspaceSwitcher"
+                    "id": "workspaceSwitcher",
+                    "maxWorkspaceIcons": 10,
+                    "showOccupiedWorkspacesOnly": true,
+                    "showWorkspaceApps": true,
+                    "showWorkspaceIndex": true,
+                    "showWorkspaceName": true,
+                    "showWorkspacePadding": true,
+                    "workspaceFollowFocus": true,
+                    "workspaceOccupiedColorMode": "sec",
+                    "workspaceUnfocusedColorMode": "s"
                 },
                 {
                     "enabled": true,

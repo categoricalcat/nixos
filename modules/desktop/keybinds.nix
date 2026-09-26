@@ -444,7 +444,27 @@ let
         "# ${desc}\nbind=${key},${cmd}";
       bindList = def: cmd: lib.concatMapStringsSep "\n" (k: bind def.description k cmd) def.keys;
 
-      appCmd = cmd: if desktopShell == "dms" then "spawn,dms ipc call ${cmd}" else "spawn,${cmd}";
+      appCmd =
+        cmd:
+        if desktopShell == "dms" then
+          "spawn,dms ipc call ${cmd}"
+        else if desktopShell == "noctalia" then
+          {
+            "spotlight toggle" = "spawn,noctalia msg panel-toggle launcher";
+            "spotlight-bar toggle" = "spawn,noctalia msg panel-toggle launcher";
+            "clipboard toggle" = "spawn,noctalia msg panel-toggle clipboard";
+            "settings focusOrToggle" = "spawn,noctalia msg settings-toggle";
+            "notifications toggle" = "spawn,noctalia msg panel-toggle control-center notifications";
+            "dash toggle wallpaper" = "spawn,noctalia msg panel-toggle wallpaper";
+            "powermenu toggle" = "spawn,noctalia msg panel-toggle session";
+            "processlist focusOrToggle" = "spawn,noctalia msg panel-toggle control-center system";
+            "keybinds toggle mangowc" = "";
+            "notepad toggle" = "";
+            "window-rules toggle" = "";
+          }
+          .${cmd} or "spawn,${cmd}"
+        else
+          "spawn,${cmd}";
 
       workspaceBinds = lib.concatStringsSep "\n" (
         map (n: ''
@@ -456,7 +476,7 @@ let
       );
     in
     ''
-      # DMS default keybinds (MangoWM) — generated from modules/desktop/keybinds.nix
+      # Default keybinds (MangoWM) — generated from modules/desktop/keybinds.nix
       # Format: bind=MODS,key,action[,args]
       # Put bind descriptions above bind lines; inline # comments break Mango spawn args.
 
@@ -481,7 +501,12 @@ let
 
       # === Security ===
       ${bindList bindings.lockScreen (
-        if desktopShell == "dms" then "spawn,dms ipc call lock lock" else "spawn,swaylock"
+        if desktopShell == "dms" then
+          "spawn,dms ipc call lock lock"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg lockscreen-lock"
+        else
+          "spawn,swaylock"
       )}
 
       # === Window Rules ===
@@ -489,63 +514,110 @@ let
 
       # === Screenshots ===
       ${bindList bindings.screenshotInteractive (
-        if desktopShell == "dms" then "spawn,shot area" else "spawn,grimshot copy area"
+        if desktopShell == "dms" then
+          "spawn,shot area"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg screenshot-region"
+        else
+          "spawn,grimshot copy area"
       )}
       ${bindList bindings.screenshotFull (
-        if desktopShell == "dms" then "spawn,shot full" else "spawn,grimshot copy screen"
+        if desktopShell == "dms" then
+          "spawn,shot full"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg screenshot-fullscreen"
+        else
+          "spawn,grimshot copy screen"
       )}
       ${bindList bindings.screenshotWindow (
-        if desktopShell == "dms" then "spawn,shot window" else "spawn,grimshot copy window"
+        if desktopShell == "dms" then
+          "spawn,shot window"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg screenshot-window"
+        else
+          "spawn,grimshot copy window"
       )}
 
       # === Audio Controls ===
       ${bindList bindings.volumeUp (
         if desktopShell == "dms" then
           "spawn,dms ipc call audio increment 3"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg volume-up"
         else
           "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
       )}
       ${bindList bindings.volumeDown (
         if desktopShell == "dms" then
           "spawn,dms ipc call audio decrement 3"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg volume-down"
         else
           "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
       )}
       ${bindList bindings.volumeMute (
         if desktopShell == "dms" then
           "spawn,dms ipc call audio mute"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg volume-mute"
         else
           "spawn,wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
       )}
       ${bindList bindings.micMute (
         if desktopShell == "dms" then
           "spawn,dms ipc call audio micmute"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg mic-mute"
         else
           "spawn,wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
       )}
       ${bindList bindings.mediaPlay (
-        if desktopShell == "dms" then "spawn,dms ipc call mpris playPause" else "spawn,playerctl play-pause"
+        if desktopShell == "dms" then
+          "spawn,dms ipc call mpris playPause"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg media-play-pause"
+        else
+          "spawn,playerctl play-pause"
       )}
       ${bindList bindings.mediaPause (
-        if desktopShell == "dms" then "spawn,dms ipc call mpris playPause" else "spawn,playerctl play-pause"
+        if desktopShell == "dms" then
+          "spawn,dms ipc call mpris playPause"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg media-play-pause"
+        else
+          "spawn,playerctl play-pause"
       )}
       ${bindList bindings.mediaPrev (
-        if desktopShell == "dms" then "spawn,dms ipc call mpris previous" else "spawn,playerctl previous"
+        if desktopShell == "dms" then
+          "spawn,dms ipc call mpris previous"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg media-previous"
+        else
+          "spawn,playerctl previous"
       )}
       ${bindList bindings.mediaNext (
-        if desktopShell == "dms" then "spawn,dms ipc call mpris next" else "spawn,playerctl next"
+        if desktopShell == "dms" then
+          "spawn,dms ipc call mpris next"
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg media-next"
+        else
+          "spawn,playerctl next"
       )}
 
       # === Brightness Controls ===
       ${bindList bindings.brightnessUp (
         if desktopShell == "dms" then
           "spawn,dms ipc call brightness increment 5 \"\""
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg brightness-up"
         else
           "spawn,brightnessctl set +5%"
       )}
       ${bindList bindings.brightnessDown (
         if desktopShell == "dms" then
           "spawn,dms ipc call brightness decrement 5 \"\""
+        else if desktopShell == "noctalia" then
+          "spawn,noctalia msg brightness-down"
         else
           "spawn,brightnessctl set 5%-"
       )}
