@@ -11,7 +11,6 @@
 #   atticd-atticadm make-token --sub "yi" --validity "10 years" --push
 #   # → add to sops as tokens/attic-push-token, redeploy
 {
-  inputs,
   pkgs,
   config,
   allAddresses,
@@ -19,7 +18,6 @@
 }:
 
 let
-  system = pkgs.stdenv.hostPlatform.system;
   services = allAddresses.hosts.yifuwuqi.services;
   inherit (services) attic;
   postgres = services.postgresql;
@@ -32,10 +30,6 @@ in
     }
   ];
 
-  imports = [ inputs.attic.nixosModules.atticd ];
-
-  nixpkgs.overlays = [ inputs.attic.overlays.default ];
-
   sops.secrets."tokens/attic-server-jwt-env" = {
     mode = "0400";
     restartUnits = [ "atticd.service" ];
@@ -43,7 +37,7 @@ in
 
   services.atticd = {
     enable = true;
-    package = inputs.attic.packages.${system}.attic-server;
+    package = pkgs.attic-server;
     environmentFile = config.sops.secrets."tokens/attic-server-jwt-env".path;
     settings = {
       listen = "[::]:${toString attic.port}";

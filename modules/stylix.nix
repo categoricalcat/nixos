@@ -42,6 +42,7 @@ in
   home-manager.sharedModules = [
     {
       home.pointerCursor.enable = true;
+      stylix.targets.rofi.enable = false;
     }
   ];
 }

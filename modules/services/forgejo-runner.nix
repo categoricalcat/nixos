@@ -3,12 +3,10 @@
   pkgs,
   allAddresses,
   lib,
-  inputs,
   ...
 }:
 
 let
-  system = pkgs.stdenv.hostPlatform.system;
   services = allAddresses.hosts.yifuwuqi.services;
 in
 {
@@ -60,7 +58,7 @@ in
         nvd
         deploy-rs
         config.nix.package
-        inputs.attic.packages.${system}.attic-client
+        pkgs.attic-client
       ];
       settings = {
         runner.labels = [ "native:host" ];

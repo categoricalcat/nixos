@@ -31,11 +31,6 @@
         ];
 
         flake = {
-          homeModules = {
-            default = ./users/home/yijia.nix;
-          };
-          homeManagerModules = self.homeModules;
-
           homeConfigurations.yijia = home-manager.lib.homeManagerConfiguration {
             pkgs = import nixpkgs {
               system = "x86_64-linux";
@@ -140,11 +135,6 @@
 
     deploy-rs = {
       url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    attic = {
-      url = "github:zhaofengli/attic";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

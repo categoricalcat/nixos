@@ -1,5 +1,4 @@
 {
-  inputs,
   pkgs,
   config,
   allAddresses,
@@ -7,9 +6,8 @@
 }:
 
 let
-  system = pkgs.stdenv.hostPlatform.system;
   attic = allAddresses.hosts.yifuwuqi.services.attic;
-  atticClient = inputs.attic.packages.${system}.attic-client;
+  atticClient = pkgs.attic-client;
   atticEndpoint = "http://${config.networking.hostName}:${toString attic.port}";
 in
 {
