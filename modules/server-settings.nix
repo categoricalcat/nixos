@@ -65,4 +65,7 @@
 
   # Disable GUI-related power management if present
   services.upower.enable = lib.mkForce false;
+
+  # Disable desktop sound themes on headless servers
+  xdg.sounds.enable = false;
 }

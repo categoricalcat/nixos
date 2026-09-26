@@ -53,9 +53,11 @@ in
             "systemd-journal"
             "tss"
             "plugdev"
-            "adbusers"
             "podman"
             "docker"
+          ]
+          ++ lib.optionals (config.host.desktopEnvironment != null) [
+            "adbusers"
           ];
         };
 
