@@ -28,4 +28,8 @@
   nixpkgs.config.allowUnfree = true;
   nixpkgs.overlays = import ../nix/overlays.nix { inherit inputs; };
   environment.defaultPackages = lib.mkForce [ ];
+
+  systemd.tmpfiles.rules = [
+    "d /tmp/ai 1777 root root 1d -"
+  ];
 }
