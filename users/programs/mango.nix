@@ -130,7 +130,7 @@ in
         jump_label_decorate_focus_fg_color = "0x${colors.base00}ff";
         jump_label_decorate_focus_bg_color = "0x${colors.base0E}ff";
         jump_label_decorate_border_color = "0x${colors.base0D}ff";
-        jump_label_decorate_corner_radius = dmsSettings.cornerRadius;
+        jump_label_decorate_corner_radius = dmsSettings.cornerRadius or 8;
 
         # Tab bar (monocle layout) colors & radius
         group_bar_decorate_fg_color = "0x${colors.base05}ff";
@@ -138,7 +138,14 @@ in
         group_bar_decorate_focus_fg_color = "0x${colors.base00}ff";
         group_bar_decorate_focus_bg_color = "0x${colors.base0E}ff";
         group_bar_decorate_border_color = "0x${colors.base0D}ff";
-        group_bar_decorate_corner_radius = dmsSettings.cornerRadius;
+        group_bar_decorate_corner_radius = dmsSettings.cornerRadius or 8;
+
+        # Layout borders and gaps
+        borderpx = 2;
+        gappih = 4;
+        gappiv = 4;
+        gappoh = 4;
+        gappov = 4;
 
         # Disable mouse auto-focus (click-to-focus only)
         sloppyfocus = 0;
@@ -182,15 +189,22 @@ in
         scroller_proportion_preset = "0.333333,0.5,0.666667,1.0";
 
         source-optional = [
-          "~/.config/mango/binds.conf"
           "~/.config/mango/noctalia.conf"
-          "~/.config/mango/dms/binds.conf"
           "~/.config/mango/dms/colors.conf"
-          "~/.config/mango/dms/layout.conf"
           "~/.config/mango/dms/cursor.conf"
           "~/.config/mango/dms/outputs.conf"
           "~/.config/mango/dms/windowrules.conf"
-        ];
+        ]
+        ++ (
+          if desktopShell == "dms" then
+            [
+              "~/.config/mango/dms/binds.conf"
+            ]
+          else
+            [
+              "~/.config/mango/binds.conf"
+            ]
+        );
       };
     };
 
@@ -200,17 +214,20 @@ in
       desktopShell == "dms"
     ) "mango-session.target";
 
-    xdg.configFile = {
-      "mango/binds.conf".text = keybinds.generateMangoConfig {
-        terminalCommand = "kitty";
-        inherit desktopShell;
-      };
-    }
-    // lib.optionalAttrs (desktopShell == "dms") {
-      "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
-        terminalCommand = "kitty";
-        inherit desktopShell;
-      };
-    };
+    xdg.configFile =
+      if desktopShell == "dms" then
+        {
+          "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
+            terminalCommand = "kitty";
+            inherit desktopShell;
+          };
+        }
+      else
+        {
+          "mango/binds.conf".text = keybinds.generateMangoConfig {
+            terminalCommand = "kitty";
+            inherit desktopShell;
+          };
+        };
   };
 }

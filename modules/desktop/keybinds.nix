@@ -579,14 +579,6 @@ let
         else
           "spawn,playerctl play-pause"
       )}
-      ${bindList bindings.mediaPause (
-        if desktopShell == "dms" then
-          "spawn,dms ipc call mpris playPause"
-        else if desktopShell == "noctalia" then
-          "spawn,noctalia msg media-play-pause"
-        else
-          "spawn,playerctl play-pause"
-      )}
       ${bindList bindings.mediaPrev (
         if desktopShell == "dms" then
           "spawn,dms ipc call mpris previous"

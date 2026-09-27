@@ -55,6 +55,7 @@ in
             "plugdev"
             "podman"
             "docker"
+            "input"
           ]
           ++ lib.optionals (config.host.desktopEnvironment != null) [
             "adbusers"
