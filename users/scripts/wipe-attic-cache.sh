@@ -3,13 +3,24 @@ set -e
 
 attic_cli() {
   if [ "$EUID" -eq 0 ]; then
-    sudo -u "${SUDO_USER:-yi}" HOME="$(getent passwd "${SUDO_USER:-yi}" | cut -d: -f6)" nix run github:zhaofengli/attic#attic -- "$@"
+    sudo -u "${SUDO_USER:-yi}" HOME="$(getent passwd "${SUDO_USER:-yi}" | cut -d: -f6)" attic "$@"
   else
-    nix run github:zhaofengli/attic#attic -- "$@"
+    attic "$@"
   fi
 }
 
-trap 'sudo systemctl start atticd.service 2>/dev/null; attic_cli cache configure yi --retention-period 15d' EXIT
+restore_cache() {
+  sudo systemctl start atticd.service 2>/dev/null || true
+  for _ in {1..10}; do
+    if attic_cli cache configure yi --retention-period 15d 2>/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  attic_cli cache configure yi --retention-period 15d
+}
+
+trap restore_cache EXIT
 
 attic_cli cache configure yi --retention-period '1s'
 sleep 4
