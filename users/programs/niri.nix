@@ -322,6 +322,15 @@ in
         mouse = {
           accel-profile = mouse.accelProfile;
           accel-speed = mouse.accelSpeed;
+          scroll-factor = mouse.scrollFactor;
+          natural-scroll = mouse.naturalScrolling;
+          left-handed = mouse.leftHanded;
+          middle-emulation = mouse.middleEmulation;
+        };
+        trackball = {
+          accel-profile = mouse.accelProfile;
+          accel-speed = mouse.accelSpeed;
+          scroll-factor = mouse.scrollFactor;
           natural-scroll = mouse.naturalScrolling;
           left-handed = mouse.leftHanded;
           middle-emulation = mouse.middleEmulation;
@@ -329,6 +338,8 @@ in
         touchpad = {
           tap = true;
           natural-scroll = true;
+          scroll-factor = mouse.scrollFactor;
+          left-handed = mouse.leftHanded;
         };
         warp-mouse-to-focus.enable = true;
         focus-follows-mouse = {

@@ -665,8 +665,8 @@ let
       ${lib.concatMapStringsSep "\n" (k: "mousebind=${k},moveresize,curresize") bindings.mouseResize.keys}
 
       # === Mouse Wheel / Axis Bindings ===
-      ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusstack,prev") bindings.scrollFocusPrev.keys}
-      ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusstack,next") bindings.scrollFocusNext.keys}
+      ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusdir,left") bindings.scrollFocusPrev.keys}
+      ${lib.concatMapStringsSep "\n" (k: "axisbind=${k},focusdir,right") bindings.scrollFocusNext.keys}
 
       # === Layout ===
       ${bindList bindings.cycleWindowWidth "switch_proportion_preset,next"}

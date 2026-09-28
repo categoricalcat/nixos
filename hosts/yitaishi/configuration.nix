@@ -115,7 +115,10 @@ in
       accelProfile = "flat";
 
       # Speed adjustment: -1.0 (slowest) to 1.0 (fastest), 0.0 is baseline
-      accelSpeed = 0.0;
+      accelSpeed = -0.33;
+
+      # Scroll factor multiplier (0.1 to 10.0; 1.0 is default baseline)
+      scrollFactor = 0.67;
 
       # Invert mouse wheel / trackball scroll direction
       naturalScrolling = false;

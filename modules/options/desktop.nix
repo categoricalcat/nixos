@@ -125,6 +125,12 @@
         description = "Global mouse acceleration speed (-1.0 to 1.0)";
       };
 
+      scrollFactor = lib.mkOption {
+        type = lib.types.either lib.types.float lib.types.int;
+        default = 1.0;
+        description = "Global mouse scroll factor multiplier (0.1 to 10.0)";
+      };
+
       naturalScrolling = lib.mkOption {
         type = lib.types.bool;
         default = false;

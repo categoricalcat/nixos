@@ -161,9 +161,13 @@ in
         # Global mouse settings from desktop.mouse
         mouse_accel_profile = accelProfileToMango;
         mouse_accel_speed = mouse.accelSpeed;
+        axis_scroll_factor = mouse.scrollFactor;
+        trackpad_scroll_factor = mouse.scrollFactor;
         mouse_natural_scrolling = if mouse.naturalScrolling then 1 else 0;
         mouse_middle_button_emulation = if mouse.middleEmulation then 1 else 0;
         mouse_left_handed = if mouse.leftHanded then 1 else 0;
+        trackpad_left_handed = if mouse.leftHanded then 1 else 0;
+        trackpad_middle_button_emulation = if mouse.middleEmulation then 1 else 0;
 
         tap_to_click = 1;
         trackpad_natural_scrolling = 1;
