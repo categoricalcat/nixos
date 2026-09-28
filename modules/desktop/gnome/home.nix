@@ -207,7 +207,11 @@ in
 
       # Input and touchpad
       "org/gnome/desktop/peripherals/mouse" = {
-        accel-profile = "flat";
+        accel-profile = config.desktop.mouse.accelProfile;
+        speed = config.desktop.mouse.accelSpeed;
+        natural-scroll = config.desktop.mouse.naturalScrolling;
+        left-handed = config.desktop.mouse.leftHanded;
+        middle-click-emulation = config.desktop.mouse.middleEmulation;
       };
       "org/gnome/desktop/peripherals/touchpad" = {
         tap-to-click = true;

@@ -109,6 +109,23 @@ in
   desktop = {
     inherit greeter monitors;
     keyboard = "us";
+
+    mouse = {
+      # Acceleration profile: "flat" (1:1 direct response) or "adaptive" (accelerates on fast movement)
+      accelProfile = "flat";
+
+      # Speed adjustment: -1.0 (slowest) to 1.0 (fastest), 0.0 is baseline
+      accelSpeed = 0.0;
+
+      # Invert mouse wheel / trackball scroll direction
+      naturalScrolling = false;
+
+      # Emulate middle click by clicking left and right buttons simultaneously
+      middleEmulation = true;
+
+      # Left-handed mode (swap left and right buttons)
+      leftHanded = true;
+    };
   };
 
   environment.systemPackages = [ pkgs.xclip ];

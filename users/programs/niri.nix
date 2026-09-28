@@ -11,6 +11,7 @@ let
   monitors = config.desktop.monitors;
   colors = import ../../modules/theme.nix;
   animRate = config.desktop.animationRate;
+  mouse = config.desktop.mouse;
 
   parseMode =
     mode:
@@ -319,7 +320,11 @@ in
 
       input = {
         mouse = {
-          accel-profile = "flat";
+          accel-profile = mouse.accelProfile;
+          accel-speed = mouse.accelSpeed;
+          natural-scroll = mouse.naturalScrolling;
+          left-handed = mouse.leftHanded;
+          middle-emulation = mouse.middleEmulation;
         };
         touchpad = {
           tap = true;

@@ -14,6 +14,13 @@ let
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
   animRate = config.desktop.animationRate;
   scale = ms: if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (ms * animRate));
+  mouse = config.desktop.mouse;
+  accelProfileToMango =
+    {
+      "flat" = 1;
+      "adaptive" = 2;
+    }
+    .${mouse.accelProfile};
 
   parseMode =
     mode:
@@ -151,8 +158,12 @@ in
         sloppyfocus = 0;
         edge_scroller_pointer_focus = 0;
 
-        # Disable mouse acceleration (flat acceleration profile)
-        mouse_accel_profile = 1;
+        # Global mouse settings from desktop.mouse
+        mouse_accel_profile = accelProfileToMango;
+        mouse_accel_speed = mouse.accelSpeed;
+        mouse_natural_scrolling = if mouse.naturalScrolling then 1 else 0;
+        mouse_middle_button_emulation = if mouse.middleEmulation then 1 else 0;
+        mouse_left_handed = if mouse.leftHanded then 1 else 0;
 
         tap_to_click = 1;
         trackpad_natural_scrolling = 1;

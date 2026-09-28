@@ -108,5 +108,40 @@
       default = 0.5;
       description = "global animation rate";
     };
+
+    mouse = {
+      accelProfile = lib.mkOption {
+        type = lib.types.enum [
+          "flat"
+          "adaptive"
+        ];
+        default = "flat";
+        description = "Global mouse acceleration profile";
+      };
+
+      accelSpeed = lib.mkOption {
+        type = lib.types.either lib.types.float lib.types.int;
+        default = 0.0;
+        description = "Global mouse acceleration speed (-1.0 to 1.0)";
+      };
+
+      naturalScrolling = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Invert mouse scroll direction";
+      };
+
+      middleEmulation = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Emulate middle mouse button by clicking left and right buttons simultaneously";
+      };
+
+      leftHanded = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Left-handed mode (swap left and right buttons)";
+      };
+    };
   };
 }

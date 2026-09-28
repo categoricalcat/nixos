@@ -30,6 +30,9 @@
           inherit monitors;
           keyboard = keyboardProfile;
         }
+        // lib.optionalAttrs (osConfig != null && osConfig ? desktop && osConfig.desktop ? mouse) {
+          inherit (osConfig.desktop) mouse;
+        }
         // lib.optionalAttrs (animationRate != null) {
           inherit animationRate;
         }

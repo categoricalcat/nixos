@@ -17,9 +17,9 @@
 
   nix = {
     registry = lib.mapAttrs (_: flake: { inherit flake; }) inputs;
-    nixPath = [ "/etc/nix/inputs" ];
 
     settings = {
+      nix-path = [ "/etc/nix/inputs" ];
       allowed-users = [ "root" ] ++ builtins.attrNames config.users.users;
       auto-optimise-store = true;
       trusted-users = lib.mkAfter [

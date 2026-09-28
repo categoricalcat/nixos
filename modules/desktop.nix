@@ -107,7 +107,11 @@ in
       libinput = {
         enable = true;
         mouse = {
-          accelProfile = "flat";
+          accelProfile = config.desktop.mouse.accelProfile;
+          accelSpeed = toString config.desktop.mouse.accelSpeed;
+          naturalScrolling = config.desktop.mouse.naturalScrolling;
+          middleEmulation = config.desktop.mouse.middleEmulation;
+          leftHanded = config.desktop.mouse.leftHanded;
         };
       };
       gnome.gnome-keyring.enable = true;
