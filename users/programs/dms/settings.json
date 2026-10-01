@@ -1,51 +1,15 @@
 {
   "currentThemeName": "custom",
-  "currentThemeCategory": "custom",
-  "customThemeFile": "~/.config/DankMaterialShell/themes/yimoka.json",
-  "matugenScheme": "scheme-vibrant",
-  "widgetBackgroundColor": "sc",
-  "cornerRadius": 8,
+  "customThemeFile": "/home/yi/.config/DankMaterialShell/themes/yimoka.json",
   "radiusStrength": 25,
-  "calendarBackend": "khal",
   "clockFormat": "24h",
-  "animationDuration": 125,
-  "popoutAnimationDuration": 75,
-  "modalAnimationDuration": 75,
+  "animationDuration": 336,
   "fontFamily": "Maple Mono NF CN",
   "monoFontFamily": "Maple Mono NF CN",
-  "springBounce": 0,
-  "barElevationEnabled": false,
-  "centeringMode": "geometric",
-  "clockDateFormat": "dddd, d MMMM",
-  "networkPreference": "wifi",
-  "cursorSettings": {
-    "dwl": {
-      "cursorHideTimeout": 0
-    },
-    "hyprland": {
-      "hideOnKeyPress": false,
-      "hideOnTouch": false,
-      "inactiveTimeout": 0
-    },
-    "niri": {
-      "hideAfterInactiveMs": 0,
-      "hideWhenTyping": false
-    },
-    "size": 28,
-    "theme": "Bibata-Modern-Amber-Right"
-  },
-  "soundLogin": true,
-  "fadeToLockEnabled": false,
-  "fadeToDpmsEnabled": false,
-  "terminalsAlwaysDark": true,
-  "matugenTemplateGtk": false,
-  "matugenTemplateQt5ct": false,
-  "matugenTemplateQt6ct": false,
-  "matugenTemplateQtengine": false,
-  "matugenTemplateNeovim": true,
-  "matugenTemplateKcolorscheme": false,
-  "matugenTemplateEmacs": false,
-  "lockScreenInactiveColor": "#09090b",
+  "displayFontFamily": "Maple Mono NF CN",
+  "fontWeight": 300,
+  "textRenderType": 1,
+  "textRenderQuality": 4,
   "dockConfigs": [
     {
       "id": "dock",
@@ -97,27 +61,77 @@
       "order": [],
       "widgets": [
         {
+          "enabled": true,
           "id": "dock_launcher",
-          "widgetId": "dockLauncher",
-          "enabled": true
+          "widgetId": "dockLauncher"
         },
         {
+          "enabled": true,
           "id": "dock_apps",
-          "widgetId": "appsDock",
-          "enabled": true
+          "widgetId": "appsDock"
         },
         {
+          "enabled": true,
           "id": "dock_trash",
-          "widgetId": "dockTrash",
-          "enabled": true
+          "widgetId": "dockTrash"
         }
       ]
     }
   ],
+  "currentThemeCategory": "custom",
+  "matugenScheme": "scheme-vibrant",
   "dmsWindowsFloatingSeeded": [
     "mango",
     "mango"
   ],
+  "widgetBackgroundColor": "sc",
+  "calendarBackend": "khal",
+  "popoutAnimationDuration": 75,
+  "modalAnimationDuration": 75,
+  "springBounce": 2,
+  "motionEffect": 3,
+  "barElevationEnabled": false,
+  "centeringMode": "geometric",
+  "clockDateFormat": "dddd, d MMMM",
+  "appLauncherGridColumns": 5,
+  "rememberLastQuery": true,
+  "dankLauncherV2Size": "medium",
+  "dankLauncherV2BorderThickness": 1,
+  "dankLauncherV2IncludeFilesInAll": true,
+  "dankLauncherV2IncludeFoldersInAll": true,
+  "avatarRing": "primary",
+  "networkPreference": "wifi",
+  "cursorSettings": {
+    "dwl": {
+      "cursorHideTimeout": 0
+    },
+    "hyprland": {
+      "hideOnKeyPress": false,
+      "hideOnTouch": false,
+      "inactiveTimeout": 0
+    },
+    "niri": {
+      "hideAfterInactiveMs": 0,
+      "hideWhenTyping": false
+    },
+    "size": 28,
+    "theme": "Bibata-Modern-Amber-Right"
+  },
+  "soundLogin": true,
+  "fadeToLockEnabled": false,
+  "fadeToDpmsEnabled": false,
+  "terminalsAlwaysDark": true,
+  "muxType": "zellij",
+  "matugenTemplateGtk": false,
+  "matugenTemplateQt5ct": false,
+  "matugenTemplateQt6ct": false,
+  "matugenTemplateQtengine": false,
+  "matugenTemplateNeovim": true,
+  "matugenTemplateKcolorscheme": false,
+  "matugenTemplateEmacs": false,
+  "enableFprint": true,
+  "lockPamExternallyManaged": true,
+  "lockScreenInactiveColor": "#09090b",
   "barConfigs": [
     {
       "attachToScreenEdge": false,
@@ -144,6 +158,7 @@
         "weather"
       ],
       "enabled": true,
+      "followInterfaceStyle": false,
       "fontScale": 1,
       "gothCornerRadiusOverride": false,
       "gothCornerRadiusValue": 12,
@@ -245,7 +260,7 @@
         }
       ],
       "screenPreferences": [
-        "DP-1"
+        "all"
       ],
       "shadowIntensity": 0,
       "shadowOpacity": 60,
@@ -254,21 +269,29 @@
       "squareCorners": false,
       "transparency": 0,
       "visible": true,
+      "widgetFollowInterfaceStyle": false,
       "widgetOutlineColor": "surfaceText",
       "widgetOutlineEnabled": false,
       "widgetOutlineOpacity": 0.01,
       "widgetOutlineThickness": 1,
-      "widgetTransparency": 0.4,
-      "followInterfaceStyle": false,
-      "widgetFollowInterfaceStyle": false
+      "widgetTransparency": 0.4
     }
   ],
   "builtInPluginSettings": {
     "dms_settings_search": {
       "trigger": "?"
+    },
+    "dms_qr_generator": {
+      "trigger": "qrg"
+    },
+    "dms_power": {
+      "trigger": "pw"
+    },
+    "dms_clipboard_search": {
+      "trigger": "cb"
     }
   },
   "barInsetPaddingShared": 0,
   "barInsetPaddingSyncAll": true,
-  "configVersion": 31
+  "configVersion": 34
 }

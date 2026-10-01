@@ -232,7 +232,7 @@ in
   environment.systemPackages = [
     # DAWs & Audio Editors
     pkgs.reaper
-    pkgs.reaper-reapack-extension
+    # pkgs.reaper-reapack-extension
     # pkgs.ardour
     # pkgs.bitwig-studio
     pkgs.tenacity

@@ -163,4 +163,8 @@ in
   };
 
   boot.kernelModules = [ "tcp_bbr" ];
+
+  virtualisation.docker = {
+    enable = true;
+  };
 }

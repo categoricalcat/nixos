@@ -12,9 +12,6 @@ let
   animRate = config.desktop.animationRate;
 in
 {
-  imports = [
-    inputs.noctalia.homeModules.default
-  ];
 
   config =
     lib.mkIf

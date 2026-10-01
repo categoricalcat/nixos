@@ -18,6 +18,11 @@
         };
       };
 
+      programs.dsearch = {
+        enable = true;
+        systemd.target = "graphical-session.target";
+      };
+
       environment.systemPackages = with pkgs; [
         brightnessctl
         cups-pk-helper

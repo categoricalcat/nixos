@@ -138,5 +138,5 @@ in
     ${dynamicSshConfig}
   '';
 
-  programs.mosh.enable = true;
+  programs.mosh.enable = false;
 }
