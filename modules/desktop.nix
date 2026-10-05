@@ -137,6 +137,16 @@ in
       "inode/directory" = "thunar.desktop";
     };
 
+    xdg.terminal-exec = {
+      enable = true;
+      settings = {
+        default = [
+          "kitty.desktop"
+          # "com.mitchellh.ghostty.desktop"
+        ];
+      };
+    };
+
     environment.systemPackages = lib.optionals (config.desktop.environment != "gnome") [
       pkgs.polkit_gnome
     ];

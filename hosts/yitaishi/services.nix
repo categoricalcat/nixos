@@ -6,6 +6,7 @@
   imports = [
     ../../modules/services/tailscale.nix
     ../../modules/services/lan-mouse.nix
+    ../../modules/services/nordvpn.nix
   ];
 
   services.lan-mouse.settings = {

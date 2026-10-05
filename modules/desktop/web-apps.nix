@@ -99,6 +99,12 @@ let
       url = "https://www.mercadolivre.com.br/";
       icon = "${iconBase}/shop.svg";
     };
+
+    songsterr = {
+      name = "Songsterr";
+      url = "https://www.songsterr.com/";
+      icon = "${iconBase}/guitar.svg";
+    };
   };
 
   chromeCustomized = pkgs.google-chrome.override {

@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }:
 
@@ -102,14 +103,17 @@ in
     wayland.windowManager.mango = {
       enable = true;
       systemd.enable = true;
-      autostart_sh = ":";
+      autostart_sh = "";
 
       bottomPrefixes = [
         "source"
-        "source-optional"
+        "source_optional"
       ];
 
       settings = {
+        exec_once = [
+          "~/.config/mango/autostart.sh"
+        ];
         env = [
           "WLR_RENDERER,vulkan"
         ];
@@ -118,18 +122,18 @@ in
         xkb_rules_variant = lib.concatMapStringsSep "," (profile: profile.variant) keyboardProfiles;
 
         # Window & root colors from theme.yaml (yimoka base16)
-        rootcolor = "0x${colors.base00}ff";
-        bordercolor = "0x${colors.base03}ff";
-        focuscolor = "0x${colors.base0D}ff";
-        urgentcolor = "0x${colors.base08}ff";
-        dropcolor = "0x${colors.base0D}55";
-        splitcolor = "0x${colors.base09}ff";
+        root_color = "0x${colors.base00}ff";
+        border_color = "0x${colors.base03}ff";
+        focus_color = "0x${colors.base0D}ff";
+        urgent_color = "0x${colors.base08}ff";
+        drop_color = "0x${colors.base0D}55";
+        split_color = "0x${colors.base09}ff";
 
         # Window state-specific colors
-        maximizescreencolor = "0x${colors.base0B}ff";
-        scratchpadcolor = "0x${colors.base0C}ff";
-        globalcolor = "0x${colors.base0E}ff";
-        overlaycolor = "0x${colors.base0D}ff";
+        maximized_screen_color = "0x${colors.base0B}ff";
+        scratchpad_color = "0x${colors.base0C}ff";
+        global_color = "0x${colors.base0E}ff";
+        overlay_color = "0x${colors.base0D}ff";
 
         # Overview jump mode label colors & radius
         jump_label_decorate_fg_color = "0x${colors.base05}ff";
@@ -148,14 +152,14 @@ in
         group_bar_decorate_corner_radius = dmsSettings.cornerRadius or 8;
 
         # Layout borders and gaps
-        borderpx = 2;
-        gappih = 4;
-        gappiv = 4;
-        gappoh = 4;
-        gappov = 4;
+        border_px = 2;
+        gap_inner_horizontal = 4;
+        gap_inner_vertical = 4;
+        gap_outer_horizontal = 4;
+        gap_outer_vertical = 4;
 
         # Disable mouse auto-focus (click-to-focus only)
-        sloppyfocus = 0;
+        sloppy_focus = 0;
         edge_scroller_pointer_focus = 0;
 
         # Global mouse settings from desktop.mouse
@@ -184,18 +188,22 @@ in
         zoom_end_ratio = 0.85;
         animation_fade_in = if animRate <= 0.0 then 0 else 1;
         animation_fade_out = if animRate <= 0.0 then 0 else 1;
-        fadein_begin_opacity = 0.3;
-        fadeout_begin_opacity = 0.3;
+        fade_in_begin_opacity = 0.3;
+        fade_out_begin_opacity = 0.3;
         animation_duration_open = scale 200;
         animation_duration_close = scale 200;
         animation_duration_move = scale 250;
         animation_duration_tag = scale 200;
         tag_animation_direction = 1;
 
-        monitorrule = map formatMonitorRule monitors;
+        monitor_rule = map formatMonitorRule monitors;
 
-        tagrule = [
+        tag_rule = [
           "id:*,layout_name:scroller"
+        ];
+
+        window_rule = [
+          "app_id:^com.danklinux.dms$,is_floating:1"
         ];
 
         scroller_structs = 20;
@@ -203,12 +211,10 @@ in
         scroller_prefer_overspread = 1;
         scroller_proportion_preset = "0.333333,0.5,0.666667,1.0";
 
-        source-optional = [
+        source_optional = [
           "~/.config/mango/noctalia.conf"
-          "~/.config/mango/dms/colors.conf"
           "~/.config/mango/dms/cursor.conf"
           "~/.config/mango/dms/outputs.conf"
-          "~/.config/mango/dms/windowrules.conf"
         ]
         ++ (
           if desktopShell == "dms" then
@@ -230,19 +236,31 @@ in
     ) "mango-session.target";
 
     xdg.configFile =
-      if desktopShell == "dms" then
-        {
-          "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
-            terminalCommand = "kitty";
-            inherit desktopShell;
-          };
-        }
-      else
-        {
-          "mango/binds.conf".text = keybinds.generateMangoConfig {
-            terminalCommand = "kitty";
-            inherit desktopShell;
-          };
+      (
+        if desktopShell == "dms" then
+          {
+            "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
+              terminalCommand = "kitty";
+              inherit desktopShell;
+            };
+          }
+        else
+          {
+            "mango/binds.conf".text = keybinds.generateMangoConfig {
+              terminalCommand = "kitty";
+              inherit desktopShell;
+            };
+          }
+      )
+      // {
+        "mango/autostart.sh" = {
+          executable = true;
+          text = ''
+            ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIXOS_OZONE_WL XCURSOR_THEME XCURSOR_SIZE
+            systemctl --user reset-failed
+            systemctl --user start mango-session.target
+          '';
         };
+      };
   };
 }

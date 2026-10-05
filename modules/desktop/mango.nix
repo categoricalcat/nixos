@@ -7,13 +7,7 @@
 }:
 
 let
-  baseMango = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango.overrideAttrs (old: {
-    postInstall = (old.postInstall or "") + ''
-      substituteInPlace $out/share/wayland-sessions/mango.desktop \
-        --replace-fail "DesktopNames=mango;wlroots" \
-        "DesktopNames=mango;wlroots;X-NIXOS-SYSTEMD-AWARE"
-    '';
-  });
+  baseMango = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango;
 
   patchedMango = baseMango.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [
