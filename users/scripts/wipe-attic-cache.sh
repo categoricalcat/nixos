@@ -1,38 +1,24 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-attic_cli() {
-  if [ "$EUID" -eq 0 ]; then
-    sudo -u "${SUDO_USER:-yi}" HOME="$(getent passwd "${SUDO_USER:-yi}" | cut -d: -f6)" attic "$@"
-  else
-    attic "$@"
-  fi
-}
+# Safely wipe all cached store paths and chunks from Attic while preserving
+# the cache configuration, signing keypair, and authentication tokens.
 
-restore_cache() {
-  sudo systemctl start atticd.service 2>/dev/null || true
-  for _ in {1..10}; do
-    if attic_cli cache configure yi --retention-period 15d 2>/dev/null; then
-      return 0
-    fi
-    sleep 1
-  done
-  attic_cli cache configure yi --retention-period 15d
-}
+echo "Stopping Attic services..."
+sudo systemctl stop attic-watch-store.service attic-closure-keeper.timer attic-closure-keeper.service atticd.service
 
-trap restore_cache EXIT
+echo "Truncating object, NAR, and chunk metadata in PostgreSQL..."
+sudo -u postgres psql -d atticd -c "TRUNCATE TABLE object, nar, chunk, chunkref CASCADE;"
 
-attic_cli cache configure yi --retention-period '1s'
-sleep 4
+echo "Removing chunk files from Attic storage..."
+if sudo test -d /var/lib/private/atticd/storage; then
+  sudo find /var/lib/private/atticd/storage/ -mindepth 1 -delete
+fi
 
-ATTICD_BIN=$(systemctl show atticd.service -P ExecStart | grep -o 'path=[^ ;]*' | cut -d= -f2)
-ATTICD_CONF=$(systemctl show atticd.service -P ExecStart | grep -o '\-f [^ ]*' | cut -d' ' -f2)
+echo "Starting Attic services..."
+sudo systemctl start atticd.service attic-watch-store.service attic-closure-keeper.timer
 
-sudo systemctl stop atticd.service
+echo "Triggering closure keeper to re-seed current system closures..."
+sudo systemctl start attic-closure-keeper.service || true
 
-sudo systemd-run --pty --wait \
-  -p User=atticd \
-  -p StateDirectory=atticd \
-  -p DynamicUser=yes \
-  -p EnvironmentFile=/run/secrets/tokens/attic-server-jwt-env \
-  "$ATTICD_BIN" --mode garbage-collector-once --config "$ATTICD_CONF"
+echo "Attic cache successfully wiped."

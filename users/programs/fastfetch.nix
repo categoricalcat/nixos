@@ -17,6 +17,11 @@ let
       text = "birth=$(stat -c %W /); now=$(date +%s); echo $(( (now - birth) / 86400 )) days";
     }
     {
+      type = "command";
+      key = "Generation";
+      text = "readlink /nix/var/nix/profiles/system | cut -d- -f2";
+    }
+    {
       type = "kernel";
       key = "Kernel";
     }

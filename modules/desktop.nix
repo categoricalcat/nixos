@@ -133,17 +133,31 @@ in
       };
     };
 
-    xdg.mime.defaultApplications = {
-      "inode/directory" = "thunar.desktop";
-    };
+    xdg = {
+      mime.defaultApplications = {
+        "inode/directory" = "thunar.desktop";
+        "text/html" = "google-chrome.desktop";
+        "x-scheme-handler/http" = "google-chrome.desktop";
+        "x-scheme-handler/https" = "google-chrome.desktop";
+      };
 
-    xdg.terminal-exec = {
-      enable = true;
-      settings = {
-        default = [
+      terminal-exec = {
+        enable = true;
+        settings.default = [
           "kitty.desktop"
           # "com.mitchellh.ghostty.desktop"
         ];
+      };
+
+      portal = {
+        enable = true;
+        extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+        config = {
+          common = {
+            default = [ "gtk" ];
+            "org.freedesktop.impl.portal.Access" = [ ];
+          };
+        };
       };
     };
 
@@ -162,23 +176,6 @@ in
         RestartSec = 1;
         TimeoutStopSec = 10;
       };
-    };
-
-    xdg.portal = {
-      enable = true;
-      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-      config =
-        lib.genAttrs
-          [
-            "common"
-            "gnome"
-            "niri"
-            "mango"
-          ]
-          (_: {
-            "org.freedesktop.impl.portal.AppChooser" = lib.mkForce [ "gtk" ];
-            "org.freedesktop.impl.portal.Access" = lib.mkForce [ ];
-          });
     };
   };
 }
