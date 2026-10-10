@@ -133,10 +133,13 @@ in
     force = true;
   };
 
-  # GitHub CLI with gh-dash extension for a TUI dashboard.
+  # GitHub CLI with extensions (gh-dash, gh-stack).
   programs.gh = {
     enable = true;
-    extensions = [ pkgs.gh-dash ];
+    extensions = [
+      pkgs.gh-dash
+      pkgs.gh-stack
+    ];
     settings = {
       git_protocol = "ssh";
       prompt = "enabled";

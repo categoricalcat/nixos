@@ -5,6 +5,10 @@
     builtins.readFile ../nix/scripts/diff-to-commit.sh
   );
 
+  lock-to-changelog = pkgs.writeShellScriptBin "lock-to-changelog" (
+    builtins.readFile ../nix/scripts/lock-to-changelog.sh
+  );
+
   nxd-agy = pkgs.writeShellScriptBin "nxd-agy" ''
     exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"
   '';

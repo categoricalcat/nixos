@@ -1,6 +1,6 @@
 ---
 name: etiquette
-description: Agent work etiquette — the rules for where plans go, finding files with fd/rg, scratch scripts in /tmp/ai, and what agents never do (git commit/push, sudo, nixos-rebuild switch, raw ssh, reading secrets). Always active.
+description: Agent work etiquette — the rules for where plans go, finding files with fd/rg, scratch scripts in /tmp/ai, and what agents never do (git commit/push, authoring commits, sudo, nixos-rebuild switch, raw ssh, reading secrets). Always active.
 alwaysApply: true
 ---
 
@@ -13,6 +13,7 @@ alwaysApply: true
 ## 2. Git
 
 - Never run `git commit` or `git push` — that final click is the user's to keep.
+- ALL and ANY agents are forbidden to add themselves as authors of ANY commits — never attribute commits to an agent, and never add agent names, emails, signatures, or co-author trailers (`Co-authored-by:`). Commits belong exclusively to the user.
 - Leave changes in the working tree for the user to review and commit.
 - Read-only inspection (`git status`, `git diff`) is always fine — look, but don't take.
 

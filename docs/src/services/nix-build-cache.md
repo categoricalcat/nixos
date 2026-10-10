@@ -114,15 +114,16 @@ ______________________________________________________________________
 
 Entering `nix develop` or running with `direnv` provides custom helper utilities:
 
-| Command            | Purpose                                                                       |
-| ------------------ | ----------------------------------------------------------------------------- |
-| `host-tree <host>` | Interactive visualizer for system closure dependencies using `nix-tree`       |
-| `host-size <host>` | Lists the top 25 largest packages in a host's system closure                  |
-| `host-diff <host>` | Compares package changes between current generation and new build using `nvd` |
-| `host-dead`        | Scans for dead code and statix linting warnings across the flake              |
-| `dns-warm`         | Pre-warms the recursive Unbound DNS cache using top Majestic Million domains  |
-| `diff-to-commit`   | Generates AI commit messages from staged Git diffs                            |
-| `inspect <host>`   | Drops into an interactive Nix REPL with the host configuration loaded         |
+| Command             | Purpose                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `host-tree <host>`  | Interactive visualizer for system closure dependencies using `nix-tree`       |
+| `host-size <host>`  | Lists the top 25 largest packages in a host's system closure                  |
+| `host-diff <host>`  | Compares package changes between current generation and new build using `nvd` |
+| `host-dead`         | Scans for dead code and statix linting warnings across the flake              |
+| `dns-warm`          | Pre-warms the recursive Unbound DNS cache using top Majestic Million domains  |
+| `diff-to-commit`    | Generates AI commit messages from staged Git diffs                            |
+| `lock-to-changelog` | Generates AI patch notes from all updated inputs in `flake.lock`              |
+| `inspect <host>`    | Drops into an interactive Nix REPL with the host configuration loaded         |
 
 ______________________________________________________________________
 

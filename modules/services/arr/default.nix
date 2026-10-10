@@ -64,7 +64,7 @@ in
     bazarr = {
       enable = true;
       group = "media";
-      listenPort = addrs.services.bazarr.port;
+      settings.general.port = addrs.services.bazarr.port;
     };
     jellyfin = {
       enable = true;
