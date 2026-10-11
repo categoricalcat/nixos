@@ -111,10 +111,25 @@ in
     enable = true;
     dataDir = monitoring.dataDirs.grafana;
 
-    declarativePlugins = with pkgs.grafanaPlugins; [
-      grafana-lokiexplore-app
-      grafana-metricsdrilldown-app
-      grafana-pyroscope-app
+    declarativePlugins = [
+      pkgs.grafanaPlugins.prometheus
+      pkgs.grafanaPlugins.loki
+      pkgs.grafanaPlugins.grafana-lokiexplore-app
+      pkgs.grafanaPlugins.grafana-metricsdrilldown-app
+      pkgs.grafanaPlugins.grafana-pyroscope-app
+      (pkgs.grafanaPlugins.yesoreyeram-infinity-datasource.overrideAttrs (old: {
+        src = pkgs.fetchurl {
+          name = "${old.pname}-${old.version}.zip";
+          url = "https://grafana.com/api/plugins/${old.pname}/versions/${old.version}/download";
+          hash = "sha256-E3CBS3xVqdBJq4ylHaFmX75INZjI0fk6RX4yYNL1IhI=";
+        };
+      }))
+      pkgs.grafanaPlugins.marcusolsson-dynamictext-panel
+      pkgs.grafanaPlugins.grafana-polystat-panel
+      pkgs.grafanaPlugins.volkovlabs-variable-panel
+      pkgs.grafanaPlugins.volkovlabs-echarts-panel
+      pkgs.grafanaPlugins.marcusolsson-calendar-panel
+      pkgs.grafanaPlugins.grafana-clock-panel
     ];
 
     settings = {
@@ -182,6 +197,14 @@ in
             type = "loki";
             access = "proxy";
             url = "http://${centralHost.network.lan.ipv4.host}:${toString loki.port}";
+          }
+          {
+            name = "Infinity";
+            orgId = 1;
+            uid = "infinity";
+            type = "yesoreyeram-infinity-datasource";
+            access = "proxy";
+            jsonData = { };
           }
         ];
       };
