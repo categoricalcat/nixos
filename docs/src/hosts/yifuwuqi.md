@@ -178,8 +178,7 @@ ______________________________________________________________________
 ## 8. General Administration & Hosted Services
 
 - **Homepage Dashboard**: Port 24082 (`homepage.fufu.land`), 5-column layout with ping health checks and resource widgets.
-- **Cockpit**: Port 24091 (`cockpit.fufu.land`), server admin web console.
-- **Portainer CE**: Port 9443 (`prtnr.fufu.land`), Podman container management.
+- **Cockpit**: Port 24091 (`cockpit.fufu.land`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **AdGuard Home & Unbound**: Secondary resolver binds explicit addresses
   (`::1`, the LAN ULA `fd75:c55f:6d19:1::2`, and its IPv4 addresses, not a
@@ -201,7 +200,6 @@ ______________________________________________________________________
 - `hosts/yifuwuqi/networking/sysctl.nix`
 - `hosts/yifuwuqi/networking/interfaces/eno1.nix`
 - `hosts/yifuwuqi/networking/interfaces/enp4s0.nix`
-- `hosts/yifuwuqi/portainer.nix`
 - `modules/services/attic/server.nix`
 - `modules/services/forgejo.nix`
 - `modules/services/ai/llama-cpp.nix`

@@ -34,7 +34,6 @@ let
     adguard = "https://adguard.fufu.land";
     # netdata = "https://netdata.fufu.land";
     searxng = "https://search.fufu.land";
-    portainer = "https://prtnr.fufu.land";
     opencode = "https://agent.fufu.land";
     goaccess = "https://goaccess.fufu.land";
   };
@@ -222,13 +221,6 @@ in
               icon = "cockpit.png";
               href = serviceDomains.cockpit;
               ping = serviceDomains.cockpit;
-            };
-          }
-          {
-            "Portainer" = {
-              icon = "portainer.png";
-              href = proxyDomains.portainer;
-              ping = proxyDomains.portainer;
             };
           }
           {

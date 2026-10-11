@@ -8,20 +8,19 @@ ______________________________________________________________________
 
 ## 1. Services Overview Table
 
-| Service          | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                            |
-| ---------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| **Homepage**     | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets           |
-| **Docs**         | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Gang documentation & architectural plans                               |
-| **SearXNG**      | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                     |
-| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (LRU, per-host cap)       | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter |
-| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat              | Web-based system management & metrics dashboard                        |
-| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`      | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                            |
-| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                          |
-| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `sillytavern.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                  |
-| **Opencode**     | `opencode.nix`       | `24010`       | `agent.fufu.land`       | Native Agent Daemon                 | Autonomous AI coding agent backend                                     |
-| **Portainer CE** | `portainer.nix`      | `9443`        | `prtnr.fufu.land`       | Podman Socket                       | Container lifecycle & volume management web UI                         |
-| **Cloudflared**  | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*         | OCI Container                       | Zero-trust Cloudflare Tunnel connector                                 |
-| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*       | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                  |
+| Service         | Module File          | Internal Port | Public / Proxy Domain   | Primary Backend / Database          | Description                                                            |
+| --------------- | -------------------- | ------------- | ----------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| **Homepage**    | `homepage.nix`       | `24082`       | `homepage.fufu.land`    | Native YAML                         | Categorized dashboard with real-time health checks & widgets           |
+| **Docs**        | `docs.nix`           | `24083`       | `docs.fufu.land`        | mdBook + Nginx                      | Gang documentation & architectural plans                               |
+| **SearXNG**     | `searxng.nix`        | `24888`       | `search.fufu.land`      | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                     |
+| **Valkey**      | `valkey.nix`         | `24379`       | *Internal only*         | In-Memory (LRU, per-host cap)       | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter |
+| **Cockpit**     | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`     | Native D-Bus / sysstat / Podman     | System management, metrics, Podman containers & file browser           |
+| **WebDAV**      | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`      | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                            |
+| **Firecrawl**   | `firecrawl.nix`      | `24002`       | *Internal API*          | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                          |
+| **SillyTavern** | `ai/sillytavern.nix` | `24000`       | `sillytavern.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                  |
+| **Opencode**    | `opencode.nix`       | `24010`       | `agent.fufu.land`       | Native Agent Daemon                 | Autonomous AI coding agent backend                                     |
+| **Cloudflared** | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*         | OCI Container                       | Zero-trust Cloudflare Tunnel connector                                 |
+| **Tor Client**  | `services.tor`       | `9050`        | *Internal SOCKS5*       | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                  |
 
 ______________________________________________________________________
 
@@ -34,7 +33,7 @@ ______________________________________________________________________
   1. **Media**: Jellyfin, Jellyseerr.
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
   1. **Monitoring**: Grafana (`grafana.fufu.land`), GoAccess (`goaccess.fufu.land`).
-  1. **Infrastructure**: Cockpit, Portainer, Forgejo, Opencode Agent, Attic Binary Cache.
+  1. **Infrastructure**: Cockpit, Forgejo, Opencode Agent, Attic Binary Cache.
   1. **Network**: AdGuard Home, SearXNG.
 - **Widgets**: Real-time CPU, RAM, and root filesystem disk utilization monitors, plus an integrated search bar pointing to SearXNG.
 
@@ -76,6 +75,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 - **Web UI**: Port `24091` (`https://cockpit.fufu.land`).
 - **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin whitelisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing.
+- **Plugins**: `cockpit-podman` (Podman containers, replaces the former Portainer CE deployment; PAM login), `cockpit-files` (file browser), `cockpit-dockermanager`, `cockpit-machines` (libvirt UI), `cockpit-zfs` (ZFS UI). The last two only add the pages; libvirt and ZFS are not enabled on this host.
 
 ### 2.7 WebDAV Server (`modules/services/webdav.nix`)
 
@@ -101,5 +101,4 @@ ______________________________________________________________________
 - `modules/services/ai/sillytavern.nix`
 - `modules/services/cockpit.nix`
 - `modules/services/webdav.nix`
-- `hosts/yifuwuqi/portainer.nix`
 - `hosts/yifuwuqi/services.nix`

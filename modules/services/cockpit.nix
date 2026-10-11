@@ -8,6 +8,13 @@ in
   services.cockpit = {
     enable = true;
     inherit (cockpit) port;
+    plugins = with pkgs; [
+      cockpit-podman
+      cockpit-files
+      cockpit-dockermanager
+      cockpit-machines
+      cockpit-zfs
+    ];
     allowed-origins = [
       "http://localhost:${port}"
       "https://localhost:${port}"

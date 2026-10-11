@@ -111,7 +111,6 @@ ______________________________________________________________________
 │ search.fufu.land             │ 10.42.0.2:24888 (yifuwuqi)   │
 │ attic.fufu.land              │ 10.42.0.2:24203 (yifuwuqi)   │
 │ git.fufu.land (Forgejo)      │ 10.42.0.2:24200 (yifuwuqi)   │
-│ prtnr.fufu.land (Portainer)  │ 10.42.0.2:9443 (yifuwuqi)    │
 │ agent.fufu.land (Opencode)   │ 10.42.0.2:24010 (yifuwuqi)   │
 │ sillytavern.fufu.land        │ 10.42.0.2:24000 (yifuwuqi)   │
 │ homepage.fufu.land           │ 10.42.0.2:24082 (yifuwuqi)   │

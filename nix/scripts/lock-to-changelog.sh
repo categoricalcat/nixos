@@ -20,9 +20,18 @@ while IFS=$'\t' read -r name owner repo old_rev new_rev; do
   [ "$name" = "" ] && continue
   logs=""
   if [ "$owner" != "" ] && [ "$repo" != "" ] && [ "$old_rev" != "" ] && [ "$new_rev" != "" ]; then
-    logs=$(curl -s "${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"}" \
-      "https://api.github.com/repos/$owner/$repo/compare/$old_rev...$new_rev" |
-      jq -r '.commits[:15][]?.commit.message | split("\n")[0] | "  * " + .' 2>/dev/null || true)
+    url="https://api.github.com/repos/$owner/$repo/compare/$old_rev...$new_rev"
+    resp=""
+    if [ "${GITHUB_TOKEN:-}" != "" ]; then
+      resp=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$url" || true)
+      # If Forgejo's token caused a 401 on api.github.com, retry unauthenticated
+      if echo "$resp" | jq -e '.message? == "Bad credentials"' >/dev/null 2>&1; then
+        resp=$(curl -s "$url" || true)
+      fi
+    else
+      resp=$(curl -s "$url" || true)
+    fi
+    logs=$(echo "$resp" | jq -r '.commits[:15][]?.commit.message | split("\n")[0] | "  * " + .' 2>/dev/null || true)
   fi
   summary+=$'\n'"- input '$name' (${old_rev:0:7}..${new_rev:0:7}):"$'\n'"$logs"$'\n'
 done < <(jq -n -r '
@@ -41,19 +50,24 @@ done < <(jq -n -r '
   exit 0
 }
 
-# 3. Call AI agent
-flags=(--print)
-[ "$agent" = "agy" ] && flags=(--dangerously-skip-permissions --print)
-[ "$agent" = "agent" ] && flags=(--mode ask --trust --print --model auto)
+# 3. Call AI agent or fallback to raw summary
+if [ "${CI:-}" != "" ] || ! command -v "nxd-$agent" >/dev/null 2>&1; then
+  echo "Using direct input commit summary (running in CI or nxd-$agent not in PATH)..." >&2
+  changelog="### Flake Lock Updates"$'\n'"$summary"
+else
+  flags=(--print)
+  [ "$agent" = "agy" ] && flags=(--dangerously-skip-permissions --print)
+  [ "$agent" = "agent" ] && flags=(--mode ask --trust --print --model auto)
 
-prompt="Write patch notes for this flake.lock update in plain text (no markdown #, **, or backticks).
+  prompt="Write patch notes for this flake.lock update in plain text (no markdown #, **, or backticks).
 Group changes by component, highlight breaking changes and major features from commit logs:
 ${instructions:+Extra instructions: $instructions}
 
 $summary"
 
-echo "Generating changelog using nxd-$agent..." >&2
-changelog="$(nxd-"$agent" "${flags[@]}" "$prompt" </dev/null)"
+  echo "Generating changelog using nxd-$agent..." >&2
+  changelog="$(nxd-"$agent" "${flags[@]}" "$prompt" </dev/null 2>/dev/null || printf '%s\n' "$summary")"
+fi
 
 # 4. Output
 printf '%s\n' "$changelog"

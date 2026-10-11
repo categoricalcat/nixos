@@ -16,7 +16,6 @@ in
     ./boot.nix
     ./networking.nix
     ./services.nix
-    ./portainer.nix
     ../../users/users.nix
     ../../modules/common.nix
     ../../modules/stylix.nix

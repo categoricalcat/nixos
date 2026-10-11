@@ -196,26 +196,6 @@ in
         };
       };
 
-      # Portainer container management UI — proxied to yifuwuqi
-      "prtnr.fufu.land" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "https://${yifuwuqiLan}:9443";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_ssl_verify off;
-            proxy_ssl_server_name on;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_read_timeout 1d;
-            proxy_send_timeout 1d;
-            client_max_body_size 1G;
-            ${restrictedProxyConfig}
-          '';
-        };
-      };
-
       # Opencode System Server — proxied to yifuwuqi
       "agent.fufu.land" = {
         useACMEHost = "fufu.land";

@@ -40,7 +40,7 @@ jobs:
       - name: Flake lock changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: nix/scripts/lock-to-changelog.sh || true
+        run: bash nix/scripts/lock-to-changelog.sh || true
 
   deploy:
     name: 'Step 2: Live Activation & Magic Rollback'
