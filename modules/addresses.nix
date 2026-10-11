@@ -613,6 +613,10 @@ in
           domain = "docs.fufu.land";
           port = 24083;
         };
+        weather = {
+          domain = "weather.fufu.land";
+          port = 24084;
+        };
       };
 
       nixBuild = {

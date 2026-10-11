@@ -26,6 +26,7 @@ let
     forgejo = "https://${addrs.services.forgejo.domain}";
     attic = "https://${addrs.services.attic.domain}";
     docs = "https://${addrs.services.docs.domain}";
+    weather = "https://${addrs.services.weather.domain}";
   };
 
   # Network/Proxy services (via yirukou NGINX config)
@@ -274,6 +275,13 @@ in
               icon = "searxng.png";
               href = proxyDomains.searxng;
               ping = proxyDomains.searxng;
+            };
+          }
+          {
+            "Weather" = {
+              icon = "openweathermap.png";
+              href = serviceDomains.weather;
+              ping = serviceDomains.weather;
             };
           }
         ];

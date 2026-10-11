@@ -365,6 +365,15 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
+      "${yifuwuqiServices.weather.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.weather.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
 
       "${yifuwuqiServices.sillytavern.domain}" = {
         useACMEHost = "fufu.land";
