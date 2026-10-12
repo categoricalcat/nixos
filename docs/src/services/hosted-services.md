@@ -74,7 +74,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 ### 2.6 Cockpit System Manager (`modules/services/cockpit.nix`)
 
 - **Web UI**: Port `24091` (`https://cockpit.fufu.land`).
-- **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin whitelisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing.
+- **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin whitelisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing. The Kernel dump page is hidden (`/etc/cockpit/kdump.override.json`): NixOS `kexec` is for fast reboot, not Fedora's `kdump.service`, and that page only shows a false "install kexec-tools" alert.
 - **Plugins**: `cockpit-podman` (Podman containers, replaces the former Portainer CE deployment; PAM login), `cockpit-files` (file browser), `cockpit-dockermanager`, `cockpit-machines` (libvirt UI), `cockpit-zfs` (ZFS UI). The last two only add the pages; libvirt and ZFS are not enabled on this host.
 
 ### 2.7 WebDAV Server (`modules/services/webdav.nix`)

@@ -30,12 +30,39 @@ in
       ../../users/programs/mango.nix
       {
         wayland.windowManager.mango.package = mangoPackage;
+        programs.fuzzel = {
+          enable = true;
+          settings = {
+            main = {
+              width = 80;
+              lines = 15;
+              horizontal-pad = 20;
+              vertical-pad = 12;
+              inner-pad = 8;
+              border-width = 2;
+              border-radius = 10;
+            };
+          };
+        };
       }
     ];
 
     environment.systemPackages = with pkgs; [
       wlr-randr
+      fuzzel
+      slurp
     ];
+
+    xdg.portal.wlr = {
+      enable = true;
+      settings = {
+        screencast = {
+          max_fps = 60;
+          chooser_type = "dmenu";
+          chooser_cmd = "${pkgs.fuzzel}/bin/fuzzel -d -p 'Share: ' --width 80 --lines 15";
+        };
+      };
+    };
 
     programs.mango.enable = true;
   };

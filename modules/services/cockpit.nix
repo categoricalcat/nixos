@@ -31,6 +31,15 @@ in
     };
   };
 
+  # NixOS ships kexec for fast reboot (boot.kexec), which makes Cockpit
+  # show its Fedora kdump page and the "install kexec-tools" alert.
+  # That page wants kdump.service, which NixOS does not provide.
+  environment.etc."cockpit/kdump.override.json".text = builtins.toJSON {
+    conditions = [
+      { "path-exists" = "/var/empty/cockpit-kdump-enabled"; }
+    ];
+  };
+
   environment.systemPackages = with pkgs; [
     sysstat
   ];
