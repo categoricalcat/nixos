@@ -22,6 +22,12 @@
           --replace-fail "MUSIC_DIR.mkdir(exist_ok=True)" "MUSIC_DIR.mkdir(parents=True, exist_ok=True)"
       '';
     });
+
+    typescript-language-server = prev.typescript-language-server.overrideAttrs (oldAttrs: {
+      pnpmDeps = oldAttrs.pnpmDeps.overrideAttrs (_: {
+        outputHash = "sha256-xR/EF60lVBsITKgH7wCM2wHM46PFQevD51KfCENSUH4=";
+      });
+    });
   })
 
   (_final: prev: {

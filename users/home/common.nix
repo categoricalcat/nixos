@@ -41,9 +41,6 @@ in
     packages = lib.optionals developer (
       with pkgs;
       [
-        pnpm
-        eslint
-        typescript
         npm-check-updates
         rtk
       ]

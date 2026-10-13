@@ -29,8 +29,6 @@ in
   services.adguardhome = {
     enable = true;
     package = pkgs.adguardhome;
-    host = "0.0.0.0";
-    port = allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port;
     mutableSettings = false;
     settings = {
 

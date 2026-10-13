@@ -15,7 +15,7 @@
       enable = true;
       enableMan = false;
       defaultEditor = true;
-      nixpkgs.source = inputs.nixpkgs;
+      nixpkgs.useGlobalPackages = true;
       package = pkgs.neovim-unwrapped;
 
       opts = {
@@ -71,7 +71,10 @@
           };
           servers = {
             nixd.enable = true;
-            ts_ls.enable = true;
+            ts_ls = {
+              enable = true;
+              package = pkgs.typescript-language-server;
+            };
             denols.enable = true;
             hls = {
               enable = true;
