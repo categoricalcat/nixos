@@ -6,8 +6,7 @@ used. Native dual-stack was tried and failed live on 2026-09-06. Missing IPv6
 internet egress is intentional until a usable prefix exists, not an unfinished
 rollout.
 
-Related: [yirukou edge](yirukou.md), [sysctl and firewall](sysctl-firewall.md),
-[implementation plan](../plans/ipv6-enablement-plan.md).
+Related: [yirukou edge](yirukou.md), [sysctl and firewall](sysctl-firewall.md).
 
 ______________________________________________________________________
 

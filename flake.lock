@@ -167,11 +167,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791913743,
-        "narHash": "sha256-AeuqyOKOpUgYBSFCRuKYOYm+15520jHKyEAVGDIBuQQ=",
+        "lastModified": 1791934512,
+        "narHash": "sha256-/ECCMIIfuNyC09eo459zEK1Hbw/5sDXbGrT3vWB04aU=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "f4e369780367c4c27c2a4541e74518d42c034a62",
+        "rev": "35041d03e19415d9df1ff9b0015820dae44d2f6d",
         "type": "github"
       },
       "original": {
@@ -618,6 +618,26 @@
         "type": "github"
       }
     },
+    "niri-unstable_2": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791889142,
+        "narHash": "sha256-btWAVpdpl/43Jms3c+xaNF4EOS0pvTMkVE3jPdzLrhU=",
+        "owner": "niri-wm",
+        "repo": "niri",
+        "rev": "4263c9a17f80fc8019bd474f85b1cc1dcbac785c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "niri-wm",
+        "repo": "niri",
+        "type": "github"
+      }
+    },
     "nixos-wsl": {
       "inputs": {
         "flake-compat": "flake-compat_5",
@@ -728,11 +748,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791906676,
-        "narHash": "sha256-wnrd0PDcdkCUrv8M/TMu8kAqodOqIzMQ1wrRWMVYb4I=",
+        "lastModified": 1791931381,
+        "narHash": "sha256-RlHeqDeaxyajIkE+R4rwFk8wrTxSPPM8h+evB4y/EEI=",
         "owner": "noctalia-dev",
         "repo": "noctalia-shell",
-        "rev": "4b19e217461e92fb8b5a24f8ad411ee56d31adfb",
+        "rev": "7209509b63df2a4df8f0109c1ff9dde77b634cfe",
         "type": "github"
       },
       "original": {
@@ -801,6 +821,7 @@
         "musnix": "musnix",
         "niri": "niri",
         "niri-float-sticky": "niri-float-sticky",
+        "niri-unstable": "niri-unstable_2",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
         "nixvim": "nixvim",

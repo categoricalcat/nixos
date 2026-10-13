@@ -283,7 +283,7 @@ in
   config = {
     xdg.enable = true;
 
-    programs.niri.package = pkgs.niri-unstable;
+    programs.niri.package = inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri;
     programs.niri.settings = {
       prefer-no-csd = true;
 

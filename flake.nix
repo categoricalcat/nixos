@@ -198,6 +198,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    niri-unstable = {
+      url = "github:niri-wm/niri";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     niri-float-sticky = {
       url = "github:probeldev/niri-float-sticky";
       inputs.nixpkgs.follows = "nixpkgs";

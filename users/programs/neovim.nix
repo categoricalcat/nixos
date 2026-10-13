@@ -71,9 +71,9 @@
           };
           servers = {
             nixd.enable = true;
-            ts_ls = {
+            vtsls = {
               enable = true;
-              package = pkgs.typescript-language-server;
+              package = pkgs.vtsls;
             };
             denols.enable = true;
             hls = {

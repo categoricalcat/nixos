@@ -83,4 +83,10 @@ in
       '';
     })
   ];
+
+  systemd.user.tmpfiles.rules = [
+    "d %h/.cache/high-tide 0755 - - -"
+    "d %h/.cache/high-tide/images 0755 - - -"
+    "d %h/.cache/high-tide/music 0755 - - -"
+  ];
 }

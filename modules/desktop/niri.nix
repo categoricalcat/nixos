@@ -24,7 +24,7 @@
     ];
 
     programs.niri.enable = true;
-    programs.niri.package = pkgs.niri-unstable;
+    programs.niri.package = inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri;
 
     # Keep the existing polkit-gnome agent (modules/desktop.nix); disable niri-flake's KDE agent.
     systemd.user.services.niri-flake-polkit.enable = false;
