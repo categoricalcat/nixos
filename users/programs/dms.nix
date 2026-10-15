@@ -11,6 +11,15 @@ let
   colors = import ../../modules/theme.nix;
   c = name: "#${colors.${name}}";
   dmsSettings = builtins.fromJSON (builtins.readFile ./dms/settings.json);
+  inherit (fromTOML (builtins.readFile ./noctalia/config.toml)) nightlight;
+  dmsNightMode = {
+    nightModeEnabled = nightlight.enabled;
+    nightModeAutoEnabled = !nightlight.force;
+    nightModeAutoMode = "location";
+    nightModeUseIPLocation = true;
+    nightModeTemperature = nightlight.temperature_night;
+    nightModeHighTemperature = nightlight.temperature_day;
+  };
   animRate = config.desktop.animationRate;
   scale = ms: if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (ms * animRate));
   yimokaTheme = {
@@ -81,8 +90,37 @@ in
 
         stylix.targets.dank-material-shell.image.enable = false;
 
-        home.sessionVariables = {
-          QS_ICON_THEME = themeAssets.icons.dark;
+        home = {
+          sessionVariables = {
+            QS_ICON_THEME = themeAssets.icons.dark;
+          };
+
+          activation.makeDmsSessionMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+            target="$HOME/.local/state/DankMaterialShell/session.json"
+            if [ -L "$target" ]; then
+              store_path=$(readlink -f "$target")
+              rm -f "$target"
+              cp "$store_path" "$target"
+              chmod u+w "$target"
+            fi
+          '';
+
+          activation.mergeDmsNightMode = lib.hm.dag.entryAfter [ "makeDmsSessionMutable" ] ''
+            merge_dms_night_mode() {
+              local target="${config.xdg.stateHome}/DankMaterialShell/session.json"
+              local tmp
+              mkdir -p "$(dirname "$target")"
+              [ -s "$target" ] || echo '{}' > "$target"
+              tmp=$(mktemp "$target.XXXXXX")
+              if ${lib.getExe pkgs.jq} --argjson nightMode ${lib.escapeShellArg (builtins.toJSON dmsNightMode)} '. + $nightMode' "$target" > "$tmp"; then
+                mv "$tmp" "$target"
+              else
+                rm -f "$tmp"
+                echo "mergeDmsNightMode: $target is not valid JSON, skipping" >&2
+              fi
+            }
+            run merge_dms_night_mode
+          '';
         };
 
         systemd.user.services.dms = {
@@ -93,16 +131,6 @@ in
             ];
           };
         };
-
-        home.activation.makeDmsSessionMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-          target="$HOME/.local/state/DankMaterialShell/session.json"
-          if [ -L "$target" ]; then
-            store_path=$(readlink -f "$target")
-            rm -f "$target"
-            cp "$store_path" "$target"
-            chmod u+w "$target"
-          fi
-        '';
 
         programs.dank-material-shell = {
           enable = true;

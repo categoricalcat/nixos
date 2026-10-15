@@ -1,5 +1,5 @@
 [accessibility]
-ui_scale = 1.05
+ui_scale = 1.0
 
 [audio]
 enable_overdrive = false
@@ -21,36 +21,34 @@ border = "outline"
 border_width = 0.0
 capsule = true
 capsule_fill = "surface_variant"
-capsule_group = []
-capsule_opacity = 0.48
-capsule_padding = 10.0
-capsule_thickness = 0.75999999046325684
+capsule_opacity = 0.4
+capsule_padding = 8.0
+capsule_radius = 8.0
+capsule_thickness = 1.0
 center = ["media", "clock", "weather"]
+compositor_blur = false
 contact_shadow = false
 enabled = true
 end = [
     "temp",
     "cpu",
     "ram",
-    "network",
-    "bluetooth",
-    "volume",
-    "brightness",
     "battery",
     "spacer",
     "tray",
     "notifications",
     "clipboard",
-    "control-center",
+    "group:control_center_group",
     "session",
 ]
-font_weight = 400
+font_scale = 1.05
+font_weight = 300
 hover_highlight = true
 layer = "top"
 margin_edge = 4
-margin_ends = 32
+margin_ends = 4
 margin_opposite_edge = 0
-padding = 16
+padding = 0
 panel_overlap = 0
 position = "top"
 radius = 80
@@ -59,12 +57,26 @@ radius_bottom_right = 80
 radius_top_left = 80
 radius_top_right = 80
 reserve_space = true
-scale = 1.0
+scale = 0.75
 shadow = false
 show_on_workspace_switch = true
-start = ["launcher", "wallpaper", "workspaces", "active_window"]
-thickness = 28
-widget_spacing = 0
+start = ["launcher", "workspaces", "active_window"]
+thickness = 22
+widget_spacing = 4
+
+[[bar.main.capsule_group]]
+enabled = true
+fill = "surface_variant"
+id = "control_center_group"
+members = [
+    "network",
+    "bluetooth",
+    "input_volume",
+    "brightness",
+    "control-center",
+]
+opacity = 0.4
+padding = 8.0
 
 [bar.main.actions]
 middle = "settings-open-widget"
@@ -105,7 +117,7 @@ type = "wifi"
 type = "bluetooth"
 
 [[control_center.shortcuts]]
-type = "caffeine"
+type = "dark_mode"
 
 [[control_center.shortcuts]]
 type = "nightlight"
@@ -114,7 +126,7 @@ type = "nightlight"
 type = "notification"
 
 [[control_center.shortcuts]]
-type = "power_profile"
+type = "caffeine"
 
 [desktop_widgets]
 enabled = true
@@ -146,7 +158,6 @@ magnification_scale = 1.4500000476837158
 main_axis_padding = 16
 margin_edge = 8
 margin_ends = 0
-monitors = []
 pinned = []
 position = "bottom"
 radius = 16
@@ -226,7 +237,7 @@ allow_empty_password = false
 blur_intensity = 0.5
 blurred_desktop = false
 enabled = true
-fingerprint = false
+fingerprint = true
 monitors = []
 tint_intensity = 0.30000001192092896
 wallpaper = ""
@@ -267,24 +278,27 @@ temperature_night = 3700
 
 [notification]
 background_opacity = 1.0
+border = false
 collapse_on_dismiss = true
 enable_daemon = true
 layer = "top"
 monitors = []
-offset_x = 20
+offset_x = 4
 offset_y = 8
 position = "top_right"
 scale = 1.0
 show_actions = true
 show_app_name = true
+width = 400
 
 [osd]
 background_opacity = 1.0
+border = false
 monitors = []
 offset_x = 20
-offset_y = 8
+offset_y = 12
 orientation = "horizontal"
-position = "top_center"
+position = "bottom_center"
 position_vertical = "top_center"
 scale = 1.0
 
@@ -323,29 +337,31 @@ name = "community"
 [shell]
 app_icon_colorize = false
 avatar_path = "/home/yi/Downloads/IMG_20251007_211453_874.jpg"
+card_borders = false
 clipboard_auto_paste = "auto"
 clipboard_confirm_clear_history = true
 clipboard_enabled = true
 clipboard_history_max_entries = 100
 clipboard_image_action_command = ""
-corner_radius_scale = 1.0
+corner_radius_scale = 0.65
 date_format = "%A, %-d %B"
 disable_mipmaps = false
 external_ip_enabled = false
 font_family = "Maple Mono NF CN"
 lang = "pt-BR"
-launch_apps_as_systemd_services = false
+launch_apps_as_systemd_services = true
 launch_apps_custom_command = ""
 niri_overview_type_to_launch_enabled = false
 offline_mode = false
 password_style = "default"
 polkit_agent = false
+popup_borders = false
 screen_time_enabled = false
 settings_show_advanced = true
-setup_wizard_enabled = true
+setup_wizard_enabled = false
 shared_gl_context = true
 show_location = true
-telemetry_enabled = true
+telemetry_enabled = false
 time_format = "{:%H:%M}"
 
 [shell.animation]
@@ -359,8 +375,11 @@ auto_sync = false
 app_grid = false
 categories = true
 compact = false
+layout = "full"
+search_position = "top"
 show_icons = true
 sort_by_usage = true
+width = 720
 
 [shell.launcher.providers.session]
 global = false
@@ -371,26 +390,26 @@ global = false
 blacklist = []
 
 [shell.panel]
-borders = true
+borders = false
 clipboard_placement = "floating"
-clipboard_position = "center"
-control_center_placement = "attached"
+clipboard_position = "auto"
+control_center_placement = "floating"
 control_center_position = "auto"
 floating_offset = 8
 launcher_placement = "floating"
 launcher_position = "center"
-open_near_click_clipboard = false
-open_near_click_control_center = false
+open_near_click_clipboard = true
+open_near_click_control_center = true
 open_near_click_launcher = false
-open_near_click_session = false
+open_near_click_session = true
 open_near_click_wallpaper = false
 polkit_placement = "floating"
 polkit_position = "center"
-session_placement = "attached"
+session_placement = "floating"
 session_position = "auto"
 shadow = true
 transparency_mode = "solid"
-wallpaper_placement = "attached"
+wallpaper_placement = "floating"
 wallpaper_position = "auto"
 
 [shell.privacy]
@@ -465,7 +484,7 @@ shortcut = "5"
 variant = "default"
 
 [shell.shadow]
-alpha = 0.55000001192092896
+alpha = 0.3
 direction = "down"
 
 [system.monitor]
@@ -475,9 +494,9 @@ cpu_temp_critical_threshold = 85.0
 cpu_temp_sensor_path = ""
 cpu_usage_activity_threshold = 50.0
 cpu_usage_critical_threshold = 90.0
+disk_poll_seconds = 10.0
 disk_used_pct_activity_threshold = 80.0
 disk_used_pct_critical_threshold = 95.0
-disk_poll_seconds = 10.0
 enabled = true
 gpu_poll_seconds = 0.0
 gpu_temp_activity_threshold = 60.0
@@ -537,15 +556,34 @@ refresh_minutes = 30
 unit = "metric"
 
 [widget.active_window]
-icon_size = 14.0
-max_length = 260.0
+display = "icon_and_text"
+icon_size = 16.0
+max_length = 384.0
 min_length = 80.0
+show_empty_label = false
 title_scroll = "none"
 type = "active_window"
 
+[widget.bluetooth]
+hide_when_adapter_off = true
+show_label = false
+type = "bluetooth"
+
+[widget.brightness]
+show_label = true
+type = "brightness"
+
+[widget.clock]
+format = "{:%H:%M • %A, %-d %B}"
+type = "clock"
+
 [widget.cpu]
+label_min_width = 36.0
+show_glyph = true
+show_value = true
 stat = "cpu_usage"
 type = "sysmon"
+visualization = "none"
 
 [widget.date]
 format = "{:%a %d %b}"
@@ -553,6 +591,7 @@ type = "clock"
 
 [widget.input_volume]
 device = "input"
+show_label = false
 type = "volume"
 
 [widget.keyboard_layout]
@@ -572,10 +611,16 @@ type = "lock_keys"
 
 [widget.media]
 art_size = 16.0
-max_length = 220.0
+hide_when_no_media = true
+max_length = 264.0
 min_length = 80.0
 title_scroll = "none"
 type = "media"
+
+[widget.network]
+show_label = false
+type = "network"
+vpn_status = "both"
 
 [widget.network_rx]
 stat = "net_rx"
@@ -590,17 +635,36 @@ device = "output"
 type = "volume"
 
 [widget.ram]
-stat = "ram_used"
+label_min_width = 36.0
+show_glyph = true
+show_value = true
+stat = "ram_pct"
 type = "sysmon"
+visualization = "none"
 
 [widget.spacer]
+capsule = false
+length = 7.0
 type = "spacer"
 
 [widget.temp]
+label_min_width = 36.0
+show_glyph = true
+show_value = true
 stat = "cpu_temp"
 type = "sysmon"
+visualization = "none"
+
+[widget.weather]
+show_condition = false
+show_temperature = true
+type = "weather"
 
 [widget.workspaces]
-empty_color = "on_secondary"
-occupied_color = "tertiary"
+empty_color = "surface"
+focused_color = "primary"
+hide_when_empty = true
+label_source = "id"
+occupied_color = "secondary"
+show_labels = true
 type = "workspaces"

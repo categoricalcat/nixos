@@ -204,6 +204,7 @@ in
 
         window_rule = [
           "app_id:^com.danklinux.dms$,is_floating:1"
+          "app_id:^dev.noctalia.Noctalia$,is_floating:1"
         ];
 
         scroller_structs = 20;

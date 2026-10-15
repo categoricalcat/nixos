@@ -441,8 +441,13 @@ let
     let
       bind =
         desc: key: cmd:
-        "# ${desc}\nbind=${key},${cmd}";
-      bindList = def: cmd: lib.concatMapStringsSep "\n" (k: bind def.description k cmd) def.keys;
+        if cmd == "" || cmd == null then "" else "# ${desc}\nbind=${key},${cmd}";
+      bindList =
+        def: cmd:
+        if cmd == "" || cmd == null then
+          ""
+        else
+          lib.concatMapStringsSep "\n" (k: bind def.description k cmd) def.keys;
 
       appCmd =
         cmd:
@@ -504,7 +509,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call lock lock"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg lockscreen-lock"
+          "spawn,noctalia msg session lock"
         else
           "spawn,swaylock"
       )}
@@ -533,7 +538,7 @@ let
         if desktopShell == "dms" then
           "spawn,shot window"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg screenshot-window"
+          "spawn,shot window"
         else
           "spawn,grimshot copy window"
       )}
@@ -543,7 +548,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call audio increment 3"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg volume-up"
+          "spawn,noctalia msg volume-up 3"
         else
           "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
       )}
@@ -551,7 +556,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call audio decrement 3"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg volume-down"
+          "spawn,noctalia msg volume-down 3"
         else
           "spawn,wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
       )}
@@ -575,7 +580,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call mpris playPause"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg media-play-pause"
+          "spawn,noctalia msg media toggle"
         else
           "spawn,playerctl play-pause"
       )}
@@ -583,7 +588,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call mpris previous"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg media-previous"
+          "spawn,noctalia msg media previous"
         else
           "spawn,playerctl previous"
       )}
@@ -591,7 +596,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call mpris next"
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg media-next"
+          "spawn,noctalia msg media next"
         else
           "spawn,playerctl next"
       )}
@@ -601,7 +606,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call brightness increment 5 \"\""
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg brightness-up"
+          "spawn,noctalia msg brightness-up 5%"
         else
           "spawn,brightnessctl set +5%"
       )}
@@ -609,7 +614,7 @@ let
         if desktopShell == "dms" then
           "spawn,dms ipc call brightness decrement 5 \"\""
         else if desktopShell == "noctalia" then
-          "spawn,noctalia msg brightness-down"
+          "spawn,noctalia msg brightness-down 5%"
         else
           "spawn,brightnessctl set 5%-"
       )}

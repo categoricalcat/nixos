@@ -10,6 +10,13 @@ let
   noctaliaPackage = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
   noctaliaConfig = fromTOML (builtins.readFile ./config.toml);
   animRate = config.desktop.animationRate;
+  barScreenPreferences = config.host.barScreenPreferences;
+  barMonitorSettings = lib.optionalAttrs (barScreenPreferences != [ "all" ]) {
+    enabled = false;
+    monitor = lib.genAttrs barScreenPreferences (_: {
+      enabled = true;
+    });
+  };
 in
 {
 
@@ -23,6 +30,7 @@ in
         && config.host.desktopShell == "noctalia"
       )
       {
+        stylix.targets.noctalia.enable = false;
 
         programs.noctalia = {
           enable = true;
@@ -31,10 +39,12 @@ in
 
           settings = lib.mkForce (
             lib.recursiveUpdate noctaliaConfig {
+              bar.main = barMonitorSettings;
               shell.animation = {
                 enabled = animRate > 0.0;
                 speed = if animRate > 0.0 then (1.0 / animRate) else 0.0;
               };
+              wallpaper.default.path = "${../../../modules/desktop/wallpaper.jpg}";
             }
           );
 
@@ -105,15 +115,5 @@ in
         #     fi
         #   done
         # ';
-
-        xdg.configFile."autostart/noctalia-shell.desktop".text = ''
-          [Desktop Entry]
-          Type=Application
-          Name=Noctalia Shell
-          Comment=Wayland desktop shell
-          Exec=${lib.getExe noctaliaPackage}
-          Terminal=false
-          X-GNOME-Autostart-enabled=true
-        '';
       };
 }

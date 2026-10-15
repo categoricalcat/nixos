@@ -59,7 +59,7 @@ in
 
   host = {
     desktopEnvironment = "mango";
-    desktopShell = "dms";
+    desktopShell = "noctalia";
     workd = true;
   };
 
