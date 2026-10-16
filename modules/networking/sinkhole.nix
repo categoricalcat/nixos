@@ -16,11 +16,11 @@ in
 
           # IPv4 Sinkhole
           ip daddr ${ipv4} meta l4proto tcp counter reject with tcp reset
-          ip daddr ${ipv4} counter reject with icmp type host-unreachable
+          ip daddr ${ipv4} counter reject with icmp type port-unreachable
 
           # IPv6 Sinkhole
           ip6 daddr ${ipv6} meta l4proto tcp counter reject with tcp reset
-          ip6 daddr ${ipv6} counter reject with icmpv6 type addr-unreachable
+          ip6 daddr ${ipv6} counter reject with icmpv6 type port-unreachable
         }
 
         chain forward {
@@ -28,11 +28,11 @@ in
 
           # IPv4 Sinkhole
           ip daddr ${ipv4} meta l4proto tcp counter reject with tcp reset
-          ip daddr ${ipv4} counter reject with icmp type host-unreachable
+          ip daddr ${ipv4} counter reject with icmp type port-unreachable
 
           # IPv6 Sinkhole
           ip6 daddr ${ipv6} meta l4proto tcp counter reject with tcp reset
-          ip6 daddr ${ipv6} counter reject with icmpv6 type addr-unreachable
+          ip6 daddr ${ipv6} counter reject with icmpv6 type port-unreachable
         }
 
         chain output {
@@ -40,11 +40,11 @@ in
 
           # IPv4 Sinkhole
           ip daddr ${ipv4} meta l4proto tcp counter reject with tcp reset
-          ip daddr ${ipv4} counter reject with icmp type host-unreachable
+          ip daddr ${ipv4} counter reject with icmp type port-unreachable
 
           # IPv6 Sinkhole
           ip6 daddr ${ipv6} meta l4proto tcp counter reject with tcp reset
-          ip6 daddr ${ipv6} counter reject with icmpv6 type addr-unreachable
+          ip6 daddr ${ipv6} counter reject with icmpv6 type port-unreachable
         }
       '';
     };

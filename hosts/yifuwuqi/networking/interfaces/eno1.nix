@@ -23,7 +23,6 @@
         address = [
           addresses.network.lan.ipv6.address
           addresses.network.lan.ipv4.address
-          "${addresses.network.sinkhole.ipv4.host}/24"
         ];
 
         # The metric-100 default route is owned exclusively by keepalived

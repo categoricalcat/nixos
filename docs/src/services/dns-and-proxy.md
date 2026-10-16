@@ -70,10 +70,11 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   `127.0.0.1:5335` retained as fallback. Bootstrap and local PTR upstreams list
   IPv6 first with `bootstrap_prefer_ipv6 = false`, and `ipv6_disabled` stays
   false so ULA AAAA answers work.
-- **Blocking**: Custom-IP blocking returns `10.42.0.24` for A and the
-  static ULA `fd75:c55f:6d19::24` for AAAA. Only yirukou assigns the ULA;
-  both AdGuard instances return it. Clients hold no IPv6 default route, so the
-  blocked AAAA is unreachable and fails immediately without a round trip.
+- **Blocking**: Custom-IP blocking returns RFC 7534 AS112 `192.175.48.1` for A
+  and `2620:4f:8000::1` for AAAA. Only yirukou assigns the sinkhole addresses
+  on `br0`; both AdGuard instances return them. Clients hold no IPv6 default
+  route, so the blocked AAAA is unreachable and fails immediately without a
+  round trip.
 
 ### 1.2 Unbound (The Recursive Root Resolver)
 

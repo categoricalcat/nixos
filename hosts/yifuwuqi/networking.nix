@@ -14,11 +14,6 @@
     ./networking/sysctl.nix
   ];
 
-  services.resolved = {
-    enable = true;
-    settings.Resolve.DNSStubListener = "no";
-  };
-
   networking = {
     inherit (addresses) hostName;
 

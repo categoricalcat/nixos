@@ -26,6 +26,7 @@ in
   system.stateVersion = global.version;
   wsl.defaultUser = "yi";
   wsl.enable = true;
+  services.resolved.enable = false;
 
   host.developer = true;
 

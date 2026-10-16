@@ -19,11 +19,6 @@ in
     ../../modules/networking/gateway-failover.nix
   ];
 
-  services.resolved = {
-    enable = true;
-    settings.Resolve.DNSStubListener = "no";
-  };
-
   networking = {
     inherit (addresses) hostName;
     nameservers = addresses.dns.systemNameservers ++ lib.take 2 resolvFallbackNameservers;

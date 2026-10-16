@@ -32,4 +32,12 @@
   systemd.tmpfiles.rules = [
     "d /tmp/ai 1777 root root 1d -"
   ];
+
+  services.resolved = {
+    enable = lib.mkDefault true;
+    settings.Resolve = {
+      DNSStubListener = lib.mkDefault "no";
+      DNSSEC = lib.mkDefault "no";
+    };
+  };
 }

@@ -60,14 +60,16 @@ ______________________________________________________________________
 
 ## 3. Why ULA, and why no default route
 
-ULA `fd75:c55f:6d19::/48` was already assigned for the DNS sinkhole
-(`fd75:c55f:6d19::24`). It is locally chosen and permanent, so full addresses
+ULA `fd75:c55f:6d19::/48` is locally chosen and permanent, so full addresses
 live in `modules/addresses.nix` instead of being derived from a CPE prefix
-that can change or vanish.
+that can change or vanish. The DNS sinkhole uses IANA's RFC 7534 AS112 public
+sinkhole (`192.175.48.1` and `2620:4f:8000::1`) so blocked answers pass browser
+Private Network Access (PNA) checks as public unicast while still failing
+locally.
 
 | Segment   | Prefix                  | Role                                     |
 | --------- | ----------------------- | ---------------------------------------- |
-| Sinkhole  | `fd75:c55f:6d19::/64`   | Unadvertised; `/128` on `br0` only       |
+| Sinkhole  | `2620:4f:8000::1/128`   | RFC 7534 AS112; `/128` on `br0` only     |
 | LAN `br0` | `fd75:c55f:6d19:1::/64` | Router `::1`, yifuwuqi `::2`, SLAAC rest |
 | VLAN 42   | `fd75:c55f:6d19:2::/64` | Router `::1`, SLAAC; isolated from LAN   |
 
@@ -81,7 +83,7 @@ Consequences that are load-bearing, not bugs:
 - IPv6 never leaves the LAN. WANs have IPv6 disabled (`DHCP = "ipv4"`,
   `IPv6AcceptRA = no`, `LinkLocalAddressing = no`) and nftables drops IPv6
   on those interfaces in prerouting, input, output, and forward.
-- Blocked AAAA answers (`fd75:c55f:6d19::24`) are off-link for clients, so
+- Blocked AAAA answers (`2620:4f:8000::1`) are off-link for clients, so
   they fail locally. nft sinkhole rules still apply on yirukou itself.
 - Dual-stack **LAN** names (`.lan` / `.local`) can prefer ULA via `gai.conf`.
   Dual-stack **internet** names have no IPv6 route, so they use IPv4 with no

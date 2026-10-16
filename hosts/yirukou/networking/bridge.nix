@@ -34,7 +34,7 @@ in
         address = [
           lan.ipv6.address
           lan.ipv4.address
-          "${addresses.network.sinkhole.ipv4.host}/${toString lan.ipv4.prefixLength}"
+          "${addresses.network.sinkhole.ipv4.host}/32"
           "${addresses.network.sinkhole.ipv6.host}/128"
         ];
         networkConfig = {

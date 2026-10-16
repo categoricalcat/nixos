@@ -11,8 +11,8 @@ ______________________________________________________________________
 | **LAN**          | `br0`        | `10.42.0.1/24`, `fd75:c55f:6d19:1::1/64`  | Trusted wired LAN and default gateway.    |
 | **Untrusted**    | `enp2s0.42`  | `10.42.42.1/24`, `fd75:c55f:6d19:2::1/64` | VLAN 42 for untrusted / guest clients.    |
 | **Tailscale**    | `tailscale0` | `100.69.0.1/32`                           | Tailnet access, subnet router, exit node. |
-| **Sinkhole**     | `br0` alias  | `10.42.0.24/24`                           | Retained IPv4 sinkhole address.           |
-| **Sinkhole v6**  | `br0` alias  | `fd75:c55f:6d19::24/128`                  | Static ULA IPv6 sinkhole address.         |
+| **Sinkhole**     | `br0` alias  | `192.175.48.1/32`                         | RFC 7534 AS112 IPv4 sinkhole address.     |
+| **Sinkhole v6**  | `br0` alias  | `2620:4f:8000::1/128`                     | RFC 7534 AS112 IPv6 sinkhole address.     |
 | **WAN primary**  | `enp7s0`     | DHCPv4 only, IPv6 disabled                | Preferred uplink (metric 100).            |
 | **WAN fallback** | `enp6s0`     | DHCPv4 only, IPv6 disabled (metric 200)   | Backup IPv4 uplink.                       |
 
@@ -50,8 +50,8 @@ enp2s0 (VLAN parent, no IP)
   route. RDNSS advertises the segment's static ULA, not a link-local address.
 - Clients use SLAAC; there is no DHCPv6 server. Temporary/privacy addresses are
   disabled globally through networkd `IPv6PrivacyExtensions = false`.
-- Sinkhole IP `10.42.0.24/24` is bound directly to `br0`.
-- Sinkhole ULA `fd75:c55f:6d19::24/128` is bound to `br0` but its prefix is not
+- Sinkhole IP `192.175.48.1/32` is bound directly to `br0`.
+- Sinkhole IPv6 `2620:4f:8000::1/128` is bound to `br0` and is not
   advertised as on-link by RA.
 
 ______________________________________________________________________
@@ -119,9 +119,9 @@ ______________________________________________________________________
   is not enforced. AGH DDR (`handle_ddr`) advertises `dns.fufu.land` DoH on
   `:3443` and DoQ on `:853`; DoT is not in the SVCB set (cert has no IP SANs).
   There is no DNR or Kea DHCPv6.
-- **Sinkhole Drop Table**: Statically rejects IPv4 `10.42.0.24` and IPv6
-  `fd75:c55f:6d19::24`; no runtime prefix derivation is required. The sinkhole
-  `/64` is never advertised, so for clients without an IPv6 default route a
+- **Sinkhole Drop Table**: Statically rejects IPv4 `192.175.48.1` and IPv6
+  `2620:4f:8000::1` (RFC 7534 AS112); no runtime prefix derivation is required. The sinkhole
+  prefix is never advertised, so for clients without an IPv6 default route a
   blocked AAAA answer is simply unreachable and fails locally; the nft rules
   matter only for hosts that can route to it, which is yirukou itself.
 

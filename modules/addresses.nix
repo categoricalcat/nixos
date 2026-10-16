@@ -418,8 +418,8 @@ in
         };
 
         sinkhole = {
-          ipv4.host = "10.42.0.24";
-          ipv6.host = "fd75:c55f:6d19::24";
+          ipv4.host = "192.175.48.1";
+          ipv6.host = "2620:4f:8000::1";
         };
 
         # Fallback uplink. The host address is DHCP-assigned; only the subnet
@@ -855,8 +855,8 @@ in
         };
 
         sinkhole = {
-          ipv4.host = "10.42.0.24";
-          ipv6.host = "fd75:c55f:6d19::24";
+          ipv4.host = "192.175.48.1";
+          ipv6.host = "2620:4f:8000::1";
         };
       };
 

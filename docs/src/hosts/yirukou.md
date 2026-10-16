@@ -109,9 +109,9 @@ ______________________________________________________________________
 - **IPv6 WAN policy**: IPv6 is dropped on both WANs in prerouting, input,
   output, and forwarding. No WAN RA, ND, or DHCPv6 handling remains, and no
   IPv6 traffic can enter or leave the edge.
-- **Sinkhole Drop Table**: Static rules reject `10.42.0.24` and ULA
-  `fd75:c55f:6d19::24`. Both addresses are assigned on `br0`; the sinkhole
-  `/64` is unadvertised, so clients without an IPv6 route fail blocked AAAA
+- **Sinkhole Drop Table**: Static rules reject RFC 7534 AS112 `192.175.48.1`
+  and `2620:4f:8000::1`. Both addresses are assigned on `br0`; the sinkhole
+  prefix is unadvertised, so clients without an IPv6 route fail blocked AAAA
   answers locally.
 
 ### 4.2 Sysctl Routing Hardening
@@ -137,7 +137,7 @@ ______________________________________________________________________
   wildcard is gone, so
   no listener touches a WAN address. The Web UI remains IPv4. Upstream is
   `[::1]:5335` with `127.0.0.1:5335` as fallback. Custom-IP blocking uses
-  `10.42.0.24` and static ULA `fd75:c55f:6d19::24`.
+  RFC 7534 AS112 `192.175.48.1` and `2620:4f:8000::1`.
 - **Unbound**: Listens on `127.0.0.1:5335` and `[::1]:5335`, with `do-ip6`
   kept on so the `::1` listener exists. Outbound iteration is IPv4 in practice
   because the host holds no IPv6 default route. It retains the IPv4 LAN Valkey
