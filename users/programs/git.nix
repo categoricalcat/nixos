@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   keys = import ../../secrets/keys.nix;
   colors = import ../../modules/theme.nix;
@@ -129,6 +134,14 @@ in
 
       [diff]
       	colorMoved = default
+      ${lib.optionalString (config.home.username == "root") ''
+        # Root reads and builds flakes in yi-owned worktrees and does not sign as yi.
+        [commit]
+        	gpgsign = false
+
+        [safe]
+        	directory = *
+      ''}
     '';
     force = true;
   };

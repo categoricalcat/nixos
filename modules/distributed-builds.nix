@@ -31,23 +31,22 @@ let
     name:
     let
       remoteBuild = hosts.${name}.nixBuild;
-      relativeSpeed = remoteBuild.speedFactor / localBuild.speedFactor;
-      finalSpeed = if relativeSpeed < 1 then 1 else relativeSpeed;
     in
     {
       hostName = name;
       sshUser = "nix-builder";
       sshKey = keys.paths.sshHostKey;
       protocol = "ssh-ng";
-      inherit (remoteBuild) maxJobs;
-      speedFactor = finalSpeed;
+      inherit (remoteBuild) maxJobs speedFactor systems;
       supportedFeatures = [
         "nixos-test"
         "benchmark"
         "big-parallel"
         "kvm"
       ];
-      inherit (remoteBuild) systems;
+      mandatoryFeatures = lib.optionals (remoteBuild.speedFactor < localBuild.speedFactor) [
+        "big-parallel"
+      ];
     }
   ) builderNames;
 
