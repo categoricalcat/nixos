@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Run with sudo: sudo nix-fix-uids"
+  echo "Must be run as root: su - && nix-fix-uids"
   exit 1
 fi
 

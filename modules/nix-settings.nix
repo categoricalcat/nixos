@@ -24,7 +24,6 @@
       auto-optimise-store = true;
       trusted-users = lib.mkAfter [
         "root"
-        "yi"
         "nix-builder"
       ];
       experimental-features = [

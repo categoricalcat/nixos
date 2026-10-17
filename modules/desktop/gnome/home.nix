@@ -85,8 +85,7 @@ let
     (lib.imap0 (i: _: toString i) osConfig.desktop.monitors)
     ++ (map (m: m.name) osConfig.desktop.monitors);
 in
-
-{
+lib.mkIf (config.home.username != "root") {
   dconf = {
     enable = true;
     settings = {

@@ -1,8 +1,5 @@
 # sops.nix
-{
-  config,
-  ...
-}:
+_:
 let
   keys = import ./keys.nix;
 in
@@ -18,7 +15,8 @@ in
       validateSopsFiles = false;
     };
 
-    # Let the sops CLI derive an age identity from the user's SSH key
-    environment.variables.SOPS_AGE_SSH_PRIVATE_KEY_FILE = keys.paths.userSshKey config.users.users.yi.home;
+    # Let the sops CLI (as root) derive its age identity directly from the host SSH key.
+    # Unprivileged users cannot read /persist/keys/ssh/ssh_host_ed25519_key (0600 root:root).
+    environment.variables.SOPS_AGE_SSH_PRIVATE_KEY_FILE = keys.paths.sshHostKey;
   };
 }

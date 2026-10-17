@@ -36,4 +36,5 @@ in
   nixpkgs.hostPlatform = "x86_64-linux";
 
   zramSwap.enable = false;
+  yi.ssh.permitRootKeyLogin = true;
 }

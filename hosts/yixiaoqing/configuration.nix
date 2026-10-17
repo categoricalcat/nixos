@@ -89,14 +89,6 @@ in
   #   role = "client";
   # };
 
-  nix = {
-    settings = {
-      trusted-users = [
-        "@wheel"
-      ];
-    };
-  };
-
   services.fprintd.enable = true;
   security = {
     fido2.enable = true;
@@ -105,7 +97,6 @@ in
     pam.services = {
       login.fprintAuth = lib.mkDefault true;
       gdm-fingerprint.fprintAuth = true;
-      sudo.fprintAuth = true;
       polkit-1.u2fAuth = true;
     };
   };
@@ -166,6 +157,7 @@ in
   yi.tailscale = {
     routingMode = "client";
     exitNodeHost = allAddresses.hosts.yirukou.network.tailscale.ipv4.host;
+    ssh = true;
   };
 
   virtualisation.docker = {

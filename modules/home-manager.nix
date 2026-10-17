@@ -53,6 +53,10 @@
       imports = [ ../users/home/yijia.nix ];
       home.stateVersion = stateVersion;
     };
+    root = {
+      imports = [ ../users/home/root.nix ];
+      home.stateVersion = stateVersion;
+    };
   }
   // (
     if enableWorkd then

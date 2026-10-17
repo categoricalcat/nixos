@@ -77,8 +77,8 @@ ______________________________________________________________________
 ┌─────────────────────────────────────────────────────────────┐
 │                 yixiaoqing Auth Mechanisms                  │
 ├──────────────────────────────┬──────────────────────────────┤
-│ 1. Fingerprint (fprintd)     │ Biometric PAM auth for sudo  │
-│                              │ and login                    │
+│ 1. Fingerprint (fprintd)     │ Biometric PAM auth for login │
+│                              │ and Polkit                   │
 ├──────────────────────────────┼──────────────────────────────┤
 │ 2. Physical FIDO2 (pam_u2f)  │ Hardware USB security key    │
 │                              │ verification                 │

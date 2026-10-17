@@ -56,29 +56,29 @@ ______________________________________________________________________
 
 ## 3. Operational Inspection & Diagnostics
 
-Because `localControlSocketPath` is active, administrators can query Unbound directly on the host using `unbound-control`:
+Because `localControlSocketPath` is active, administrators can query Unbound directly on the host as `root` (`su -`) using `unbound-control`:
 
 ### 3.1 Inspecting Running Status & Statistics
 
 ```bash
-sudo unbound-control -c /etc/unbound/unbound.conf status
-sudo unbound-control -c /etc/unbound/unbound.conf stats_noreset
+unbound-control -c /etc/unbound/unbound.conf status
+unbound-control -c /etc/unbound/unbound.conf stats_noreset
 ```
 
 ### 3.2 Dumping the Cache
 
 ```bash
-sudo unbound-control -c /etc/unbound/unbound.conf dump_cache
+unbound-control -c /etc/unbound/unbound.conf dump_cache
 ```
 
 ### 3.3 Flushing Specific Domains or Entire Zones
 
 ```bash
 # Flush a single domain
-sudo unbound-control -c /etc/unbound/unbound.conf flush github.com
+unbound-control -c /etc/unbound/unbound.conf flush github.com
 
 # Flush an entire zone
-sudo unbound-control -c /etc/unbound/unbound.conf flush_zone .
+unbound-control -c /etc/unbound/unbound.conf flush_zone .
 ```
 
 ______________________________________________________________________

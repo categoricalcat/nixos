@@ -70,10 +70,11 @@ printf 'ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="%s"\n' \
   "$(openssl genrsa -traditional 4096 | base64 -w0)"
 ```
 
-Edit the encrypted payload:
+Edit the encrypted payload as `root` (`su -`, then `cd /home/yi/the.files/nixos`):
 
 ```bash
 sops secrets/secrets.yaml
+./users/scripts/setup-sops.sh
 ```
 
 Store the generated values as:
@@ -125,20 +126,21 @@ After the admin user exists, flip `service.DISABLE_REGISTRATION = true` in
 
 ## Attic Bootstrap
 
-Run on `yifuwuqi` after `atticd` is running.
+Run on `yifuwuqi` as `root` (`su -`) after `atticd` is running.
 
 > **Note:** `atticd-atticadm` runs as the `atticd` user via `systemd-run` and
 > cannot `cd` into restricted directories. Run from `/tmp` to avoid permission
 > errors. The `attic` CLI is not in system packages — use `nix shell` to get it.
 
 ```bash
+su -
 cd /tmp
 nix shell github:zhaofengli/attic#attic-client
-admin_token=$(sudo atticd-atticadm make-token --sub 'admin' --validity '10 years' --pull '*' --push '*' --create-cache '*' --configure-cache '*' --configure-cache-retention '*' --destroy-cache '*' | tr -d '\r')
+admin_token=$(atticd-atticadm make-token --sub 'admin' --validity '10 years' --pull '*' --push '*' --create-cache '*' --configure-cache '*' --configure-cache-retention '*' --destroy-cache '*' | tr -d '\r')
 attic login yi http://127.0.0.1:24203 "$admin_token"
 attic cache create yi --public --priority 38
 attic cache info yi
-push_token=$(sudo atticd-atticadm make-token --sub 'yi' --validity '10 years' --push 'yi' | tr -d '\r')
+push_token=$(atticd-atticadm make-token --sub 'yi' --validity '10 years' --push 'yi' | tr -d '\r')
 ```
 
 Then:

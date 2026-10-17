@@ -98,7 +98,7 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 
 ### 5.3 Key Rotation
 
-To rotate the CI deployment key:
+To rotate the CI deployment key (as `root` via `su -` in `/home/yi/the.files/nixos`):
 
 ```bash
 # 1. Mint a new key on any configured host
@@ -112,6 +112,7 @@ shred -u /run/ci-deploy-key/keys/deploy_ed25519
 rm -rf /run/ci-deploy-key
 
 # 4. Sync persist secrets and deploy across gang
+./users/scripts/setup-sops.sh
 ```
 
 ______________________________________________________________________

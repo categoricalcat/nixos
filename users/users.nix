@@ -32,19 +32,28 @@ in
 
     users = lib.mkMerge [
       {
-        root = {
-          openssh.authorizedKeys.keys = keys.access.root.${hostName};
-        };
+        root = lib.mkMerge [
+          {
+            openssh.authorizedKeys.keys = keys.access.root.${hostName};
+          }
+          (lib.mkIf
+            (lib.elem hostName [
+              "yitaishi"
+              "yixiaoqing"
+            ])
+            {
+              hashedPasswordFile = "/persist/keys/passwords/root";
+            }
+          )
+        ];
 
         yi = {
           uid = 1000;
           isNormalUser = true;
           description = "yi";
           group = "yi";
-          hashedPasswordFile = config.sops.secrets."passwords/yi".path;
           openssh.authorizedKeys.keys = keys.access.yi.${hostName};
           extraGroups = [
-            "wheel"
             "render"
             "video"
             "audio"
@@ -89,7 +98,6 @@ in
           isNormalUser = true;
           description = "workd";
           group = "workd";
-          hashedPasswordFile = config.sops.secrets."passwords/workd".path;
         };
       })
     ];
@@ -101,27 +109,9 @@ in
         isNormalUser = true;
         description = "none";
         group = "none";
-        hashedPasswordFile = config.sops.secrets."passwords/yi".path;
       };
     };
   };
-
-  sops.secrets = lib.mkMerge [
-    {
-      "passwords/yi" = {
-        mode = "0600";
-        owner = "yi";
-        group = "yi";
-      };
-    }
-    (lib.mkIf config.host.workd {
-      "passwords/workd" = {
-        mode = "0600";
-        owner = "workd";
-        group = "workd";
-      };
-    })
-  ];
 
   programs = {
     mtr.enable = true;

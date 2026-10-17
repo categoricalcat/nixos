@@ -2,11 +2,13 @@
 set -euo pipefail
 
 if [ "$EUID" -ne 0 ]; then
-  echo "sudoing..."
-  exec sudo "$0" "$@"
+  echo "Error: this script must be run as root (su -)." >&2
+  exit 1
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+cd "$REPO_ROOT"
 
 # Source modular functions
 # shellcheck source=users/scripts/sops/ensure-host-key.sh
@@ -69,8 +71,7 @@ ensure_user_key yi yi "$AI_KEY" "ai@$HOSTNAME"
 chown yi:yi "$USER_HOME/.ssh"
 chmod 0700 "$USER_HOME/.ssh"
 
-echo "-> generate sops age identity for yi"
-derive_age_key "$MESH_KEY" "$USER_HOME/.config/sops/age/keys.txt" "yi:yi"
+rm -f "$USER_HOME/.config/sops/age/keys.txt"
 
 echo "-> generate sops age identity for root"
 derive_age_key "$HOST_KEY" "/root/.config/sops/age/keys.txt" "root:root"
@@ -79,7 +80,6 @@ HOST_PUB=$(cat "$HOST_KEY.pub")
 MESH_PUB=$(cat "$MESH_KEY.pub")
 AI_PUB=$(cat "$AI_KEY.pub")
 HOST_AGE=$(ssh_pub_to_age "$HOST_PUB")
-MESH_AGE=$(ssh_pub_to_age "$MESH_PUB")
 
 NEEDS_INSTRUCTIONS=false
 if ! grep -Fq "$HOST_PUB" secrets/keys.nix 2>/dev/null; then
@@ -99,8 +99,8 @@ if [ "$NEEDS_INSTRUCTIONS" = "true" ]; then
   echo "=========================================="
   echo "   Add to secrets/keys.nix (machines)     "
   echo "=========================================="
-  printf '    %s = {\n      host = {\n        ssh = "%s";\n        age = "%s";\n      };\n      yi = {\n        ssh = "%s";\n        age = "%s";\n      };\n      ai.ssh = "%s";\n      allow = {\n        root = rootAdmins;\n        yi = [ ];\n        ai = aiAgent;\n      };\n    };\n' \
-    "$HOSTNAME" "$HOST_PUB" "$HOST_AGE" "$MESH_PUB" "$MESH_AGE" "$AI_PUB"
+  printf '    %s = {\n      host = {\n        ssh = "%s";\n        age = "%s";\n      };\n      yi.ssh = "%s";\n      ai.ssh = "%s";\n      allow = {\n        root = rootAdmins;\n        yi = [ ];\n        ai = aiAgent;\n      };\n    };\n' \
+    "$HOSTNAME" "$HOST_PUB" "$HOST_AGE" "$MESH_PUB" "$AI_PUB"
   echo "-> Add \"$HOSTNAME\" to the keyed machine list."
 fi
 
@@ -112,7 +112,6 @@ echo "                  keys                    "
 echo "=========================================="
 GIT_PUB=$(cat "$GIT_KEY.pub")
 echo "-> host age:    $HOST_AGE"
-echo "-> mesh age:    $MESH_AGE"
 echo "-> host pkey:   $HOST_PUB"
 echo "-> mesh pkey:   $MESH_PUB"
 echo "-> git pkey:    $GIT_PUB"

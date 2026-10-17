@@ -53,11 +53,7 @@ in
 
   services.nix-access-tokens.enable = true;
 
-  nix.settings = {
-    trusted-users = [
-      "@wheel"
-    ];
-  };
+  yi.ssh.permitRootKeyLogin = true;
 
   hardware = {
     enableRedistributableFirmware = true;

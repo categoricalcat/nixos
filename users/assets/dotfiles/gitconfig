@@ -146,3 +146,6 @@
 
 [safe]
 	directory = /etc/nixos
+	directory = /home/yi/the.files/nixos
+	directory = /mnt/smb/the.files/nixos
+	directory = /srv/shares/the.files/nixos

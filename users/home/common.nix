@@ -18,22 +18,13 @@ let
     ".agents/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
     ".agents/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
   };
-  zshColors = import ../../modules/theme.nix;
-  zshDir = pkgs.runCommand "zsh-config" { } ''
-    cp -r ${../assets/dotfiles/zsh} "$out"
-    chmod -R +w "$out"
-    substituteInPlace "$out/completion.zsh" \
-      --replace-fail '@base03@' '${zshColors.base03}'
-  '';
 in
 {
   imports = [
+    ./shell.nix
     ../programs/git.nix
     ../programs/ssh
-    ../programs/fastfetch.nix
-    ../programs/tui.nix
     ../programs/vscode-theme.nix
-    ../programs/neovim.nix
     ../programs/khal.nix
   ];
 
@@ -46,21 +37,7 @@ in
       ]
     );
 
-    sessionVariables = lib.mkMerge [
-      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-        TERMINFO = "/run/current-system/sw/share/terminfo";
-        TERMINFO_DIRS = "${config.home.profileDirectory}/share/terminfo:/run/current-system/sw/share/terminfo";
-      })
-    ];
-
     file = lib.mkMerge [
-      {
-        ".config/zsh" = {
-          source = zshDir;
-          recursive = true;
-          force = true;
-        };
-      }
       (lib.mkIf developer (
         lib.mapAttrs (_path: src: {
           source = src;
@@ -108,18 +85,5 @@ in
         realizeCmds
       )
     );
-  };
-
-  programs = {
-    home-manager.enable = true;
-
-    zsh = {
-      enable = true;
-      package = pkgs.zsh;
-      enableCompletion = true;
-      autosuggestion.enable = true;
-      syntaxHighlighting.enable = true;
-      initContent = builtins.readFile ../assets/dotfiles/zshrc;
-    };
   };
 }

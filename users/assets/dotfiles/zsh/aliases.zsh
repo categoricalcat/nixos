@@ -53,7 +53,7 @@ alias zshrc='source ~/.zshrc'
 alias query='~/the.files/query.sh' 
 
 
-alias nix-dr="sudo nixos-rebuild dry-run"
+alias nix-dr="nh os build ."
 alias gh-pr="gh pr create -a @me --fill-verbose -B $1"
 alias gen-commit="~/the.files/git-commit-msg.sh"
 alias usb-ssh="~/the.files/usb-ssh.sh"

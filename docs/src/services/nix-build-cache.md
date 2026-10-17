@@ -66,9 +66,10 @@ Nix distributed builds authenticate over SSH using the dedicated `nix-builder` u
      mandatoryFeatures = [ ];
    };
    ```
-1. **Deploy the configuration**:
+1. **Deploy the configuration (as `root` via `su -`)**:
    ```bash
-   nixos-rebuild switch --flake .#newhost
+   su -
+   nh os switch /home/yi/the.files/nixos
    ```
 
 ______________________________________________________________________
@@ -86,26 +87,23 @@ ______________________________________________________________________
 
 ## 4. Daily Build & Switch Workflows
 
-### 4.1 Build Remotely, Switch Locally
+### 4.1 Switch a Client Locally (Offloading via `nix-daemon`)
 
-From the client machine you wish to update (e.g. `yixiaoqing`):
+From a client machine (`yitaishi` or `yixiaoqing`), elevate to `root` (`su -`) and run `nh os switch` (`nix.distributedBuilds` automatically offloads derivations to `yifuwuqi` and `yitaishi` using `/persist/keys/ssh/ssh_host_ed25519_key` and `nix-builder`):
 
 ```bash
-sudo nixos-rebuild switch \
-  --flake .#yixiaoqing \
-  --build-host yi@yifuwuqi
+su -
+nh os switch /home/yi/the.files/nixos
 ```
 
-### 4.2 Build and Deploy Remotely from a Workstation
+### 4.2 Deploy Remotely from a Client Root Shell
 
-From your desktop (`yitaishi`), build on `yifuwuqi` and deploy to a target node:
+From `yitaishi` or `yixiaoqing`, elevate to `root` (`su -`) and deploy to a server (`yifuwuqi`, `yirukou`) using `deploy-rs` (authenticating with the client's host SSH key `/persist/keys/ssh/ssh_host_ed25519_key`):
 
 ```bash
-nixos-rebuild switch \
-  --flake .#yixiaoqing \
-  --build-host yi@yifuwuqi \
-  --target-host yi@yixiaoqing \
-  --use-remote-sudo
+su -
+cd /home/yi/the.files/nixos
+deploy .#yifuwuqi
 ```
 
 ______________________________________________________________________

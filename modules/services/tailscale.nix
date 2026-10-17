@@ -93,7 +93,7 @@ in
 
       environment.systemPackages = [
         (pkgs.writeShellScriptBin "tailscale-up" ''
-          exec sudo tailscale up --reset ${lib.escapeShellArgs runtimeFlags} "$@"
+          exec tailscale up --reset ${lib.escapeShellArgs runtimeFlags} "$@"
         '')
       ];
     };

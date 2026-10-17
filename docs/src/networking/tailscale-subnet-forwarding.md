@@ -78,10 +78,10 @@ nc -zv 10.42.0.2 24333 -w 4
 curl -I http://10.42.0.2:24333/
 ```
 
-If it still times out, inspect live state on `yirukou`:
+If it still times out, inspect live state on `yirukou` (as `root`):
 
 ```sh
-sudo nft list ruleset
+nft list ruleset
 tailscale status
 tailscale debug prefs
 ```

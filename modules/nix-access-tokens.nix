@@ -8,7 +8,7 @@
   config = lib.mkIf config.services.nix-access-tokens.enable {
     sops.secrets."nix/access-tokens" = {
       mode = "0440";
-      group = "wheel";
+      group = "yi";
     };
 
     nix.extraOptions = ''

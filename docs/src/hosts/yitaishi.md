@@ -54,7 +54,7 @@ ______________________________________________________________________
 - **Ly Greeter**: Terminal-based display manager configured in 8-color VT framebuffer mode to prevent color mangling on Linux consoles, styled to match the Stylix base16 palette.
 - **Stylix Theming**: Dark polarity base16 theme (`theme.nix`), custom fonts and cursors (`theme-assets.nix`), GTK/Qt/GRUB/Plymouth targets enabled.
 - **Lan Mouse KVM**: Software KVM configured to seamlessly move cursor across the right screen boundary onto laptop `yixiaoqing`.
-- **FIDO2 Authentication**: PAM U2F authentication enabled for system login and `sudo`.
+- **FIDO2 Authentication**: PAM U2F authentication enabled for system login (`sudo` is disabled gang-wide; local root elevation uses `su -` with `/persist/keys/passwords/root`).
 
 ______________________________________________________________________
 
@@ -89,7 +89,7 @@ Configured in `hosts/yitaishi/gaming.nix` and `modules/gaming.nix`:
 
 - **Fanatec Racing Hardware**: Kernel module and udev rules (`services.fanatec.enable = true`) for direct-drive wheelbases and pedals.
 - **GameMode Integration**:
-  - Automatically pauses background daemon resource contention (`coolercontrold`, `lactd`) during gaming sessions.
+  - Automatically pauses background daemon resource contention (`coolercontrold`, `lactd`) during gaming sessions via a scoped Polkit rule (`security.polkit.extraConfig`, no `sudo`).
   - Disables GNOME Vitals extension while games are active to prevent frame drops.
 - **WiVRn VR Streaming**: OpenXR / SteamVR wireless headset streaming over local network (`host.vr = true`).
 - **Steam & Tools**: Steam with Proton-GE, Gamescope micro-compositor, Lutris.

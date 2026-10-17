@@ -93,7 +93,7 @@ in
 
   host = {
     desktopEnvironment = "mango";
-    desktopShell = "dms";
+    desktopShell = "noctalia";
     barScreenPreferences = [ "DP-1" ];
     vr = true;
     workd = true;
@@ -167,4 +167,6 @@ in
   virtualisation.docker = {
     enable = true;
   };
+
+  yi.tailscale.ssh = true;
 }

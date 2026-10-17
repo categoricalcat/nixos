@@ -12,11 +12,11 @@ ______________________________________________________________________
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│ 2. Run ./users/scripts/setup-sops.sh <hostname>             │
+│ 2. Run ./users/scripts/setup-sops.sh <hostname> (as root)   │
 │    ├── Host ED25519 SSH Key -> /persist/keys/ssh            │
 │    ├── User Mesh Key        -> ~/.ssh/id_ed25519            │
 │    ├── User Git Key         -> ~/.ssh/git_ed25519           │
-│    └── AI Restricted Key    -> ~/.ssh/ai_ed25519            │
+│    └── AI Restricted Key    -> ~/.ssh/id_ai_ed25519         │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -25,13 +25,13 @@ ______________________________________________________________________
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│ 4. Re-generate .sops.yaml and Rekey Secrets                 │
-│    nix eval --raw .#sopsYaml > .sops.yaml && sops updatekeys│
+│ 4. Re-generate .sops.yaml, Rekey & Sync Secrets (as root)   │
+│    ./users/scripts/setup-sops.sh && sops updatekeys -y ...  │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│ 5. Deploy Initial NixOS System Closure                      │
-│    sudo nixos-rebuild switch --flake .#<hostname>           │
+│ 5. Deploy Initial NixOS System Closure (as root)            │
+│    nh os switch (local) or deploy .#<hostname> (remote)     │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -82,25 +82,38 @@ mount /dev/nvme0n1p1 /mnt/boot
 
 ______________________________________________________________________
 
-## 3. Step 2: Key Generation (`setup-sops.sh`)
+## 3. Step 2: Key & Root Password Provisioning (`setup-sops.sh`)
 
-Run the automated key provisioning script:
+Run the automated key provisioning script as `root` (`su -`):
 
 ```bash
 # Clone the repository
 git clone https://github.com/categoricalcat/nixos /mnt/home/yi/the.files/nixos
 
-# Run key generator for the target host
+# Run key generator for the target host (as root)
 cd /mnt/home/yi/the.files/nixos
-sudo ./users/scripts/setup-sops.sh <hostname>
+./users/scripts/setup-sops.sh <hostname>
 ```
 
 This script deterministically generates:
 
-1. `/persist/keys/ssh/ssh_host_ed25519_key` (The host's age identity)
-1. `~/.ssh/id_ed25519` (User inter-host mesh SSH key)
-1. `~/.ssh/git_ed25519` (Git signing & commit key)
-1. `~/.ssh/ai_ed25519` (Restricted `ai-ssh` read-only key)
+1. `/persist/keys/ssh/ssh_host_ed25519_key` (The host's SSH and SOPS age identity, `0600 root:root`)
+1. `/root/.config/sops/age/keys.txt` (Derived host age private key for `root`)
+1. `~yi/.ssh/id_ed25519` (User inter-host mesh SSH key, passphrase-less)
+1. `~yi/.ssh/git_ed25519` (Git signing & commit key)
+1. `~yi/.ssh/id_ai_ed25519` (Restricted `ai-ssh` read-only key)
+
+### Client Root Password Seed (`yitaishi` / `yixiaoqing`)
+
+Because `sudo` is disabled gang-wide and `yi` is not in `wheel`, interactive client machines (`yitaishi`, `yixiaoqing`) elevate locally via `su -` backed by `/persist/keys/passwords/root` (while servers lock local root passwords and accept key-based `ssh root@<server>` from client root). On a new client host, seed `/persist/keys/passwords/root` as `root`:
+
+```bash
+install -d -m 0700 -o root -g root /persist/keys/passwords
+mkpasswd -m yescrypt > /persist/keys/passwords/root
+chmod 0600 /persist/keys/passwords/root
+```
+
+*(User passwords for `yi` and `workd` are mutable in `/etc/shadow`; set them after boot with `passwd yi` as root.)*
 
 ______________________________________________________________________
 
@@ -116,10 +129,7 @@ and add the hostname to the `keyed` list:
     ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
     age = "age1...";
   };
-  yi = {
-    ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
-    age = "age1...";
-  };
+  yi.ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
   ai.ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
   allow = {
     root = rootAdmins;
@@ -135,14 +145,20 @@ ______________________________________________________________________
 
 ## 5. Step 4: Rekeying Secrets
 
-Update `.sops.yaml` with the new host's age recipient and re-encrypt secrets:
+As `root` (`su -`) on an existing configured host, regenerate `.sops.yaml` with the new host's age recipient, rekey `secrets/secrets.yaml`, and sync `/persist/keys/sops/secrets.yaml`:
 
 ```bash
-# Re-generate .sops.yaml from Nix specification
-nix eval --raw .#sopsYaml > .sops.yaml
+su -
+cd /home/yi/the.files/nixos
 
-# Rekey the encrypted secrets file
-sops updatekeys secrets/secrets.yaml
+# 1. Regenerate .sops.yaml from secrets/keys.nix
+./users/scripts/setup-sops.sh
+
+# 2. Rekey the encrypted secrets file for all host age recipients
+sops updatekeys -y secrets/secrets.yaml
+
+# 3. Sync the rekeyed file to /persist/keys/sops/secrets.yaml (0600 root:root)
+./users/scripts/setup-sops.sh
 ```
 
 ______________________________________________________________________
@@ -150,11 +166,17 @@ ______________________________________________________________________
 ## 6. Step 5: Initial Installation & Deployment
 
 ```bash
-# On a fresh installation:
+# On a fresh installation (as root):
 nixos-install --flake .#<hostname> --root /mnt
 
-# On an existing system:
-sudo nixos-rebuild switch --flake .#<hostname>
+# On an existing client system (as root via su -):
+su -
+nh os switch /home/yi/the.files/nixos
+
+# Remote deployment to a server (as root via su -):
+su -
+cd /home/yi/the.files/nixos
+deploy .#<hostname>
 ```
 
 ______________________________________________________________________
@@ -175,27 +197,27 @@ systemctl status attic-watch-store.service
 systemctl status attic-closure-keeper.timer
 ```
 
-### 7.2 Forgejo Git Server (on `yifuwuqi`)
+### 7.2 Forgejo Git Server (on `yifuwuqi`, as `root`)
 
 ```bash
 # 1. Create the primary admin account
-sudo -u forgejo forgejo admin user create \
+runuser -u forgejo -- forgejo admin user create \
   --admin \
   --username yi \
   --email admin@fufu.land \
   --password <temporary-password>
 
 # 2. Create the Forgejo Actions runner token
-# Place token into Sops: sops set secrets/secrets.yaml '["tokens"]["forgejo-runner"]' "<token>"
+# Place token into SOPS (as root): sops set secrets/secrets.yaml '["tokens"]["forgejo-runner"]' "<token>"
 ```
 
-### 7.3 Samba User Password (on `yifuwuqi`)
+### 7.3 Samba User Password (on `yifuwuqi`, as `root`)
 
 ```bash
-sudo smbpasswd -a yi
+smbpasswd -a yi
 ```
 
-### 7.4 Tailscale Network Authentication
+### 7.4 Tailscale Network Authentication (as `root`)
 
 ```bash
 # Authenticate node to tailnet

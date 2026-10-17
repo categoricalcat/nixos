@@ -40,4 +40,6 @@
       DNSSEC = lib.mkDefault "no";
     };
   };
+
+  security.sudo.enable = false;
 }

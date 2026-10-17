@@ -21,6 +21,7 @@ in
       p7zip
       ripgrep
       sops
+      ssh-to-age
       stow
       tree
       unzip

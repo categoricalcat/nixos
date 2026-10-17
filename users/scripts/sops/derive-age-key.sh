@@ -10,8 +10,12 @@ derive_age_key() {
 
   mkdir -p "$out_dir"
   chown "$owner_group" "$out_dir"
+  local cmd=(ssh-to-age)
+  if ! command -v ssh-to-age >/dev/null 2>&1; then
+    cmd=(nix shell "nixpkgs#ssh-to-age" -c ssh-to-age)
+  fi
   # shellcheck disable=SC2024
-  if nix shell "nixpkgs#ssh-to-age" -c ssh-to-age -private-key -i "$priv" >"$out"; then
+  if "${cmd[@]}" -private-key -i "$priv" >"$out"; then
     chown "$owner_group" "$out"
     chmod 0600 "$out"
   else

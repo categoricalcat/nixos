@@ -7,6 +7,7 @@ pkgs.writeShellApplication {
     findutils
     postgresql
     systemd
+    util-linux
   ];
   text = builtins.readFile ../users/scripts/wipe-attic-cache.sh;
 }

@@ -56,19 +56,21 @@ ______________________________________________________________________
 Active on `yitaishi` via `boot.lanzaboote.enable = true`:
 
 ```bash
+su -
+
 # 1. Generate Secure Boot keys (one-time)
-sudo sbctl create-keys
+sbctl create-keys
 
 # 2. Build and switch to the Lanzaboote generation
-sudo nixos-rebuild switch --flake .#yitaishi
+nh os switch /home/yi/the.files/nixos
 
 # 3. Reboot into UEFI Firmware Setup -> Set Secure Boot to "Setup Mode"
 # 4. Enroll keys with Microsoft certs preserved (for dual-boot/GPU firmware compatibility)
-sudo sbctl enroll-keys --microsoft
+sbctl enroll-keys --microsoft
 
 # 5. Verify enrollment and EFI binary signatures
 bootctl status
-sudo sbctl verify
+sbctl verify
 ```
 
 ______________________________________________________________________

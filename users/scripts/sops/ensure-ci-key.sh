@@ -18,19 +18,16 @@ ensure_ci_key() {
   fi
 
   if [ "$is_registered" = "false" ] || [ "$rotate" = "true" ]; then
-    local target_user="${SUDO_USER:-yi}"
-    local target_group="${SUDO_GID:-$target_user}"
-
     mkdir -p "$ci_keys_dir"
     chmod 0700 "$ci_dir" "$ci_keys_dir"
-    chown -R "$target_user:$target_group" "$ci_dir"
+    chown -R root:root "$ci_dir"
 
     echo "-> Generating CI deployment key in tmpfs ($ci_priv)..."
     rm -f "$ci_priv" "$ci_pub"
     ssh-keygen -t ed25519 -N "" -f "$ci_priv" -C "nix-builder@$hostname"
     chmod 0600 "$ci_priv"
     chmod 0644 "$ci_pub"
-    chown -R "$target_user:$target_group" "$ci_dir"
+    chown -R root:root "$ci_dir"
 
     local ci_pub_content
     ci_pub_content=$(cat "$ci_pub")

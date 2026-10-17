@@ -2,10 +2,23 @@
 
 set -euo pipefail
 
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Must be run as root: su - && nix-sanity" >&2
+  exit 1
+fi
+
+if [ ! -f "flake.nix" ] && [ -f "/home/yi/the.files/nixos/flake.nix" ]; then
+  cd /home/yi/the.files/nixos
+fi
+
 if [ ! -f "flake.nix" ]; then
   echo "flake.nix not found" >&2
   exit 1
 fi
+
+as_yi() {
+  runuser -u yi -- env HOME=/home/yi "$@"
+}
 
 quiet=false
 action="build"
@@ -33,13 +46,13 @@ fi
 
 HOST_NAME=${HOST:-$(hostname)}
 
-sudo nix fmt
-statix check .
-deadnix --fail .
+as_yi nix fmt
+as_yi statix check .
+as_yi deadnix --fail .
 ./users/scripts/setup-sops.sh
-git add .
+as_yi git add .
 if "$check"; then
-  nix flake check "${check_flags[@]}"
+  as_yi nix flake check "${check_flags[@]}"
 fi
 
 nh os "$action" -H "$HOST_NAME" "${rebuild_flags[@]}" .
