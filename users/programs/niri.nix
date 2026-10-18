@@ -66,6 +66,9 @@ let
           x = m.position.x;
           y = m.position.y;
         };
+      }
+      // lib.optionalAttrs (m ? vrr && m.vrr != null) {
+        variable-refresh-rate = m.vrr;
       };
     }) monitors
   );
@@ -197,6 +200,7 @@ let
     "Mod+Period".action."spawn" = [ "smile" ];
 
     "Mod+R".action."switch-preset-column-width" = [ ];
+    "Mod+Alt+R".action."switch-preset-column-width-back" = [ ];
     "Mod+Shift+R".action."switch-preset-window-height" = [ ];
     "Mod+Ctrl+R".action."reset-window-height" = [ ];
     "Mod+F".action."maximize-column" = [ ];
@@ -375,6 +379,11 @@ in
           gaps = 4;
           background-color = "transparent";
           center-focused-column = "never";
+          always-center-single-column = true;
+          struts = {
+            left = 32;
+            right = 64;
+          };
           preset-column-widths = [
             { proportion = 0.33333; }
             { proportion = 0.5; }

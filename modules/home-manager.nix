@@ -26,6 +26,11 @@
         ...
       }:
       {
+        home = {
+          backupFileExtension = "bkp";
+          overwriteBackup = true;
+        };
+
         desktop = {
           inherit monitors;
           keyboard = keyboardProfile;

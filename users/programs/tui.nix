@@ -138,5 +138,6 @@ in
       };
     };
 
+    home.file."${config.xdg.configHome}/starship.toml".force = true;
   };
 }
