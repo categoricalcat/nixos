@@ -14,6 +14,7 @@ systemctl stop attic-watch-store.service attic-closure-keeper.timer attic-closur
 
 echo "Truncating object, NAR, and chunk metadata in PostgreSQL..."
 runuser -u postgres -- psql -d atticd -c "TRUNCATE TABLE object, nar, chunk, chunkref CASCADE;"
+runuser -u postgres -- psql -d atticd -c "ALTER DATABASE atticd REFRESH COLLATION VERSION;" || true
 
 echo "Removing chunk files from Attic storage..."
 if test -d /var/lib/private/atticd/storage; then
@@ -22,6 +23,14 @@ fi
 
 echo "Starting Attic services..."
 systemctl start atticd.service attic-watch-store.service attic-closure-keeper.timer
+
+echo "Waiting for Attic daemon to be ready..."
+for _ in {1..30}; do
+  if curl -s -f -o /dev/null "http://127.0.0.1:24203/" || curl -s -f -o /dev/null "http://localhost:24203/"; then
+    break
+  fi
+  sleep 1
+done
 
 echo "Triggering closure keeper to re-seed current system closures..."
 systemctl start attic-closure-keeper.service || true

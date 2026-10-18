@@ -34,6 +34,7 @@ in
     path = [
       atticClient
       pkgs.coreutils
+      pkgs.curl
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -46,6 +47,15 @@ in
       set -euo pipefail
       export HOME="/var/lib/attic-closure-keeper"
       ATTIC_TOKEN=$(< "$CREDENTIALS_DIRECTORY/attic-push-token")
+
+      # Wait up to 30s for atticd to finish starting and accept connections
+      for _ in {1..30}; do
+        if curl -s -f -o /dev/null "${atticEndpoint}/"; then
+          break
+        fi
+        sleep 1
+      done
+
       attic login ${attic.cacheName} ${atticEndpoint} "$ATTIC_TOKEN"
 
       shopt -s nullglob

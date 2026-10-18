@@ -85,6 +85,8 @@ in
 
   config = {
     services = {
+      flatpak.enable = true;
+
       # Base audio — all desktop hosts get PipeWire
       pulseaudio.enable = false;
       gvfs.enable = true;

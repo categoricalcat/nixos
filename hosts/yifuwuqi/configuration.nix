@@ -24,7 +24,6 @@ in
     ../../modules/boot-common.nix
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix
-    ../../modules/fonts.nix
     ../../modules/packages
     ../../modules/packages/dev.nix
     ../../modules/packages/network.nix

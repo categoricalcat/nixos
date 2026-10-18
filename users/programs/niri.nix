@@ -381,8 +381,8 @@ in
           center-focused-column = "never";
           always-center-single-column = true;
           struts = {
-            left = 32;
-            right = 64;
+            left = 16;
+            right = 32;
           };
           preset-column-widths = [
             { proportion = 0.33333; }

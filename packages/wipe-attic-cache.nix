@@ -4,6 +4,7 @@ pkgs.writeShellApplication {
   runtimeInputs = with pkgs; [
     attic-client
     coreutils
+    curl
     findutils
     postgresql
     systemd

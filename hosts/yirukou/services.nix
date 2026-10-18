@@ -5,7 +5,6 @@
     ../../modules/services/ssh
     ../../modules/services/tailscale.nix
     # ../../modules/services/netbird.nix
-    ../../modules/services/samba/client.nix
     ../../modules/services/adguardhome.nix
     ../../modules/services/unbound.nix
     ../../modules/services/valkey.nix

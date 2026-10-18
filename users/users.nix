@@ -56,7 +56,6 @@ in
           extraGroups = [
             "render"
             "video"
-            "audio"
             "dialout"
             "networkmanager"
             "systemd-journal"
@@ -64,9 +63,10 @@ in
             "plugdev"
             "podman"
             "docker"
-            "input"
           ]
           ++ lib.optionals (config.host.desktopEnvironment != null) [
+            "audio"
+            "input"
             "adbusers"
           ];
         };

@@ -66,6 +66,21 @@
   # Disable GUI-related power management if present
   services.upower.enable = lib.mkForce false;
 
-  # Disable desktop sound themes on headless servers
+  # Headless servers do not need audio hardware, daemons, or sound targets
   xdg.sounds.enable = false;
+  systemd.targets.sound.enable = false;
+  services.pipewire.enable = lib.mkForce false;
+  services.pulseaudio.enable = lib.mkForce false;
+  hardware.alsa.enable = lib.mkForce false;
+
+  boot.blacklistedKernelModules = [
+    # Sound / ALSA core and controller modules
+    "snd"
+    "soundcore"
+    "snd_pcm"
+    "snd_timer"
+    "snd_hda_intel"
+    "snd_hda_codec"
+    "snd_soc_core"
+  ];
 }
