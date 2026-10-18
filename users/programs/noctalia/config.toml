@@ -42,7 +42,7 @@ end = [
     "session",
 ]
 font_scale = 1.05
-font_weight = 300
+font_weight = 400
 hover_highlight = true
 layer = "top"
 margin_edge = 4

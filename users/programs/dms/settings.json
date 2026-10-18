@@ -3,13 +3,13 @@
   "customThemeFile": "/home/yi/.config/DankMaterialShell/themes/yimoka.json",
   "radiusStrength": 25,
   "clockFormat": "24h",
-  "animationDuration": 336,
+  "animationDuration": 125,
   "fontFamily": "Maple Mono NF CN",
   "monoFontFamily": "Maple Mono NF CN",
   "displayFontFamily": "Maple Mono NF CN",
-  "fontWeight": 300,
+  "fontWeight": 400,
   "textRenderType": 1,
-  "textRenderQuality": 4,
+  "textRenderQuality": 0,
   "dockConfigs": [
     {
       "id": "dock",
@@ -58,6 +58,10 @@
       "showTrash": false,
       "trashFileManager": "default",
       "trashCustomCommand": "",
+      "magnification": false,
+      "magnificationScale": 130,
+      "magnificationProfile": "parabolic",
+      "magnificationExpand": false,
       "order": [],
       "widgets": [
         {
@@ -80,12 +84,15 @@
   ],
   "currentThemeCategory": "custom",
   "matugenScheme": "scheme-vibrant",
+  "popupTransparency": 1,
   "dmsWindowsFloatingSeeded": [
     "mango",
-    "mango"
+    "mango",
+    "niri"
   ],
   "widgetBackgroundColor": "sc",
   "calendarBackend": "khal",
+  "syncComponentAnimationSpeeds": true,
   "popoutAnimationDuration": 75,
   "modalAnimationDuration": 75,
   "springBounce": 2,
@@ -101,6 +108,8 @@
   "dankLauncherV2IncludeFoldersInAll": true,
   "avatarRing": "primary",
   "networkPreference": "wifi",
+  "iconThemeDark": "System Default",
+  "iconThemeLight": "System Default",
   "cursorSettings": {
     "dwl": {
       "cursorHideTimeout": 0
@@ -260,7 +269,7 @@
         }
       ],
       "screenPreferences": [
-        "all"
+        "DP-1"
       ],
       "shadowIntensity": 0,
       "shadowOpacity": 60,
@@ -278,20 +287,20 @@
     }
   ],
   "builtInPluginSettings": {
-    "dms_settings_search": {
-      "trigger": "?"
-    },
-    "dms_qr_generator": {
-      "trigger": "qrg"
+    "dms_clipboard_search": {
+      "trigger": "cb"
     },
     "dms_power": {
       "trigger": "pw"
     },
-    "dms_clipboard_search": {
-      "trigger": "cb"
+    "dms_qr_generator": {
+      "trigger": "qrg"
+    },
+    "dms_settings_search": {
+      "trigger": "?"
     }
   },
   "barInsetPaddingShared": 0,
   "barInsetPaddingSyncAll": true,
-  "configVersion": 34
+  "configVersion": 42
 }

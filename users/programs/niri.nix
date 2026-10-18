@@ -376,7 +376,7 @@ in
         outputs = typedOutputs;
 
         layout = {
-          gaps = 4;
+          gaps = 6;
           background-color = "transparent";
           center-focused-column = "never";
           always-center-single-column = true;
