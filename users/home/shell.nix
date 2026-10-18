@@ -23,6 +23,8 @@ in
     ../programs/neovim.nix
   ];
 
+  xdg.enable = true;
+
   home = {
     sessionVariables = lib.mkMerge [
       (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {

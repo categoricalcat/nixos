@@ -92,8 +92,8 @@ in
   system.stateVersion = version;
 
   host = {
-    desktopEnvironment = "mango";
-    desktopShell = "noctalia";
+    desktopEnvironment = "niri";
+    desktopShell = "dms";
     barScreenPreferences = [ "DP-1" ];
     vr = true;
     workd = true;
@@ -108,6 +108,7 @@ in
 
   desktop = {
     inherit greeter monitors;
+    hdr = true;
     keyboard = "us";
 
     mouse = {

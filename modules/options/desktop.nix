@@ -81,6 +81,19 @@
               default = false;
               description = "Force HDR even if EDID does not advertise BT.2020/PQ";
             };
+            hdrMode = lib.mkOption {
+              type = lib.types.enum [
+                "on"
+                "auto"
+              ];
+              default = "on";
+              description = "niri HDR mode. on keeps the output in HDR. auto switches to HDR only while a fullscreen HDR client is showing.";
+            };
+            hdrReferenceLuminance = lib.mkOption {
+              type = lib.types.nullOr (lib.types.either lib.types.float lib.types.int);
+              default = null;
+              description = "SDR white luminance in cd/m² while the output is HDR. null uses niri's default of 203.";
+            };
           };
         }
       );
@@ -93,6 +106,8 @@
         awk -F'[<>]' '/<vendor>/{v=$3} /<product>/{print "\"" v "-" $3 "\""}' ~/.config/monitors.xml | sort -u
       '';
     };
+
+    hdr = lib.mkEnableOption "HDR on the active compositor";
 
     keyboard = lib.mkOption {
       type = lib.types.enum [

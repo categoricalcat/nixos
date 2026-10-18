@@ -203,6 +203,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    niri-spicy = {
+      url = "github:losnoco/niri/spicy-main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    smithay-spicy = {
+      url = "github:losnoco/smithay/spicy-master";
+      flake = false;
+    };
+
     niri-float-sticky = {
       url = "github:probeldev/niri-float-sticky";
       inputs.nixpkgs.follows = "nixpkgs";

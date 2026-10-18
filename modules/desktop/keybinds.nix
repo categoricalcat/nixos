@@ -350,6 +350,7 @@ let
       description = "Screenshot: Interactive";
       keys = [
         "none,Print"
+        "SUPER+SHIFT,s"
       ];
     };
     screenshotFull = {
@@ -437,6 +438,7 @@ let
       terminalCommand ? "kitty",
       desktopShell ? "dms",
       emojiCommand ? "smile",
+      hdr ? false,
     }:
     let
       bind =
@@ -519,7 +521,7 @@ let
 
       # === Screenshots ===
       ${bindList bindings.screenshotInteractive (
-        if desktopShell == "dms" then
+        if desktopShell == "dms" || hdr then
           "spawn,shot area"
         else if desktopShell == "noctalia" then
           "spawn,noctalia msg screenshot-region"
@@ -527,7 +529,7 @@ let
           "spawn,grimshot copy area"
       )}
       ${bindList bindings.screenshotFull (
-        if desktopShell == "dms" then
+        if desktopShell == "dms" || hdr then
           "spawn,shot full"
         else if desktopShell == "noctalia" then
           "spawn,noctalia msg screenshot-fullscreen"
@@ -535,9 +537,7 @@ let
           "spawn,grimshot copy screen"
       )}
       ${bindList bindings.screenshotWindow (
-        if desktopShell == "dms" then
-          "spawn,shot window"
-        else if desktopShell == "noctalia" then
+        if desktopShell == "dms" || desktopShell == "noctalia" || hdr then
           "spawn,shot window"
         else
           "spawn,grimshot copy window"

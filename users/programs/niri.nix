@@ -2,6 +2,7 @@
   lib,
   pkgs,
   config,
+  options,
   inputs,
   ...
 }:
@@ -9,6 +10,8 @@
 let
   desktopShell = config.host.desktopShell;
   monitors = config.desktop.monitors;
+  hdr = config.desktop.hdr;
+  kdl = inputs.niri.lib.kdl;
   colors = import ../../modules/theme.nix;
   animRate = config.desktop.animationRate;
   mouse = config.desktop.mouse;
@@ -50,9 +53,11 @@ let
     flipped = lib.hasPrefix "flipped" t;
   };
 
+  outputName = m: if m.connector != null then m.connector else m.name;
+
   typedOutputs = builtins.listToAttrs (
     map (m: {
-      inherit (m) name;
+      name = outputName m;
       value = {
         mode = parseMode m.mode;
         inherit (m) scale;
@@ -76,6 +81,10 @@ let
           name = "Mod+Ctrl+${toString n}";
           value.action."move-column-to-workspace" = [ n ];
         }
+        {
+          name = "Mod+Shift+${toString n}";
+          value.action."move-column-to-workspace" = [ n ];
+        }
       ]) (lib.range 1 9)
     )
   );
@@ -83,6 +92,7 @@ let
   baseBinds = {
     "Mod+Shift+Slash".action."show-hotkey-overlay" = [ ];
     "Mod+T".action."spawn" = [ "kitty" ];
+    "Mod+Return".action."spawn" = [ "kitty" ];
     "Super+Alt+L".action."spawn" = [ "swaylock" ];
     "Super+Alt+S" = {
       allow-when-locked = true;
@@ -156,30 +166,30 @@ let
     "Mod+Shift+U".action."move-workspace-down" = [ ];
     "Mod+Shift+I".action."move-workspace-up" = [ ];
 
-    "Mod+WheelScrollDown" = {
-      cooldown-ms = 150;
-      action."focus-workspace-down" = [ ];
-    };
-    "Mod+WheelScrollUp" = {
-      cooldown-ms = 150;
-      action."focus-workspace-up" = [ ];
-    };
-    "Mod+Ctrl+WheelScrollDown" = {
-      cooldown-ms = 150;
-      action."move-column-to-workspace-down" = [ ];
-    };
-    "Mod+Ctrl+WheelScrollUp" = {
-      cooldown-ms = 150;
-      action."move-column-to-workspace-up" = [ ];
-    };
+    "Mod+WheelScrollDown".action."focus-column-right" = [ ];
+    "Mod+WheelScrollUp".action."focus-column-left" = [ ];
+    "Mod+Ctrl+WheelScrollDown".action."move-column-right" = [ ];
+    "Mod+Ctrl+WheelScrollUp".action."move-column-left" = [ ];
     "Mod+WheelScrollRight".action."focus-column-right" = [ ];
     "Mod+WheelScrollLeft".action."focus-column-left" = [ ];
     "Mod+Ctrl+WheelScrollRight".action."move-column-right" = [ ];
     "Mod+Ctrl+WheelScrollLeft".action."move-column-left" = [ ];
-    "Mod+Shift+WheelScrollDown".action."focus-column-right" = [ ];
-    "Mod+Shift+WheelScrollUp".action."focus-column-left" = [ ];
-    "Mod+Ctrl+Shift+WheelScrollDown".action."move-column-right" = [ ];
-    "Mod+Ctrl+Shift+WheelScrollUp".action."move-column-left" = [ ];
+    "Mod+Shift+WheelScrollDown" = {
+      cooldown-ms = 150;
+      action."focus-workspace-down" = [ ];
+    };
+    "Mod+Shift+WheelScrollUp" = {
+      cooldown-ms = 150;
+      action."focus-workspace-up" = [ ];
+    };
+    "Mod+Ctrl+Shift+WheelScrollDown" = {
+      cooldown-ms = 150;
+      action."move-column-to-workspace-down" = [ ];
+    };
+    "Mod+Ctrl+Shift+WheelScrollUp" = {
+      cooldown-ms = 150;
+      action."move-column-to-workspace-up" = [ ];
+    };
 
     "Mod+BracketLeft".action."consume-or-expel-window-left" = [ ];
     "Mod+BracketRight".action."consume-or-expel-window-right" = [ ];
@@ -239,6 +249,10 @@ let
     "Print".action."screenshot" = [ ];
     "Ctrl+Print".action."screenshot-screen" = [ ];
     "Alt+Print".action."screenshot-window" = [ ];
+    "Mod+Shift+S".action."screenshot" = [ ];
+    "XF86Launch1".action."screenshot" = [ ];
+    "Ctrl+XF86Launch1".action."screenshot-screen" = [ ];
+    "Alt+XF86Launch1".action."screenshot-window" = [ ];
     "F12".action."spawn" = [
       "wpctl"
       "set-mute"
@@ -283,133 +297,218 @@ in
   config = {
     xdg.enable = true;
 
-    programs.niri.package = inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri;
-    programs.niri.settings = {
-      prefer-no-csd = true;
+    programs.niri = {
+      package =
+        if hdr then
+          pkgs.callPackage ../../packages/niri-spicy.nix {
+            niri-spicy = inputs.niri-spicy.packages.${pkgs.stdenv.hostPlatform.system}.niri;
+            inherit (inputs) smithay-spicy;
+          }
+        else
+          inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri;
+      settings = {
+        prefer-no-csd = true;
 
-      spawn-at-startup = [
-        {
-          argv = [
-            "bash"
-            "-c"
-            "wl-paste --watch cliphist store &"
-          ];
-        }
-        { argv = [ "niri-float-sticky" ]; }
-      ];
-
-      environment = {
-        XDG_CURRENT_DESKTOP = "niri";
-        QT_QPA_PLATFORM = "wayland";
-        ELECTRON_OZONE_PLATFORM_HINT = "auto";
-        QT_QPA_PLATFORMTHEME = "qt6ct";
-        QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
-        TERMINAL = "kitty";
-      };
-
-      hotkey-overlay.skip-at-startup = true;
-
-      screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
-
-      overview.backdrop-color = "#${colors.base00}";
-
-      animations = {
-        enable = animRate > 0.0;
-        slowdown = if animRate > 0.0 then animRate else 1.0;
-      };
-
-      input = {
-        mouse = {
-          accel-profile = mouse.accelProfile;
-          accel-speed = mouse.accelSpeed;
-          scroll-factor = mouse.scrollFactor;
-          natural-scroll = mouse.naturalScrolling;
-          left-handed = mouse.leftHanded;
-          middle-emulation = mouse.middleEmulation;
-        };
-        trackball = {
-          accel-profile = mouse.accelProfile;
-          accel-speed = mouse.accelSpeed;
-          scroll-factor = mouse.scrollFactor;
-          natural-scroll = mouse.naturalScrolling;
-          left-handed = mouse.leftHanded;
-          middle-emulation = mouse.middleEmulation;
-        };
-        touchpad = {
-          tap = true;
-          natural-scroll = true;
-          scroll-factor = mouse.scrollFactor;
-          left-handed = mouse.leftHanded;
-        };
-        warp-mouse-to-focus.enable = true;
-        focus-follows-mouse = {
-          enable = true;
-          max-scroll-amount = "0%";
-        };
-      };
-
-      outputs = typedOutputs;
-
-      layout = {
-        gaps = 4;
-        background-color = "transparent";
-        center-focused-column = "never";
-        preset-column-widths = [
-          { proportion = 0.33333; }
-          { proportion = 0.5; }
-          { proportion = 0.66667; }
-          { proportion = 1.0; }
+        spawn-at-startup = [
+          {
+            argv = [
+              "bash"
+              "-c"
+              "wl-paste --watch cliphist store &"
+            ];
+          }
+          { argv = [ "niri-float-sticky" ]; }
         ];
-        default-column-width = {
-          proportion = 0.5;
+
+        environment = {
+          XDG_CURRENT_DESKTOP = "niri";
+          QT_QPA_PLATFORM = "wayland";
+          ELECTRON_OZONE_PLATFORM_HINT = "auto";
+          QT_QPA_PLATFORMTHEME = "qt6ct";
+          QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
+          TERMINAL = "kitty";
         };
-        focus-ring = {
-          enable = true;
-          width = 0.5;
-          active = {
-            color = "#${colors.base05}";
+
+        hotkey-overlay.skip-at-startup = true;
+
+        screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
+
+        overview.backdrop-color = "#${colors.base00}";
+
+        animations = {
+          enable = animRate > 0.0;
+          slowdown = if animRate > 0.0 then animRate else 1.0;
+        };
+
+        input = {
+          mouse = {
+            accel-profile = mouse.accelProfile;
+            accel-speed = mouse.accelSpeed;
+            scroll-factor = mouse.scrollFactor;
+            natural-scroll = mouse.naturalScrolling;
+            left-handed = mouse.leftHanded;
+            middle-emulation = mouse.middleEmulation;
           };
-          inactive = {
-            color = "#${colors.base03}";
+          trackball = {
+            accel-profile = mouse.accelProfile;
+            accel-speed = mouse.accelSpeed;
+            natural-scroll = mouse.naturalScrolling;
+            left-handed = mouse.leftHanded;
+            middle-emulation = mouse.middleEmulation;
+          };
+          touchpad = {
+            tap = true;
+            natural-scroll = true;
+            scroll-factor = mouse.scrollFactor;
+            left-handed = mouse.leftHanded;
+          };
+          warp-mouse-to-focus.enable = true;
+          focus-follows-mouse = {
+            enable = true;
+            max-scroll-amount = "0%";
           };
         };
-        border.enable = false;
-        shadow = {
-          enable = true;
-          softness = 30;
-          spread = 5;
-          offset = {
-            x = 0;
-            y = 5;
+
+        outputs = typedOutputs;
+
+        layout = {
+          gaps = 4;
+          background-color = "transparent";
+          center-focused-column = "never";
+          preset-column-widths = [
+            { proportion = 0.33333; }
+            { proportion = 0.5; }
+            { proportion = 0.66667; }
+            { proportion = 1.0; }
+          ];
+          default-column-width = {
+            proportion = 0.5;
           };
-          color = "#${colors.base00}";
+          focus-ring = {
+            enable = true;
+            width = 0.5;
+            active = {
+              color = "#${colors.base0D}";
+            };
+            inactive = {
+              color = "#${colors.base03}";
+            };
+          };
+          border = {
+            enable = false;
+            width = 1;
+            active = {
+              color = "#${colors.base0D}";
+            };
+            inactive = {
+              color = "#${colors.base03}";
+            };
+          };
+          shadow = {
+            enable = true;
+            softness = 30;
+            spread = 5;
+            offset = {
+              x = 0;
+              y = 5;
+            };
+            color = "#${colors.base00}";
+          };
         };
+
+        window-rules = [
+          {
+            matches = [ { title = "(?i)picture-in-picture"; } ];
+            open-floating = true;
+          }
+          {
+            geometry-corner-radius = {
+              top-left = 6.0;
+              top-right = 6.0;
+              bottom-left = 6.0;
+              bottom-right = 6.0;
+            };
+            clip-to-geometry = true;
+            draw-border-with-background = false;
+          }
+        ];
+
+        binds = baseBinds // numberedBinds // shellLauncherBind;
       };
 
-      window-rules = [
-        {
-          matches = [ { title = "(?i)picture-in-picture"; } ];
-          open-floating = true;
-        }
-        {
-          geometry-corner-radius = {
-            top-left = 6.0;
-            top-right = 6.0;
-            bottom-left = 6.0;
-            bottom-right = 6.0;
-          };
-          clip-to-geometry = true;
-          draw-border-with-background = false;
-        }
-      ];
-
-      binds = baseBinds // numberedBinds // shellLauncherBind;
+      config = lib.mkIf hdr (
+        let
+          hdrByOutput = builtins.listToAttrs (
+            map (m: {
+              name = outputName m;
+              value = kdl.node "hdr" [ { mode = m.hdrMode; } ] (
+                lib.optional (m.hdrReferenceLuminance != null) (
+                  kdl.leaf "reference-luminance" m.hdrReferenceLuminance
+                )
+                ++ lib.optional (m.hdrMaxLum != null && m.hdrMaxLum >= 1) (kdl.leaf "peak-luminance" m.hdrMaxLum)
+              );
+            }) (lib.filter (m: m.hdr) monitors)
+          );
+        in
+        map (
+          node:
+          let
+            args = node.arguments or [ ];
+            key = if args == [ ] then null else builtins.head args;
+          in
+          if node.name or null == "output" && key != null && hdrByOutput ? ${key} then
+            node
+            // {
+              children = node.children ++ [ hdrByOutput.${key} ];
+            }
+          else
+            node
+        ) (lib.remove null (lib.flatten options.programs.niri.config.default))
+      );
     };
 
     xdg.configFile = lib.mkIf (desktopShell == "dms") {
-      "niri/dms/binds.kdl".text = builtins.replaceStrings [ "{{TERMINAL_COMMAND}}" ] [ "kitty" ] (
-        builtins.readFile "${dmsEmbedded}/niri-binds.kdl"
-      );
+      "niri/dms/binds.kdl".text =
+        builtins.replaceStrings
+          (
+            [
+              "{{TERMINAL_COMMAND}}"
+              "Mod+Period { expel-window-from-column; }"
+              "Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }"
+              "Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }"
+              "Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }"
+              "Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }"
+              "Mod+Shift+WheelScrollDown      { focus-column-right; }"
+              "Mod+Shift+WheelScrollUp        { focus-column-left; }"
+              "Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }"
+              "Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }"
+            ]
+            ++ lib.optionals hdr [
+              ''spawn "dms" "screenshot";''
+              ''spawn "dms" "screenshot" "full";''
+              ''spawn "dms" "screenshot" "window";''
+            ]
+          )
+          (
+            [
+              "kitty"
+              ''Mod+Period hotkey-overlay-title="Emoji Picker" { spawn "smile"; }''
+              "Mod+WheelScrollDown      { focus-column-right; }"
+              "Mod+WheelScrollUp        { focus-column-left; }"
+              "Mod+Ctrl+WheelScrollDown { move-column-right; }"
+              "Mod+Ctrl+WheelScrollUp   { move-column-left; }"
+              "Mod+Shift+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }"
+              "Mod+Shift+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }"
+              "Mod+Ctrl+Shift+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }"
+              "Mod+Ctrl+Shift+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }"
+            ]
+            ++ lib.optionals hdr [
+              "screenshot;"
+              "screenshot-screen;"
+              "screenshot-window;"
+            ]
+          )
+          (builtins.readFile "${dmsEmbedded}/niri-binds.kdl");
     };
   };
 }

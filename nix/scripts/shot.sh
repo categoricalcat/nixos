@@ -40,7 +40,7 @@ grim "${args[@]}" "$raw"
 
 target="$raw"
 if [ "$output" != "" ] && [ "$(mmsg get monitor "$output" 2>/dev/null | jq -r '.is_hdr // false')" = "true" ]; then
-  if ffmpeg -y -v error -i "$raw" -vf "zscale=tin=smpte2084:pin=bt2020:t=iec61966-2-1:p=bt709:npl=190" "$sdr"; then
+  if ffmpeg -y -v error -i "$raw" -vf "zscale=tin=smpte2084:pin=bt2020:t=iec61966-2-1:p=bt709:npl=203" "$sdr"; then
     target="$sdr"
   else
     echo "shot: HDR-to-SDR conversion failed, falling back to raw capture" >&2

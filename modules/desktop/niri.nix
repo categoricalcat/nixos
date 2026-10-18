@@ -6,6 +6,13 @@
   ...
 }:
 
+let
+  system = pkgs.stdenv.hostPlatform.system;
+  niriSpicy = pkgs.callPackage ../../packages/niri-spicy.nix {
+    niri-spicy = inputs.niri-spicy.packages.${system}.niri;
+    inherit (inputs) smithay-spicy;
+  };
+in
 {
 
   config = lib.mkIf (config.desktop.environment == "niri") {
@@ -24,10 +31,8 @@
     ];
 
     programs.niri.enable = true;
-    programs.niri.package = inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri;
-
-    # Keep the existing polkit-gnome agent (modules/desktop.nix); disable niri-flake's KDE agent.
-    systemd.user.services.niri-flake-polkit.enable = false;
+    programs.niri.package =
+      if config.desktop.hdr then niriSpicy else inputs.niri-unstable.packages.${system}.niri;
 
     services.accounts-daemon.enable = true;
 

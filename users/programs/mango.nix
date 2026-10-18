@@ -63,6 +63,7 @@ let
     let
       targetName = if m.connector != null then m.connector else m.name;
       parsedMode = parseMode m.mode;
+      hdrOn = config.desktop.hdr && m.hdr;
       parts = [
         "name:^${targetName}$"
       ]
@@ -81,18 +82,18 @@ let
         "scale:${toString m.scale}"
         "rr:${toString (transformToRr m.transform)}"
         "vrr:${if m.vrr then "1" else "0"}"
-        "hdr:${if m.hdr then "1" else "0"}"
+        "hdr:${if hdrOn then "1" else "0"}"
       ]
-      ++ lib.optionals (m.hdrMinLum != null) [
+      ++ lib.optionals (hdrOn && m.hdrMinLum != null) [
         "hdr_min_lum:${toString m.hdrMinLum}"
       ]
-      ++ lib.optionals (m.hdrMaxLum != null) [
+      ++ lib.optionals (hdrOn && m.hdrMaxLum != null) [
         "hdr_max_lum:${toString m.hdrMaxLum}"
       ]
-      ++ lib.optionals (m.hdrMaxAvgLum != null) [
+      ++ lib.optionals (hdrOn && m.hdrMaxAvgLum != null) [
         "hdr_max_avg_lum:${toString m.hdrMaxAvgLum}"
       ]
-      ++ lib.optionals m.hdrForce [
+      ++ lib.optionals (hdrOn && m.hdrForce) [
         "hdr_force:1"
       ];
     in
@@ -117,7 +118,6 @@ in
         env = [
           "WLR_RENDERER,vulkan"
         ];
-        hdr_depth = 2;
         xkb_rules_layout = lib.concatMapStringsSep "," (profile: profile.layout) keyboardProfiles;
         xkb_rules_variant = lib.concatMapStringsSep "," (profile: profile.variant) keyboardProfiles;
 
@@ -227,6 +227,9 @@ in
               "~/.config/mango/binds.conf"
             ]
         );
+      }
+      // lib.optionalAttrs config.desktop.hdr {
+        hdr_depth = 2;
       };
     };
 
@@ -243,6 +246,7 @@ in
             "mango/dms/binds.conf".text = keybinds.generateMangoConfig {
               terminalCommand = "kitty";
               inherit desktopShell;
+              inherit (config.desktop) hdr;
             };
           }
         else
@@ -250,6 +254,7 @@ in
             "mango/binds.conf".text = keybinds.generateMangoConfig {
               terminalCommand = "kitty";
               inherit desktopShell;
+              inherit (config.desktop) hdr;
             };
           }
       )

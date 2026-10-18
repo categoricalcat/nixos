@@ -33,6 +33,9 @@
         // lib.optionalAttrs (osConfig != null && osConfig ? desktop && osConfig.desktop ? mouse) {
           inherit (osConfig.desktop) mouse;
         }
+        // lib.optionalAttrs (osConfig != null && osConfig ? desktop && osConfig.desktop ? hdr) {
+          inherit (osConfig.desktop) hdr;
+        }
         // lib.optionalAttrs (animationRate != null) {
           inherit animationRate;
         }
