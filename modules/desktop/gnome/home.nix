@@ -7,24 +7,9 @@
 }:
 
 let
-  keybinds = import ../keybinds.nix { inherit lib; };
+  keybinds = import ../keybinds { inherit lib; };
 
-  toGnomeKey =
-    keyStr:
-    let
-      parts = lib.splitString "," keyStr;
-      modsPart = lib.elemAt parts 0;
-      keyPart = lib.elemAt parts 1;
-      modMap = {
-        "SUPER" = "<Super>";
-        "CTRL" = "<Ctrl>";
-        "ALT" = "<Alt>";
-        "SHIFT" = "<Shift>";
-      };
-      mods = lib.filter (m: m != "" && m != "none") (lib.splitString "+" modsPart);
-      gnomeMods = lib.concatMapStrings (m: modMap.${m} or "<${m}>") mods;
-    in
-    "${gnomeMods}${keyPart}";
+  inherit (keybinds) toGnomeKey;
 
   colors = import ../../theme.nix;
   animRate = config.desktop.animationRate;

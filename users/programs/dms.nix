@@ -16,7 +16,6 @@ let
     nightModeEnabled = nightlight.enabled;
     nightModeAutoEnabled = !nightlight.force;
     nightModeAutoMode = "location";
-    nightModeUseIPLocation = true;
     nightModeTemperature = nightlight.temperature_night;
     nightModeHighTemperature = nightlight.temperature_day;
   };
@@ -112,7 +111,17 @@ in
               mkdir -p "$(dirname "$target")"
               [ -s "$target" ] || echo '{}' > "$target"
               tmp=$(mktemp "$target.XXXXXX")
-              if ${lib.getExe pkgs.jq} --argjson nightMode ${lib.escapeShellArg (builtins.toJSON dmsNightMode)} '. + $nightMode' "$target" > "$tmp"; then
+              if ${lib.getExe pkgs.jq} --argjson nightMode ${lib.escapeShellArg (builtins.toJSON dmsNightMode)} '
+                . + $nightMode +
+                (if (.latitude == null or .latitude == 0) and .weatherCoordinates and (.weatherCoordinates | contains(",")) then
+                   (.weatherCoordinates | split(",")) as $c |
+                   {latitude: ($c[0] | tonumber), longitude: ($c[1] | tonumber), nightModeUseIPLocation: false}
+                 elif (.latitude != null and .latitude != 0) then
+                   {nightModeUseIPLocation: false}
+                 else
+                   {}
+                 end)
+              ' "$target" > "$tmp"; then
                 mv "$tmp" "$target"
               else
                 rm -f "$tmp"
