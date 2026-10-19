@@ -105,7 +105,11 @@ let
       repeat = false;
       action."toggle-overview" = [ ];
     };
-    "Mod+Tab" = {
+    "Alt+Tab" = {
+      repeat = false;
+      action."toggle-overview" = [ ];
+    };
+    "Alt+Shift+Tab" = {
       repeat = false;
       action."toggle-overview" = [ ];
     };
@@ -169,14 +173,38 @@ let
     "Mod+Shift+U".action."move-workspace-down" = [ ];
     "Mod+Shift+I".action."move-workspace-up" = [ ];
 
-    "Mod+WheelScrollDown".action."focus-column-right" = [ ];
-    "Mod+WheelScrollUp".action."focus-column-left" = [ ];
-    "Mod+Ctrl+WheelScrollDown".action."move-column-right" = [ ];
-    "Mod+Ctrl+WheelScrollUp".action."move-column-left" = [ ];
-    "Mod+WheelScrollRight".action."focus-column-right" = [ ];
-    "Mod+WheelScrollLeft".action."focus-column-left" = [ ];
-    "Mod+Ctrl+WheelScrollRight".action."move-column-right" = [ ];
-    "Mod+Ctrl+WheelScrollLeft".action."move-column-left" = [ ];
+    "Mod+WheelScrollDown" = {
+      cooldown-ms = 150;
+      action."focus-column-right" = [ ];
+    };
+    "Mod+WheelScrollUp" = {
+      cooldown-ms = 150;
+      action."focus-column-left" = [ ];
+    };
+    "Mod+Ctrl+WheelScrollDown" = {
+      cooldown-ms = 150;
+      action."move-column-right" = [ ];
+    };
+    "Mod+Ctrl+WheelScrollUp" = {
+      cooldown-ms = 150;
+      action."move-column-left" = [ ];
+    };
+    "Mod+WheelScrollRight" = {
+      cooldown-ms = 150;
+      action."focus-column-right" = [ ];
+    };
+    "Mod+WheelScrollLeft" = {
+      cooldown-ms = 150;
+      action."focus-column-left" = [ ];
+    };
+    "Mod+Ctrl+WheelScrollRight" = {
+      cooldown-ms = 150;
+      action."move-column-right" = [ ];
+    };
+    "Mod+Ctrl+WheelScrollLeft" = {
+      cooldown-ms = 150;
+      action."move-column-left" = [ ];
+    };
     "Mod+Shift+WheelScrollDown" = {
       cooldown-ms = 150;
       action."focus-workspace-down" = [ ];
@@ -212,7 +240,9 @@ let
     "Mod+Equal".action."set-column-width" = [ "+10%" ];
     "Mod+Shift+Minus".action."set-window-height" = [ "-10%" ];
     "Mod+Shift+Equal".action."set-window-height" = [ "+10%" ];
-    "Mod+Shift+V".action."toggle-window-floating" = [ ];
+    "Mod+Shift+Space".action."toggle-window-floating" = [ ];
+    "Mod+Shift+T".action."toggle-window-floating" = [ ];
+    "Mod+Shift+V".action."switch-focus-between-floating-and-tiling" = [ ];
     "Mod+W".action."toggle-column-tabbed-display" = [ ];
 
     "XF86AudioRaiseVolume" = {
@@ -283,6 +313,15 @@ let
             "msg"
             "panel-toggle"
             "launcher"
+          ];
+        };
+        "Mod+V" = {
+          hotkey-overlay.title = "Clipboard: noctalia";
+          action."spawn" = [
+            "noctalia"
+            "msg"
+            "panel-toggle"
+            "clipboard"
           ];
         };
       }
@@ -445,35 +484,55 @@ in
         binds = baseBinds // numberedBinds // shellLauncherBind;
       };
 
-      config = lib.mkIf hdr (
+      config =
         let
-          hdrByOutput = builtins.listToAttrs (
-            map (m: {
-              name = outputName m;
-              value = kdl.node "hdr" [ { mode = m.hdrMode; } ] (
-                lib.optional (m.hdrReferenceLuminance != null) (
-                  kdl.leaf "reference-luminance" m.hdrReferenceLuminance
+          recentWindowsNode =
+            kdl.node "recent-windows"
+              [ ]
+              [
+                (kdl.node "binds"
+                  [ ]
+                  [
+                    (kdl.node "Mod+Tab" [ ] [ (kdl.node "next-window" [ ] [ ]) ])
+                    (kdl.node "Mod+Shift+Tab" [ ] [ (kdl.node "previous-window" [ ] [ ]) ])
+                    (kdl.node "Mod+grave" [ ] [ (kdl.node "next-window" [ { filter = "app-id"; } ] [ ]) ])
+                    (kdl.node "Mod+Shift+grave" [ ] [ (kdl.node "previous-window" [ { filter = "app-id"; } ] [ ]) ])
+                  ]
                 )
-                ++ lib.optional (m.hdrMaxLum != null && m.hdrMaxLum >= 1) (kdl.leaf "peak-luminance" m.hdrMaxLum)
-              );
-            }) (lib.filter (m: m.hdr) monitors)
-          );
+              ];
+          baseNodes =
+            if hdr then
+              let
+                hdrByOutput = builtins.listToAttrs (
+                  map (m: {
+                    name = outputName m;
+                    value = kdl.node "hdr" [ { mode = m.hdrMode; } ] (
+                      lib.optional (m.hdrReferenceLuminance != null) (
+                        kdl.leaf "reference-luminance" m.hdrReferenceLuminance
+                      )
+                      ++ lib.optional (m.hdrMaxLum != null && m.hdrMaxLum >= 1) (kdl.leaf "peak-luminance" m.hdrMaxLum)
+                    );
+                  }) (lib.filter (m: m.hdr) monitors)
+                );
+              in
+              map (
+                node:
+                let
+                  args = node.arguments or [ ];
+                  key = if args == [ ] then null else builtins.head args;
+                in
+                if node.name or null == "output" && key != null && hdrByOutput ? ${key} then
+                  node
+                  // {
+                    children = node.children ++ [ hdrByOutput.${key} ];
+                  }
+                else
+                  node
+              ) (lib.remove null (lib.flatten options.programs.niri.config.default))
+            else
+              lib.remove null (lib.flatten options.programs.niri.config.default);
         in
-        map (
-          node:
-          let
-            args = node.arguments or [ ];
-            key = if args == [ ] then null else builtins.head args;
-          in
-          if node.name or null == "output" && key != null && hdrByOutput ? ${key} then
-            node
-            // {
-              children = node.children ++ [ hdrByOutput.${key} ];
-            }
-          else
-            node
-        ) (lib.remove null (lib.flatten options.programs.niri.config.default))
-      );
+        baseNodes ++ [ recentWindowsNode ];
     };
 
     xdg.configFile = lib.mkIf (desktopShell == "dms") {
@@ -483,10 +542,16 @@ in
             [
               "{{TERMINAL_COMMAND}}"
               "Mod+Period { expel-window-from-column; }"
+              "Mod+Shift+T { toggle-window-floating; }"
+              "Mod+Tab repeat=false { toggle-overview; }"
               "Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }"
               "Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }"
               "Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }"
               "Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }"
+              "Mod+WheelScrollRight      { focus-column-right; }"
+              "Mod+WheelScrollLeft       { focus-column-left; }"
+              "Mod+Ctrl+WheelScrollRight { move-column-right; }"
+              "Mod+Ctrl+WheelScrollLeft  { move-column-left; }"
               "Mod+Shift+WheelScrollDown      { focus-column-right; }"
               "Mod+Shift+WheelScrollUp        { focus-column-left; }"
               "Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }"
@@ -502,10 +567,16 @@ in
             [
               "kitty"
               ''Mod+Period hotkey-overlay-title="Emoji Picker" { spawn "smile"; }''
-              "Mod+WheelScrollDown      { focus-column-right; }"
-              "Mod+WheelScrollUp        { focus-column-left; }"
-              "Mod+Ctrl+WheelScrollDown { move-column-right; }"
-              "Mod+Ctrl+WheelScrollUp   { move-column-left; }"
+              "Mod+Shift+Space hotkey-overlay-title=\"Toggle Floating\" { toggle-window-floating; }\n    Mod+Shift+T hotkey-overlay-title=\"Toggle Floating\" { toggle-window-floating; }"
+              "Alt+Tab repeat=false { toggle-overview; }\n    Alt+Shift+Tab repeat=false { toggle-overview; }"
+              "Mod+WheelScrollDown      cooldown-ms=150 { focus-column-right; }"
+              "Mod+WheelScrollUp        cooldown-ms=150 { focus-column-left; }"
+              "Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-right; }"
+              "Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-left; }"
+              "Mod+WheelScrollRight      cooldown-ms=150 { focus-column-right; }"
+              "Mod+WheelScrollLeft       cooldown-ms=150 { focus-column-left; }"
+              "Mod+Ctrl+WheelScrollRight cooldown-ms=150 { move-column-right; }"
+              "Mod+Ctrl+WheelScrollLeft  cooldown-ms=150 { move-column-left; }"
               "Mod+Shift+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }"
               "Mod+Shift+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }"
               "Mod+Ctrl+Shift+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }"
@@ -517,7 +588,18 @@ in
               "screenshot-window;"
             ]
           )
-          (builtins.readFile "${dmsEmbedded}/niri-binds.kdl");
+          (builtins.readFile "${dmsEmbedded}/niri-binds.kdl")
+        + ''
+
+          recent-windows {
+              binds {
+                  Mod+Tab         { next-window; }
+                  Mod+Shift+Tab   { previous-window; }
+                  Mod+grave       { next-window     filter="app-id"; }
+                  Mod+Shift+grave { previous-window filter="app-id"; }
+              }
+          }
+        '';
     };
   };
 }

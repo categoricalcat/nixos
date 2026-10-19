@@ -123,6 +123,7 @@ let
       description = "Toggle Floating Window";
       keys = [
         "SUPER+SHIFT,space"
+        "SUPER+SHIFT,t"
       ];
     };
     toggleOverview = {
