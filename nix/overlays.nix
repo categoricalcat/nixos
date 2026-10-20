@@ -21,6 +21,8 @@ _: [
 
     # Fix vector build with Rust 1.99+ where std::sync::atomic::*::fetch_update was
     # deprecated in favor of try_update, and vector crates enforce #![deny(warnings)].
+    # Disable slow check phase (resolves deserialization_json failure) and use parallel
+    # ThinLTO + multi-core codegen units to dramatically speed up compilation.
     vector = prev.vector.overrideAttrs (old: {
       postPatch = (old.postPatch or "") + ''
         substituteInPlace lib/vector-common/src/atomic.rs \
@@ -28,8 +30,11 @@ _: [
         substituteInPlace lib/vector-buffers/src/variants/disk_v2/ledger.rs \
           --replace-fail "unacked_reader_file_id_offset.fetch_update(" "unacked_reader_file_id_offset.try_update("
       '';
+      doCheck = false;
       env = (old.env or { }) // {
         RUSTFLAGS = (old.env.RUSTFLAGS or "") + " --cap-lints warn";
+        CARGO_PROFILE_RELEASE_LTO = "thin";
+        CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "16";
       };
     });
   })

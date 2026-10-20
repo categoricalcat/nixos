@@ -5,22 +5,23 @@
     enable = true; # For zero-config service discovery
     nssmdns4 = true; # So apps can find .local hostnames
     nssmdns6 = true; # Same for IPv6
-    reflector = true; # Share services between VPN and LAN
     openFirewall = true; # "safe" up to LAN
 
-    publish = {
-      enable = true; # Let others discover our services
-      addresses = true; # Share our IP for direct connections
-      workstation = true; # Show up in network browsers
-      domain = true; # Advertise our .local domain
-      userServices = true; # Allow user-level service sharing
+    settings = {
+      server.allow-interfaces = [
+        # "tailscale0"
+        "wt0"
+        "eno1"
+      ];
+      reflector.enable-reflector = true; # Share services between VPN and LAN
+      publish = {
+        disable-publishing = false; # Let others discover our services
+        disable-user-service-publishing = false; # Allow user-level service sharing
+        publish-addresses = true; # Share our IP for direct connections
+        publish-workstation = true; # Show up in network browsers
+        publish-domain = true; # Advertise our .local domain
+      };
     };
-
-    allowInterfaces = [
-      # "tailscale0"
-      "wt0"
-      "eno1"
-    ];
 
     extraServiceFiles = {
       # Services to advertise
