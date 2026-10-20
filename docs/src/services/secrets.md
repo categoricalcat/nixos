@@ -140,7 +140,7 @@ Database data can be dropped or recreated without rotating these secrets. Losing
 database data may still require service bootstrap again: Forgejo admin/mirrors,
 Attic cache/tokens, or non-declarative Grafana state.
 
-> **Note on Forgejo Runners:** If you wipe the Forgejo database, you must also delete the runner's local state file (`rm /var/lib/gitea-runner-yifuwuqi/.runner` as root) before restarting the runner, otherwise it will try to authenticate using its stale state and fail.
+> **Note on Forgejo Runners:** If you wipe the Forgejo database, you must also delete the runner's local state directory (`rm -rf /var/lib/forgejo-runner/yifuwuqi` as root) before restarting the runner, otherwise it will try to authenticate using its stale state and fail.
 
 ## Get Service Secrets
 

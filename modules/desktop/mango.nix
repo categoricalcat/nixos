@@ -11,12 +11,12 @@ let
 
   patchedMango = baseMango.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [
-      ../../packages/mango-monitor-focus.patch
+      ../../packages/mango-focus-delay.patch
     ];
   });
 
-  # Monitor focus tracking carry-patch, only wanted on the multi-head host.
-  mangoPackage = if config.networking.hostName == "yitaishi" then patchedMango else baseMango;
+  # Mango with 333ms mouse focus delay
+  mangoPackage = patchedMango;
 in
 {
   config = lib.mkIf (config.desktop.environment == "mango") {

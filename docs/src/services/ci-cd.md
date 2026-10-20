@@ -63,7 +63,7 @@ ______________________________________________________________________
 
 ### 4.1 Forgejo Native Runner (`modules/services/forgejo-runner.nix`)
 
-- **Instance**: `gitea-runner-yifuwuqi` running on `yifuwuqi`.
+- **Instance**: `forgejo-runner-yifuwuqi` running on `yifuwuqi`.
 - **Labels**: `["native:host"]`.
 - **Execution User**: `nix-builder:nogroup`.
 - **Sandboxing Policy**: Default systemd sandboxing (`ProtectSystem`, `ProtectHome`, `PrivateUsers`, `PrivateMounts`) is explicitly relaxed so builds can interact directly with `/nix/store` and utilize Linux mount namespaces.
@@ -94,7 +94,7 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 
 - **Step 1 (`1-diff`)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`) and verifies closure differences before applying changes (`ci/deploy.sh diff <host>`).
 - **Step 2 (`2-deploy`)**: Performs live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh deploy <host>`.
-- **Runner Host Caution**: When activating `yifuwuqi` from CI, changes that restart `gitea-runner-yifuwuqi.service` will kill the job mid-activation and trigger magic rollback. Apply runner service modifications from a local root terminal.
+- **Runner Host Caution**: When activating `yifuwuqi` from CI, changes that restart `forgejo-runner-yifuwuqi.service` will kill the job mid-activation and trigger magic rollback. Apply runner service modifications from a local root terminal.
 
 ### 5.3 Key Rotation
 

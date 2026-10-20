@@ -111,7 +111,7 @@ ______________________________________________________________________
 ### 4.2 Git Forge & Actions Runners
 
 - **Forgejo (`git.fufu.land`)**: Port 24200, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
-- **Forgejo Actions Runner (`gitea-runner-yifuwuqi`)**: Native host runner (`native:host` label) under `nix-builder` user. Systemd sandbox is intentionally relaxed so builds can access `/nix/store` and mount namespaces. Automatically injects Attic push credentials.
+- **Forgejo Actions Runner (`forgejo-runner-yifuwuqi`)**: Native host runner (`native:host` label) under `nix-builder` user. Systemd sandbox is intentionally relaxed so builds can access `/nix/store` and mount namespaces. Automatically injects Attic push credentials.
 - **GitHub Actions Runner**: Dedicated self-hosted runner targeting `categoricalcat/nixos` with `setup-ci-env` integration.
 - **Distributed Builder**: Pinned host keys in `secrets/keys.nix`, accepts up to 16 concurrent Nix build jobs.
 

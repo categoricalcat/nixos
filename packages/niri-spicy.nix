@@ -11,6 +11,9 @@ niri-spicy.overrideAttrs (old: {
     shaderc
     vulkan-loader
   ];
+  patches = (old.patches or [ ]) ++ [
+    ./niri-focus-delay.patch
+  ];
   SHADERC_LIB_DIR = "${lib.getLib shaderc}/lib";
   postPatch = (old.postPatch or "") + ''
     substituteInPlace Cargo.toml --replace-fail '../smithay' '${smithay-spicy}'

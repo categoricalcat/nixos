@@ -161,7 +161,7 @@ Actions repository secrets as `FORGEJO_TOKEN`.
 Check services on `yifuwuqi`:
 
 ```bash
-systemctl status forgejo gitea-actions-runner-yifuwuqi atticd attic-watch-store attic-closure-keeper.timer github-runner-nixos
+systemctl status forgejo forgejo-runner-yifuwuqi atticd attic-watch-store attic-closure-keeper.timer github-runner-nixos
 ```
 
 Check the cache endpoint from a mesh host:

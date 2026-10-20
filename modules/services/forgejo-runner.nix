@@ -26,23 +26,16 @@ in
     owner = "nix-builder";
     group = "nogroup";
     mode = "0400";
-    restartUnits = [ "gitea-runner-yifuwuqi.service" ];
+    restartUnits = [ "forgejo-runner-yifuwuqi.service" ];
   };
 
   systemd.tmpfiles.rules = [
     "d /var/lib/nix-builder/.ssh 0700 nix-builder nogroup -"
   ];
 
-  services.gitea-actions-runner = {
-    package = pkgs.forgejo-runner;
+  services.forgejo-runner = {
     instances."yifuwuqi" = {
       enable = true;
-      name = "yifuwuqi";
-      url = "https://${services.forgejo.domain}";
-      token = "dummy";
-      labels = [
-        "native:host"
-      ];
       hostPackages = with pkgs; [
         bash
         coreutils
@@ -65,14 +58,18 @@ in
         runner.timeout = "12h";
         server.connections.yifuwuqi = {
           url = "https://${services.forgejo.domain}";
-          token_url = "file://${config.sops.secrets."tokens/forgejo-runner".path}";
           uuid = "e6b2db5f-d74b-41bc-866e-1f530f4a26c4";
+        };
+      };
+      secrets = {
+        server.connections.yifuwuqi = {
+          token_url = config.sops.secrets."tokens/forgejo-runner".path;
         };
       };
     };
   };
 
-  systemd.services."gitea-runner-yifuwuqi" = {
+  systemd.services."forgejo-runner-yifuwuqi" = {
     wants = [
       "network-online.target"
       "sops-nix.service"
@@ -96,7 +93,6 @@ in
       ProtectHome = lib.mkForce false;
       PrivateMounts = lib.mkForce false;
       MemoryDenyWriteExecute = lib.mkForce false;
-      ExecStartPre = lib.mkForce [ "" ];
     };
   };
 }

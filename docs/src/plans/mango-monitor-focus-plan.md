@@ -4,9 +4,9 @@
 
 Permanently eliminate the out-of-tree patch [`packages/mango-monitor-focus.patch`](../../packages/mango-monitor-focus.patch) and its recurring rebase friction on `flake.lock` updates, while preserving:
 
-1. **Click-to-focus window behavior (`sloppyfocus = 0`) with cursor-driven monitor tracking**: Moving the pointer across monitor boundaries immediately updates `server.selected_monitor` so that shortcuts and launchers target the screen under the cursor without requiring a window click.
-1. **Synchronized multi-monitor overview**: Entering or exiting overview mode (`toggleoverview`, gestures, or hot corner) switches all active displays on multi-head workstations (`yitaishi`) simultaneously.
-1. **Unified package evaluation**: Eliminate host-conditional branching in [`modules/desktop/mango.nix`](../../modules/desktop/mango.nix) (`patchedMango` on `yitaishi` vs `baseMango` on `yixiaoqing`).
+1. **Mouse focus with 333ms delay (`sloppyfocus = 1`)**: Pointer-driven window focus is enabled with a 333ms debounce delay ([`packages/mango-focus-delay.patch`](../../packages/mango-focus-delay.patch)) so sweeping the mouse between monitors does not accidentally shift focus.
+1. **Cursor-driven monitor tracking**: Because `sloppyfocus = 1`, upstream Mango natively tracks `server.selected_monitor` on cursor motion, eliminating the need for `packages/mango-monitor-focus.patch`.
+1. **Unified package evaluation**: Eliminated host-conditional branching in [`modules/desktop/mango.nix`](../../modules/desktop/mango.nix) (`mangoPackage = patchedMango;` on all desktop hosts).
 
 ______________________________________________________________________
 

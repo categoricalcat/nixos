@@ -7,17 +7,21 @@
 let
   inherit (config.serverMode) developer;
   inherit (config.host) vr;
-  agentSkills = {
-    ".gemini/config/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
-    ".gemini/config/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
-    ".gemini/config/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
-    ".cursor/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
-    ".cursor/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
-    ".cursor/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
-    ".agents/skills/nixos/SKILL.md" = ../../modules/services/ai/nixos-skill.md;
-    ".agents/skills/code-quality/SKILL.md" = ../../modules/services/ai/code-quality-skill.md;
-    ".agents/skills/etiquette/SKILL.md" = ../../modules/services/ai/etiquette-skill.md;
+  agentSkillTargets = [
+    ".gemini/config/skills"
+    ".cursor/skills"
+    ".agents/skills"
+    ".claude/skills"
+    ".opencode/skills"
+  ];
+  skills = {
+    nixos = ../../modules/services/ai/nixos-skill.md;
+    code-quality = ../../modules/services/ai/code-quality-skill.md;
+    etiquette = ../../modules/services/ai/etiquette-skill.md;
   };
+  agentSkills = lib.concatMapAttrs (
+    name: path: lib.genAttrs (map (target: "${target}/${name}/SKILL.md") agentSkillTargets) (_: path)
+  ) skills;
 in
 {
   imports = [

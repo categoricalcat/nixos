@@ -22,6 +22,7 @@ Whenever you read, write, or review code, **proactively** apply these rules. Do 
 
 - **Single Source of Truth**: Define data once, reference everywhere.
 - **Smallest diff**: Prefer refactorings touching fewest files.
+- **No Representation Bouncing**: Stay in the native data structure / category (e.g. Map -> Map). Never convert `Map -> List of pairs -> Nested Lists -> Flat List -> Map` just to transform keys or take products. Use category-native combinators and applicatives.
 - **Comment why, not what**: Document reasons for non-obvious abstractions.
 - **No premature abstraction**: Extract only when there are 2+ concrete instances.
 

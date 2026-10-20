@@ -158,8 +158,8 @@ in
         gap_outer_horizontal = 4;
         gap_outer_vertical = 4;
 
-        # Disable mouse auto-focus (click-to-focus only)
-        sloppy_focus = 0;
+        # Mouse focus follows cursor with 333ms delay
+        sloppy_focus = 1;
         edge_scroller_pointer_focus = 0;
 
         # Global mouse settings from desktop.mouse

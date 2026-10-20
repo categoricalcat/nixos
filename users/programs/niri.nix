@@ -93,7 +93,11 @@ in
             inherit (inputs) smithay-spicy;
           }
         else
-          inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri;
+          inputs.niri-unstable.packages.${pkgs.stdenv.hostPlatform.system}.niri.overrideAttrs (old: {
+            patches = (old.patches or [ ]) ++ [
+              ../../packages/niri-focus-delay.patch
+            ];
+          });
       settings = {
         prefer-no-csd = true;
 
@@ -152,7 +156,7 @@ in
           };
           warp-mouse-to-focus.enable = true;
           focus-follows-mouse = {
-            enable = false;
+            enable = true;
           };
         };
 
