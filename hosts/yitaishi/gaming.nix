@@ -55,19 +55,34 @@ in
     coolercontrol.enable = true;
   };
 
-  services.lact.enable = true;
+  services = {
+    lact.enable = true;
 
-  services.wivrn = {
-    enable = true;
-    openFirewall = true;
-
-    autoStart = false;
-
-    highPriority = true;
-
-    steam = {
+    wivrn = {
       enable = true;
-      importOXRRuntimes = true;
+      openFirewall = true;
+
+      autoStart = false;
+
+      highPriority = true;
+
+      steam = {
+        enable = true;
+        importOXRRuntimes = true;
+      };
+    };
+
+    # Workaround for upstream nixpkgs: wivrn.nix still sets obsolete
+    # services.avahi.publish.{enable,userServices}. Force them to null to silence
+    # the warning, and configure via services.avahi.settings instead.
+    avahi = {
+      publish.enable = lib.mkForce null;
+      publish.userServices = lib.mkForce null;
+      settings.publish = {
+        disable-publishing = false;
+        disable-user-service-publishing = false;
+        publish-addresses = true;
+      };
     };
   };
 

@@ -1,5 +1,5 @@
 name: Continuous Deployment
-run-name: 'Deploy ${{ inputs.host || github.event.inputs.host }} (${{ inputs.step || github.event.inputs.step }})'
+run-name: 'Deploy ${{ inputs.host || github.event.inputs.host }} (${{ inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step }})'
 
 on:
   workflow_dispatch:
@@ -13,14 +13,15 @@ on:
           - yitaishi
           - yifuwuqi
           - yirukou
-      step:
-        description: 'Pipeline Step'
+      action:
+        description: 'Deployment Action'
         required: true
         type: choice
-        default: '1-diff'
+        default: 'dry'
         options:
-          - '1-diff'
-          - '2-deploy'
+          - 'dry'
+          - 'switch'
+          - 'boot'
 
 concurrency:
   group: ${{ format('deploy-{0}', inputs.host || github.event.inputs.host) }}
@@ -43,12 +44,12 @@ jobs:
         run: bash nix/scripts/lock-to-changelog.sh || true
 
   deploy:
-    name: 'Step 2: Live Activation & Magic Rollback'
+    name: 'Step 2: Activation / Bootloader Update'
     needs: [diff]
-    if: inputs.step == '2-deploy'
+    if: (inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step) == 'switch' || (inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step) == 'boot' || (inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step) == '2-deploy'
     runs-on: native
     timeout-minutes: 60
     steps:
       - uses: https://github.com/actions/checkout@main
       - name: Deploy ${{ inputs.host }}
-        run: ci/deploy.sh deploy ${{ inputs.host }}
+        run: ci/deploy.sh ${{ inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step }} ${{ inputs.host }}

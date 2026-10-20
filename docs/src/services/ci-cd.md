@@ -92,8 +92,9 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 
 ### 5.2 Rollout & Safety
 
-- **Step 1 (`1-diff`)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`) and verifies closure differences before applying changes (`ci/deploy.sh diff <host>`).
-- **Step 2 (`2-deploy`)**: Performs live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh deploy <host>`.
+- **`dry` (Dry-run & Diff)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`) and verifies closure differences before applying changes (`ci/deploy.sh diff <host>`).
+- **`switch` (Live Activation)**: Performs dry/diff verification, then live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh switch <host>`.
+- **`boot` (Bootloader Staging)**: Performs dry/diff verification, then updates the bootloader to boot into the new profile on next reboot without immediate live activation via `ci/deploy.sh boot <host>` (`deploy .#<host> --boot`).
 - **Runner Host Caution**: When activating `yifuwuqi` from CI, changes that restart `forgejo-runner-yifuwuqi.service` will kill the job mid-activation and trigger magic rollback. Apply runner service modifications from a local root terminal.
 
 ### 5.3 Key Rotation

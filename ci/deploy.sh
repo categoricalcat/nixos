@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <dry-activate|diff|deploy|1-diff|2-deploy> <host>" >&2
+  echo "Usage: $0 <dry|switch|boot|dry-activate|diff|deploy|1-diff|2-deploy> <host>" >&2
   exit 1
 }
 
@@ -41,27 +41,34 @@ diff_closure() {
 
 deploy_live() {
   local target="$1"
-  echo "::group::deploy $target"
+  echo "::group::deploy switch $target"
   deploy .#"$target" -- --print-build-logs
   echo "::endgroup::"
 }
 
+deploy_boot() {
+  local target="$1"
+  echo "::group::deploy boot $target"
+  deploy .#"$target" --boot -- --print-build-logs
+  echo "::endgroup::"
+}
+
 case "$action" in
+dry | 1-diff)
+  dry_activate "$host"
+  diff_closure "$host"
+  ;;
 dry-activate | dry-run)
   dry_activate "$host"
   ;;
 diff)
   diff_closure "$host"
   ;;
-deploy | live | apply)
+switch | deploy | 2-deploy | live | apply)
   deploy_live "$host"
   ;;
-1-diff)
-  dry_activate "$host"
-  diff_closure "$host"
-  ;;
-2-deploy)
-  deploy_live "$host"
+boot)
+  deploy_boot "$host"
   ;;
 *)
   echo "Unknown action: $action" >&2
