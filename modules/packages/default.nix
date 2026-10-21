@@ -19,6 +19,7 @@ in
       killall
       ncdu
       p7zip
+      pik
       ripgrep
       sops
       ssh-to-age
