@@ -63,6 +63,8 @@ let
       legendFormat ? "{{instance}}",
       unit ? "none",
       links ? [ ],
+      mappings ? [ ],
+      thresholds ? null,
     }:
     {
       type = "stat";
@@ -75,10 +77,114 @@ let
       ];
       fieldConfig = {
         defaults = {
-          inherit unit;
+          inherit unit mappings;
+        }
+        // (if thresholds != null then { inherit thresholds; } else { })
+        // (if links != [ ] then { inherit links; } else { });
+      };
+    };
+
+  mkBarGauge =
+    {
+      title,
+      expr,
+      gridPos,
+      legendFormat ? "{{instance}}",
+      unit ? "none",
+      min ? 0,
+      max ? 10,
+      thresholds ? [
+        {
+          color = "green";
+          value = null;
+        }
+        {
+          color = "orange";
+          value = 4.0;
+        }
+        {
+          color = "red";
+          value = 7.0;
+        }
+      ],
+      links ? [ ],
+      orientation ? "horizontal",
+      displayMode ? "gradient",
+    }:
+    {
+      type = "bargauge";
+      inherit title gridPos;
+      targets = [
+        {
+          inherit expr legendFormat;
+          format = "time_series";
+          instant = true;
+        }
+      ];
+      options = {
+        inherit orientation displayMode;
+        showUnfilled = true;
+        reduceOptions = {
+          calcs = [ "lastNotNull" ];
+          fields = "";
+          values = false;
+        };
+      };
+      fieldConfig = {
+        defaults = {
+          inherit unit min max;
+          thresholds = {
+            mode = "absolute";
+            steps = thresholds;
+          };
           mappings = [ ];
         }
         // (if links != [ ] then { inherit links; } else { });
+      };
+    };
+
+  mkTable =
+    {
+      title,
+      expr,
+      gridPos,
+      transformations ? [ ],
+      overrides ? [ ],
+      links ? [ ],
+      sortBy ? [ ],
+    }:
+    {
+      type = "table";
+      inherit title gridPos transformations;
+      targets = [
+        {
+          inherit expr;
+          format = "table";
+          instant = true;
+        }
+      ];
+      options = {
+        cellHeight = "sm";
+        footer = {
+          countRows = false;
+          enablePagination = true;
+          show = false;
+        };
+        showHeader = true;
+      }
+      // (if sortBy != [ ] then { inherit sortBy; } else { });
+      fieldConfig = {
+        defaults = {
+          custom = {
+            align = "auto";
+            cellOptions = {
+              type = "auto";
+            };
+            inspect = false;
+          };
+        }
+        // (if links != [ ] then { inherit links; } else { });
+        inherit overrides;
       };
     };
 
@@ -191,6 +297,8 @@ in
     mkTimeseries
     mkStat
     mkGauge
+    mkBarGauge
+    mkTable
     mkStateTimeline
     mkLokiDataLink
     ;

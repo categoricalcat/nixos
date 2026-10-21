@@ -13,8 +13,11 @@
     ../../modules/services/monitoring/exporters.nix
     ../../modules/services/monitoring/adguard-exporter
     ../../modules/services/monitoring/promtail.nix
+    ../../modules/services/monitoring/security-monitor
     ./goaccess.nix
   ];
+
+  services.security-monitor.enable = true;
   yi.tailscale = {
     routingMode = "both";
     advertiseRoutes = [ "10.42.0.0/24" ];

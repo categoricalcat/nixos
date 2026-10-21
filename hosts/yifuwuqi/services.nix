@@ -33,6 +33,7 @@
     ../../modules/services/monitoring/prometheus.nix
     ../../modules/services/monitoring/loki.nix
     ../../modules/services/monitoring/promtail.nix
+    ../../modules/services/monitoring/security-monitor
     ../../modules/services/monitoring/grafana.nix
     ../../modules/services/docs.nix
     # ../../modules/services/webdav.nix
@@ -109,6 +110,7 @@
 
     fwupd.enable = true;
     opencode.enable = true;
+    security-monitor.enable = true;
   };
   yi.services.sillytavern.enable = true;
 

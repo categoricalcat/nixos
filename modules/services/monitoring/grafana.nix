@@ -98,6 +98,11 @@ let
             builtins.toJSON (import ./dashboards/internet.nix { inherit pkgs; })
           )
         } $out/internet.json
+        ln -s ${
+          pkgs.writeText "security.json" (
+            builtins.toJSON (import ./dashboards/security.nix { inherit pkgs; })
+          )
+        } $out/security.json
       '';
 in
 {
