@@ -42,12 +42,10 @@ in
     );
 
     file = lib.mkMerge [
-      (lib.mkIf developer (
-        lib.mapAttrs (_path: src: {
-          source = src;
-          force = true;
-        }) agentSkills
-      ))
+      (lib.mapAttrs (_path: src: {
+        source = src;
+        force = true;
+      }) agentSkills)
       (lib.mkIf vr {
         ".config/openxr/1/active_runtime.json".text = ''
           {
@@ -71,23 +69,24 @@ in
       fi
     '';
 
-    activation.realizeSkillFiles = lib.mkIf developer (
-      lib.hm.dag.entryAfter [ "linkGeneration" ] (
-        let
-          skills = builtins.attrNames agentSkills;
-          realizeCmds = lib.concatMapStringsSep "\n" (relPath: ''
-            target="$HOME/${relPath}"
-            if [ -e "$target" ] || [ -L "$target" ]; then
-              src="$(readlink -f "$target")"
-              dir="$(dirname "$target")"
-              run install -d -m 0755 "$dir"
-              run rm -f "$target"
-              run install -m 0444 "$src" "$target"
-            fi
-          '') skills;
-        in
-        realizeCmds
-      )
+    activation.realizeSkillFiles = lib.hm.dag.entryAfter [ "linkGeneration" ] (
+      let
+        skills = builtins.attrNames agentSkills;
+        realizeCmds = lib.concatMapStringsSep "\n" (relPath: ''
+          target="$HOME/${relPath}"
+          if [ -e "$target.bkp" ]; then
+            run rm -f "$target.bkp"
+          fi
+          if [ -e "$target" ] || [ -L "$target" ]; then
+            src="$(readlink -f "$target")"
+            dir="$(dirname "$target")"
+            run install -d -m 0755 "$dir"
+            run rm -f "$target"
+            run install -m 0444 "$src" "$target"
+          fi
+        '') skills;
+      in
+      realizeCmds
     );
   };
 }
