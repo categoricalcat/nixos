@@ -157,6 +157,7 @@ Running in a secure hybrid arrangement: network-isolated containers share a Prot
 - **Native Host Media Daemons**:
   - Radarr (port 24878), Sonarr (port 24989), Lidarr (port 24686), Readarr (port 24787), Bazarr (port 24767), Prowlarr (port 24696).
   - Jellyfin Media Server (port 24096), Jellyseerr / Seerr (port 24055).
+  - Audiobookshelf podcast catcher (port 24085, `cast.fufu.land`): subscribes to external RSS feeds and downloads episodes to `/persist/media/podcasts`. Nothing is published.
   - Recyclarr declarative quality profile sync.
 
 ______________________________________________________________________

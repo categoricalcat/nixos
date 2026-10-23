@@ -158,7 +158,7 @@ ______________________________________________________________________
   - `git.fufu.land` $\\to$ Forgejo Git (:24200)
   - `agent.fufu.land` $\\to$ Opencode Server (:24010)
   - `sillytavern.fufu.land` $\\to$ SillyTavern (:24000)
-  - `radarr.fufu.land` – `sonarr.fufu.land` – `prowlarr.fufu.land` – `jellyfin.fufu.land` – `seerr.fufu.land` – `homepage.fufu.land` (Arr & Media stack)
+  - `radarr.fufu.land` – `sonarr.fufu.land` – `prowlarr.fufu.land` – `jellyfin.fufu.land` – `seerr.fufu.land` – `cast.fufu.land` (Audiobookshelf, :24085) – `homepage.fufu.land` (Arr & Media stack)
 - Host-local virtual hosts:
   - `adguard.fufu.land` $\\to$ Local AdGuard UI (:3333)
   - `dns.fufu.land` $\\to$ Local AdGuard DoH (:3333/dns-query)

@@ -38,6 +38,7 @@
     settings.Resolve = {
       DNSStubListener = lib.mkDefault "no";
       DNSSEC = lib.mkDefault "no";
+      Cache = lib.mkDefault "no";
     };
   };
 

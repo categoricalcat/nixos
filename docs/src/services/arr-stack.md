@@ -111,3 +111,11 @@ To ensure your media applications prefer files with Brazilian voice acting:
 - Create rules that match release titles containing regex patterns like `(?i)\b(dublado|dual(\W)?audio|pt(\W)?br)\b`.
 - Go to your **Profiles** > **Quality Profiles** and assign a positive score to this Custom Format so the system automatically upgrades or prefers these releases.
   *(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr/default.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*
+
+## 9. Podcasts (Audiobookshelf)
+
+Audiobookshelf (`modules/services/audiobookshelf.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. Feeds and accounts live in its own sqlite database under `/var/lib/audiobookshelf`, so setup happens in the UI:
+
+1. Open `https://cast.fufu.land` and create the admin user.
+1. Add a library of type **Podcast** with folder `/persist/media/podcasts`.
+1. Add podcasts with **Search** (iTunes) or paste an RSS URL. Turn on **Auto Download Episodes** per show to fetch new episodes on a schedule.

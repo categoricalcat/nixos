@@ -309,6 +309,15 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
+      "${yifuwuqiServices.audiobookshelf.domain}" = {
+        useACMEHost = "fufu.land";
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.audiobookshelf.port}";
+          proxyWebsockets = true;
+          extraConfig = restrictedProxyConfig;
+        };
+      };
       "${yifuwuqiServices.jellyseerr.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;

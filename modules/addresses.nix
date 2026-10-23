@@ -557,6 +557,10 @@ in
           domain = "jellyseerr.fufu.land";
           port = 24055;
         };
+        audiobookshelf = {
+          domain = "cast.fufu.land";
+          port = 24085;
+        };
         flaresolverr = {
           domain = "flaresolverr.fufu.land";
           port = 24191;

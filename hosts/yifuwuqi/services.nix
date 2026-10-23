@@ -45,6 +45,7 @@
     ../../modules/services/attic/watch-store.nix
     ../../modules/services/attic/closure-keeper.nix
     ../../modules/services/arr
+    ../../modules/services/audiobookshelf.nix
     ../../modules/services/qbittorrent-vpn.nix
     ../../modules/services/slskd.nix
     ../../modules/services/homepage.nix
