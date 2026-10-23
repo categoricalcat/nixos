@@ -12,7 +12,7 @@ let
   serviceDomains = {
     jellyfin = "https://${addrs.services.jellyfin.domain}";
     jellyseerr = "https://${addrs.services.jellyseerr.domain}";
-    audiobookshelf = "https://${addrs.services.audiobookshelf.domain}";
+    podgrab = "https://${addrs.services.podgrab.domain}";
     sonarr = "https://${addrs.services.sonarr.domain}";
     radarr = "https://${addrs.services.radarr.domain}";
     lidarr = "https://${addrs.services.lidarr.domain}";
@@ -122,10 +122,10 @@ in
             };
           }
           {
-            "Audiobookshelf" = {
-              icon = "audiobookshelf.png";
-              href = serviceDomains.audiobookshelf;
-              ping = serviceDomains.audiobookshelf;
+            "Podgrab" = {
+              icon = "podgrab.png";
+              href = serviceDomains.podgrab;
+              ping = serviceDomains.podgrab;
             };
           }
         ];

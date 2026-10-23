@@ -30,7 +30,7 @@ ______________________________________________________________________
 
 - **Web UI**: Served at `http://10.42.0.2:24082` and proxied to `https://home.fufu.land`.
 - **Layout Architecture**: 4-column responsive grid with 5 main service groups:
-  1. **Media**: Jellyfin, Jellyseerr, Audiobookshelf (`cast.fufu.land`, podcast catcher).
+  1. **Media**: Jellyfin, Jellyseerr, Podgrab (`cast.fufu.land`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
   1. **Monitoring**: Grafana (`grafana.fufu.land`), GoAccess (`goaccess.fufu.land`).
   1. **Infrastructure**: Cockpit, Forgejo, Opencode Agent, Attic Binary Cache.

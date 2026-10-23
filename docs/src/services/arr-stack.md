@@ -112,10 +112,10 @@ To ensure your media applications prefer files with Brazilian voice acting:
 - Go to your **Profiles** > **Quality Profiles** and assign a positive score to this Custom Format so the system automatically upgrades or prefers these releases.
   *(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr/default.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*
 
-## 9. Podcasts (Audiobookshelf)
+## 9. Podcasts (Podgrab)
 
-Audiobookshelf (`modules/services/audiobookshelf.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. Feeds and accounts live in its own sqlite database under `/var/lib/audiobookshelf`, so setup happens in the UI:
+Podgrab (`modules/services/podgrab.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. Feeds and database live in its sqlite database under `/var/lib/container-volumes/podgrab`, with downloaded podcasts stored in `/persist/media/podcasts`:
 
-1. Open `https://cast.fufu.land` and create the admin user.
-1. Add a library of type **Podcast** with folder `/persist/media/podcasts`.
-1. Add podcasts with **Search** (iTunes) or paste an RSS URL. Turn on **Auto Download Episodes** per show to fetch new episodes on a schedule.
+1. Open `https://cast.fufu.land`.
+1. Add podcasts by searching via the iTunes search bar or pasting an RSS feed URL.
+1. Configure automatic downloads or download specific episodes directly from the web interface.

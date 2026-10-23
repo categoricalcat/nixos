@@ -557,7 +557,7 @@ in
           domain = "jellyseerr.fufu.land";
           port = 24055;
         };
-        audiobookshelf = {
+        podgrab = {
           domain = "cast.fufu.land";
           port = 24085;
         };

@@ -309,11 +309,11 @@ in
           extraConfig = restrictedProxyConfig;
         };
       };
-      "${yifuwuqiServices.audiobookshelf.domain}" = {
+      "${yifuwuqiServices.podgrab.domain}" = {
         useACMEHost = "fufu.land";
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.audiobookshelf.port}";
+          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.podgrab.port}";
           proxyWebsockets = true;
           extraConfig = restrictedProxyConfig;
         };
