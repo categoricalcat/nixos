@@ -131,17 +131,75 @@ dashLib.mkDashboard {
       ];
     })
 
+    # --- CVE Scan & Image Row ---
+    (dashLib.mkStat {
+      title = "CVE Scan Health";
+      expr = "min by (host, target) (node_security_cve_last_scan_success)";
+      gridPos = dashLib.mkGridPos 0 4 4 4;
+      legendFormat = "{{host}} {{target}}";
+      mappings = [
+        {
+          type = "value";
+          options = {
+            "0" = {
+              text = "FAILED";
+              color = "red";
+            };
+            "1" = {
+              text = "OK";
+              color = "green";
+            };
+          };
+        }
+      ];
+    })
+    (dashLib.mkStat {
+      title = "CVE Scan Age";
+      expr = "(time() - max by (host) (node_security_cve_last_scan_timestamp_seconds)) / 3600";
+      gridPos = dashLib.mkGridPos 0 8 4 4;
+      legendFormat = "{{host}}";
+      unit = "h";
+      thresholds = [
+        {
+          color = "green";
+          value = null;
+        }
+        {
+          color = "orange";
+          value = 26;
+        }
+        {
+          color = "red";
+          value = 50;
+        }
+      ];
+    })
+    (dashLib.mkBarGauge {
+      title = "Critical & High CVEs by Image";
+      expr = "topk(15, sum by (host, image) (node_security_container_vulnerabilities{severity=~\"CRITICAL|HIGH\"}))";
+      gridPos = dashLib.mkGridPos 4 4 10 8;
+      legendFormat = "{{host}} {{image}}";
+      max = null;
+    })
+    (dashLib.mkBarGauge {
+      title = "Fixable Critical & High CVEs by Image";
+      expr = "topk(15, sum by (host, image) (node_security_container_vulnerabilities{severity=~\"CRITICAL|HIGH\",fixable=\"true\"}))";
+      gridPos = dashLib.mkGridPos 14 4 10 8;
+      legendFormat = "{{host}} {{image}}";
+      max = null;
+    })
+
     # --- Vulnerability Breakdown Row ---
     (dashLib.mkTimeseries {
       title = "Vulnerabilities by Severity & Target";
       expr = "node_security_vulnerabilities_total";
-      gridPos = dashLib.mkGridPos 0 4 10 8;
+      gridPos = dashLib.mkGridPos 0 12 10 8;
       legendFormat = "{{host}} {{target}} {{severity}}";
     })
     (dashLib.mkTable {
       title = "Vulnerable Packages (Critical & High)";
       expr = "node_security_vulnerable_package_info == 1";
-      gridPos = dashLib.mkGridPos 10 4 14 8;
+      gridPos = dashLib.mkGridPos 10 12 14 8;
       transformations = [
         {
           id = "organize";
@@ -156,6 +214,8 @@ dashLib.mkDashboard {
             renameByName = {
               cve = "CVE";
               package = "Package";
+              image = "Image";
+              fixed_version = "Fixed In";
               severity = "Severity";
               target = "Target";
               host = "Host";
@@ -211,7 +271,7 @@ dashLib.mkDashboard {
     (dashLib.mkBarGauge {
       title = "Top Systemd Service Exposure Scores (0.0 Safe - 10.0 Unsafe)";
       expr = "topk(25, node_systemd_unit_exposure_score)";
-      gridPos = dashLib.mkGridPos 0 12 14 10;
+      gridPos = dashLib.mkGridPos 0 20 14 10;
       legendFormat = "{{host}} {{name}}";
       unit = "none";
       min = 0;
@@ -239,7 +299,7 @@ dashLib.mkDashboard {
     (dashLib.mkTimeseries {
       title = "Systemd Units by Security Predicate";
       expr = "node_systemd_units_by_status_total";
-      gridPos = dashLib.mkGridPos 14 12 10 10;
+      gridPos = dashLib.mkGridPos 14 20 10 10;
       legendFormat = "{{host}} {{status}}";
     })
 
@@ -247,13 +307,13 @@ dashLib.mkDashboard {
     (dashLib.mkTimeseries {
       title = "SSH / Auth Failure Rate";
       expr = "sum(rate(f2b_jail_failed_total[15m])) by (host, jail)";
-      gridPos = dashLib.mkGridPos 0 22 12 8;
+      gridPos = dashLib.mkGridPos 0 30 12 8;
       legendFormat = "{{host}} {{jail}} failures/s";
     })
     (dashLib.mkTimeseries {
       title = "Fail2ban Ban Activity by Jail";
       expr = "f2b_jail_banned_current";
-      gridPos = dashLib.mkGridPos 12 22 12 8;
+      gridPos = dashLib.mkGridPos 12 30 12 8;
       legendFormat = "{{host}} {{jail}}";
     })
   ];

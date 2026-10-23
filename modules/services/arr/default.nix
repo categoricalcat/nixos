@@ -111,7 +111,7 @@ in
   };
 
   virtualisation.oci-containers.containers.torrent-indexer = {
-    image = "felipemarinho97/torrent-indexer:latest";
+    image = "docker.io/felipemarinho97/torrent-indexer:latest";
     # Share gluetun's network namespace (like FlareSolverr): outbound traffic
     # goes through the VPN and FlareSolverr is reachable on 127.0.0.1.
     dependsOn = [ "gluetun" ];

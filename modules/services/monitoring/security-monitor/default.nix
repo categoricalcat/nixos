@@ -24,13 +24,23 @@ let
     '';
   };
 
+  # Commit per NVD archive: one stalled feed otherwise aborts the whole import and leaves the DB empty
+  vulnixPatched = pkgs.vulnix.overridePythonAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace src/vulnix/nvd.py \
+        --replace-fail "timeout=10" "timeout=120" \
+        --replace-fail "self.add(arch)" "self.add(arch); transaction.commit()"
+    '';
+  });
+
   cveScanScript = pkgs.writeShellApplication {
     name = "security-audit-cve";
     runtimeInputs = [
       pkgs.bash
       pkgs.coreutils
+      pkgs.findutils
       pkgs.jq
-      pkgs.vulnix
+      vulnixPatched
       config.nix.package
     ]
     ++ lib.optionals cfg.cveScan.scanContainers [
@@ -93,10 +103,14 @@ in
       };
       containerImages = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = lib.unique (
-          lib.mapAttrsToList (_: c: c.image) (config.virtualisation.oci-containers.containers or { })
-        );
-        description = "List of container images to scan if container scanning is enabled";
+        default = lib.pipe (config.virtualisation.oci-containers.containers or { }) [
+          (lib.filterAttrs (
+            _: c: c.imageFile == null && c.imageStream == null && !lib.hasPrefix "localhost/" c.image
+          ))
+          (lib.mapAttrsToList (_: c: c.image))
+          lib.unique
+        ];
+        description = "Registry container images to scan if container scanning is enabled (Nix-built images are covered by vulnix)";
       };
       whitelistFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
@@ -132,8 +146,14 @@ in
 
         security-audit-cve = lib.mkIf cfg.cveScan.enable {
           description = "Deep CVE Vulnerability Scan (Vulnix & Trivy)";
-          environment = lib.optionalAttrs cfg.cveScan.scanContainers {
+          wants = [ "network-online.target" ];
+          after = [ "network-online.target" ];
+          environment = {
+            NIX_REMOTE = "daemon";
+          }
+          // lib.optionalAttrs cfg.cveScan.scanContainers {
             TMPDIR = "/var/cache/trivy";
+            DOCKER_HOST = "unix:///run/podman/podman.sock";
           };
           serviceConfig = {
             Type = "oneshot";

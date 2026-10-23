@@ -44,5 +44,17 @@ in
       home.pointerCursor.enable = true;
       stylix.targets.rofi.enable = false;
     }
+    (
+      { config, lib, ... }:
+      {
+        # OpenCode 2 ignores tui.json; stylix's target still only sets tui.theme.
+        config = lib.mkIf (config.stylix.enable && config.stylix.targets.opencode.enable) {
+          programs.opencode = {
+            tui = lib.mkForce { };
+            cli.theme.name = "stylix";
+          };
+        };
+      }
+    )
   ];
 }

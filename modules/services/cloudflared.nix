@@ -14,12 +14,9 @@
 
   virtualisation.oci-containers.containers.cloudflared = {
     autoStart = true;
-    image = "cloudflare/cloudflared:latest";
+    image = "docker.io/cloudflare/cloudflared:latest";
     # Run as non-root; map container UID to host user `cloudflared` group
     user = "${toString config.users.users.cloudflared.uid}:${toString config.users.groups.cloudflared.gid}";
-    extraOptions = [
-      "--pull=newer"
-    ];
     environmentFiles = [
       config.sops.templates."cloudflared.env".path
     ];

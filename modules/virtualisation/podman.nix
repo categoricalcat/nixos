@@ -1,10 +1,38 @@
 {
+  config,
+  lib,
   pkgs,
   addresses,
   ...
 }:
 
+let
+  isLocalImage =
+    c: c.imageFile != null || c.imageStream != null || lib.hasPrefix "localhost/" c.image;
+in
 {
+  imports = [
+    {
+      options.virtualisation.oci-containers.containers = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule (
+            { config, ... }:
+            {
+              labels = lib.mkIf (!isLocalImage config) {
+                "io.containers.autoupdate" = lib.mkDefault "registry";
+              };
+            }
+          )
+        );
+      };
+    }
+  ];
+
+  assertions = lib.mapAttrsToList (name: c: {
+    assertion = isLocalImage c || builtins.match "[^/]+[.:][^/]*/.+" c.image != null;
+    message = "virtualisation.oci-containers.containers.${name}: image `${c.image}` must be fully qualified (registry/name:tag) for podman auto-update";
+  }) config.virtualisation.oci-containers.containers;
+
   virtualisation = {
     oci-containers.backend = "podman";
 
@@ -67,6 +95,7 @@
   systemd.tmpfiles.rules = [
     "d /var/lib/container-volumes 0770 root podman -"
   ];
+  systemd.timers.podman-auto-update.wantedBy = [ "timers.target" ];
 
   environment.systemPackages = with pkgs; [
     buildah

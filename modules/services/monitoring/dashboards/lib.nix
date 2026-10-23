@@ -79,7 +79,17 @@ let
         defaults = {
           inherit unit mappings;
         }
-        // (if thresholds != null then { inherit thresholds; } else { })
+        // (
+          if thresholds != null then
+            {
+              thresholds = {
+                mode = "absolute";
+                steps = thresholds;
+              };
+            }
+          else
+            { }
+        )
         // (if links != [ ] then { inherit links; } else { });
       };
     };

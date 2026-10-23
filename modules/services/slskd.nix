@@ -102,7 +102,7 @@ in
 
   virtualisation.oci-containers.containers = {
     slskd = {
-      image = "slskd/slskd:latest";
+      image = "docker.io/slskd/slskd:latest";
       # Share gluetun's network namespace: outbound Soulseek traffic goes
       # through the VPN. The Web UI port is published via gluetun.
       dependsOn = [ "gluetun" ];
@@ -118,7 +118,7 @@ in
       ];
     };
     soularr = {
-      image = "mrusse/soularr:latest";
+      image = "ghcr.io/mrusse/soularr:latest";
       dependsOn = [ "slskd" ];
       extraOptions = [
         "--network=container:gluetun"

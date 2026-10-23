@@ -49,7 +49,7 @@ in
 
   virtualisation.oci-containers.containers = {
     firecrawl-redis = {
-      image = "redis:alpine";
+      image = "docker.io/library/redis:alpine";
       extraOptions = [ "--network=firecrawl_internal" ];
     };
 
@@ -64,7 +64,7 @@ in
     };
 
     firecrawl-rabbitmq = {
-      image = "rabbitmq:3-management";
+      image = "docker.io/library/rabbitmq:3-management";
       extraOptions = [ "--network=firecrawl_internal" ];
     };
 

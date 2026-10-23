@@ -9,7 +9,7 @@ let
 in
 {
   virtualisation.oci-containers.containers.podgrab = {
-    image = "akhilrex/podgrab:latest";
+    image = "docker.io/akhilrex/podgrab:latest";
     ports = [ "${toString addrs.services.podgrab.port}:8080" ];
     volumes = [
       "/var/lib/container-volumes/podgrab:/config"

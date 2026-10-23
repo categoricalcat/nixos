@@ -8,6 +8,46 @@
 let
   inherit (config.networking) hostName;
   addrs = allAddresses.hosts.${hostName};
+
+  # Chromium aborts when fontconfig reports zero font families
+  flaresolverrFonts = pkgs.makeFontsConf {
+    fontDirectories = [ pkgs.dejavu_fonts ];
+    includes = [ "${pkgs.fontconfig.out}/etc/fonts/conf.d" ];
+  };
+
+  flaresolverrImage = pkgs.dockerTools.streamLayeredImage {
+    name = "localhost/flaresolverr-nix";
+    contents = [
+      pkgs.dockerTools.caCertificates
+      pkgs.dockerTools.fakeNss
+      pkgs.dockerTools.usrBinEnv
+      pkgs.dockerTools.binSh
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.dumb-init
+      pkgs.flaresolverr
+    ];
+    extraCommands = ''
+      mkdir -p tmp var/tmp
+      chmod 1777 tmp var/tmp
+    '';
+    config = {
+      User = "65534:65534";
+      Entrypoint = [
+        "${pkgs.dumb-init}/bin/dumb-init"
+        "--"
+      ];
+      Cmd = [ "${pkgs.flaresolverr}/bin/flaresolverr" ];
+      Env = [
+        "HOME=/tmp"
+        "LANG=C.UTF-8"
+        "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+        "FONTCONFIG_FILE=${flaresolverrFonts}"
+      ];
+      WorkingDir = "/tmp";
+    };
+  };
+  flaresolverrRef = "${flaresolverrImage.imageName}:${flaresolverrImage.imageTag}";
 in
 {
   sops.secrets = {
@@ -82,7 +122,7 @@ in
     };
 
     flaresolverr = {
-      image = "ghcr.io/flaresolverr/flaresolverr:latest";
+      image = flaresolverrRef;
       dependsOn = [ "gluetun" ];
       extraOptions = [
         "--network=container:gluetun"
@@ -140,6 +180,8 @@ in
       "podman-flaresolverr" = {
         after = [ "podman-gluetun.service" ];
         bindsTo = [ "podman-gluetun.service" ];
+        # imageStream would re-stream the whole image on every (re)start
+        preStart = "podman image exists ${flaresolverrRef} || ${flaresolverrImage} | podman load";
       };
 
       "restart-gluetun" = {
