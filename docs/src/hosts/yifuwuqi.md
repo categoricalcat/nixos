@@ -104,7 +104,7 @@ ______________________________________________________________________
 
 ### 4.1 Attic Binary Cache
 
-- **Attic Server (`atticd`)**: Port `24203` (`attic.fufu.land`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
+- **Attic Server (`atticd`)**: Port `24203` (`cache.fufu.land`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
 - **Attic Watch-Store (`attic-watch-store.service`)**: Daemon running under user `nix-builder` that watches `/nix/store` and pushes new paths in real time (`-j 10`).
 - **Attic Closure-Keeper (`attic-closure-keeper.timer`)**: Runs every 15 minutes to guarantee all `-nixos-system-` closures are pinned and pushed.
 
@@ -138,7 +138,7 @@ ______________________________________________________________________
 
 - **Vulkan llama-cpp Serving (`llama-cpp-node`)**: Runs `llama-server` instances with Vulkan acceleration (`vulkanSupport = true`) on the Radeon 680M APU.
   - Active model: **`qwen3.6-35b-abliterated`** (port `11437`, IQ2_M quantization, 16,384 context length, FlashAttention enabled, Q8 KV cache, 5-minute idle sleep).
-- **SillyTavern Companion UI**: Port 24000 (`sillytavern.fufu.land`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
+- **SillyTavern Companion UI**: Port 24000 (`companion.fufu.land`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.fufu.land`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
 - **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.fufu.land`).
@@ -178,7 +178,7 @@ ______________________________________________________________________
 
 ## 8. General Administration & Hosted Services
 
-- **Homepage Dashboard**: Port 24082 (`homepage.fufu.land`), 5-column layout with ping health checks and resource widgets.
+- **Homepage Dashboard**: Port 24082 (`home.fufu.land`), 5-column layout with ping health checks and resource widgets.
 - **Cockpit**: Port 24091 (`cockpit.fufu.land`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **AdGuard Home & Unbound**: Secondary resolver binds explicit addresses

@@ -14,7 +14,7 @@ ai-ssh <host> <command...>
 The wrapper (`users/scripts/ai-ssh.sh`) connects as the read-only `ai` user
 using `~/.ssh/id_ai_ed25519`, encodes the command as one base64 token per
 argument (no eval, spaces/quotes survive verbatim), and the server-side gate
-reconstructs and dispatches it. Only the whitelisted commands below run;
+reconstructs and dispatches it. Only the allowlisted commands below run;
 anything else is rejected.
 
 Bare hostnames resolve via the generated ssh config
@@ -24,7 +24,7 @@ Bare hostnames resolve via the generated ssh config
 - `yitaishi`, `yixiaoqing` — Tailscale address (VPN only; they expose ssh
   nowhere else)
 
-## Gate whitelist
+## Gate allowlist
 
 The gate is `modules/services/ssh/scripts/ai-gate.sh`, wired via
 `Match User ai` in `modules/services/ssh/default.nix`. It allows:
@@ -63,7 +63,7 @@ path allowlist and additionally unreadable to the `ai` user.
   reads — read-only system state, journals, and allowlisted paths. Cannot
   write, escalate, or touch `/persist/keys` or user SSH material.
 - **`ai` key theft**: same as agent compromise — the key is server-gated, so
-  there is nothing beyond the whitelist to run.
+  there is nothing beyond the allowlist to run.
 - **Host-key pinning**: mesh host keys are pinned in `/etc/ssh/ssh_known_hosts`
   (`modules/services/ssh/known-hosts.nix`), generated from `secrets/keys.nix`.
   `ssh.fufu.land` stays `accept-new` as the out-of-band backup path.

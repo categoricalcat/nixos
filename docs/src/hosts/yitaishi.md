@@ -51,7 +51,7 @@ ______________________________________________________________________
 ```
 
 - **Desktop Shells**: GNOME desktop or Niri Wayland compositor.
-- **Ly Greeter**: Terminal-based display manager configured in 8-color VT framebuffer mode to prevent color mangling on Linux consoles, styled to match the Stylix base16 palette.
+- **tuigreet**: Clean, lightweight TUI login manager powered by greetd.
 - **Stylix Theming**: Dark polarity base16 theme (`theme.nix`), custom fonts and cursors (`theme-assets.nix`), GTK/Qt/GRUB/Plymouth targets enabled.
 - **Lan Mouse KVM**: Software KVM configured to seamlessly move cursor across the right screen boundary onto laptop `yixiaoqing`.
 - **FIDO2 Authentication**: PAM U2F authentication enabled for system login (`sudo` is disabled gang-wide; local root elevation uses `su -` with `/persist/keys/passwords/root`).
@@ -60,26 +60,26 @@ ______________________________________________________________________
 
 ## 4. Pro-Audio Production DAW Studio
 
-Configured via `modules/audio/default.nix` and `modules/audio-home.nix`:
+Configured via `modules/audio/default.nix`:
 
 ### 4.1 Real-Time Kernel & Low-Latency PipeWire
 
 - **Musnix Integration**: Real-time audio kernel privileges, thread priority tuning, `rtcqs` system diagnostic tool.
 - **PipeWire Studio Tuning**:
   - Sample Rate: **96,000 Hz** bit-perfect audio processing.
-  - Quantum Buffer: **128 samples** (~1.33 ms hardware latency).
+  - Quantum Buffer: **384 samples** (~4.0 ms latency at 96kHz).
   - Realtime Kit (`rtkit`) priority boosting.
 
 ### 4.2 Production Tools & Plugin Ecosystem
 
-- **DAWs & Sequencers**: Reaper, Carla, LMMS, Giada, Seq66, Qmidiarp, Stochas, Helio Workstation.
-- **Drum Synthesis & Samplers**: MT-PowerDrumKit, DrumGizmo (with CrocellKit, DRSKit, MuldjordKit, Shkit multi-mic drumkits), AVL Drumkits.
-- **Synthesizers & Processors**: Vital, Surge-XT, Helm, Odin2, Dexed, Cardinal Modular, LSP-Plugins suite, Calf Studio Gear, Dragonfly Reverb, Guitarix, ChowDSP.
+- **DAWs & Audio Editors**: Reaper, Tenacity.
+- **Drum Synthesis & Samplers**: MT-PowerDrumKit, DrumGizmo (CrocellKit, MuldjordKit multi-mic drumkits), AVL Drumkits, Hydrogen, Geonkick, Drumkv1.
+- **Synthesizers & Processors**: Vital, Surge-XT, Helm, Odin2, Dexed, Stochas, Fluidsynth, LSP-Plugins suite, Calf Studio Gear, Dragonfly Reverb, Guitarix, ToneLib, Neural Amp Modeler LV2, ChowDSP.
 - **Scaffolded Preset & Library Tree (`/home/yi`)**:
-  - `~/Music/midi-library/`: ldrolez chord progressions, Magenta Groove drum MIDI, MAESTRO piano performances, Lakh clean MIDI songs.
   - `~/Audio/nam/`: Neural Amp Modeler (`.nam`) profiles.
   - `~/Audio/ir/`: Speaker cabinet and room impulse responses (`.wav`).
   - `~/Audio/reaper-fxchains/`: Custom Reaper effect chain presets.
+  - `~/.vst3`, `~/.lv2`, `~/.clap`, `~/.vst`: Plugin search paths.
 
 ______________________________________________________________________
 
@@ -124,7 +124,6 @@ ______________________________________________________________________
 - `hosts/yitaishi/graphics.nix`
 - `hosts/yitaishi/gaming.nix`
 - `modules/audio/default.nix`
-- `modules/audio-home.nix`
 - `modules/desktop.nix`
-- `modules/desktop/ly.nix`
+- `modules/desktop/greetd.nix`
 - `modules/services/lan-mouse.nix`

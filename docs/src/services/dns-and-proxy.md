@@ -110,11 +110,11 @@ ______________________________________________________________________
 │ grafana.fufu.land            │ 10.42.0.2:24030 (yifuwuqi)   │
 │ cockpit.fufu.land            │ 10.42.0.2:24091 (yifuwuqi)   │
 │ search.fufu.land             │ 10.42.0.2:24888 (yifuwuqi)   │
-│ attic.fufu.land              │ 10.42.0.2:24203 (yifuwuqi)   │
+│ cache.fufu.land              │ 10.42.0.2:24203 (yifuwuqi)   │
 │ git.fufu.land (Forgejo)      │ 10.42.0.2:24200 (yifuwuqi)   │
 │ agent.fufu.land (Opencode)   │ 10.42.0.2:24010 (yifuwuqi)   │
-│ sillytavern.fufu.land        │ 10.42.0.2:24000 (yifuwuqi)   │
-│ homepage.fufu.land           │ 10.42.0.2:24082 (yifuwuqi)   │
+│ companion.fufu.land          │ 10.42.0.2:24000 (yifuwuqi)   │
+│ home.fufu.land               │ 10.42.0.2:24082 (yifuwuqi)   │
 │ radarr / sonarr / prowlarr...│ 10.42.0.2:24878/24989...(Arr)│
 └──────────────────────────────┴──────────────────────────────┘
 ```

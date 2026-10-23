@@ -30,7 +30,7 @@ Configured in `hosts/yichuang/configuration.nix`:
 
 ### 2.2 Remote Access & File Sharing
 
-- **OpenSSH Server**: Runs on custom port `24212` with standard locked-down authentication settings.
+- **OpenSSH Server**: Runs on standard port `22` with default loopback listening.
 - **Samba Client**: Mounts shared storage paths from `yifuwuqi` over local or mesh networking.
 - **Attic Cache Client**: Pre-configured to pull cached binary closures from `cache.fufu.land/yi`.
 
@@ -45,6 +45,4 @@ ______________________________________________________________________
 ## 4. Key Source Files
 
 - `hosts/yichuang/configuration.nix`
-- `hosts/yichuang/services.nix`
-- `hosts/yichuang/addresses.nix`
 - `users/home/yijia.nix`

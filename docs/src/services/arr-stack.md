@@ -52,7 +52,7 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 - Host: `127.0.0.1`
 - Port: `24080`
 - Category: `music` for Lidarr (must exist in qBittorrent)
-- Provide the WebUI credentials (localhost is auth-whitelisted, so they can be empty).
+- Provide the WebUI credentials (localhost is auth-allowlisted, so they can be empty).
 
 ## 5. Prowlarr Configuration
 

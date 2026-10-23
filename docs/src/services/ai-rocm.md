@@ -65,7 +65,7 @@ ______________________________________________________________________
 
 ### 4.1 SillyTavern Companion (`modules/services/ai/sillytavern.nix`)
 
-- **Domain**: `https://sillytavern.fufu.land` (proxied to port `24000`).
+- **Domain**: `https://companion.fufu.land` (proxied to port `24000`).
 - **Security**: Strict systemd isolation under dedicated user `sillytavern`. Pre-start script automatically bootstraps default settings and enables network listening with security overrides.
 
 ### 4.2 Opencode Agent Server (`modules/services/opencode.nix`)
