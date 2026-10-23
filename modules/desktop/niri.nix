@@ -32,7 +32,14 @@ in
 
     programs.niri.enable = true;
     programs.niri.package =
-      if config.desktop.hdr then niriSpicy else inputs.niri-unstable.packages.${system}.niri;
+      if config.desktop.hdr then
+        niriSpicy
+      else
+        inputs.niri-unstable.packages.${system}.niri.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [
+            ../../packages/niri-focus-delay.patch
+          ];
+        });
 
     services.accounts-daemon.enable = true;
 

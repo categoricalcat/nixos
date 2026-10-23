@@ -34,13 +34,23 @@
       # download-buffer-size = lib.mkDefault (1024 * 1024 * 1024 * 10);
 
       substituters = [
-        "https://nix-community.cachix.org"
-        "https://nixos-rocm.cachix.org"
         "https://cache.nixos.org/"
+        "https://nix-community.cachix.org"
+        "https://noctalia.cachix.org"
+        "https://niri.cachix.org"
+        "https://musnix.cachix.org"
+        "https://cache.numtide.com"
+        "https://pre-commit-hooks.cachix.org"
+        "https://cache.thalheim.io"
       ];
       trusted-public-keys = [
-        "nixos-rocm.cachix.org-1:VEpsf7pRIijjd8csKjFNBGzkBqOmw8H9PRmgAq14LnE"
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+        "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
+        "musnix.cachix.org-1:EDlNXnpEVLgjuxKuiB5xJrEmVge1h3W7GqAe7L0zs+M="
+        "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+        "pre-commit-hooks.cachix.org-1:Pkk3Panw5AW24TOv6kz3PvLhlH8puAsJTBbOPmBo7Rc="
+        "cache.thalheim.io-1:R7msbosLEZKrxk/lKxf9BTjOOH7Ax3H0Qj0/6wiHOgc="
       ];
     };
   };
