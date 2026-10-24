@@ -1,4 +1,5 @@
-_: {
+{ lib, ... }:
+{
   perSystem =
     { pkgs, ... }:
     {
@@ -6,24 +7,34 @@ _: {
         projectRootFile = "flake.nix";
         package = pkgs.treefmt;
         programs = {
-          nixfmt = {
+          deadnix = {
             enable = true;
-            package = pkgs.nixfmt;
+            package = pkgs.deadnix;
+            priority = 1;
+          };
+          nixf-diagnose = {
+            enable = true;
+            package = pkgs.nixf-diagnose;
+            priority = 2;
           };
           statix = {
             enable = true;
             package = pkgs.statix;
+            priority = 3;
           };
-          deadnix = {
+          nixfmt = {
             enable = true;
-            package = pkgs.deadnix;
+            package = pkgs.nixfmt;
+            priority = 4;
           };
           shfmt = {
             enable = true;
             indent_size = 2;
+            priority = 2;
           };
           shellcheck = {
             enable = true;
+            priority = 3;
           };
           mdformat = {
             enable = true;
@@ -35,11 +46,23 @@ _: {
             settings.wrap = "keep";
           };
         };
-        settings.formatter.shellharden = {
-          command = "${pkgs.shellharden}/bin/shellharden";
-          options = [ "--replace" ];
-          includes = [ "*.sh" ];
-          excludes = [ ".envrc" ];
+        settings.formatter = {
+          statix.command = lib.mkForce (
+            pkgs.writeShellScriptBin "statix-fix" ''
+              set -euo pipefail
+              for file in "$@"; do
+                ${lib.getExe pkgs.statix} fix "$file"
+                ${lib.getExe pkgs.statix} check "$file"
+              done
+            ''
+          );
+          shellharden = {
+            command = "${pkgs.shellharden}/bin/shellharden";
+            options = [ "--replace" ];
+            includes = [ "*.sh" ];
+            excludes = [ ".envrc" ];
+            priority = 1;
+          };
         };
       };
     };

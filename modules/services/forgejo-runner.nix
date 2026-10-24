@@ -70,6 +70,8 @@ in
   };
 
   systemd.services."forgejo-runner-yifuwuqi" = {
+    # CD deploying yifuwuqi would otherwise kill its own job mid-activation
+    restartIfChanged = false;
     wants = [
       "network-online.target"
       "sops-nix.service"

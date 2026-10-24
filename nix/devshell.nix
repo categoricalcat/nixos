@@ -1,6 +1,7 @@
 _: {
   perSystem =
     {
+      config,
       pkgs,
       ...
     }:
@@ -35,10 +36,11 @@ _: {
       nixDevPkgs = with pkgs; [
         statix # Lints and suggestions for Nix
         deadnix # Nix dead code locator
+        nixf-diagnose # Nix semantic linter and auto-fixer
         shellcheck # Shell linter
         shfmt # Shell formatter
         shellharden # Shell syntax hardener and auto-quoter
-        treefmt # Universal multi-file formatter
+        config.treefmt.build.wrapper # Universal multi-file formatter (wrapped with flake config)
         nixpkgs-hammering # Linter for Nixpkgs packages
         nil # Nix language server
         nixd # Nix language server (with statix/deadnix support)

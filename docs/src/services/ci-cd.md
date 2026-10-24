@@ -1,6 +1,6 @@
 # CI/CD Pipeline & Actions Runners
 
-This document details the automated continuous integration, matrix compilation, and binary cache publishing pipeline running on self-hosted Forgejo and GitHub Actions runners.
+This document details the automated continuous integration, parallel compilation, and binary cache publishing pipeline running on self-hosted Forgejo and GitHub Actions runners.
 
 ______________________________________________________________________
 
@@ -13,21 +13,16 @@ ______________________________________________________________________
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│                    Job 1: Flake Check                       │
-│    nix flake check --print-build-logs --show-trace -v       │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Success
-┌──────────────────────────────▼──────────────────────────────┐
-│             Job 2: Build & Push Matrix (max-parallel: 1)    │
-│  Matrix: [yixiaoqing, yitaishi, yifuwuqi, yirukou, yichuang]│
+│                Job: Build & Push (single job)               │
+│  nix-fast-build .#hydraJobs: checks, hosts, pkgs, shells    │
 │                                                             │
-│  1. Run ci/build.sh <host>                                  │
+│  1. Run ci/build.sh                                         │
 │     ├── Probe yitaishi on port 24212 (Tailscale / NetBird)  │
 │     ├── If online: offload derivations via ssh-ng           │
 │     └── If offline: compile locally on yifuwuqi             │
 │                                                             │
-│  2. Push built system closure to Attic Binary Cache         │
-│     attic push yi:yi result-<host>                          │
+│  2. Build all jobs in one pass (--skip-cached, --retries 1) │
+│     attic push yi:yi as each output finishes                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -38,11 +33,10 @@ ______________________________________________________________________
 The primary CI pipeline runs on Forgejo Actions:
 
 - **Triggers**: Pushes to `main` and `develop`, pull requests, and manual `workflow_dispatch`.
-- **`check` Job**: Runs syntax, flake integrity, and module evaluation tests on the native runner.
-- **`buildepush` Job**:
-  - Strategy: `max-parallel: 1` (builds one host at a time to prevent resource exhaustion) with `fail-fast: false`.
-  - Matrix targets: `yixiaoqing`, `yitaishi`, `yifuwuqi`, `yirukou`, `yichuang`.
-  - Output: Derivations land in `result-<host>` and are immediately pushed to Attic.
+- **`build` Job**: Runs `ci/build.sh` on the native runner, which builds `.#hydraJobs` with `nix-fast-build` from a single parallel evaluation.
+  - Jobs (`nix/ci.nix`): all `checks` (lint, deploy-rs schema/activate, `yijia`), plus `nixos-<host>`, `package-<name>`, and `shell-<name>`. They live in `hydraJobs` rather than `checks` so `nix flake check` and deploy-rs pre-checks do not build every host.
+  - Strategy: `--skip-cached` skips jobs already in a binary cache; `--retries 1` retries transient remote-builder failures.
+  - Output: Each finished job is immediately pushed to Attic.
 
 ______________________________________________________________________
 
@@ -92,10 +86,11 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 
 ### 5.2 Rollout & Safety
 
+- **Attic Gate**: Step 1 first runs `ci/deploy.sh gate <host>`, which fails unless the host toplevel is already in Attic. `nix.registry.self` embeds the flake source, so this only passes once CI has built that exact commit, which is why `ci/deploy.sh` runs deploy-rs with `--skip-checks`.
 - **`dry` (Dry-run & Diff)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`) and verifies closure differences before applying changes (`ci/deploy.sh diff <host>`).
 - **`switch` (Live Activation)**: Performs dry/diff verification, then live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh switch <host>`.
 - **`boot` (Bootloader Staging)**: Performs dry/diff verification, then updates the bootloader to boot into the new profile on next reboot without immediate live activation via `ci/deploy.sh boot <host>` (`deploy .#<host> --boot`).
-- **Runner Host Caution**: When activating `yifuwuqi` from CI, changes that restart `forgejo-runner-yifuwuqi.service` will kill the job mid-activation and trigger magic rollback. Apply runner service modifications from a local root terminal.
+- **Runner Host Caution**: `forgejo-runner-yifuwuqi.service` sets `restartIfChanged = false`, so activating `yifuwuqi` from CI no longer kills the job mid-activation. Runner changes take effect after `systemctl restart forgejo-runner-yifuwuqi` (as root, while idle) or a reboot.
 
 ### 5.3 Key Rotation
 
@@ -123,6 +118,7 @@ ______________________________________________________________________
 - `.forgejo/workflows/ci.yml`
 - `.forgejo/workflows/cd.yml`
 - `nix/deploy.nix`
+- `nix/ci.nix`
 - `ci/build.sh`
 - `ci/deploy.sh`
 - `modules/services/forgejo-runner.nix`

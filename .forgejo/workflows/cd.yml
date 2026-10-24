@@ -34,6 +34,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: https://github.com/actions/checkout@main
+      - name: Require ${{ inputs.host }} closure in attic
+        run: ci/deploy.sh gate ${{ inputs.host }}
       - name: Dry-activate ${{ inputs.host }}
         run: ci/deploy.sh dry-activate ${{ inputs.host }}
       - name: Diff package closures with nvd

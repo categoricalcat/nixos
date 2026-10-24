@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <dry|switch|boot|dry-activate|diff|deploy|1-diff|2-deploy> <host>" >&2
+  echo "Usage: $0 <gate|dry|switch|boot|dry-activate|diff|deploy|1-diff|2-deploy> <host>" >&2
   exit 1
 }
 
@@ -20,10 +20,19 @@ elif [ -f /var/lib/nix-builder/.ssh/id_ed25519 ]; then
   SSH_KEY_ARGS=(-i /var/lib/nix-builder/.ssh/id_ed25519)
 fi
 
+gate() {
+  local target="$1" new_system
+  new_system=$(nix eval --raw ".#nixosConfigurations.$target.config.system.build.toplevel")
+  if ! curl -sf -o /dev/null "$ATTIC_INTERNAL_URL/$ATTIC_CACHE_NAME/$(basename "$new_system" | cut -d- -f1).narinfo"; then
+    echo "::error::$new_system is not in attic; wait for CI on ${GITHUB_SHA:-HEAD}" >&2
+    exit 1
+  fi
+}
+
 dry_activate() {
   local target="$1"
   echo "::group::deploy dry-activate $target"
-  deploy .#"$target" --dry-activate
+  deploy --skip-checks .#"$target" --dry-activate
   echo "::endgroup::"
 }
 
@@ -42,18 +51,21 @@ diff_closure() {
 deploy_live() {
   local target="$1"
   echo "::group::deploy switch $target"
-  deploy .#"$target" -- --print-build-logs
+  deploy --skip-checks .#"$target" -- --print-build-logs
   echo "::endgroup::"
 }
 
 deploy_boot() {
   local target="$1"
   echo "::group::deploy boot $target"
-  deploy .#"$target" --boot -- --print-build-logs
+  deploy --skip-checks .#"$target" --boot -- --print-build-logs
   echo "::endgroup::"
 }
 
 case "$action" in
+gate)
+  gate "$host"
+  ;;
 dry | 1-diff)
   dry_activate "$host"
   diff_closure "$host"

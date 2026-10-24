@@ -28,6 +28,7 @@
           ./nix/git-hooks.nix
           ./nix/devshell.nix
           ./nix/deploy.nix
+          ./nix/ci.nix
         ];
 
         flake = {
