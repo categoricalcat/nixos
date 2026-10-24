@@ -53,7 +53,7 @@ let
         ${
           lib.optionalString (
             cfg.cveScan.whitelistFile != null
-          ) "--whitelist-file \"${toString cfg.cveScan.whitelistFile}\""
+          ) "--whitelist-file \"${cfg.cveScan.whitelistFile}\""
         } \
         ${lib.optionalString cfg.cveScan.scanContainers "--scan-containers"} \
         ${lib.optionalString (
@@ -84,16 +84,16 @@ in
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Enable daily deep CVE scanning via Vulnix and Trivy";
+        description = "Enable deep CVE scanning via Vulnix and Trivy";
       };
       calendar = lib.mkOption {
         type = lib.types.str;
-        default = "*-*-* 03:30:00";
+        default = config.yi.maintenance.slots.cveScan.calendar;
         description = "Systemd OnCalendar expression for deep CVE scan";
       };
       randomizedDelay = lib.mkOption {
         type = lib.types.str;
-        default = "1800s";
+        default = config.yi.maintenance.slots.cveScan.jitter;
         description = "Randomized delay for deep CVE scan timer";
       };
       scanContainers = lib.mkOption {
@@ -114,8 +114,8 @@ in
       };
       whitelistFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
-        default = null;
-        description = "Path to optional TOML whitelist file passed to vulnix -w";
+        default = ./vulnix-whitelist.toml;
+        description = "TOML whitelist file passed to vulnix -w (null disables it)";
       };
     };
   };
@@ -186,7 +186,7 @@ in
         security-audit-cve = lib.mkIf cfg.cveScan.enable {
           description = "Trigger deep CVE vulnerability scan";
           wantedBy = [ "timers.target" ];
-          timerConfig = {
+          timerConfig = config.yi.maintenance.slots.cveScan.timerConfig // {
             OnCalendar = cfg.cveScan.calendar;
             RandomizedDelaySec = cfg.cveScan.randomizedDelay;
             Persistent = true;

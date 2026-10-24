@@ -21,6 +21,9 @@ let
   services = allAddresses.hosts.yifuwuqi.services;
   inherit (services) attic;
   postgres = services.postgresql;
+  atticd = config.services.atticd;
+  gcSlot = config.yi.maintenance.slots.atticGc;
+  gcConfig = (pkgs.formats.toml { }).generate "attic-gc.toml" atticd.settings;
 in
 {
   assertions = [
@@ -43,7 +46,7 @@ in
       listen = "[::]:${toString attic.port}";
       database.url = postgres.urls.atticd;
       garbage-collection = {
-        interval = "1 days";
+        interval = "0 seconds";
         default-retention-period = "1 days";
       };
       chunking = {
@@ -55,9 +58,31 @@ in
     };
   };
 
-  systemd.services.atticd.serviceConfig.ExecStartPre = pkgs.lib.mkAfter [
-    "+${pkgs.bash}/bin/bash -c 'if [ -d /var/lib/private/atticd/storage ]; then ${pkgs.coreutils}/bin/chown -R --reference=/var/lib/private/atticd /var/lib/private/atticd/storage; fi'"
-  ];
+  systemd = {
+    services = {
+      atticd.serviceConfig.ExecStartPre = pkgs.lib.mkAfter [
+        "+${pkgs.bash}/bin/bash -c 'if [ -d /var/lib/private/atticd/storage ]; then ${pkgs.coreutils}/bin/chown -R --reference=/var/lib/private/atticd /var/lib/private/atticd/storage; fi'"
+      ];
+
+      attic-gc = {
+        description = "Attic garbage collection";
+        after = [ "postgresql.target" ];
+        requires = [ "postgresql.target" ];
+        before = [ "fstrim.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${pkgs.lib.getExe atticd.package} -f ${gcConfig} --mode garbage-collector-once";
+          EnvironmentFile = atticd.environmentFile;
+          DynamicUser = true;
+          User = atticd.user;
+          Group = atticd.group;
+          StateDirectory = "atticd";
+        };
+      };
+    };
+
+    timers.attic-gc = gcSlot.timer;
+  };
   environment.systemPackages = [
     pkgs.attic-client
     (import ../../../packages/wipe-attic-cache.nix { inherit pkgs; })

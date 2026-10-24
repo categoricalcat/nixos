@@ -196,10 +196,8 @@ in
     timers."restart-gluetun" = {
       description = "Timer to restart Gluetun VPN every 6 hours";
       wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "6h";
-        OnUnitActiveSec = "6h";
-        RandomizedDelaySec = "5m";
+      timerConfig = config.yi.maintenance.slots.gluetunRotate.timerConfig // {
+        OnCalendar = config.yi.maintenance.slots.gluetunRotate.calendar;
       };
     };
   };

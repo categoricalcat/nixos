@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   allAddresses,
   ...
@@ -27,7 +28,8 @@ in
     after = [
       "network-online.target"
       "atticd.service"
-    ];
+    ]
+    ++ lib.optional config.programs.nh.clean.enable "nh-clean.service";
     wants = [ "network-online.target" ];
     requires = [ "atticd.service" ];
 

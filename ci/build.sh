@@ -46,3 +46,20 @@ fi
   --eval-workers 2 \
   --attic-cache "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" \
   --attic-ignore-upstream-cache-filter
+
+# Keep one GC root per deploy host so attic-closure-keeper retains undeployed closures across weekly GC.
+case "${GITHUB_REF_NAME:-}" in
+develop | bot/auto-maintenance)
+  echo "::group::GC roots for $GITHUB_REF_NAME"
+  root_dir="/var/lib/nix-builder/gcroots/${GITHUB_REF_NAME//\//-}"
+  mkdir -p "$root_dir"
+  nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]' | while read -r host; do
+    if nix build --out-link "$root_dir/$host" ".#nixosConfigurations.$host.config.system.build.toplevel"; then
+      printf '%s✔ Rooted%s %s\n' "$GREEN" "$RESET" "$host"
+    else
+      echo "::warning::could not root the $host toplevel for $GITHUB_REF_NAME"
+    fi
+  done
+  echo "::endgroup::"
+  ;;
+esac

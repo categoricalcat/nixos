@@ -35,7 +35,6 @@
   # Automatic SSD maintenance
   services.fstrim = {
     enable = true; # Enable periodic SSD TRIM
-    interval = "weekly";
   };
 
   # Basic system monitoring
@@ -59,9 +58,6 @@
       Compress = "yes";
     };
   };
-
-  # Override gc retention for servers (longer than default 9d)
-  nix.gc.options = lib.mkForce "--delete-older-than 30d";
 
   # Disable GUI-related power management if present
   services.upower.enable = lib.mkForce false;

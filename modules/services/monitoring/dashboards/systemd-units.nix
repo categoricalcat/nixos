@@ -4,6 +4,33 @@
 let
   inherit (pkgs) lib;
   dashLib = import ./lib.nix { inherit lib; };
+
+  units =
+    suffix: names: lib.concatMapStringsSep "|" (name: "${name}.${suffix}") (lib.splitString " " names);
+  dailyTimers = units "timer" "podman-auto-update recyclarr attic-gc";
+  weeklyTimers = units "timer" "nh-clean podman-prune fstrim";
+  maintenanceServices = units "service" "nh-clean podman-prune podman-auto-update fstrim recyclarr attic-gc attic-closure-keeper security-audit-cve restart-gluetun";
+  timerAge =
+    timers: scale:
+    "(time() - max by (host, name) (node_systemd_timer_last_trigger_seconds{name=~\"${timers}\"})) / ${toString scale}";
+  steps =
+    orange: red:
+    [
+      {
+        color = "green";
+        value = null;
+      }
+    ]
+    ++ lib.optional (orange != null) {
+      color = "orange";
+      value = orange;
+    }
+    ++ [
+      {
+        color = "red";
+        value = red;
+      }
+    ];
 in
 dashLib.mkDashboard {
   uid = "systemd-units";
@@ -29,6 +56,31 @@ dashLib.mkDashboard {
       links = [
         (dashLib.mkLokiDataLink { })
       ];
+    })
+    (dashLib.mkStat {
+      title = "Failed Maintenance Units";
+      expr = "count(node_systemd_unit_state{state=\"failed\", name=~\"${maintenanceServices}\"} == 1) or vector(0)";
+      gridPos = dashLib.mkGridPos 0 14 6 6;
+      legendFormat = "Failed maintenance units";
+      thresholds = steps null 1;
+    })
+    (dashLib.mkBarGauge {
+      title = "Daily Maintenance: Last Run";
+      expr = timerAge dailyTimers 3600;
+      gridPos = dashLib.mkGridPos 6 14 9 6;
+      legendFormat = "{{host}} {{name}}";
+      unit = "h";
+      max = 50;
+      thresholds = steps 26 50;
+    })
+    (dashLib.mkBarGauge {
+      title = "Weekly Maintenance: Last Run";
+      expr = timerAge weeklyTimers 86400;
+      gridPos = dashLib.mkGridPos 15 14 9 6;
+      legendFormat = "{{host}} {{name}}";
+      unit = "d";
+      max = 15;
+      thresholds = steps 8 15;
     })
   ];
 }

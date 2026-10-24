@@ -47,7 +47,9 @@ node_security_generation_age_seconds $GEN_AGE
 # TYPE node_systemd_units_by_status_total gauge
 EOF
 
+  # Socket-activated per-connection instances (nix-daemon@N-...) would mint a new series per connection
   echo "$SEC_JSON" | jq -r '
+    map(select(.unit | test("@[0-9]+-") | not)) |
     def count_pred(p): [.[] | select(.predicate == p)] | length;
     "node_systemd_units_by_status_total{status=\"OK\"} \(count_pred("OK"))",
     "node_systemd_units_by_status_total{status=\"MEDIUM\"} \(count_pred("MEDIUM"))",

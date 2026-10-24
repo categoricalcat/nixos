@@ -2,6 +2,7 @@
   pkgs,
   config,
   allAddresses,
+  systemdHardening,
   ...
 }:
 
@@ -33,7 +34,7 @@ in
     requires = [ "atticd.service" ];
 
     path = [ atticClient ];
-    serviceConfig = {
+    serviceConfig = systemdHardening // {
       Type = "simple";
       User = "nix-builder";
       Group = "nogroup";

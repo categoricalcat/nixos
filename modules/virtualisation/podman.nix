@@ -7,6 +7,8 @@
 }:
 
 let
+  inherit (config.yi.maintenance) slots;
+
   isLocalImage =
     c: c.imageFile != null || c.imageStream != null || lib.hasPrefix "localhost/" c.image;
 in
@@ -48,7 +50,7 @@ in
 
       autoPrune = {
         enable = true;
-        dates = "weekly";
+        dates = slots.containerPrune.calendar;
         flags = [ "--all" ];
       };
     };
@@ -92,10 +94,26 @@ in
     };
   };
 
-  systemd.tmpfiles.rules = [
-    "d /var/lib/container-volumes 0770 root podman -"
-  ];
-  systemd.timers.podman-auto-update.wantedBy = [ "timers.target" ];
+  systemd = {
+    tmpfiles.rules = [
+      "d /var/lib/container-volumes 0770 root podman -"
+    ];
+    timers = {
+      podman-auto-update = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = slots.podmanAutoUpdate.timerConfig // {
+          OnCalendar = [
+            ""
+            slots.podmanAutoUpdate.calendar
+          ];
+        };
+      };
+      podman-prune = {
+        inherit (slots.containerPrune) timerConfig;
+      };
+    };
+    services.podman-prune.after = [ "podman-auto-update.service" ];
+  };
 
   environment.systemPackages = with pkgs; [
     buildah

@@ -3,12 +3,33 @@
   lib,
   pkgs,
   allAddresses,
+  systemdHardening,
   ...
 }:
 
 let
   inherit (config.networking) hostName;
   addrs = allAddresses.hosts.${hostName};
+  envFile = config.sops.templates."arr-secrets.env".path;
+
+  # radarr and sonarr get this set from nixpkgs; its lidarr, readarr and prowlarr modules set none of it
+  servarrHardening =
+    removeAttrs systemdHardening [
+      "ProtectSystem"
+      "MemoryDenyWriteExecute"
+    ]
+    // {
+      RemoveIPC = true;
+      SystemCallFilter = lib.splitString " " "@system-service ~@privileged ~@debug ~@mount @chown";
+    };
+
+  mediaService = {
+    UMask = lib.mkForce "0002";
+    PrivateUsers = lib.mkForce "identity";
+    ReadWritePaths = [ "/persist/media" ];
+    IPAddressDeny = lib.mkForce [ ];
+    IPAddressAllow = lib.mkForce [ ];
+  };
 in
 {
   sops.secrets = {
@@ -126,55 +147,25 @@ in
   };
 
   systemd.services = {
-    radarr = {
-      serviceConfig = {
-        EnvironmentFile = config.sops.templates."arr-secrets.env".path;
-        UMask = lib.mkForce "0002";
-        PrivateUsers = lib.mkForce "identity";
-        ReadWritePaths = [ "/persist/media" ];
-        IPAddressDeny = lib.mkForce [ ];
-        IPAddressAllow = lib.mkForce [ ];
-      };
+    radarr.serviceConfig = mediaService // {
+      EnvironmentFile = envFile;
     };
-    sonarr = {
-      serviceConfig = {
-        EnvironmentFile = config.sops.templates."arr-secrets.env".path;
-        UMask = lib.mkForce "0002";
-        PrivateUsers = lib.mkForce "identity";
-        ReadWritePaths = [ "/persist/media" ];
-        IPAddressDeny = lib.mkForce [ ];
-        IPAddressAllow = lib.mkForce [ ];
-      };
+    sonarr.serviceConfig = mediaService // {
+      EnvironmentFile = envFile;
     };
-    lidarr = {
-      serviceConfig = {
-        EnvironmentFile = config.sops.templates."arr-secrets.env".path;
-        UMask = lib.mkForce "0002";
-        PrivateUsers = lib.mkForce "identity";
-        ReadWritePaths = [ "/persist/media" ];
-        IPAddressDeny = lib.mkForce [ ];
-        IPAddressAllow = lib.mkForce [ ];
+    lidarr.serviceConfig =
+      servarrHardening
+      // mediaService
+      // {
+        EnvironmentFile = envFile;
       };
-    };
-    readarr = {
-      serviceConfig = {
-        EnvironmentFile = config.sops.templates."arr-secrets.env".path;
-        UMask = lib.mkForce "0002";
-        PrivateUsers = lib.mkForce "identity";
-        ReadWritePaths = [ "/persist/media" ];
-        IPAddressDeny = lib.mkForce [ ];
-        IPAddressAllow = lib.mkForce [ ];
+    readarr.serviceConfig =
+      servarrHardening
+      // mediaService
+      // {
+        EnvironmentFile = envFile;
       };
-    };
-    bazarr = {
-      serviceConfig = {
-        UMask = lib.mkForce "0002";
-        PrivateUsers = lib.mkForce "identity";
-        ReadWritePaths = [ "/persist/media" ];
-        IPAddressDeny = lib.mkForce [ ];
-        IPAddressAllow = lib.mkForce [ ];
-      };
-    };
+    bazarr.serviceConfig = mediaService;
     jellyfin = {
       # Jellyfin has no declarative port option: InternalHttpPort lives in
       # mutable network.xml. Only rewrite listen ports on an existing file;
@@ -199,21 +190,14 @@ in
         ];
       };
     };
-    seerr = {
-      serviceConfig = {
-        UMask = lib.mkForce "0002";
-      };
+    seerr.serviceConfig.UMask = lib.mkForce "0002";
+    prowlarr.serviceConfig = servarrHardening // {
+      PrivateUsers = true;
+      EnvironmentFile = envFile;
+      IPAddressDeny = lib.mkForce [ ];
+      IPAddressAllow = lib.mkForce [ ];
     };
-    prowlarr = {
-      serviceConfig = {
-        EnvironmentFile = config.sops.templates."arr-secrets.env".path;
-        IPAddressDeny = lib.mkForce [ ];
-        IPAddressAllow = lib.mkForce [ ];
-      };
-    };
-    recyclarr = {
-      serviceConfig.EnvironmentFile = config.sops.templates."arr-secrets.env".path;
-    };
+    recyclarr.serviceConfig.EnvironmentFile = envFile;
     # Restart with gluetun: the torrent-indexer shares its network namespace.
     "podman-torrent-indexer" = {
       after = [ "podman-gluetun.service" ];

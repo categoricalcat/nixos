@@ -74,6 +74,10 @@ in
       builders-use-substitutes = true;
       connect-timeout = 5;
       fallback = true;
+    }
+    // lib.optionalAttrs localBuild.remoteBuilder {
+      min-free = 50 * 1024 * 1024 * 1024;
+      max-free = 100 * 1024 * 1024 * 1024;
     };
   };
 
