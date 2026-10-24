@@ -52,6 +52,7 @@ in
         deploy-rs
         config.nix.package
         pkgs.attic-client
+        pkgs.lixPackageSets.lix_2_96.nix-fast-build
       ];
       settings = {
         runner.labels = [ "native:host" ];

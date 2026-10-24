@@ -1,5 +1,5 @@
 name: Continuous Deployment
-run-name: 'Deploy ${{ inputs.host || github.event.inputs.host }} (${{ inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step }})'
+run-name: 'CD: ${{ inputs.host }} (${{ inputs.action }})'
 
 on:
   workflow_dispatch:
@@ -24,21 +24,25 @@ on:
           - 'boot'
 
 concurrency:
-  group: ${{ format('deploy-{0}', inputs.host || github.event.inputs.host) }}
+  group: deploy-${{ inputs.host }}
   cancel-in-progress: false
 
 jobs:
   diff:
-    name: 'Step 1: Dry-Run & Diff'
+    name: 'Preflight & Diff (${{ inputs.host }})'
     runs-on: native
     timeout-minutes: 60
+    env:
+      CLICOLOR_FORCE: "1"
+      FORCE_COLOR: "1"
     steps:
-      - uses: https://github.com/actions/checkout@main
-      - name: Require ${{ inputs.host }} closure in attic
+      - name: Checkout repository
+        uses: https://github.com/actions/checkout@main
+      - name: Verify closure in Attic
         run: ci/deploy.sh gate ${{ inputs.host }}
-      - name: Dry-activate ${{ inputs.host }}
+      - name: Dry-activate configuration
         run: ci/deploy.sh dry-activate ${{ inputs.host }}
-      - name: Diff package closures with nvd
+      - name: Diff package closures (nvd)
         run: ci/deploy.sh diff ${{ inputs.host }}
       - name: Flake lock changelog
         env:
@@ -46,12 +50,16 @@ jobs:
         run: bash nix/scripts/lock-to-changelog.sh || true
 
   deploy:
-    name: 'Step 2: Activation / Bootloader Update'
+    name: 'Activate ${{ inputs.host }} (${{ inputs.action }})'
     needs: [diff]
-    if: (inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step) == 'switch' || (inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step) == 'boot' || (inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step) == '2-deploy'
+    if: inputs.action == 'switch' || inputs.action == 'boot'
     runs-on: native
     timeout-minutes: 60
+    env:
+      CLICOLOR_FORCE: "1"
+      FORCE_COLOR: "1"
     steps:
-      - uses: https://github.com/actions/checkout@main
-      - name: Deploy ${{ inputs.host }}
-        run: ci/deploy.sh ${{ inputs.action || inputs.step || github.event.inputs.action || github.event.inputs.step }} ${{ inputs.host }}
+      - name: Checkout repository
+        uses: https://github.com/actions/checkout@main
+      - name: Deploy configuration (${{ inputs.action }})
+        run: ci/deploy.sh ${{ inputs.action }} ${{ inputs.host }}

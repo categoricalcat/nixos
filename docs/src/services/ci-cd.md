@@ -33,8 +33,9 @@ ______________________________________________________________________
 The primary CI pipeline runs on Forgejo Actions:
 
 - **Triggers**: Pushes to `main` and `develop`, pull requests, and manual `workflow_dispatch`.
-- **`build` Job**: Runs `ci/build.sh` on the native runner, which builds `.#hydraJobs` with `nix-fast-build` from a single parallel evaluation.
-  - Jobs (`nix/ci.nix`): all `checks` (lint, deploy-rs schema/activate, `yijia`), plus `nixos-<host>`, `package-<name>`, and `shell-<name>`. They live in `hydraJobs` rather than `checks` so `nix flake check` and deploy-rs pre-checks do not build every host.
+- **Concurrency**: Groups runs by `ci-${{ github.ref }}` and cancels superseded in-progress runs on feature branches / PRs (preserving runs on `main` and `develop`).
+- **`build` Job (`Build & Cache`)**: Runs `ci/build.sh` on the native runner, which builds `.#hydraJobs` with `nix-fast-build` from a single parallel evaluation.
+  - Jobs (`nix/ci.nix`): all `checks` (`pre-commit`, `treefmt`, `yijia`), plus `nixos-<host>`, `package-<name>`, and `shell-<name>`. Each attribute's build log is buffered and folded into its own collapsible `::group::` section, and a Markdown summary table + build report is written to `$GITHUB_STEP_SUMMARY`.
   - Strategy: `--skip-cached` skips jobs already in a binary cache; `--retries 1` retries transient remote-builder failures.
   - Output: Each finished job is immediately pushed to Attic.
 
@@ -87,8 +88,8 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 ### 5.2 Rollout & Safety
 
 - **Attic Gate**: Step 1 first runs `ci/deploy.sh gate <host>`, which fails unless the host toplevel is already in Attic. `nix.registry.self` embeds the flake source, so this only passes once CI has built that exact commit, which is why `ci/deploy.sh` runs deploy-rs with `--skip-checks`.
-- **`dry` (Dry-run & Diff)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`) and verifies closure differences before applying changes (`ci/deploy.sh diff <host>`).
-- **`switch` (Live Activation)**: Performs dry/diff verification, then live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh switch <host>`.
+- **`dry` (Dry-run & Diff)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`), verifies closure differences (`ci/deploy.sh diff <host>`), and publishes a Markdown step summary (`$GITHUB_STEP_SUMMARY`) with target host metadata, store paths, and the full `nvd diff` output.
+- **`switch` (Live Activation)**: Performs dry/diff verification, then live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh switch <host>` and records the activation verdict in `$GITHUB_STEP_SUMMARY`.
 - **`boot` (Bootloader Staging)**: Performs dry/diff verification, then updates the bootloader to boot into the new profile on next reboot without immediate live activation via `ci/deploy.sh boot <host>` (`deploy .#<host> --boot`).
 - **Runner Host Caution**: `forgejo-runner-yifuwuqi.service` sets `restartIfChanged = false`, so activating `yifuwuqi` from CI no longer kills the job mid-activation. Runner changes take effect after `systemctl restart forgejo-runner-yifuwuqi` (as root, while idle) or a reboot.
 
