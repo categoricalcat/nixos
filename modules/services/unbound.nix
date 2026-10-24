@@ -94,6 +94,24 @@
         aggressive-nsec = "yes";
         harden-glue = "yes";
         harden-dnssec-stripped = "yes";
+        harden-below-nxdomain = "yes";
+
+        # Privacy Logging (silent in normal operation, log servfail only)
+        verbosity = 0;
+        log-queries = "no";
+        log-replies = "no";
+        log-servfail = "yes";
+
+        # DNS Rebinding Protection (RFC 1918 / RFC 3927 / RFC 4193 / RFC 4291)
+        # Note: 100.64.0.0/10 is intentionally excluded for Tailscale/CGNAT space.
+        private-address = [
+          "10.0.0.0/8"
+          "172.16.0.0/12"
+          "192.168.0.0/16"
+          "169.254.0.0/16"
+          "fd00::/8"
+          "fe80::/10"
+        ];
 
         # Infrastructure Cache & Resilience
         # Prevent temporary network hiccups/boot races from blacklisting upstreams for 15m.

@@ -177,3 +177,11 @@ ______________________________________________________________________
 - `modules/services/monitoring/blackbox.yml`
 - `modules/services/monitoring/adguard-exporter/`
 - `modules/services/monitoring/dashboards/`
+
+______________________________________________________________________
+
+## 6. DNS Privacy & Query Log Retention
+
+- **RAM-Only Query Log**: The AdGuard Home query log is RAM-only (`file_enabled = false`) on both resolver hosts (`yirukou` and `yifuwuqi`), avoiding query logging to disk while continuing to feed `adguard-exporter`.
+- **Retention Knob**: Log retention is governed in-memory by `size_memory` (50,000 entries) rather than the disk rotation `interval`.
+- **Client IP Granularity**: `anonymize_client_ip` stays off (`false`) to preserve client IP granularity for per-client Prometheus metrics and Grafana dashboard panels (`adguard_query_client_reason_total`).

@@ -65,9 +65,14 @@ in
         # fastest_addr: It finds an IP address with the lowest latency and returns this IP address in DNS response.
         # upstream_mode = "parallel";
 
+        safebrowsing_enabled = false;
+        parental_enabled = false;
+        safesearch_enabled = false;
+
         edns_client_subnet = {
           enabled = true;
-          use_custom = false;
+          use_custom = true;
+          custom_ip = "200.20.186.76";
         };
         ecs_use_subnet_opt = true;
         ratelimit = 0; # no per-client rate limit
@@ -180,9 +185,9 @@ in
 
       querylog = {
         enabled = true;
-        file_enabled = true;
-        interval = "168h";
-        size_memory = 10485760; # 10MiB
+        file_enabled = false;
+        interval = "24h";
+        size_memory = 50000; # entries (the real retention knob with file_enabled = false)
       };
 
       statistics = {
