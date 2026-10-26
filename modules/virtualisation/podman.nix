@@ -58,12 +58,19 @@ in
     containers = {
       enable = true;
 
-      storage.settings = {
-        storage = {
-          driver = "overlay";
-          runroot = "/run/containers/storage";
-          graphroot = "/var/lib/containers/storage";
-          options.overlay.mount_program = "${pkgs.fuse-overlayfs}/bin/fuse-overlayfs";
+      storage = {
+        settings = {
+          storage = {
+            driver = "overlay";
+            options.overlay.mount_program = "${pkgs.fuse-overlayfs}/bin/fuse-overlayfs";
+          };
+        };
+
+        rootful.settings = {
+          storage = {
+            runroot = "/run/containers/storage";
+            graphroot = "/var/lib/containers/storage";
+          };
         };
       };
 

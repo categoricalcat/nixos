@@ -34,7 +34,7 @@ elif [ "$agent" = "agent" ]; then
   flags=(--mode ask --trust --print --model auto)
 fi
 
-msg="$(nxd-"$agent" "${flags[@]}" "$(
+nxd-"$agent" "${flags[@]}" "$(
   cat <<EOF
 Write a concise git commit message for this staged diff.
 Output ONLY the commit message itself (no markdown blocks or preamble).
@@ -45,12 +45,11 @@ $stat
 Diff:
 $diff
 EOF
-)" </dev/null)"
+)" </dev/null | tee "$msg_file"
 
-if [ "$msg" = "" ]; then
+if [ ! -s "$msg_file" ] || [ "$(tr -d '[:space:]' <"$msg_file")" = "" ]; then
   echo "Failed to generate commit message."
   exit 1
 fi
 
-printf '%s\n' "$msg" >"$msg_file"
 exec git commit -e -F "$msg_file"

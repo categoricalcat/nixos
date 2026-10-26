@@ -22,6 +22,7 @@ in
     onlyoffice-desktopeditors
     discord
     vesktop
+    fluxer
     osmium
     stoat-desktop
 
@@ -31,7 +32,6 @@ in
     kdePackages.kdegraphics-thumbnailers
     kdePackages.kimageformats
     kdePackages.kio-extras
-    warehouse
     # davinci-resolve
     high-tide
     dbeaver-bin

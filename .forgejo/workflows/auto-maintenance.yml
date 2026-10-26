@@ -1,0 +1,29 @@
+name: Auto Maintenance
+run-name: 'Auto-maintenance summon (@${{ github.actor }})'
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 5,17 * * *'
+
+concurrency:
+  group: auto-maintenance
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Append one maintenance commit
+    runs-on: native
+    timeout-minutes: 30
+    steps:
+      - name: Checkout develop
+        uses: https://github.com/actions/checkout@main
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.AUTO_MAINTENANCE_TOKEN }}
+      - name: Summon maintenance agent
+        env:
+          AGY_OAUTH_TOKEN: ${{ secrets.AGY_OAUTH_TOKEN }}
+          AUTO_MAINTENANCE_TOKEN: ${{ secrets.AUTO_MAINTENANCE_TOKEN }}
+        run: ci/auto-maintenance.sh

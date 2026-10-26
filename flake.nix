@@ -110,6 +110,7 @@
           {
             packages = {
               zero-parades = pkgs.callPackage ./packages/zero-parades { };
+              fluxer = pkgs.callPackage ./packages/fluxer { };
               default = self.packages.x86_64-linux.zero-parades;
             };
 

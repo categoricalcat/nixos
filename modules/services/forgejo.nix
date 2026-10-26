@@ -43,8 +43,7 @@ in
         SSH_PORT = 24212;
         START_SSH_SERVER = false;
       };
-      # Flip to true after creating the admin account.
-      service.DISABLE_REGISTRATION = false;
+      service.DISABLE_REGISTRATION = true;
       actions.ENABLED = true;
       actions.ENDLESS_TASK_TIMEOUT = "12h";
       webhook.ALLOWED_HOST_LIST = "external,loopback," + builtins.concatStringsSep "," trustedCidrs;

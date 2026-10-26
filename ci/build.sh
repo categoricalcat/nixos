@@ -4,6 +4,7 @@ set -euo pipefail
 GREEN=$'\033[1;32m'
 DIM=$'\033[2m'
 RESET=$'\033[0m'
+ref_name="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
 
 echo "::group::Preflight: builder probe & Attic login"
 
@@ -30,7 +31,7 @@ if [ "${GITHUB_STEP_SUMMARY:-}" != "" ]; then
     printf '| **Runner** | \140%s\140 |\n' "$(hostname)"
     printf '| **Remote Builder** | \140%s\140 |\n' "$BUILDER_STATUS"
     printf '| **Attic Cache** | \140%s\140 (\140%s\140) |\n' "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL"
-    printf '| **Commit** | \140%s\140 (\140%s\140) |\n\n' "${GITHUB_SHA:0:7}" "${GITHUB_REF_NAME:-unknown}"
+    printf '| **Commit** | \140%s\140 (\140%s\140) |\n\n' "${GITHUB_SHA:0:7}" "${ref_name:-unknown}"
   } >>"$GITHUB_STEP_SUMMARY"
 fi
 
@@ -48,16 +49,16 @@ fi
   --attic-ignore-upstream-cache-filter
 
 # Keep one GC root per deploy host so attic-closure-keeper retains undeployed closures across weekly GC.
-case "${GITHUB_REF_NAME:-}" in
+case "$ref_name" in
 develop | bot/auto-maintenance)
-  echo "::group::GC roots for $GITHUB_REF_NAME"
-  root_dir="/var/lib/nix-builder/gcroots/${GITHUB_REF_NAME//\//-}"
+  echo "::group::GC roots for $ref_name"
+  root_dir="/var/lib/nix-builder/gcroots/${ref_name//\//-}"
   mkdir -p "$root_dir"
   nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]' | while read -r host; do
     if nix build --out-link "$root_dir/$host" ".#nixosConfigurations.$host.config.system.build.toplevel"; then
       printf '%s✔ Rooted%s %s\n' "$GREEN" "$RESET" "$host"
     else
-      echo "::warning::could not root the $host toplevel for $GITHUB_REF_NAME"
+      echo "::warning::could not root the $host toplevel for $ref_name"
     fi
   done
   echo "::endgroup::"

@@ -34,6 +34,7 @@
   - [Nix Build Mesh & Binary Cache](services/nix-build-cache.md)
   - [CI & Binary Cache Bootstrap](services/ci-cache.md)
   - [Forgejo Primary & Push Mirror](services/forgejo-github-sync.md)
+  - [Auto-Maintenance Bot](services/auto-maintenance.md)
 
 # Hardware & Workstation
 
