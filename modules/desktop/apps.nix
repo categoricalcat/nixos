@@ -26,6 +26,12 @@ in
     stoat-desktop
 
     kdePackages.kdenlive
+    kdePackages.dolphin
+    kdePackages.ffmpegthumbs
+    kdePackages.kdegraphics-thumbnailers
+    kdePackages.kimageformats
+    kdePackages.kio-extras
+    warehouse
     # davinci-resolve
     high-tide
     dbeaver-bin
@@ -68,7 +74,6 @@ in
     obs-studio-plugins.obs-vkcapture
     feishin
     jellyflix
-    jellyfin-rpc
     jellyfin-tui
     jellytui
     # nextcloud-client

@@ -15,6 +15,7 @@
     ../programs/opencode.nix
     ../programs/kitty.nix
     ../programs/mprisence.nix
+    ../programs/fluxer.nix
   ];
 
   host = {

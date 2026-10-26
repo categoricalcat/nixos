@@ -83,7 +83,7 @@ lib.mkIf (config.home.username != "root") {
 
         favorite-apps = [
           "google-chrome.desktop"
-          "thunar.desktop"
+          "org.kde.dolphin.desktop"
           "kitty.desktop"
         ];
       };
