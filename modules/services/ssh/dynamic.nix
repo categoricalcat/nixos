@@ -35,6 +35,20 @@ let
       host: [ (mkBareRewrite host) ] ++ (map (alias: mkSshRewrite host alias) allAddresses.aliases)
     ) (builtins.attrValues allAddresses.hosts)
   );
+
+  forgejoHost = allAddresses.hosts.yifuwuqi;
+  forgejoDomain = forgejoHost.services.forgejo.domain or null;
+  forgejoLanIp = forgejoHost.network.lan.ipv4.host;
+  forgejoPort = forgejoHost.ssh.listenPort;
+
+  forgejoRewrite =
+    lib.optionalString (forgejoDomain != null && forgejoLanIp != null && forgejoPort != null)
+      ''
+        Host ${forgejoDomain}
+            HostName ${forgejoLanIp}
+            Port ${toString forgejoPort}
+            HostKeyAlias ${forgejoHost.hostName}
+      '';
 in
 ''
   IdentityFile ${keys.paths.userGitSshKey "~"}
@@ -43,4 +57,5 @@ in
       IdentityFile ${keys.paths.sshHostKey}
 
   ${dynamicSshConfig}
+  ${forgejoRewrite}
 ''

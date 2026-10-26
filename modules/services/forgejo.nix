@@ -56,4 +56,19 @@ in
     after = [ "postgresql.service" ];
     requires = [ "postgresql.service" ];
   };
+
+  services.openssh = {
+    settings.AllowUsers = [ "forgejo" ];
+    extraConfig = ''
+      Match User forgejo
+        AuthenticationMethods publickey
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        X11Forwarding no
+        AllowTcpForwarding no
+        AllowAgentForwarding no
+        AllowStreamLocalForwarding no
+      Match All
+    '';
+  };
 }

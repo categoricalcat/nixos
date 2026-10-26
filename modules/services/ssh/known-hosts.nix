@@ -19,8 +19,12 @@ let
       host = allAddresses.hosts.${name};
       resolvedAliases = lib.filter (a: (ipFor host a) != null) allAddresses.aliases;
       port = host.ssh.listenPort or null;
+      serviceDomains = lib.optional (
+        host.services.forgejo.domain or null != null
+      ) host.services.forgejo.domain;
       rawNames = lib.unique (
         [ name ]
+        ++ serviceDomains
         ++ (map (a: "${name}.${a.suffix}") resolvedAliases)
         ++ (map (a: ipFor host a) resolvedAliases)
       );
