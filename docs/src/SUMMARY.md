@@ -33,6 +33,7 @@
   - [CI/CD Pipeline & Runners](services/ci-cd.md)
   - [Nix Build Mesh & Binary Cache](services/nix-build-cache.md)
   - [CI & Binary Cache Bootstrap](services/ci-cache.md)
+  - [Forgejo Primary & Push Mirror](services/forgejo-github-sync.md)
 
 # Hardware & Workstation
 
