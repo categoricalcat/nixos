@@ -10,15 +10,19 @@ echo "::group::Preflight: builder probe & Attic login"
 
 BUILDER_ARGS=()
 BUILDER_STATUS="local only (yitaishi offline)"
+LOCAL_JOBS="$(nix config show --json | jq -er '."max-jobs".value | numbers')"
+REMOTE_JOBS=0
 if timeout 2 bash -c '</dev/tcp/yitaishi.ts/24212' 2>/dev/null || timeout 2 bash -c '</dev/tcp/yitaishi.nb/24212' 2>/dev/null; then
   printf '%s✔ yitaishi online%s — registering ssh-ng remote builder\n' "$GREEN" "$RESET"
-  b="ssh-ng://yitaishi x86_64-linux - 16 100 kvm,nixos-test,benchmark,big-parallel"
+  REMOTE_JOBS=16
+  b="ssh-ng://yitaishi x86_64-linux - $REMOTE_JOBS 100 kvm,nixos-test,benchmark,big-parallel"
   [ -f /etc/nix/machines ] && b="@/etc/nix/machines ; $b"
   BUILDER_ARGS=(--option builders "$b")
-  BUILDER_STATUS="yitaishi (ssh-ng, 16 cores)"
+  BUILDER_STATUS="yitaishi (ssh-ng, $REMOTE_JOBS jobs)"
 else
   printf '%s• yitaishi offline%s — building locally on %s\n' "$DIM" "$RESET" "$(hostname)"
 fi
+TOTAL_JOBS=$((LOCAL_JOBS + REMOTE_JOBS))
 
 attic login "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL" "${ATTIC_TOKEN:?attic token is empty}"
 printf '%s✔ Attic authenticated%s (%s @ %s)\n' "$GREEN" "$RESET" "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL"
@@ -30,6 +34,7 @@ if [ "${GITHUB_STEP_SUMMARY:-}" != "" ]; then
     printf '| Field | Value |\n| :--- | :--- |\n'
     printf '| **Runner** | \140%s\140 |\n' "$(hostname)"
     printf '| **Remote Builder** | \140%s\140 |\n' "$BUILDER_STATUS"
+    printf '| **Build Workers** | \140%s\140 (\140%s local + %s remote\140) |\n' "$TOTAL_JOBS" "$LOCAL_JOBS" "$REMOTE_JOBS"
     printf '| **Attic Cache** | \140%s\140 (\140%s\140) |\n' "$ATTIC_CACHE_NAME" "$ATTIC_INTERNAL_URL"
     printf '| **Commit** | \140%s\140 (\140%s\140) |\n\n' "${GITHUB_SHA:0:7}" "${ref_name:-unknown}"
   } >>"$GITHUB_STEP_SUMMARY"
@@ -41,6 +46,7 @@ if ! command -v nix-fast-build >/dev/null 2>&1; then
 fi
 
 "${FAST_BUILD_CMD[@]}" "${BUILDER_ARGS[@]}" \
+  --max-jobs "$TOTAL_JOBS" \
   --flake ".#hydraJobs" \
   --skip-cached \
   --retries 1 \
