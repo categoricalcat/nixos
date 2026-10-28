@@ -1,18 +1,9 @@
 name: Continuous Deployment
-run-name: 'CD: ${{ inputs.host }} (${{ inputs.action }})'
+run-name: 'CD: ${{ inputs.action }} (@${{ github.actor }})'
 
 on:
   workflow_dispatch:
     inputs:
-      host:
-        description: 'Target Host'
-        required: true
-        type: choice
-        options:
-          - yixiaoqing
-          - yitaishi
-          - yifuwuqi
-          - yirukou
       action:
         description: 'Deployment Action'
         required: true
@@ -22,35 +13,74 @@ on:
           - 'dry'
           - 'switch'
           - 'boot'
+      all:
+        description: 'All hosts (yixiaoqing, yitaishi, yifuwuqi, yirukou)'
+        type: boolean
+        default: false
+      yixiaoqing:
+        description: 'Deploy yixiaoqing (Desktop)'
+        type: boolean
+        default: false
+      yitaishi:
+        description: 'Deploy yitaishi (Workstation)'
+        type: boolean
+        default: false
+      yifuwuqi:
+        description: 'Deploy yifuwuqi (Server)'
+        type: boolean
+        default: false
+      yirukou:
+        description: 'Deploy yirukou (Gateway)'
+        type: boolean
+        default: false
 
 concurrency:
-  group: deploy-${{ inputs.host }}
+  group: cd-deploy
   cancel-in-progress: false
 
 jobs:
   diff:
-    name: 'Preflight & Diff (${{ inputs.host }})'
+    name: 'Preflight & Diff'
     runs-on: native
     timeout-minutes: 60
+    outputs:
+      hosts: ${{ steps.targets.outputs.hosts }}
     env:
       CLICOLOR_FORCE: "1"
       FORCE_COLOR: "1"
     steps:
       - name: Checkout repository
         uses: https://github.com/actions/checkout@main
+      - name: Resolve target hosts
+        id: targets
+        run: |
+          TARGETS=()
+          [ "${{ inputs.all }}" = "true" ] && TARGETS+=(all)
+          [ "${{ inputs.yixiaoqing }}" = "true" ] && TARGETS+=(yixiaoqing)
+          [ "${{ inputs.yitaishi }}" = "true" ] && TARGETS+=(yitaishi)
+          [ "${{ inputs.yifuwuqi }}" = "true" ] && TARGETS+=(yifuwuqi)
+          [ "${{ inputs.yirukou }}" = "true" ] && TARGETS+=(yirukou)
+
+          if [ "${#TARGETS[@]}" -eq 0 ]; then
+            echo "::error::No target hosts selected! Please check at least one host." >&2
+            exit 1
+          fi
+
+          printf 'Target hosts: %s\n' "${TARGETS[*]}"
+          echo "hosts=${TARGETS[*]}" >> "$GITHUB_OUTPUT"
       - name: Verify closure in Attic
-        run: ci/deploy.sh gate ${{ inputs.host }}
+        run: ci/deploy.sh gate ${{ steps.targets.outputs.hosts }}
       - name: Dry-activate configuration
-        run: ci/deploy.sh dry-activate ${{ inputs.host }}
+        run: ci/deploy.sh dry-activate ${{ steps.targets.outputs.hosts }}
       - name: Diff package closures (nvd)
-        run: ci/deploy.sh diff ${{ inputs.host }}
+        run: ci/deploy.sh diff ${{ steps.targets.outputs.hosts }}
       - name: Flake lock changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash nix/scripts/lock-to-changelog.sh || true
 
   deploy:
-    name: 'Activate ${{ inputs.host }} (${{ inputs.action }})'
+    name: 'Activate (${{ inputs.action }})'
     needs: [diff]
     if: inputs.action == 'switch' || inputs.action == 'boot'
     runs-on: native
@@ -62,4 +92,4 @@ jobs:
       - name: Checkout repository
         uses: https://github.com/actions/checkout@main
       - name: Deploy configuration (${{ inputs.action }})
-        run: ci/deploy.sh ${{ inputs.action }} ${{ inputs.host }}
+        run: ci/deploy.sh ${{ inputs.action }} ${{ needs.diff.outputs.hosts }}

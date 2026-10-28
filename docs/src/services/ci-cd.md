@@ -87,11 +87,12 @@ The automated gang deployment pipeline runs via `deploy-rs` on Forgejo Actions u
 
 ### 5.2 Rollout & Safety
 
-- **Attic Gate**: Step 1 first runs `ci/deploy.sh gate <host>`, which fails unless the host toplevel is already in Attic. `nix.registry.self` embeds the flake source, so this only passes once CI has built that exact commit, which is why `ci/deploy.sh` runs deploy-rs with `--skip-checks`.
-- **`dry` (Dry-run & Diff)**: Dry-runs activation (`ci/deploy.sh dry-activate <host>`), verifies closure differences (`ci/deploy.sh diff <host>`), and publishes a Markdown step summary (`$GITHUB_STEP_SUMMARY`) with target host metadata, store paths, and the full `nvd diff` output.
-- **`switch` (Live Activation)**: Performs dry/diff verification, then live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh switch <host>` and records the activation verdict in `$GITHUB_STEP_SUMMARY`.
-- **`boot` (Bootloader Staging)**: Performs dry/diff verification, then updates the bootloader to boot into the new profile on next reboot without immediate live activation via `ci/deploy.sh boot <host>` (`deploy .#<host> --boot`).
-- **Runner Host Caution**: `forgejo-runner-yifuwuqi.service` sets `restartIfChanged = false`, so activating `yifuwuqi` from CI no longer kills the job mid-activation. Runner changes take effect after `systemctl restart forgejo-runner-yifuwuqi` (as root, while idle) or a reboot.
+- **Multi-host Batch Deployments**: The manual dispatch modal uses checkboxes for all target hosts (`yixiaoqing`, `yitaishi`, `yifuwuqi`, `yirukou`) and an `all` toggle, allowing batch deployments of any combination of machines in a single workflow run. When run interactively in a terminal without arguments, `ci/deploy.sh` launches an `fzf -m` multi-select prompt.
+- **Attic Gate**: Step 1 runs `ci/deploy.sh gate <host...>`, which fails immediately unless each host's toplevel closure is already verified in Attic. `nix.registry.self` embeds the flake source, so this only passes once CI has built that exact commit, which is why `ci/deploy.sh` runs deploy-rs with `--skip-checks`.
+- **`dry` (Dry-run & Diff)**: Dry-runs activation (`ci/deploy.sh dry-activate <host...>`), verifies closure differences (`ci/deploy.sh diff <host...>`), and publishes a Markdown step summary (`$GITHUB_STEP_SUMMARY`) with target host metadata, store paths, and the full `nvd diff` output for every selected machine.
+- **`switch` (Live Activation)**: Performs dry/diff verification, then live activation with `magicRollback` enabled (30s confirm timeout) via `ci/deploy.sh switch <host...>` and records the activation verdict in `$GITHUB_STEP_SUMMARY`.
+- **`boot` (Bootloader Staging)**: Performs dry/diff verification, then updates the bootloader to boot into the new profile on next reboot without immediate live activation via `ci/deploy.sh boot <host...>` (`deploy .#<host> --boot`).
+- **Runner Host Caution & Ordering**: `forgejo-runner-yifuwuqi.service` sets `restartIfChanged = false`, so activating `yifuwuqi` from CI no longer kills the job mid-activation. The deployment script automatically sorts target nodes so that `yifuwuqi` is activated last after all remote nodes complete successfully. Runner changes take effect after `systemctl restart forgejo-runner-yifuwuqi` (as root, while idle) or a reboot.
 
 ### 5.3 Key Rotation
 

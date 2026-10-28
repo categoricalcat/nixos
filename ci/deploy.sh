@@ -6,17 +6,60 @@ CYAN=$'\033[1;36m'
 DIM=$'\033[2m'
 RESET=$'\033[0m'
 
+RUNNER_HOST="yifuwuqi"
+KNOWN_HOSTS=(yixiaoqing yitaishi yirukou "$RUNNER_HOST")
+declare -A KNOWN_HOST_MAP
+for h in "${KNOWN_HOSTS[@]}"; do KNOWN_HOST_MAP[$h]=1; done
+
+ATTIC_INTERNAL_URL="${ATTIC_INTERNAL_URL:-http://yifuwuqi:24203}"
+ATTIC_CACHE_NAME="${ATTIC_CACHE_NAME:-yi}"
+
 usage() {
-  echo "Usage: $0 <gate|dry|switch|boot|dry-activate|diff|deploy|1-diff|2-deploy> <host>" >&2
+  echo "Usage: $0 <gate|dry|switch|boot|dry-activate|diff|deploy|1-diff|2-deploy> <host...>" >&2
   exit 1
 }
 
-if [ "$#" -lt 2 ]; then
-  usage
+if [ "$#" -eq 0 ]; then
+  if ! [ -t 0 ] || ! command -v fzf >/dev/null 2>&1; then
+    usage
+  fi
+  action="dry"
+else
+  action="$1"
+  shift
 fi
 
-action="$1"
-host="$2"
+hosts=("$@")
+if [ "${#hosts[@]}" -eq 0 ]; then
+  if ! [ -t 0 ] || ! command -v fzf >/dev/null 2>&1; then
+    usage
+  fi
+  selected=$(printf '%s\n' "${KNOWN_HOSTS[@]}" | fzf -m --prompt="Select host(s) to deploy (TAB to select multiple, Enter to confirm): ")
+  [ "$selected" != "" ] || {
+    echo "No hosts selected. Aborting." >&2
+    exit 1
+  }
+  readarray -t hosts <<<"$selected"
+fi
+
+targets=()
+has_runner=0
+declare -A seen=()
+for h in "${hosts[@]}"; do
+  if [ "$h" = "all" ]; then
+    targets=("${KNOWN_HOSTS[@]}")
+    has_runner=0
+    break
+  fi
+  [ "${KNOWN_HOST_MAP[$h]:-}" != "" ] || {
+    echo "::error::Unknown host '$h'. Valid hosts: ${KNOWN_HOSTS[*]}" >&2
+    exit 1
+  }
+  [ "${seen[$h]:-}" = "" ] || continue
+  seen[$h]=1
+  [ "$h" = "$RUNNER_HOST" ] && has_runner=1 || targets+=("$h")
+done
+[ "$has_runner" -eq 1 ] && targets+=("$RUNNER_HOST")
 
 SSH_KEY_ARGS=()
 if [ "${SSH_KEY:-}" != "" ]; then
@@ -119,28 +162,25 @@ deploy_boot() {
   fi
 }
 
-case "$action" in
-gate)
-  gate "$host"
-  ;;
-dry | 1-diff)
-  dry_activate "$host"
-  diff_closure "$host"
-  ;;
-dry-activate | dry-run)
-  dry_activate "$host"
-  ;;
-diff)
-  diff_closure "$host"
-  ;;
-switch | deploy | 2-deploy | live | apply)
-  deploy_live "$host"
-  ;;
-boot)
-  deploy_boot "$host"
-  ;;
-*)
-  echo "Unknown action: $action" >&2
-  usage
-  ;;
-esac
+run_action() {
+  local target="$1"
+  case "$action" in
+  gate) gate "$target" ;;
+  dry | 1-diff)
+    dry_activate "$target"
+    diff_closure "$target"
+    ;;
+  dry-activate | dry-run) dry_activate "$target" ;;
+  diff) diff_closure "$target" ;;
+  switch | deploy | 2-deploy | live | apply) deploy_live "$target" ;;
+  boot) deploy_boot "$target" ;;
+  *)
+    echo "Unknown action: $action" >&2
+    usage
+    ;;
+  esac
+}
+
+for target in "${targets[@]}"; do
+  run_action "$target"
+done
