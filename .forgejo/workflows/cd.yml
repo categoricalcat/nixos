@@ -1,36 +1,37 @@
-name: Continuous Deployment
-run-name: 'CD: ${{ inputs.action }} (@${{ github.actor }})'
+name: flake deploies
+run-name: "CD: ${{ inputs.action }} (@${{ github.actor }})"
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Deployment Action'
+        description: "Deployment Action"
         required: true
         type: choice
-        default: 'dry'
+        default: "dry"
         options:
-          - 'dry'
-          - 'switch'
-          - 'boot'
+          - "dry"
+          - "switch"
+          - "boot"
+
       all:
-        description: 'All hosts (yixiaoqing, yitaishi, yifuwuqi, yirukou)'
+        description: "All hosts (yixiaoqing, yitaishi, yifuwuqi, yirukou)"
         type: boolean
         default: false
       yixiaoqing:
-        description: 'Deploy yixiaoqing (Desktop)'
+        description: "Deploy yixiaoqing (Desktop)"
         type: boolean
         default: false
       yitaishi:
-        description: 'Deploy yitaishi (Workstation)'
+        description: "Deploy yitaishi (Workstation)"
         type: boolean
         default: false
       yifuwuqi:
-        description: 'Deploy yifuwuqi (Server)'
+        description: "Deploy yifuwuqi (Server)"
         type: boolean
         default: false
       yirukou:
-        description: 'Deploy yirukou (Gateway)'
+        description: "Deploy yirukou (Gateway)"
         type: boolean
         default: false
 
@@ -40,7 +41,7 @@ concurrency:
 
 jobs:
   diff:
-    name: 'Preflight & Diff'
+    name: "Preflight & Diff"
     runs-on: native
     timeout-minutes: 60
     outputs:
@@ -49,8 +50,8 @@ jobs:
       CLICOLOR_FORCE: "1"
       FORCE_COLOR: "1"
     steps:
-      - name: Checkout repository
-        uses: https://github.com/actions/checkout@main
+      - uses: https://github.com/actions/checkout@main
+
       - name: Resolve target hosts
         id: targets
         run: |
@@ -68,19 +69,19 @@ jobs:
 
           printf 'Target hosts: %s\n' "${TARGETS[*]}"
           echo "hosts=${TARGETS[*]}" >> "$GITHUB_OUTPUT"
-      - name: Verify closure in Attic
-        run: ci/deploy.sh gate ${{ steps.targets.outputs.hosts }}
-      - name: Dry-activate configuration
-        run: ci/deploy.sh dry-activate ${{ steps.targets.outputs.hosts }}
-      - name: Diff package closures (nvd)
-        run: ci/deploy.sh diff ${{ steps.targets.outputs.hosts }}
-      - name: Flake lock changelog
+
+      - run: ci/deploy.sh gate ${{ steps.targets.outputs.hosts }}
+
+      - run: ci/deploy.sh dry-activate ${{ steps.targets.outputs.hosts }}
+
+      - run: ci/deploy.sh diff ${{ steps.targets.outputs.hosts }}
+
+      - run: bash nix/scripts/lock-to-changelog.sh || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash nix/scripts/lock-to-changelog.sh || true
 
   deploy:
-    name: 'Activate (${{ inputs.action }})'
+    name: "Activate (${{ inputs.action }})"
     needs: [diff]
     if: inputs.action == 'switch' || inputs.action == 'boot'
     runs-on: native
