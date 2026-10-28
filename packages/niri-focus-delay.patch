@@ -2,30 +2,21 @@ diff --git a/src/niri.rs b/src/niri.rs
 index 17f4c1b..1f57ed9 100644
 --- a/src/niri.rs
 +++ b/src/niri.rs
-@@ -6976,7 +6976,25 @@ impl Niri {
-                     }
-                 }
- 
+@@ -7686,2 +7686,15 @@ impl Niri {
 -                self.layout.activate_window_without_raising(window);
-+                thread_local! {
-+                    static LAST_HOVER: RefCell<Option<(Window, Instant)>> =
-+                        const { RefCell::new(None) };
-+                }
-+                let should_focus = LAST_HOVER.with(|cell| {
-+                    let mut cell = cell.borrow_mut();
-+                    match &*cell {
-+                        Some((w, time)) if w == window => {
-+                            time.elapsed() >= Duration::from_millis(333)
-+                        }
-+                        _ => {
-+                            *cell = Some((window.clone(), Instant::now()));
-+                            false
-+                        }
-+                    }
-+                });
-+                if should_focus {
-+                    self.layout.activate_window_without_raising(window);
-+                }
-                 self.layer_shell_on_demand_focus = None;
-             }
-         }
+-                self.layer_shell_on_demand_focus = None;
++                let window = window.clone();
++                self.event_loop
++                    .insert_source(
++                        Timer::from_duration(Duration::from_millis(500)),
++                        move |_, _, state| {
++                            let pointer = state.niri.seat.get_pointer().unwrap();
++                            let under = state.niri.contents_under(pointer.current_location());
++                            if under.window.as_ref().map(|(window, _)| window) == Some(&window) {
++                                state.niri.layout.activate_window_without_raising(&window);
++                                state.niri.layer_shell_on_demand_focus = None;
++                            }
++                            TimeoutAction::Drop
++                        },
++                    )
++                    .unwrap();

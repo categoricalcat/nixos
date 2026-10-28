@@ -15,23 +15,23 @@ on:
           - "boot"
 
       all:
-        description: "All hosts (yixiaoqing, yitaishi, yifuwuqi, yirukou)"
+        description: "Deploy all hosts"
         type: boolean
         default: false
       yixiaoqing:
-        description: "Deploy yixiaoqing (Desktop)"
+        description: "Deploy yixiaoqing"
         type: boolean
         default: false
       yitaishi:
-        description: "Deploy yitaishi (Workstation)"
+        description: "Deploy yitaishi"
         type: boolean
         default: false
       yifuwuqi:
-        description: "Deploy yifuwuqi (Server)"
+        description: "Deploy yifuwuqi"
         type: boolean
         default: false
       yirukou:
-        description: "Deploy yirukou (Gateway)"
+        description: "Deploy yirukou"
         type: boolean
         default: false
 
