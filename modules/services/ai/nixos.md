@@ -1,8 +1,3 @@
----
-name: nixos
-description: NixOS configuration, modules, options, flake management, and idiomatic functional combinators. Read local source code from /etc/nix/inputs before searching online. Always verify which host you are on.
----
-
 # NixOS AI Skill
 
 When reasoning about NixOS configurations, modules, or options, you must strictly follow these instructions:

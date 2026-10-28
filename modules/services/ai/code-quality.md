@@ -1,9 +1,3 @@
----
-name: code-quality
-description: Proactively detect and refactor duplicated code and cyclomatic complexity. Always active, language-agnostic.
-alwaysApply: true
----
-
 # Code Quality
 
 Whenever you read, write, or review code, **proactively** apply these rules. Do not wait to be asked.

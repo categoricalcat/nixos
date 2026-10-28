@@ -1,9 +1,3 @@
----
-name: etiquette
-description: 'Agent work etiquette — universally binding on ALL and ANY agents: deterministic spec compliance, non-destructive verification, where plans go, finding files with fd/rg, scratch scripts in /tmp/ai, and what agents never do (git stage/commit/push/author, sudo, nixos-rebuild switch, raw ssh, reading secrets). Always active.'
-alwaysApply: true
----
-
 ## Universal Scope & Invariance
 
 - **Always active on ANY agent**: This protocol is universally and unconditionally binding on ALL and ANY agents, subagents, background workers, autonomous loops, and tools across all environments (Gemini/Antigravity, Cursor, Claude Code, Opencode, and any other runner).
