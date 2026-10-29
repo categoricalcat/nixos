@@ -122,6 +122,10 @@ in
     console.keyMap = kb.keyMap;
 
     programs = {
+      appimage = {
+        enable = true;
+        binfmt = true;
+      };
       xwayland.enable = true;
       dconf.enable = true;
       thunar = {

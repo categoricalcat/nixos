@@ -26,7 +26,7 @@ download_appimage() {
   tmp="$app_image.tmp.$$"
 
   echo "Downloading latest Fluxer AppImage..." >&2
-  if ! @curl@ -fSL --progress-bar "$url" -o "$tmp"; then
+  if ! @curl@ --http1.1 -fSL --progress-bar "$url" -o "$tmp"; then
     echo "Failed to download Fluxer AppImage from $url" >&2
     rm -f "$tmp"
     exit 1
@@ -47,7 +47,7 @@ if [ ! -f "$app_image" ]; then
 fi
 
 # Load user-configured runtime flags
-flags=()
+flags=("--fluxer-update")
 flags_file="${XDG_CONFIG_HOME:-$HOME/.config}/fluxer-flags.conf"
 fallback_flags_file="$HOME/.var/app/app.fluxer.Fluxer/config/fluxer-flags.conf"
 

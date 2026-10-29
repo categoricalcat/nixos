@@ -8,7 +8,8 @@
 {
   config = lib.mkIf (pkgs.stdenv.hostPlatform.isLinux && config.host.desktopEnvironment != null) {
     xdg.configFile."fluxer-flags.conf".text = ''
-      --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiIgnoreDriverChecks,AcceleratedVideoEncoder
+      --enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL,VaapiIgnoreDriverChecks,AcceleratedVideoEncoder,WaylandWindowDecorations
+      --ozone-platform-hint=auto
       --use-gl=angle
       --use-angle=gl
       --disable-gpu-sandbox
