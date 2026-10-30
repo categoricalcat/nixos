@@ -18,7 +18,7 @@ ______________________________________________________________________
 | **WebDAV**      | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`    | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                            |
 | **Firecrawl**   | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                          |
 | **SillyTavern** | `ai/sillytavern.nix` | `24000`       | `companion.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                  |
-| **Opencode**    | `opencode.nix`       | `24010`       | `agent.fufu.land`     | Native Agent Daemon                 | Autonomous AI coding agent backend                                     |
+| **Opencode**    | `opencode.nix`       | `24010`       | `agent.fufu.land`     | Native Agent Daemon                 | Autonomous AI coding agent backend; LAN-bound, unauthenticated         |
 | **Cloudflared** | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*       | OCI Container                       | Zero-trust Cloudflare Tunnel connector                                 |
 | **Tor Client**  | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                  |
 

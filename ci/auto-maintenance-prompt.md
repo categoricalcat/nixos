@@ -1,19 +1,17 @@
-# Incremental auto-maintenance
+# Auto-maintenance repair
 
-Work directly in the current repository checkout and produce one coherent,
-reviewable maintenance diff. Do not stage, commit, push, or create a pull
-request; the caller owns those operations.
+`/work` is a plain copy of `develop` (no git metadata) whose `flake.lock` the
+caller has just refreshed with `nix flake update`. You are summoned only because
+`nix flake check --no-build` or `nix-fast-build --flake .#hydraJobs` failed on
+it; the failure log is attached below. The caller commits and publishes
+whatever you leave in `/work`.
 
-The caller appends each summon to the same maintenance pull request until it is
-merged:
-
-- For `CYCLE: new`, begin a fresh maintenance cycle from `develop`. Update
-  `flake.lock`, run the relevant checks, and fix one concrete issue if the
-  update exposes one.
-- For `CYCLE: continue`, inspect the existing branch relative to
-  `origin/develop`, run the relevant checks, and address the highest-priority
-  remaining failure or incomplete maintenance item.
-- If the branch is already green, make at most one small, clearly beneficial
-  cleanup instead of inventing work.
-- Preserve unrelated behavior and existing user changes.
-- Leave the tree unchanged when there is no justified improvement.
+- Repair that failure with the smallest possible diff: the broken package,
+  module option, overlay, or check.
+- Do not edit `.forgejo/`, `.gitea/`, `.github/`, `ci/`, or `nix/scripts/`; the
+  caller rejects any change there.
+- Do not perform unrelated cleanups, formatting churn, or opportunistic
+  refactoring, and leave no scratch files behind.
+- Re-run the failing `nix eval`, `nix build`, or `nix flake check --no-build`
+  target to confirm the repair before finishing.
+- Preserve existing behavior and user configuration.

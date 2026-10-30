@@ -141,7 +141,7 @@ ______________________________________________________________________
 - **SillyTavern Companion UI**: Port 24000 (`companion.fufu.land`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.fufu.land`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
-- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.fufu.land`).
+- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.fufu.land`), bound to the LAN address only (`10.42.0.2`, where `yirukou`'s Nginx proxies to it). It has no authentication, so anything that can reach that address (Nginx clients, tailnet peers via `yirukou`'s `10.42.0.0/24` subnet route, local processes) can drive it.
 
 ______________________________________________________________________
 

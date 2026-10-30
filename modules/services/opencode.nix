@@ -10,6 +10,7 @@ let
   opencodeHome = config.users.users.yi.home;
   opencodeConfigHome = "${opencodeHome}/.config";
   opencodeConfigPath = "${opencodeConfigHome}/opencode/opencode.json";
+  host = allAddresses.hosts.${config.networking.hostName};
 in
 {
   options.services.opencode = {
@@ -24,9 +25,7 @@ in
       after = [ "network-online.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${
-          toString allAddresses.hosts.${config.networking.hostName}.services.opencode.port
-        } --hostname 0.0.0.0";
+        ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${toString host.services.opencode.port} --hostname ${host.network.lan.ipv4.host}";
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";

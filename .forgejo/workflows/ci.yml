@@ -21,7 +21,7 @@ jobs:
       FORCE_COLOR: "1"
 
     steps:
-      - uses: https://github.com/actions/checkout@main
+      - uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - run: ci/build.sh
         env:

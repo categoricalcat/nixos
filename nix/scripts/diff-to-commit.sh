@@ -29,7 +29,7 @@ msg_file="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
 
 flags=(--print)
 if [ "$agent" = "agy" ]; then
-  flags=(--dangerously-skip-permissions --print)
+  flags=(--mode plan --sandbox --disable-slash-commands --print)
 elif [ "$agent" = "agent" ]; then
   flags=(--mode ask --trust --print --model auto)
 fi

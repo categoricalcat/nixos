@@ -10,7 +10,7 @@
   );
 
   nxd-agy = pkgs.writeShellScriptBin "nxd-agy" ''
-    exec nix run github:jacopone/antigravity-nix#google-antigravity-cli -- "$@"
+    exec nix run antigravity-nix#google-antigravity-cli -- "$@"
   '';
 
   nxd-agent = pkgs.writeShellScriptBin "nxd-agent" ''

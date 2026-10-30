@@ -8,6 +8,8 @@
 
 let
   services = allAddresses.hosts.yifuwuqi.services;
+  # Numeric: the build-time `nft --check` sandbox cannot resolve user names.
+  noneUid = toString config.users.users.none.uid;
 in
 {
   assertions = [
@@ -16,6 +18,32 @@ in
       message = "modules/services/forgejo-runner.nix: may only be imported on yifuwuqi";
     }
   ];
+
+  # nix-daemon trusts callers by real uid and nix-builder is a trusted-user, so
+  # sandboxed jobs must really become `none`; a bwrap user namespace keeps the uid.
+  security.wrappers.drop-to-none = {
+    source = lib.getExe' pkgs.util-linux "setpriv";
+    owner = "none";
+    group = "none";
+    setuid = true;
+    setgid = true;
+    permissions = "u+rx,g+x";
+  };
+
+  users.users.nix-builder.extraGroups = [ "none" ];
+
+  networking.nftables.tables.sandbox-egress = {
+    family = "inet";
+    content = ''
+      chain output {
+        type filter hook output priority filter; policy accept;
+        meta skuid ${noneUid} ip daddr 127.0.0.1 meta l4proto { tcp, udp } th dport 53 accept
+        meta skuid ${noneUid} ip6 daddr ::1 meta l4proto { tcp, udp } th dport 53 accept
+        meta skuid ${noneUid} ip daddr { 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16 } reject
+        meta skuid ${noneUid} ip6 daddr { ::1, fc00::/7, fe80::/10 } reject
+      }
+    '';
+  };
 
   sops.secrets."tokens/forgejo-runner" = {
     owner = "nix-builder";
@@ -38,6 +66,7 @@ in
       enable = true;
       hostPackages = with pkgs; [
         bash
+        bubblewrap
         coreutils
         curl
         findutils

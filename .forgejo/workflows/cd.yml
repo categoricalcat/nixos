@@ -50,7 +50,7 @@ jobs:
       CLICOLOR_FORCE: "1"
       FORCE_COLOR: "1"
     steps:
-      - uses: https://github.com/actions/checkout@main
+      - uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Resolve target hosts
         id: targets
@@ -91,6 +91,6 @@ jobs:
       FORCE_COLOR: "1"
     steps:
       - name: Checkout repository
-        uses: https://github.com/actions/checkout@main
+        uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Deploy configuration (${{ inputs.action }})
         run: ci/deploy.sh ${{ inputs.action }} ${{ needs.diff.outputs.hosts }}
