@@ -79,35 +79,16 @@ ______________________________________________________________________
 
 ## Phases & Implementation Strategy
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│    Phase 1: Default-Deny & Remove trustedInterfaces         │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│    Phase 2: Localhost & Unix Socket Binding                 │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│    Phase 3: Valkey Auth / Unix Socket Hardening             │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│    Phase 4: Inter-Host Ingress & mTLS                       │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│    Phase 5: Container Bridge Isolation & Clean Up nftables  │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│         Fully Hardened Zero-Trust Architecture              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    P1["Phase 1: Default-Deny & Remove trustedInterfaces"]
+    P2["Phase 2: Localhost & Unix Socket Binding"]
+    P3["Phase 3: Valkey Auth / Unix Socket Hardening"]
+    P4["Phase 4: Inter-Host Ingress & mTLS"]
+    P5["Phase 5: Container Bridge Isolation & Clean Up nftables"]
+    Target["Fully Hardened Zero-Trust Architecture"]
+
+    P1 --> P2 --> P3 --> P4 --> P5 --> Target
 ```
 
 ### Phase 1: Switch to Default-Deny & Delete `backend-ui-guard`

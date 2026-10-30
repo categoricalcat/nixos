@@ -50,30 +50,51 @@ ______________________________________________________________________
 
 ## State Inventory on `yirukou`
 
-```text
-/ (tmpfs - wiped every boot)
-├── nix/                  -> bind-mount from /persist/nix
-├── persist/              -> mount /dev/nvme0n1p2 (Ext4)
-│   ├── keys/             -> SSH host key & SOPS payload (mapped from nvme0n1p2:/keys)
-│   ├── etc/machine-id    -> Persisted machine ID
-│   ├── var/lib/
-│   │   ├── acme/         -> Let's Encrypt wildcard certificates (*.fufu.land)
-│   │   ├── tailscale/    -> Tailscale node key & state
-│   │   ├── kea/          -> DHCPv4 lease database (dhcp4.leases)
-│   │   ├── AdGuardHome/  -> DNS blocklist cache & runtime data
-│   │   ├── unbound/      -> DNSSEC root trust anchor (root.key)
-│   │   ├── goaccess/     -> Real-time analytics database
-│   │   ├── chrony/       -> Hardware clock frequency drift file
-│   │   ├── vector/       -> Journal cursor offset tracking
-│   │   ├── nixos/        -> Declarative user/group state mappings
-│   │   └── systemd/coredump
-│   ├── var/log/          -> Persistent systemd journal & Nginx access logs
-│   └── home/yi/
-│       ├── .ssh/         -> User mesh, git, and ai SSH keys
-│       ├── .config/sops/ -> Derived age identity keys.txt
-│       ├── .zsh_history  -> Shell history
-│       └── the.files/    -> Local clone of flake repository
-└── [everything else]     -> Volatile RAM (tmp, run, etc, var/cache, root)
+```mermaid
+flowchart TD
+    ROOT["/ (tmpfs — wiped on every boot)"]
+
+    subgraph Volatile["Volatile RAM"]
+        VOL["/tmp, /run, /etc, /var/cache, /root"]
+    end
+
+    subgraph Mounts["Storage Mounts"]
+        NIX["/nix/"]
+        PERSIST["/persist/ (Ext4 mount: /dev/nvme0n1p2)"]
+    end
+
+    ROOT --> Volatile
+    ROOT --> Mounts
+
+    NIX -.->|bind-mount| PNIX["/persist/nix"]
+
+    subgraph PersistedState["/persist/ Hierarchy"]
+        KEYS["keys/ (SSH host key & SOPS payload)"]
+        MID["etc/machine-id (Persisted machine ID)"]
+        subgraph VARLIB["var/lib/"]
+            direction TB
+            ACME["acme/ (*.fufu.land certs)"]
+            TS["tailscale/ (node key & state)"]
+            KEA["kea/ (DHCPv4 leases)"]
+            AGH["AdGuardHome/ (runtime & cache)"]
+            UNB["unbound/ (root.key)"]
+            GOA["goaccess/ (analytics DB)"]
+            OTHERS["chrony, vector, nixos, coredump"]
+        end
+        VARLOG["var/log/ (journal & nginx access logs)"]
+        subgraph HOMEYI["home/yi/"]
+            SSH[".ssh/ (mesh, git, ai SSH keys)"]
+            SOPS[".config/sops/ (age identity keys.txt)"]
+            HIST[".zsh_history"]
+            REPO["the.files/ (flake git repo)"]
+        end
+    end
+
+    PERSIST --> KEYS
+    PERSIST --> MID
+    PERSIST --> VARLIB
+    PERSIST --> VARLOG
+    PERSIST --> HOMEYI
 ```
 
 ______________________________________________________________________

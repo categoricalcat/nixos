@@ -63,13 +63,19 @@ ______________________________________________________________________
    - Enable options: only one host imports the module.
 1. **Feature plans**: review and update the docs only.
 
-```text
-modules/audio/
-├── default.nix ───── musnix, rtirq, PipeWire, WirePlumber, PAM; imports ./plugins.nix
-├── plugins.nix ───── systemPackages, writable $HOME dirs, audioPkgs wiring
-└── packages/ ─────── callPackage files, auto-wired by lib.packagesFromDirectoryRecursive
-    ├── mt-power-drum-kit.nix
-    └── drum-locker.nix (template, src = throw)
+```mermaid
+flowchart TD
+    subgraph AudioModule["modules/audio/"]
+        direction TB
+        DEF["default.nix<br/>musnix, rtirq, PipeWire, WirePlumber, PAM"]
+        PLUG["plugins.nix<br/>systemPackages, writable $HOME dirs, audioPkgs wiring"]
+        subgraph PKGS["packages/ (callPackage files, auto-wired by lib.packagesFromDirectoryRecursive)"]
+            MT["mt-power-drum-kit.nix"]
+            DL["drum-locker.nix (template, src = throw)"]
+        end
+        DEF -->|imports| PLUG
+        PLUG --> PKGS
+    end
 ```
 
 ______________________________________________________________________

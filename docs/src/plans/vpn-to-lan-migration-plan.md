@@ -10,6 +10,32 @@ Under this architecture:
 - Remote access to internal services is consolidated through `yirukou`'s Tailscale subnet router (`10.42.0.0/24` with SNAT), causing remote connections to arrive at backend services as trusted gateway LAN traffic (`10.42.0.1`).
 - Direct ingress access from the VPN overlay to unproxied backend services is eliminated.
 
+```mermaid
+flowchart TD
+    subgraph External["Remote / Roaming Clients"]
+        REMOTE["Roaming Node (100.64.0.0/10)"]
+    end
+
+    subgraph Gateway["Host: yirukou (Gateway & Subnet Router)"]
+        SR["Tailscale Subnet Router<br/>(10.42.0.0/24 with SNAT 10.42.0.1)"]
+    end
+
+    subgraph LAN["Trusted LAN (10.42.0.0/24)"]
+        subgraph Yifuwuqi["Host: yifuwuqi (Core Server Daemons)"]
+            direction TB
+            PG["PostgreSQL<br/>(listen LAN, pg_hba trust 10.42.0.0/24)"]
+            SMB["Samba Server<br/>(hosts allow 10.42.0.0/24)"]
+            NGX["Nginx Reverse Proxy<br/>(trustedProxyCidrs LAN)"]
+            APPS["Forgejo / Cockpit<br/>(allowed-origins LAN)"]
+        end
+    end
+
+    REMOTE -->|Tailscale Tunnel| SR
+    SR -->|SNAT gateway traffic 10.42.0.1| PG
+    SR -->|SNAT gateway traffic 10.42.0.1| SMB
+    SR -->|SNAT gateway traffic 10.42.0.1| NGX
+```
+
 ______________________________________________________________________
 
 ## Current State
@@ -99,6 +125,16 @@ ______________________________________________________________________
 ______________________________________________________________________
 
 ## Rollout Order
+
+```mermaid
+flowchart LR
+    P1["Phase 1: Storage & DB<br/>(PostgreSQL, Samba)"]
+    P2["Phase 2: Web & Dev<br/>(Nginx, Forgejo, Cockpit)"]
+    P3["Phase 3: Host Firewall<br/>(Drop VPN from trustedHostDestinations)"]
+    P4["Phase 4: Validation & Deploy"]
+
+    P1 --> P2 --> P3 --> P4
+```
 
 1. Apply changes to `modules/services/postgresql.nix`, `modules/services/samba/server.nix`, `modules/services/forgejo.nix`, `modules/services/cockpit.nix`, and `hosts/yifuwuqi/networking/firewall.nix`.
 1. Apply changes to `modules/services/nginx-proxy.nix`.

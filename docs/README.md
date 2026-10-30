@@ -2,11 +2,34 @@
 
 This directory contains the maintained documentation for this NixOS gang.
 
-The source is an mdBook:
+The source is an mdBook with native Mermaid support.
+
+## Building and Serving
+
+To build the HTML book into `docs/book/`:
 
 ```sh
-nix shell nixpkgs#mdbook -c mdbook build docs
-nix shell nixpkgs#mdbook -c mdbook serve docs
+nix-shell docs --run docs-build
+```
+
+To serve the book interactively on localhost:
+
+```sh
+nix-shell docs --run docs-serve
+```
+
+Or enter the docs environment directly:
+
+```sh
+cd docs && nix-shell
+docs-build
+docs-serve
+```
+
+Or build the derivation directly into the Nix store:
+
+```sh
+nix-build docs
 ```
 
 The generated book is written to `docs/book/`.

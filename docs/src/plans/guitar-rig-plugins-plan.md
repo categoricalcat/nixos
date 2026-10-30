@@ -64,19 +64,37 @@ ______________________________________________________________________
 
 ## Architecture
 
-```text
-hosts/yitaishi/configuration.nix
-└── modules/audio/default.nix ─────── imports plugins.nix
-    └── modules/audio/plugins.nix
-        ├── environment.systemPackages ─ audioPkgs.{hex-forge,amp-locker,rustortion}, pkgs.kapitonov-plugins-pack
-        ├── systemd.user.tmpfiles.rules ─ + ~/Audio/tapf, ~/Audio/kpp
-        └── audioPkgs ◄── modules/audio/packages/
-            ├── hex-forge.nix ─── C++17/CMake → $out/lib/lv2/guitaramp-suite.lv2
-            ├── amp-locker.nix ── vendored → $out/lib/vst3, $out/bin/amp-locker
-            └── rustortion.nix ── vendored → $out/bin, $out/lib/vst3, $out/lib/clap
-                                          │
-                                          ▼
-              REAPER or standalone on PipeWire-JACK (96 kHz, 384 quantum, 4.0 ms)
+```mermaid
+flowchart TD
+    HOST["hosts/yitaishi/configuration.nix"]
+    DEF["modules/audio/default.nix"]
+    PLUG["modules/audio/plugins.nix"]
+
+    HOST --> DEF
+    DEF -->|imports| PLUG
+
+    subgraph PluginsConfig["plugins.nix Configuration"]
+        direction TB
+        PKGS["environment.systemPackages<br/>• audioPkgs.{hex-forge,amp-locker,rustortion}<br/>• pkgs.kapitonov-plugins-pack"]
+        TMP["systemd.user.tmpfiles.rules<br/>• + ~/Audio/tapf, ~/Audio/kpp"]
+    end
+
+    PLUG --> PluginsConfig
+
+    subgraph AudioPackages["modules/audio/packages/ (audioPkgs)"]
+        direction TB
+        HEX["hex-forge.nix<br/>(C++17/CMake → $out/lib/lv2/guitaramp-suite.lv2)"]
+        AMP["amp-locker.nix<br/>(vendored → $out/lib/vst3, $out/bin/amp-locker)"]
+        RUST["rustortion.nix<br/>(vendored → $out/bin, $out/lib/vst3, $out/lib/clap)"]
+    end
+
+    PLUG -->|audioPkgs| AudioPackages
+
+    subgraph HostApp["Audio Host Targets"]
+        REAPER["REAPER or standalone on PipeWire-JACK<br/>(96 kHz, 384 quantum, 4.0 ms)"]
+    end
+
+    AudioPackages --> REAPER
 ```
 
 ______________________________________________________________________

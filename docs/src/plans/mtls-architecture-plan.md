@@ -38,51 +38,32 @@ ______________________________________________________________________
 
 ## Architecture Diagram
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                       Internet / Edge                       │
-│  ┌─────────────────────────┐                                │
-│  │     Cloudflare Edge     │                                │
-│  └────────────┬────────────┘                                │
-└───────────────┼─────────────────────────────────────────────┘
-                │ Tier 1: Cloudflare mTLS (Authenticated Origin Pulls)
-┌───────────────▼─────────────────────────────────────────────┐
-│        Host: yirukou (Reverse Proxy & Gateway)              │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ Nginx Ingress (sslVerifyClient on; Cloudflare CA)     │  │
-│  └──────────────────────┬────────────────────────────────┘  │
-│                         │ proxy_pass over LAN               │
-│  ┌──────────────────────▼────────────────────────────────┐  │
-│  │ Nginx Upstream Client (Cert: yirukou-proxy.crt)       │  │
-│  └──────────────────────┬────────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────────────────┴───────┐                           │
-│  │ Node Exporter (exporter.crt) │                           │
-│  └──────────────▲───────────────┘                           │
-└─────────────────┼───────────────────────────────────────────┘
-                  │ Tier 2: Inter-Host mTLS (LAN)
-                  │ Tier 3: Scrape mTLS
-┌─────────────────┼───────────────────────────────────────────┐
-│        Host: yifuwuqi (Service & Monitoring Host)           │
-│  ┌──────────────▼────────────────────────────────────────┐  │
-│  │ Nginx Backend TLS (sslClientCert: service-ca.crt)     │  │
-│  └──────────────────────┬────────────────────────────────┘  │
-│                         │ local loopback                    │
-│  ┌──────────────────────▼────────────────────────────────┐  │
-│  │ Internal Services (Cockpit, Forgejo, Arr, Agent...)   │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌──────────────────────────────┐                           │
-│  │ Prometheus Scraper           │                           │
-│  │ (prometheus-scraper.crt)     │                           │
-│  └──┬─────────────────────────┬─┘                           │
-│     │ Scrape mTLS             │ Scrape mTLS                 │
-│     ▼                         ▼                             │
-│  ┌─────────────────────────┐  │                             │
-│  │ Node / App Exporters    │  │                             │
-│  │ (exporter.crt)          │  │                             │
-│  └─────────────────────────┘  └─────────────────────────────┼──► to yirukou exporter
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Internet["Internet / Edge"]
+        CF["Cloudflare Edge"]
+    end
+
+    subgraph Yirukou["Host: yirukou (Reverse Proxy & Gateway)"]
+        Y_INGRESS["Nginx Ingress<br/>(sslVerifyClient on; Cloudflare CA)"]
+        Y_UPSTREAM["Nginx Upstream Client<br/>(Cert: yirukou-proxy.crt)"]
+        Y_EXPORTER["Node Exporter<br/>(exporter.crt)"]
+        Y_INGRESS -->|proxy_pass over LAN| Y_UPSTREAM
+    end
+
+    subgraph Yifuwuqi["Host: yifuwuqi (Service & Monitoring Host)"]
+        F_BACKEND["Nginx Backend TLS<br/>(sslClientCert: service-ca.crt)"]
+        F_SERVICES["Internal Services<br/>(Cockpit, Forgejo, Arr, Agent...)"]
+        F_PROMETHEUS["Prometheus Scraper<br/>(prometheus-scraper.crt)"]
+        F_EXPORTER["Node / App Exporters<br/>(exporter.crt)"]
+
+        F_BACKEND -->|local loopback| F_SERVICES
+        F_PROMETHEUS -->|Scrape mTLS| F_EXPORTER
+    end
+
+    CF -->|Tier 1: Cloudflare mTLS Origin Pulls| Y_INGRESS
+    Y_UPSTREAM -->|Tier 2: Inter-Host mTLS (LAN)| F_BACKEND
+    F_PROMETHEUS -->|Tier 3: Scrape mTLS (LAN)| Y_EXPORTER
 ```
 
 ______________________________________________________________________
@@ -334,26 +315,16 @@ ______________________________________________________________________
 
 ## Rollout Order
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│             Phase 1: Cloudflare Origin Pulls                │
-│ (Lock perimeter against direct IP scans & botnets)          │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Encrypt yirukou <-> yifuwuqi LAN traffic
-┌──────────────────────────────▼──────────────────────────────┐
-│             Phase 2: Inter-Host Proxy mTLS                  │
-│ (Mutual auth between reverse proxy and backend server)      │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Mutually authenticate Prometheus scrapes
-┌──────────────────────────────▼──────────────────────────────┐
-│             Phase 3: Monitoring Scrape mTLS                 │
-│ (TLS metrics scraping across all host exporters)            │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Infrastructure mTLS Deployed                   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    P1["Phase 1: Cloudflare Origin Pulls<br/>(Lock perimeter against direct IP scans & botnets)"]
+    P2["Phase 2: Inter-Host Proxy mTLS<br/>(Mutual auth between reverse proxy and backend server)"]
+    P3["Phase 3: Monitoring Scrape mTLS<br/>(TLS metrics scraping across all host exporters)"]
+    Done["Infrastructure mTLS Deployed"]
+
+    P1 -->|Encrypt yirukou ↔ yifuwuqi LAN traffic| P2
+    P2 -->|Mutually authenticate Prometheus scrapes| P3
+    P3 --> Done
 ```
 
 1. **Step 1: Deploy Phase 1 (Cloudflare)**

@@ -94,14 +94,27 @@ ______________________________________________________________________
 
 ## Architecture
 
-```text
-hosts/yitaishi/configuration.nix
-└── modules/audio/default.nix
-    ├── home-manager.users.yi.imports ─ modules/audio/home.nix
-    │   └── home.file ───────────────── ~/Music/midi-library/{chords,drums-groove,piano-maestro,songs-lakh-clean} (read-only)
-    └── imports ─────────────────────── modules/audio/plugins.nix
-        ├── environment.systemPackages ─ compose tools (lmms, seq66, cardinal, …)
-        └── systemd.user.tmpfiles.rules ─ ~/Audio/{nam,ir,reaper-fxchains}, ~/Music/midi-library/_user (writable)
+```mermaid
+flowchart TD
+    HOST["hosts/yitaishi/configuration.nix"]
+    DEF["modules/audio/default.nix"]
+    HOME["modules/audio/home.nix"]
+    PLUG["modules/audio/plugins.nix"]
+    MIDILIB["~/Music/midi-library/<br/>• chords<br/>• drums-groove<br/>• piano-maestro<br/>• songs-lakh-clean<br/><i>(read-only)</i>"]
+
+    HOST --> DEF
+    DEF -->|home-manager.users.yi.imports| HOME
+    DEF -->|imports| PLUG
+
+    HOME -->|home.file| MIDILIB
+
+    subgraph PluginsConfig["plugins.nix Configuration"]
+        direction TB
+        TOOLS["environment.systemPackages<br/>compose tools (lmms, seq66, cardinal, …)"]
+        TMP["systemd.user.tmpfiles.rules<br/>~/Audio/{nam,ir,reaper-fxchains}, ~/Music/midi-library/_user (writable)"]
+    end
+
+    PLUG --> PluginsConfig
 ```
 
 ## Pinned Sources
@@ -200,15 +213,20 @@ In the same commit, update `docs/src/hosts/yitaishi.md` §4.2 with the new tools
 
 Resulting layout in `/home/yi`:
 
-```text
-~/Music/midi-library/
-  chords/             ldrolez, one folder per key (read-only)
-  drums-groove/       Magenta Groove, drummer1..drummer10 (read-only)
-  piano-maestro/      MAESTRO v3, one folder per year (read-only)
-  songs-lakh-clean/   Lakh clean_midi, Artist/Title.mid (read-only)
-  _user/              writable: gated packs + your own
-~/Audio/              already present
-  nam/  ir/  reaper-fxchains/
+```mermaid
+flowchart LR
+    subgraph Home["/home/yi"]
+        subgraph Music["~/Music/midi-library/"]
+            CH["chords/ (ldrolez, one folder per key - ro)"]
+            DG["drums-groove/ (Magenta Groove drummer1..10 - ro)"]
+            PM["piano-maestro/ (MAESTRO v3, per year - ro)"]
+            SLC["songs-lakh-clean/ (Lakh clean_midi - ro)"]
+            USR["_user/ (writable: gated packs + user)"]
+        end
+        subgraph Audio["~/Audio/"]
+            FX["nam/ • ir/ • reaper-fxchains/"]
+        end
+    end
 ```
 
 ### Phase 3 — Manual follow-ups (no config)

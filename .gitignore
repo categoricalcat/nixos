@@ -1,6 +1,7 @@
 secrets/secrets.yaml
 result*
 docs/book/
+docs/mermaid*.js
 .pre-commit-config.yaml
 .cursor/plans
 .sops.yaml

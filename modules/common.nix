@@ -42,6 +42,7 @@
     ./services/ai/opencode.nix
     ./services/chrony.nix
     ./services/kmscon.nix
+    ../docs/service.nix
   ];
 
   home-manager.sharedModules = [

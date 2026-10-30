@@ -10,3 +10,8 @@ git-repository-url = "https://github.com/categoricalcat/nixos"
 [output.html.fold]
 enable = true
 level = 0
+
+[preprocessor]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"

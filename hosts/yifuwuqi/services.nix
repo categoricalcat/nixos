@@ -35,7 +35,6 @@
     ../../modules/services/monitoring/promtail.nix
     ../../modules/services/monitoring/security-monitor
     ../../modules/services/monitoring/grafana.nix
-    ../../modules/services/docs.nix
     # ../../modules/services/webdav.nix
     ../../modules/services/searxng.nix
     ../../modules/services/valkey.nix
@@ -52,6 +51,9 @@
     ../../modules/services/weather.nix
     ../../modules/services/ai/sillytavern.nix
   ];
+
+  docs.enable = true;
+
   yi.tailscale = {
     # Subnet router for the fallback uplink's router only: enp4s0 is the sole
     # tailnet foothold in 192.168.0.0/24, so advertising that one address
