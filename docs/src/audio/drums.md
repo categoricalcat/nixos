@@ -12,10 +12,10 @@ Because Drum Locker requires a purchase and an account login, Nix cannot fetch i
 
 1. Log in to your Audio Assault account.
 1. Download the Linux version (usually a `.zip` archive).
-1. Open `/home/yi/the.files/nixos/modules/audio/drum-locker.nix` in your text editor.
+1. Open `/home/yi/the.files/nixos/modules/audio/packages/drum-locker.nix` in your text editor.
 1. Replace the `src = throw ...` line with the path to your downloaded file. For example: `src = /home/yi/Downloads/DrumLocker_Linux.zip;`
-1. Uncomment `# drum-locker` in `/home/yi/the.files/nixos/modules/audio/default.nix` under the `environment.systemPackages` section.
-1. Run `nixos-rebuild switch`.
+1. Uncomment `# audioPkgs.drum-locker` in `/home/yi/the.files/nixos/modules/audio/plugins.nix` under the `environment.systemPackages` section.
+1. Run `nixos-rebuild switch`. If the build stops with `auto-patchelf: could not satisfy dependency libfoo.so`, add the package that provides that library to `buildInputs` in `drum-locker.nix`.
 
 ## DrumGizmo Kits
 

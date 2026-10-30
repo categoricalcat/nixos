@@ -1,4 +1,4 @@
-{ pkgs, nix-ld-libraries, ... }:
+{ pkgs, ... }:
 
 pkgs.stdenv.mkDerivation {
   pname = "drum-locker";
@@ -9,7 +9,7 @@ pkgs.stdenv.mkDerivation {
   src = throw ''
     Audio Assault Drum Locker requires a manual download.
     Please download the Linux VST3 zip from your account,
-    and update the `src` attribute in `modules/audio/drum-locker.nix`
+    and update the `src` attribute in `modules/audio/packages/drum-locker.nix`
     to point to the downloaded file.
   '';
 
@@ -18,7 +18,19 @@ pkgs.stdenv.mkDerivation {
     pkgs.unzip
   ];
 
-  buildInputs = nix-ld-libraries;
+  # Unverified until the archive is supplied; autoPatchelf reports missing libraries.
+  buildInputs = with pkgs; [
+    stdenv.cc.cc
+    libx11
+    libxcb
+    libxcb-util
+    libxcb-cursor
+    libxkbcommon
+    glib
+    cairo
+    pango
+    fontconfig
+  ];
 
   unpackPhase = ''
     unzip $src

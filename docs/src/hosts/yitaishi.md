@@ -60,7 +60,7 @@ ______________________________________________________________________
 
 ## 4. Pro-Audio Production DAW Studio
 
-Configured via `modules/audio/default.nix`:
+Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM) and `modules/audio/plugins.nix` (packages, plugin folders, custom derivations from `modules/audio/packages/`):
 
 ### 4.1 Real-Time Kernel & Low-Latency PipeWire
 
@@ -68,7 +68,7 @@ Configured via `modules/audio/default.nix`:
 - **PipeWire Studio Tuning**:
   - Sample Rate: **96,000 Hz** bit-perfect audio processing.
   - Quantum Buffer: **384 samples** (~4.0 ms latency at 96kHz).
-  - Realtime Kit (`rtkit`) priority boosting.
+  - Realtime Kit (`rtkit`) priority boosting (from `modules/desktop.nix`).
 
 ### 4.2 Production Tools & Plugin Ecosystem
 
@@ -124,6 +124,8 @@ ______________________________________________________________________
 - `hosts/yitaishi/graphics.nix`
 - `hosts/yitaishi/gaming.nix`
 - `modules/audio/default.nix`
+- `modules/audio/plugins.nix`
+- `modules/audio/packages/`
 - `modules/desktop.nix`
 - `modules/desktop/greetd.nix`
 - `modules/services/lan-mouse.nix`

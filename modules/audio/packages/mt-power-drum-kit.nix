@@ -1,4 +1,4 @@
-{ pkgs, nix-ld-libraries, ... }:
+{ pkgs, ... }:
 
 pkgs.stdenv.mkDerivation {
   pname = "mt-power-drum-kit";
@@ -12,7 +12,18 @@ pkgs.stdenv.mkDerivation {
 
   nativeBuildInputs = [ pkgs.autoPatchelfHook ];
 
-  buildInputs = nix-ld-libraries;
+  buildInputs = with pkgs; [
+    stdenv.cc.cc
+    libx11
+    libxcb
+    libxcb-util
+    libxcb-cursor
+    libxkbcommon
+    glib
+    cairo
+    pango
+    fontconfig
+  ];
 
   installPhase = ''
     mkdir -p $out/lib/vst3
