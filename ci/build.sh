@@ -40,19 +40,59 @@ if [ "${GITHUB_STEP_SUMMARY:-}" != "" ]; then
   } >>"$GITHUB_STEP_SUMMARY"
 fi
 
-FAST_BUILD_CMD=(nix-fast-build)
-if ! command -v nix-fast-build >/dev/null 2>&1; then
-  FAST_BUILD_CMD=(nix run --inputs-from . "nixpkgs#lixPackageSets.lix_2_96.nix-fast-build" --)
+EVAL_JOBS_CMD=(nix-eval-jobs)
+if ! command -v nix-eval-jobs >/dev/null 2>&1; then
+  EVAL_JOBS_CMD=(nix run --inputs-from . "nixpkgs#lixPackageSets.lix_2_96.nix-eval-jobs" --)
 fi
 
-"${FAST_BUILD_CMD[@]}" "${BUILDER_ARGS[@]}" \
-  --max-jobs "$TOTAL_JOBS" \
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+mkdir "$work/gcroots" "$work/roots"
+jobs="$work/jobs.jsonl"
+failed=0
+
+"${EVAL_JOBS_CMD[@]}" "${BUILDER_ARGS[@]}" \
   --flake ".#hydraJobs" \
-  --skip-cached \
-  --retries 1 \
-  --eval-workers 2 \
-  --attic-cache "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" \
-  --attic-ignore-upstream-cache-filter
+  --force-recurse \
+  --check-cache-status \
+  --show-trace \
+  --workers 2 \
+  --gc-roots-dir "$work/gcroots" >"$jobs" || failed=1
+jq -r 'select(.error) | "::error::evaluation of \(.attr) failed\n\(.error)"' "$jobs"
+
+mapfile -t drvs < <(jq -r 'select(.error == null and (.isCached | not)) | "\(.drvPath)^*"' "$jobs")
+jq -rs --argjson build "${#drvs[@]}" \
+  '"\(length) jobs: \(map(select(.isCached)) | length) cached, \($build) to build, \(map(select(.error)) | length) failed to evaluate"' "$jobs"
+# One `nix build --keep-going` for every job: Nix caches no build failures, so
+# per-job builds would each retry a broken dependency they share.
+if [ "${#drvs[@]}" -gt 0 ]; then
+  nix build "${BUILDER_ARGS[@]}" --keep-going --print-build-logs --no-link "${drvs[@]}" || failed=1
+fi
+
+declare -A verdict=()
+built=()
+while IFS=$'\t' read -r attr state outs; do
+  read -ra paths <<<"$outs"
+  case "$state" in
+  eval-error) failed=1 ;;
+  build)
+    # nix build creates no out-links once any job fails; root finished outputs before the push.
+    if nix-store --check-validity "${paths[@]}" 2>/dev/null &&
+      nix-store --add-root "$work/roots/$attr" --realise "${paths[@]}" >/dev/null; then
+      state=built
+      built+=("${paths[@]}")
+    else
+      state=failed
+      failed=1
+    fi
+    ;;
+  esac
+  verdict[$attr]="$state"
+done < <(jq -r '[.attr, (if .error then "eval-error" elif .isCached then "cached" else "build" end), ([.outputs // {} | .[] | strings] | join(" "))] | @tsv' "$jobs")
+
+if [ "${#built[@]}" -gt 0 ]; then
+  attic push --ignore-upstream-cache-filter "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "${built[@]}" || failed=1
+fi
 
 # Keep one GC root per deploy host so attic-closure-keeper retains undeployed closures across weekly GC.
 case "$ref_name" in
@@ -61,7 +101,9 @@ develop | bot/auto-maintenance)
   root_dir="/var/lib/nix-builder/gcroots/${ref_name//\//-}"
   mkdir -p "$root_dir"
   nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]' | while read -r host; do
-    if nix build --out-link "$root_dir/$host" ".#nixosConfigurations.$host.config.system.build.toplevel"; then
+    job="nixos-$host"
+    toplevel="$(jq -r --arg attr "$job" 'select(.attr == $attr) | .outputs.out // empty' "$jobs")"
+    if [[ ${verdict[$job]:-} =~ ^(built|cached)$ ]] && nix build --out-link "$root_dir/$host" "$toplevel"; then
       printf '%s✔ Rooted%s %s\n' "$GREEN" "$RESET" "$host"
     else
       echo "::warning::could not root the $host toplevel for $ref_name"
@@ -70,3 +112,13 @@ develop | bot/auto-maintenance)
   echo "::endgroup::"
   ;;
 esac
+
+report() {
+  printf '| Job | Result |\n| :--- | :--- |\n'
+  jq -r '.attr' "$jobs" | sort | while read -r attr; do
+    printf '| \140%s\140 | %s |\n' "$attr" "${verdict[$attr]}"
+  done
+}
+report
+[ "${GITHUB_STEP_SUMMARY:-}" = "" ] || report >>"$GITHUB_STEP_SUMMARY"
+exit "$failed"

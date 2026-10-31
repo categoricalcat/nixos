@@ -2,6 +2,12 @@ _: [
   (_final: prev: {
     fluxer = prev.callPackage ../packages/fluxer { };
 
+    # Timing-sensitive like the e2e tests nixpkgs already skips: under parallel CI
+    # load the daemon gives up with "took too long to redact" and the build fails.
+    atuin = prev.atuin.overrideAttrs (old: {
+      checkFlags = old.checkFlags ++ [ "--skip=a_huge_message_reads_back" ];
+    });
+
     # NixOS/nixpkgs#575192: aggregateModules fails when external kernel modules
     # (such as hid-fanatecff, zenpower, acpi_call) lack .ko.cer files.
     # Only concatenate .ko.cer into modules.cer if the file actually exists.

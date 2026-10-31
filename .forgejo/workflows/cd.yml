@@ -40,12 +40,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  diff:
-    name: "Preflight & Diff"
+  deploy:
+    name: "Preflight & Activate (${{ inputs.action }})"
     runs-on: native
-    timeout-minutes: 60
-    outputs:
-      hosts: ${{ steps.targets.outputs.hosts }}
+    timeout-minutes: 120
     env:
       CLICOLOR_FORCE: "1"
       FORCE_COLOR: "1"
@@ -70,27 +68,25 @@ jobs:
           printf 'Target hosts: %s\n' "${TARGETS[*]}"
           echo "hosts=${TARGETS[*]}" >> "$GITHUB_OUTPUT"
 
-      - run: ci/deploy.sh gate ${{ steps.targets.outputs.hosts }}
+      # Each step only gets the hosts that passed the previous one: a failing host fails
+      # the run without holding back the rest. Forgejo drops the outputs of failed jobs,
+      # so preflight and activation must share one job.
+      - id: gate
+        run: ci/deploy.sh gate ${{ steps.targets.outputs.hosts }}
 
-      - run: ci/deploy.sh dry-activate ${{ steps.targets.outputs.hosts }}
+      - id: dry
+        if: ${{ !cancelled() && steps.gate.outputs.hosts != '' }}
+        run: ci/deploy.sh dry-activate ${{ steps.gate.outputs.hosts }}
 
-      - run: ci/deploy.sh diff ${{ steps.targets.outputs.hosts }}
+      - id: diff
+        if: ${{ !cancelled() && steps.dry.outputs.hosts != '' }}
+        run: ci/deploy.sh diff ${{ steps.dry.outputs.hosts }}
 
-      - run: bash nix/scripts/lock-to-changelog.sh || true
+      - if: ${{ !cancelled() }}
+        run: bash nix/scripts/lock-to-changelog.sh || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    name: "Activate (${{ inputs.action }})"
-    needs: [diff]
-    if: inputs.action == 'switch' || inputs.action == 'boot'
-    runs-on: native
-    timeout-minutes: 60
-    env:
-      CLICOLOR_FORCE: "1"
-      FORCE_COLOR: "1"
-    steps:
-      - name: Checkout repository
-        uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Deploy configuration (${{ inputs.action }})
-        run: ci/deploy.sh ${{ inputs.action }} ${{ needs.diff.outputs.hosts }}
+        if: ${{ !cancelled() && steps.diff.outputs.hosts != '' && (inputs.action == 'switch' || inputs.action == 'boot') }}
+        run: ci/deploy.sh ${{ inputs.action }} ${{ steps.diff.outputs.hosts }}

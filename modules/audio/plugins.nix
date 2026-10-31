@@ -6,17 +6,15 @@ let
   };
 in
 {
-  # Writable directories in $HOME for user plugins and NAM models
-  systemd.user.tmpfiles.rules = map (dir: "d %h/${dir} 0755 - - - -") [
-    ".vst"
-    ".vst3"
-    ".lv2"
-    ".clap"
-    ".ladspa"
-    "Audio/nam"
-    "Audio/ir"
-    "Audio/reaper-fxchains"
-  ];
+  home-manager.users.yi = {
+    imports = [ ./home.nix ];
+
+    # Amp Locker's default data folder; recursive keeps the folders writable
+    home.file."Audio Assault/PluginData/Audio Assault/AmpLockerData" = {
+      source = "${audioPkgs.amp-locker}/share/amp-locker/AmpLockerData";
+      recursive = true;
+    };
+  };
 
   environment.systemPackages = [
     # DAWs & Audio Editors
@@ -34,6 +32,8 @@ in
     pkgs.neural-amp-modeler-lv2
     pkgs.ir-lv2
     pkgs.chow-centaur
+    audioPkgs.amp-locker
+    audioPkgs.rustortion
 
     # Tape / saturation
     pkgs.chow-tape-model # the star — real tape
@@ -60,7 +60,7 @@ in
     pkgs.noise-repellent
 
     # Modular & FM Synths / Sequencers / Instruments
-    # pkgs.cardinal # depends on carla
+    pkgs.cardinal
     pkgs.dexed
     pkgs.stochas
     pkgs.vmpk
@@ -76,6 +76,14 @@ in
     pkgs.padthv1
     pkgs.setbfree
     pkgs.x42-gmsynth
+
+    # MIDI compose / sequence
+    pkgs.lmms
+    pkgs.giada
+    pkgs.seq66
+    pkgs.qmidiarp
+    pkgs.helio-workstation
+    pkgs.midivisualizer
 
     # Drums
     audioPkgs.mt-power-drum-kit

@@ -60,7 +60,7 @@ ______________________________________________________________________
 
 ## 4. Pro-Audio Production DAW Studio
 
-Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM) and `modules/audio/plugins.nix` (packages, plugin folders, custom derivations from `modules/audio/packages/`):
+Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM), `modules/audio/plugins.nix` (packages, custom derivations from `modules/audio/packages/`, Amp Locker data link) and `modules/audio/home.nix` (yi's MIDI library and plugin folders):
 
 ### 4.1 Real-Time Kernel & Low-Latency PipeWire
 
@@ -73,12 +73,17 @@ Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM
 ### 4.2 Production Tools & Plugin Ecosystem
 
 - **DAWs & Audio Editors**: Reaper, Tenacity.
+- **MIDI Composition & Sequencing**: LMMS, Giada, Seq66, QMidiArp, Helio Workstation, MIDIVisualizer.
 - **Drum Synthesis & Samplers**: MT-PowerDrumKit, DrumGizmo (CrocellKit, MuldjordKit multi-mic drumkits), AVL Drumkits, Hydrogen, Geonkick, Drumkv1.
-- **Synthesizers & Processors**: Vital, Surge-XT, Helm, Odin2, Dexed, Stochas, Fluidsynth, LSP-Plugins suite, Calf Studio Gear, Dragonfly Reverb, Guitarix, ToneLib, Neural Amp Modeler LV2, ChowDSP.
-- **Scaffolded Preset & Library Tree (`/home/yi`)**:
+- **Synthesizers & Processors**: Vital, Surge-XT, Helm, Odin2, Dexed, Cardinal, Stochas, Fluidsynth, LSP-Plugins suite, Calf Studio Gear, Dragonfly Reverb, Guitarix, ToneLib, Neural Amp Modeler LV2, ChowDSP.
+- **Guitar Rig**: Rustortion (standalone, VST3, CLAP), Amp Locker 1.6.0 (standalone, VST3, LV2), KPP (Kapitonov Plugins Pack: tubeAmp profiler and pedals).
+- **MIDI Reference Library (`~/Music/midi-library/`, read-only)**: `chords/` (ldrolez free-midi-chords), `drums-groove/` (Magenta Groove, GM-mapped), `piano-maestro/` (MAESTRO v3, CC BY-NC-SA), `songs-lakh-clean/` (Lakh `clean_midi`); `_user/` is writable for gated packs.
+- **Scaffolded Preset & Library Tree (`/home/yi` only)**:
   - `~/Audio/nam/`: Neural Amp Modeler (`.nam`) profiles.
   - `~/Audio/ir/`: Speaker cabinet and room impulse responses (`.wav`).
   - `~/Audio/reaper-fxchains/`: Custom Reaper effect chain presets.
+  - `~/Audio/tapf/`: KPP tubeAmp (`.tapf`) profiles; the factory profiles ship in `kpp_tubeamp.lv2/profiles/`.
+  - `~/Audio Assault/PluginData/Audio Assault/AmpLockerData/`: Amp Locker factory data, linked from the store.
   - `~/.vst3`, `~/.lv2`, `~/.clap`, `~/.vst`: Plugin search paths.
 
 ______________________________________________________________________
@@ -125,6 +130,7 @@ ______________________________________________________________________
 - `hosts/yitaishi/gaming.nix`
 - `modules/audio/default.nix`
 - `modules/audio/plugins.nix`
+- `modules/audio/home.nix`
 - `modules/audio/packages/`
 - `modules/desktop.nix`
 - `modules/desktop/greetd.nix`

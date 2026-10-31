@@ -1,10 +1,10 @@
 # MIDI Libraries, Compose Tools, and FX Presets (yitaishi / yi)
 
-## Status: PARTIAL — reviewed 2026-10-30
+## Status: IMPLEMENTED — 2026-10-31 (yitaishi switch pending)
 
-Reviewed against `develop` at `daed5ba` (flake.lock of 2026-10-30) plus the staged `pkgs.carla` re-enable. Part of the tool list and all writable folders landed in `cc3507d` (2026-09-05). The MIDI library was never started: despite its message, `8cc4232` added only this plan and no audio code.
+Re-reviewed against `develop` at `bd9a714` (nixpkgs `5772e199`, flake.lock of 2026-10-31). Part of the tool list and all writable folders landed in `cc3507d` (2026-09-05). The MIDI library was never started: despite its message, `8cc4232` added only this plan and no audio code.
 
-Updated the same day for `audio-module-fixes-plan.md`, which splits `modules/audio/` into `default.nix`, `plugins.nix` and `packages/`. This plan lands after it.
+The carla re-enable and `audio-module-fixes-plan.md`, which splits `modules/audio/` into `default.nix`, `plugins.nix` and `packages/`, both landed in `c80c2f0`.
 
 ______________________________________________________________________
 
@@ -27,13 +27,13 @@ ______________________________________________________________________
 1. **Landed in `cc3507d`**:
    - `dexed` (VST3, CLAP), `stochas` (VST3), `vmpk`, `fluidsynth` and `soundfont-fluid` in `environment.systemPackages`.
    - Writable `~/Audio/{nam,ir,reaper-fxchains}` and `~/.{vst,vst3,lv2,clap,ladspa}` via `systemd.user.tmpfiles.rules`, replacing the draft's `home.file` `.keep` files. `plugins.nix` now generates those rules with `map` over a list of directory names.
-1. **Plugin search paths**: musnix exports `LV2_PATH`, `CLAP_PATH`, `VST_PATH`, `VST3_PATH`, `LADSPA_PATH`, `DSSI_PATH` and `LXVST_PATH` (`environment.sessionVariables`, `mkDefault`). `audio-module-fixes-plan.md` drops the module's old `VST3_PATH` override and its Wine folder. All of them include `/run/current-system/sw/lib/<format>`, so new system plugins need no path changes.
-1. **Carla**: commented out in `cc3507d` along with `# pkgs.cardinal # depends on carla`; re-enabled on 2026-10-30 (staged) and moved with the package list into `plugins.nix`. `guitar-rig-plugins-plan.md` keeps carla optional.
+1. **Plugin search paths**: musnix exports `LV2_PATH`, `CLAP_PATH`, `VST_PATH`, `VST3_PATH`, `LADSPA_PATH`, `DSSI_PATH` and `LXVST_PATH` (`environment.sessionVariables`, `mkDefault`). `audio-module-fixes-plan.md` dropped the module's old `VST3_PATH` override and its Wine folder. All of them include `/run/current-system/sw/lib/<format>`, so new system plugins need no path changes.
+1. **Carla**: commented out in `cc3507d` along with `# pkgs.cardinal # depends on carla`; re-enabled and moved with the package list into `plugins.nix` in `c80c2f0`. `guitar-rig-plugins-plan.md` keeps carla optional.
 1. **Not started**: the home module, `~/Music/midi-library`, and the tools below.
 1. **Home-manager precedent**: `modules/desktop/niri.nix` and `modules/desktop/mango.nix` set `home-manager.users.yi.imports` from a NixOS module; `modules/desktop/gnome/default.nix` keeps its home module as a sibling `home.nix`.
 1. **Docs**: `786f43d` removed `modules/audio-home.nix` and `~/Music/midi-library/` from `docs/src/hosts/yitaishi.md` §4.2, since neither exists.
 
-Remaining draft tools in the 2026-10-30 lock. All evaluate, none is broken or insecure, and all except `linuxsampler` are on cache.nixos.org:
+Remaining draft tools in the 2026-10-31 lock, unchanged from the 2026-10-30 lock. All evaluate, none is broken or insecure, and all except `linuxsampler` are on cache.nixos.org:
 
 | Package             | Version                   | Plugins               | Notes                                      | Plan      |
 | ------------------- | ------------------------- | --------------------- | ------------------------------------------ | --------- |
@@ -55,15 +55,20 @@ ______________________________________________________________________
 - **Decision**: Fetch ldrolez chords, Magenta Groove, MAESTRO (MIDI only) and Lakh `clean_midi`. Heavy datasets (Lakh full, LA-MIDI, Slakh2100) stay out of the store. No `yabridge`.
 - **Rationale**: FX/processing presets are not a portable cross-plugin library. Factory presets already ship inside `lsp-plugins`, `calf`, `dragonfly-reverb`, `guitarix` and `surge-xt`. The one large free processing "library", NAM `.nam` models plus IR `.wav`s, has no stable bulk URL, so it stays a writable drop folder.
 
-### 2. Home content in `modules/audio/home.nix` (path revised)
+### 2. Home content in `modules/audio/home.nix`, imported from `plugins.nix` (revised 2026-10-31)
 
-- **Decision**: `modules/audio/default.nix` adds `home-manager.users.yi.imports = [ ./home.nix ];`.
-- **Rationale**: Same pattern as `niri.nix` and `mango.nix`, and no `mkHome` flag is needed because only yitaishi imports `modules/audio`. Home-manager links for `yi` only and removes stale links on switch; tmpfiles `L+` links would hit every user and are never cleaned up.
+- **Decision**: `modules/audio/plugins.nix` adds `home-manager.users.yi.imports = [ ./home.nix ];`.
+- **Rationale**:
+  - Same pattern as `niri.nix` and `mango.nix`, and no `mkHome` flag is needed because only yitaishi imports `modules/audio`. Home-manager links for `yi` only and removes stale links on switch; tmpfiles `L+` links would hit every user and are never cleaned up.
+  - `plugins.nix` rather than `default.nix`: it owns `audioPkgs`, and the Amp Locker data link from `guitar-rig-plugins-plan.md` joins the same `home-manager.users.yi` block.
 
-### 3. Writable folders stay in `systemd.user.tmpfiles.rules` (revised)
+### 3. Writable folders move to home-manager tmpfiles, `yi` only (revised 2026-10-31)
 
-- **Decision**: Append `"Music/midi-library/_user"` to the directory-name list in `plugins.nix` (which generates the rules with `map`), and drop the draft's `.keep` files.
-- **Rationale**: One mechanism for writable `$HOME` folders; the NAM/IR/FX-chain folders already work this way, and tmpfiles creates missing parents. Like the existing rules, it applies to every user with a systemd user instance (`yi`, `workd`).
+- **Decision**: Move the directory-name list from `plugins.nix` into `home.nix`, as home-manager's `systemd.user.tmpfiles.rules` (still generated with `map`), and append `"Music/midi-library/_user"`. Drop the draft's `.keep` files.
+- **Rationale**:
+  - The NixOS option created the folders for every user with a systemd user instance (`yi`, `workd`). The home-manager option writes `~/.config/user-tmpfiles.d/home-manager.conf` for `yi` only and runs `systemd-tmpfiles --user --create` on activation, so no re-login is needed.
+  - The `-` owner fields resolve to the invoking user and its primary group: `yi:yi` (gid 1000).
+  - One mechanism for writable `$HOME` folders, and tmpfiles creates missing parents. The empty folders the old rules created for `workd` stay until removed by hand.
 
 ### 4. `fetchurl` with hex `sha256`, one table-driven unpack (revised)
 
@@ -88,7 +93,7 @@ ______________________________________________________________________
 ### 7. ldrolez bumped to `v0.20260914` (revised)
 
 - **Decision**: Use `free-midi-chords-20260914.zip` (released 2026-10-14) instead of `20260314`.
-- **Rationale**: Latest release with about 300 more files; its GitHub asset digest matches a local prefetch.
+- **Rationale**: Latest release (still on 2026-10-31) with about 300 more files; its GitHub asset digest matches a local prefetch.
 
 ______________________________________________________________________
 
@@ -98,23 +103,19 @@ ______________________________________________________________________
 flowchart TD
     HOST["hosts/yitaishi/configuration.nix"]
     DEF["modules/audio/default.nix"]
-    HOME["modules/audio/home.nix"]
     PLUG["modules/audio/plugins.nix"]
+    HOME["modules/audio/home.nix"]
+    TOOLS["environment.systemPackages<br/>compose tools (lmms, seq66, cardinal, …)"]
     MIDILIB["~/Music/midi-library/<br/>• chords<br/>• drums-groove<br/>• piano-maestro<br/>• songs-lakh-clean<br/><i>(read-only)</i>"]
+    TMP["~/.vst, ~/.vst3, ~/.lv2, ~/.clap, ~/.ladspa<br/>~/Audio/{nam,ir,reaper-fxchains}<br/>~/Music/midi-library/_user<br/><i>(writable, yi only)</i>"]
 
     HOST --> DEF
-    DEF -->|home-manager.users.yi.imports| HOME
     DEF -->|imports| PLUG
+    PLUG --> TOOLS
+    PLUG -->|home-manager.users.yi.imports| HOME
 
     HOME -->|home.file| MIDILIB
-
-    subgraph PluginsConfig["plugins.nix Configuration"]
-        direction TB
-        TOOLS["environment.systemPackages<br/>compose tools (lmms, seq66, cardinal, …)"]
-        TMP["systemd.user.tmpfiles.rules<br/>~/Audio/{nam,ir,reaper-fxchains}, ~/Music/midi-library/_user (writable)"]
-    end
-
-    PLUG --> PluginsConfig
+    HOME -->|systemd.user.tmpfiles.rules| TMP
 ```
 
 ## Pinned Sources
@@ -148,19 +149,13 @@ pkgs.midivisualizer
 
 ### Phase 2 — MIDI library
 
-In `modules/audio/default.nix`:
+In `modules/audio/plugins.nix`, delete the `systemd.user.tmpfiles.rules` block and add:
 
 ```nix
 home-manager.users.yi.imports = [ ./home.nix ];
 ```
 
-In `modules/audio/plugins.nix`, append to the directory-name list behind `systemd.user.tmpfiles.rules`:
-
-```nix
-"Music/midi-library/_user"
-```
-
-New `modules/audio/home.nix`. On 2026-10-30 this exact module passed `nixfmt --check`, `statix` and `deadnix`, and was evaluated and built against `yitaishi` through `extendModules`. All four libraries built with no wrapper folder, and yifuwuqi got no `Music/` entries.
+New `modules/audio/home.nix`. On 2026-10-30 its `libraries`/`unpack` part passed `nixfmt --check`, `statix` and `deadnix`, and was evaluated and built against `yitaishi` through `extendModules`. All four libraries built with no wrapper folder, and yifuwuqi got no `Music/` entries. The directory list moves in verbatim from `plugins.nix`, plus `_user`.
 
 ```nix
 { pkgs, lib, ... }:
@@ -203,6 +198,19 @@ let
     '';
 in
 {
+  # Writable directories in $HOME for user plugins, NAM models and MIDI packs
+  systemd.user.tmpfiles.rules = map (dir: "d %h/${dir} 0755 - - - -") [
+    ".vst"
+    ".vst3"
+    ".lv2"
+    ".clap"
+    ".ladspa"
+    "Audio/nam"
+    "Audio/ir"
+    "Audio/reaper-fxchains"
+    "Music/midi-library/_user"
+  ];
+
   home.file = lib.mapAttrs' (
     name: entry: lib.nameValuePair "Music/midi-library/${name}" { source = unpack name entry; }
   ) libraries;
@@ -236,15 +244,15 @@ flowchart LR
 - Amp/cab tone: download `.nam` models and IR `.wav`s from TONE3000 (formerly ToneHunt) into `~/Audio/nam` and `~/Audio/ir`. IRs load into `ir-lv2` or x42's `zeroconvo.lv2`, not Dragonfly (algorithmic).
 - Gated MIDI packs (JJ Groove, OddGrooves, Unison, Cymatics) go into `~/Music/midi-library/_user`.
 - LSP and similar plugins have no central preset packs; save EQ/comp chains as Reaper FX chains in `~/Audio/reaper-fxchains`.
+- Optional, as `workd`: `rmdir` the empty folders the old system-wide rules created (`~/.vst`, `~/.vst3`, `~/.lv2`, `~/.clap`, `~/.ladspa`, `~/Audio/{nam,ir,reaper-fxchains}`, `~/Audio`).
 
 ______________________________________________________________________
 
 ## Rollout Order
 
-1. Commit the staged carla re-enable first; `lmms` and `cardinal` need it.
-1. Land `audio-module-fixes-plan.md` next; this plan edits the `plugins.nix` it creates.
-1. Land Phases 1–2 plus the host-doc update in one commit. `guitar-rig-plugins-plan.md` appends to the same lists in `plugins.nix`, so either feature plan can land first.
-1. Push to `develop`. CI builds the yitaishi closure, downloads ≈ 300 MB of archives once (Lakh over plain HTTP; the pinned hash guarantees integrity) and pushes ≈ 874 MB of MIDI trees to the `yi` Attic cache.
+1. Done in `c80c2f0`: the carla re-enable (`lmms` and `cardinal` need it) and `audio-module-fixes-plan.md`.
+1. Land Phases 1–2 plus the host-doc update in one commit, before `guitar-rig-plugins-plan.md`: it appends `Audio/tapf` to the `home.nix` list and adds its Amp Locker data link to the same `home-manager.users.yi` block.
+1. Push to `develop`. CI builds the yitaishi closure, downloads ≈ 300 MB of archives once (Lakh over plain HTTP; the pinned hash guarantees integrity) and pushes ≈ 874 MB of MIDI trees to the `yi` Attic cache. `attic-watch-store` on yifuwuqi pushes the fetched archives too.
 1. On yitaishi: `su -`, then `nh os switch /home/yi/the.files/nixos`.
 1. Phase 3.
 
@@ -252,27 +260,32 @@ ______________________________________________________________________
 
 ## Verification
 
-`home.nix` is a new file, and evaluating a git flake ignores untracked files. Track it before running the commands below, or evaluate a snapshot the way `audio-module-fixes-plan.md` Phase 6 does.
+`home.nix` is a new file, and evaluating a git flake ignores untracked files. Until it is staged, build the libraries from the working tree with `--impure`, and evaluate the whole config from a snapshot the way `audio-module-fixes-plan.md` Phase 6 does.
 
 Before switching:
 
 ```bash
 cd /home/yi/the.files/nixos
-nix flake check --no-build
-nix eval .#nixosConfigurations.yitaishi.config.home-manager.users.yi.home.file \
+flake="git+file://$PWD"
+nix build --impure -L --no-link --print-out-paths --expr "let pkgs = (builtins.getFlake \"$flake\").nixosConfigurations.yitaishi.pkgs; in map (f: f.source) (builtins.attrValues (import ./modules/audio/home.nix { inherit pkgs; inherit (pkgs) lib; }).home.file)"
+snap=/tmp/ai/<session-id>.tar
+git ls-files -z --cached --others --exclude-standard |
+  tar --null --ignore-failed-read --transform 's,^,source/,' -T - -cf "$snap"
+nix flake check --no-build --option tarball-ttl 0 "tarball+file://$snap"
+nix eval --option tarball-ttl 0 --json "tarball+file://$snap#nixosConfigurations.yitaishi.config.home-manager.users.yi.home.file" \
   --apply 'f: builtins.filter (n: builtins.match "Music/.*" n != null) (builtins.attrNames f)'
-# expect the four Music/midi-library/* entries (today: [ ])
-nix eval .#nixosConfigurations.yifuwuqi.config.home-manager.users.yi.home.file \
+# expect the four Music/midi-library/* entries
+nix eval --option tarball-ttl 0 --json "tarball+file://$snap#nixosConfigurations.yifuwuqi.config.home-manager.users.yi.home.file" \
   --apply 'f: builtins.filter (n: builtins.match "Music/.*" n != null) (builtins.attrNames f)'
 # expect [ ]
-nixos-rebuild build --flake .#yitaishi
+nix build --no-link --option tarball-ttl 0 "tarball+file://$snap#nixosConfigurations.yitaishi.config.system.build.toplevel"
 ```
 
-After switching, on yitaishi. User tmpfiles only run when the user manager starts, so `_user` appears after the next login or the restart below:
+After switching, on yitaishi. Home-manager activation runs `systemd-tmpfiles --user --create`, so `_user` exists without a re-login:
 
 ```bash
-systemctl --user restart systemd-tmpfiles-setup.service
 ls ~/Music/midi-library   # chords drums-groove piano-maestro songs-lakh-clean _user
+stat -c '%U:%G %a %n' ~/.vst3 ~/Audio/nam ~/Music/midi-library/_user   # yi:yi 755
 command -v lmms giada qseq66 qmidiarp helio Cardinal MIDIVisualizer
 ```
 
@@ -280,7 +293,9 @@ ______________________________________________________________________
 
 ## Open Questions
 
-1. **Keep Lakh `clean_midi`?** It is 782 MB of the ≈ 874 MB, the only pin without an upstream checksum, and served over plain HTTP from a university host. Without it the library is ≈ 93 MB, all upstream-verified.
-1. **`midivisualizer`**: still wanted? The draft marked it optional.
-1. **ldrolez progressions**: add `free-midi-progressions-20260914.zip` as a fifth `libraries` entry?
-1. **Scope the writable folders to `yi`?** Moving the directory list into `home.nix`, via home-manager's own `systemd.user.tmpfiles.rules`, would stop creating `~/.vst3`, `~/Audio/*` and `_user` for `workd`.
+None. Resolved 2026-10-31:
+
+1. **Lakh `clean_midi`**: kept, pinned as above, despite being 782 MB of the ≈ 874 MB and the only pin without an upstream checksum.
+1. **`midivisualizer`**: added.
+1. **ldrolez progressions**: not added; the `free-midi-progressions-20260914.zip` digest stays on record above.
+1. **Writable folders**: scoped to `yi`, owned `yi:yi` (Decision 3).

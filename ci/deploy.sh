@@ -2,6 +2,7 @@
 set -euo pipefail
 
 GREEN=$'\033[1;32m'
+RED=$'\033[1;31m'
 CYAN=$'\033[1;36m'
 DIM=$'\033[2m'
 RESET=$'\033[0m'
@@ -181,6 +182,29 @@ run_action() {
   esac
 }
 
+passed=()
+failed=()
 for target in "${targets[@]}"; do
-  run_action "$target"
+  # errexit is ignored inside `if`/`||` conditions, so the subshell must run as a plain command.
+  set +e
+  (
+    set -e
+    run_action "$target"
+  )
+  rc=$?
+  set -e
+  if [ "$rc" -eq 0 ]; then
+    passed+=("$target")
+  else
+    echo "::endgroup::"
+    echo "::error::$action failed for $target (exit $rc); continuing with the remaining hosts" >&2
+    failed+=("$target")
+  fi
 done
+
+[ "${GITHUB_OUTPUT:-}" = "" ] || echo "hosts=${passed[*]}" >>"$GITHUB_OUTPUT"
+[ "${#passed[@]}" -eq 0 ] || printf '%s✔ %s passed%s: %s\n' "$GREEN" "$action" "$RESET" "${passed[*]}"
+if [ "${#failed[@]}" -gt 0 ]; then
+  printf '%s✘ %s failed%s: %s\n' "$RED" "$action" "$RESET" "${failed[*]}" >&2
+  exit 1
+fi
