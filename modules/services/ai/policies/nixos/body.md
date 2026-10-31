@@ -40,8 +40,8 @@ Never make assumptions about NixOS options, module structures, function signatur
 
 ## 6. Functional Combinators & Idiomatic Nix
 
-When writing Nix expressions, write pure, idiomatic functional code and uphold categorical invariants:
+Apply code-quality's **No Representation Bouncing** with Nix's own combinators:
 
-- **Representation Invariance**: Never bounce between data representations. If the source and destination are attribute sets, stay in the `AttrSet` monoid directly (`lib.concatMapAttrs`, `lib.genAttrs`, `lib.mapAttrs'`, `lib.mergeAttrsList`). Chaining `listToAttrs`, `concatMap`, and `mapAttrsToList` with intermediate `{ name = ...; value = ...; }` pairs is an anti-pattern.
-- **Cartesian Products are Applicative**: When combining independent domains ($A \\times B$), treat the Cartesian product as an applicative operation. Do not construct ad-hoc nested list mappings.
-- **Canonical Combinators**: Always prefer standard combinators over unrolled expansions (e.g. `lib.concatMap` over `concatLists (map ...)`, `lib.mergeAttrsList` over manual folds).
+- **Attribute sets**: stay in the `AttrSet` monoid with `lib.concatMapAttrs`, `lib.genAttrs`, `lib.mapAttrs'`, and `lib.mergeAttrsList`. Chaining `listToAttrs`, `concatMap`, and `mapAttrsToList` through intermediate `{ name = ...; value = ...; }` pairs is the anti-pattern.
+- **Products**: combine independent domains (`A × B`) applicatively, e.g. with `lib.cartesianProduct`, instead of ad-hoc nested list mappings.
+- **Lists and folds**: prefer `lib.concatMap` over `concatLists (map ...)`, and `lib.mergeAttrsList` over manual folds.

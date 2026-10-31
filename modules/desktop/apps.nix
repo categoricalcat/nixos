@@ -76,6 +76,7 @@ in
     jellyflix
     jellyfin-tui
     jellytui
+    constrict
     # nextcloud-client
   ];
 
