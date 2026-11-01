@@ -7,7 +7,10 @@ let
 in
 {
   home-manager.users.yi = {
-    imports = [ ./home.nix ];
+    imports = [
+      ./amplitube.nix
+      ./home.nix
+    ];
 
     # Amp Locker's default data folder; recursive keeps the folders writable
     home.file."Audio Assault/PluginData/Audio Assault/AmpLockerData" = {

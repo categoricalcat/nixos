@@ -52,7 +52,12 @@
   ];
 
   nix.package = lib.mkForce pkgs.lixPackageSets.lix_2_96.lix;
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+    allowUnfree = true;
+    # gtk2 is marked broken ahead of its NixOS 27.05 removal, but Home Manager's
+    # input-method gtk2 cache, lutris, onlyoffice and ir-lv2 still depend on it.
+    problems.handlers."gtk+".broken = "warn";
+  };
   nixpkgs.overlays = import ../nix/overlays.nix { inherit inputs; };
   environment.defaultPackages = lib.mkForce [ ];
 

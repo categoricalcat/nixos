@@ -44,4 +44,5 @@
   - [Software KVM (Lan Mouse)](hardware/lan-mouse.md)
   - [Troubleshooting USB Boot Delays](hardware/usb-boot-delays.md)
 - [Studio & Audio](<>)
+  - [AmpliTube 5 (Wine/yabridge)](audio/amplitube.md)
   - [Pro-Audio Drum Kits](audio/drums.md)
