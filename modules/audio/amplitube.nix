@@ -1,140 +1,128 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   prefix = ".local/share/wineprefixes/ik-multimedia";
+  vst3 = "${config.home.homeDirectory}/${prefix}/drive_c/Program Files/Common Files/VST3";
   wine = pkgs.wineWow64Packages.yabridge;
   wineAsio = pkgs.wineasio.override { wineWow64Packages.stable = wine; };
-  tools = [
-    wine
-    wineAsio
-    pkgs.winetricks
-    pkgs.yabridgectl
-  ];
 
-  amplitube = pkgs.writeShellApplication {
-    name = "amplitube-5";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.libnotify
-    ]
-    ++ tools;
-    text = ''
-      export WINEARCH=win64
-      export WINEDLLOVERRIDES="winemenubuilder.exe=d"
-      export WINEDLLPATH="${wineAsio}/lib/wine"
-      export WINEPREFIX="$HOME/${prefix}"
+  productManagerVersion = "1.1.16";
+  # IK's CDN publishes no checksum; trust-on-first-use
+  productManagerSetup = pkgs.fetchzip {
+    name = "ik-product-manager-setup-${productManagerVersion}";
+    url = "https://g1.ikmultimedia.com/plugins/ProductManager/ik_product_manager_${productManagerVersion}.zip";
+    hash = "sha256-DUxn/nK8XFotJTXnL3iaaiCI2u2Oh6xDttFBSlLjbmk=";
+    # The CDN answers 403 without IK's site as referer
+    curlOptsList = [
+      "--referer"
+      "https://www.ikmultimedia.com/"
+    ];
+  };
 
-      manager="$WINEPREFIX/drive_c/Program Files/IK Multimedia/IK Product Manager/IK Product Manager.exe"
-      standalone="$WINEPREFIX/drive_c/Program Files/IK Multimedia/AmpliTube 5/AmpliTube 5.exe"
-      vst3="$WINEPREFIX/drive_c/Program Files/Common Files/VST3"
-      wineasio_marker="$WINEPREFIX/.nix-wineasio"
+  launcher =
+    name: body:
+    pkgs.writeShellApplication {
+      inherit name;
+      runtimeInputs = [
+        pkgs.coreutils
+        pkgs.libnotify
+        wine
+        wineAsio
+      ];
+      runtimeEnv = {
+        WINEARCH = "win64";
+        WINEDLLPATH = "${wineAsio}/lib/wine";
+        WINEDLLOVERRIDES = "winemenubuilder.exe=d";
+      };
+      text = ''
+        export WINEPREFIX="$HOME/${prefix}"
+        ik="$WINEPREFIX/drive_c/Program Files/IK Multimedia"
 
-      usage() {
-        cat >&2 <<'EOF'
-      Usage:
-        amplitube-5 install INSTALLER.exe
-        amplitube-5 manager
-        amplitube-5 standalone
-        amplitube-5 sync
-        amplitube-5 winecfg
-        amplitube-5 winetricks VERB...
-      EOF
-      }
+        need() {
+          [[ -f "$1" ]] && return
+          printf '%s\n' "$2" >&2
+          notify-send "IK Multimedia" "$2" || true
+          exit 1
+        }
 
-      die() {
-        printf 'amplitube-5: %s\n' "$*" >&2
-        [[ -t 2 ]] || notify-send "AmpliTube 5" "$*" || true
-        exit 1
-      }
-
-      require_file() {
-        [[ -f "$1" ]] || die "$2"
-      }
-
-      init_prefix() {
         if [[ ! -f "$WINEPREFIX/system.reg" ]]; then
           mkdir -p "$WINEPREFIX"
           # Wine Mono and Gecko are not bundled; skip their download prompts
           WINEDLLOVERRIDES="$WINEDLLOVERRIDES;mscoree,mshtml=" wineboot --init
-        fi
-      }
-
-      ensure_wineasio() {
-        local registered=""
-        if [[ -f "$wineasio_marker" ]]; then
-          registered="$(<"$wineasio_marker")"
-        fi
-        if [[ "$registered" == "${wineAsio}" ]]; then
-          return
+          install -m0644 "$WINEDLLPATH/x86_64-windows/wineasio64.dll" "$WINEPREFIX/drive_c/windows/system32/"
+          # /s suppresses the result dialog; a bare /nix path would resolve against the current drive
+          wine regsvr32 /s "Z:$WINEDLLPATH/x86_64-unix/wineasio64.dll.so"
         fi
 
-        install -Dm0644 "$WINEDLLPATH/x86_64-windows/wineasio64.dll" "$WINEPREFIX/drive_c/windows/system32/wineasio64.dll"
-        # A bare /nix path would resolve against the current Wine drive
-        wine regsvr32 "Z:$WINEDLLPATH/x86_64-unix/wineasio64.dll.so"
-        printf '%s\n' "${wineAsio}" >"$wineasio_marker"
-      }
+        ${body}
+      '';
+    };
 
-      case "''${1:-}" in
-        install) [[ $# -eq 2 ]] ;;
-        winetricks) [[ $# -ge 2 ]] ;;
-        manager | standalone | sync | winecfg) [[ $# -eq 1 ]] ;;
-        *) false ;;
-      esac || {
-        usage
-        exit 2
-      }
+  productManager = launcher "ik-product-manager" ''
+    exe="$ik/IK Product Manager/IK Product Manager.exe"
+    if [[ ! -f "$exe" ]]; then
+      wine "${productManagerSetup}/Install IK Product Manager (v${productManagerVersion}).exe" /S
+      wineserver -w
+    fi
+    need "$exe" "IK Product Manager failed to install."
+    exec wine "$exe"
+  '';
 
-      subcommand="$1"
-      shift
-      case "$subcommand" in
-        install)
-          require_file "$1" "installer not found: $1"
-          installer="$(readlink -f -- "$1")"
-          init_prefix
-          ensure_wineasio
-          exec wine "$installer"
-          ;;
-        manager)
-          require_file "$manager" "IK Product Manager is not installed; run: amplitube-5 install INSTALLER.exe"
-          exec wine "$manager"
-          ;;
-        standalone)
-          require_file "$standalone" "AmpliTube 5 is not installed; install it from IK Product Manager"
-          ensure_wineasio
-          # xwayland-satellite maps Wine dropdowns as separate windows, so niri's focus changes close them
-          exec wine explorer /desktop=AmpliTube,1920x1080 "$(winepath -w "$standalone")"
-          ;;
-        sync)
-          [[ -e "$vst3/AmpliTube 5.vst3" ]] \
-            || die "AmpliTube VST3 is not installed in the default location"
-          yabridgectl add "$vst3"
-          exec yabridgectl sync
-          ;;
-        winecfg)
-          init_prefix
-          exec winecfg
-          ;;
-        winetricks)
-          init_prefix
-          exec winetricks "$@"
-          ;;
-      esac
-    '';
-  };
+  amplitube = launcher "amplitube-5" ''
+    exe="$ik/AmpliTube 5/AmpliTube 5.exe"
+    need "$exe" "Install AmpliTube 5 from IK Product Manager first."
+    # xwayland-satellite maps Wine dropdowns as separate windows, so niri's focus changes close them
+    exec wine explorer /desktop=AmpliTube,1920x1080 "$(winepath -w "$exe")"
+  '';
 in
 {
   home.packages = [
-    amplitube
     pkgs.yabridge
-  ]
-  ++ tools;
+    pkgs.yabridgectl
+  ];
 
-  systemd.user.tmpfiles.rules = [ "d %h/${prefix} 0755 - - - -" ];
+  xdg.configFile."yabridgectl/config.toml".source =
+    (pkgs.formats.toml { }).generate "yabridgectl.toml"
+      {
+        plugin_dirs = [ vst3 ];
+        yabridge_home = "${pkgs.yabridge}/lib";
+        # Verification records the Wine version in this file, which is read-only
+        no_verify = true;
+      };
+
+  systemd.user = {
+    services.yabridge-sync = {
+      Unit = {
+        Description = "Bridge Windows VST3 plugins from the IK Multimedia prefix";
+        ConditionPathIsDirectory = vst3;
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${lib.getExe pkgs.yabridgectl} sync";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+
+    paths.yabridge-sync = {
+      Unit.Description = "Watch the IK Multimedia prefix for VST3 installs";
+      # The bundle folder appears before the installer finishes; its binary lands when the copy completes
+      Path.PathChanged = [
+        vst3
+        "${vst3}/AmpliTube 5.vst3/Contents/x86_64-win"
+      ];
+      Install.WantedBy = [ "default.target" ];
+    };
+  };
 
   xdg.desktopEntries = {
     amplitube-5 = {
       name = "AmpliTube 5";
       comment = "IK Multimedia guitar amp and effects workstation";
-      exec = "${lib.getExe amplitube} standalone";
+      exec = lib.getExe amplitube;
       icon = "audio-card";
       categories = [
         "Audio"
@@ -144,7 +132,7 @@ in
     ik-product-manager = {
       name = "IK Product Manager";
       comment = "Install, update, and authorize IK Multimedia products";
-      exec = "${lib.getExe amplitube} manager";
+      exec = lib.getExe productManager;
       icon = "system-software-install";
       categories = [
         "Audio"

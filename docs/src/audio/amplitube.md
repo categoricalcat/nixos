@@ -1,61 +1,33 @@
 # AmpliTube 5 on NixOS
 
-AmpliTube 5 is a Windows application. On `yitaishi`, Nix provides a dedicated Wine prefix, yabridge for REAPER, and WineASIO over PipeWire JACK. IK Product Manager, AmpliTube, and the license remain persistent user state because they require an IK account.
+AmpliTube 5 is a Windows application. On `yitaishi`, `modules/audio/amplitube.nix` provides a dedicated Wine prefix (`~/.local/share/wineprefixes/ik-multimedia`), yabridge for REAPER, WineASIO over PipeWire JACK, and two app launchers: **IK Product Manager** and **AmpliTube 5**. Signing in, installing, and authorizing stay in IK Product Manager because they need an IK account; nothing account-related goes into Git or the Nix store.
 
-## Declarative Components
+## Setup
 
-- Prefix: `~/.local/share/wineprefixes/ik-multimedia`
-- Wine: nixpkgs' yabridge-matched Wine Staging
-- Windows VST3 bridge: yabridge and yabridgectl
-- Standalone audio: WineASIO, built for the same Wine; it loads PipeWire's `libjack.so.0` from the session `LD_LIBRARY_PATH` that `services.pipewire.jack.enable` sets
-- Native bridged plugins: `~/.vst3/yabridge`
-- Helper and launchers: `amplitube-5`, AmpliTube 5, and IK Product Manager
+1. Rebuild `yitaishi`: run `su -`, then `nh os switch /mnt/smb/the.files/nixos`. A plain `nh os switch` builds `programs.nh.flake` (`/home/yi/the.files/nixos`), so update that clone first if you use it.
+1. Open **IK Product Manager** from the app launcher. The first launch creates the prefix and installs Product Manager silently. Sign in, then install and authorize AmpliTube 5 with the default paths.
+1. Open **AmpliTube 5** from the app launcher and select WineASIO in its audio settings.
 
-The helper disables Wine's menu builder, so the IK installers create no extra launchers or file associations; start everything from the two launchers above or through `amplitube-5`. No installer, credentials, serial number, or authorization data belongs in Git or the Nix store.
+For REAPER, the `yabridge-sync` user service bridges the prefix's VST3 folder into `~/.vst3/yabridge` at login, after every rebuild, and whenever an installation changes the plugin. Clear REAPER's VST cache and rescan once; if `~/.vst3` is missing from Preferences → Plug-ins → VST, add it. Do not add the raw Wine prefix to REAPER's plugin paths.
 
-## First Installation
+## Behavior
 
-1. Rebuild `yitaishi` from a checkout that contains this configuration: run `su -`, then `nh os switch /mnt/smb/the.files/nixos`. A plain `nh os switch` builds `programs.nh.flake` (`/home/yi/the.files/nixos`), so update that clone first if you use it.
+- AmpliTube opens inside a 1920x1080 Wine virtual desktop window, which niri floats because its size is fixed. On their own, Wine's dropdowns become separate windows under xwayland-satellite and close as soon as niri moves focus; inside the virtual desktop they behave normally. Maximize AmpliTube inside that window if needed; the size is set in `modules/audio/amplitube.nix`.
+- WineASIO follows the PipeWire graph at 96,000 Hz and 384 samples. Keep its fixed buffer size on (the default): without it, WineASIO accepts only power-of-two buffer sizes, and 384 is not one.
+- Wine's menu builder is disabled, so the IK installers create no extra launchers or file associations. Wine Mono and Gecko are skipped when the prefix is created; none of the IK software needs them, and Wine still offers to install them the first time a program does.
+- The launchers report problems, such as AmpliTube not being installed yet, as desktop notifications.
 
-1. Download IK Product Manager for Windows from [IK Multimedia](https://ikmultimedia.com/en-us/pages/ik-product-manager) and extract its ZIP archive.
+## Maintenance
 
-1. Create the prefix and run the extracted installer, adjusting the path for the downloaded version:
+- Update IK software from IK Product Manager; the sync service picks up new plugin files on its own.
 
-   ```bash
-   amplitube-5 install "$HOME/Downloads/ik_product_manager_1.1.16/Install IK Product Manager (v.1.1.16).exe"
-   ```
+- Plugin folders are declared in Nix and `~/.config/yabridgectl/config.toml` is read-only, so `yabridgectl add` does not apply. `yabridgectl status` still works, and `journalctl --user -u yabridge-sync` shows the sync log.
 
-1. Launch `amplitube-5 manager`, sign in, and register the serial if it is not already attached to the account.
+- Preserve the whole prefix; it contains installed files, registry state, and authorization. Recreating it means installing and authorizing again.
 
-1. In Product Manager's Software tab, install and authorize AmpliTube 5. Keep the default standalone and VST3 destinations.
+- If Product Manager reports download-path error 108, download AmpliTube from the IK account's My Products or Past Releases page, extract it, run its installer in the prefix, then authorize in Product Manager:
 
-1. Bridge the installed VST3:
-
-   ```bash
-   amplitube-5 sync
-   yabridgectl status
-   ```
-
-1. In REAPER, clear the VST cache and rescan. REAPER should discover `~/.vst3/yabridge/AmpliTube 5.vst3`; if `~/.vst3` is missing from Preferences → Plug-ins → VST, add it. Do not add the raw Wine prefix to REAPER's plugin paths.
-
-## Standalone Mode
-
-Launch from the desktop entry or run:
-
-```bash
-amplitube-5 standalone
-```
-
-AmpliTube opens inside a 1920x1080 Wine virtual desktop window, which niri floats because its size is fixed. On their own, Wine's dropdowns become separate windows under xwayland-satellite and close as soon as niri moves focus; inside the virtual desktop they behave normally. Maximize AmpliTube inside that window if needed; the size is set in `modules/audio/amplitube.nix`.
-
-In AmpliTube's audio settings, select WineASIO. It follows the PipeWire graph at 96,000 Hz and 384 samples. Keep WineASIO's fixed buffer size on (the default): without it, WineASIO accepts only power-of-two buffer sizes, and 384 is not one. The helper re-registers WineASIO automatically after its Nix store path changes.
-
-## Maintenance and Recovery
-
-- Run `amplitube-5 manager` for IK updates, then `amplitube-5 sync`.
-- Run `amplitube-5 winecfg` for prefix-specific Wine settings and `amplitube-5 winetricks VERB...` to add Windows components to the same prefix.
-- The launchers report problems, such as Product Manager or AmpliTube not being installed yet, as desktop notifications.
-- Wine Mono and Gecko are skipped when the prefix is created. None of the IK software needs them, and Wine still offers to install them the first time a program does.
-- Preserve the whole prefix; it contains installed files, registry state, and authorization. Recreating it requires installing and authorizing again.
-- After a yabridge or Wine update, rerun `amplitube-5 sync` before opening REAPER.
-- If Product Manager reports download-path error 108, download AmpliTube from the IK account's My Products or Past Releases page, extract it, and run its installer with `amplitube-5 install <installer.exe>`. Use Product Manager afterward for authorization.
+  ```bash
+  WINEPREFIX=~/.local/share/wineprefixes/ik-multimedia WINEDLLOVERRIDES=winemenubuilder.exe=d \
+    nix shell nixpkgs#wineWow64Packages.yabridge -c wine "<installer.exe>"
+  ```
