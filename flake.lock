@@ -188,11 +188,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793649086,
-        "narHash": "sha256-NpUa2HC9BLGzlWppBZxM/T166FYbOqdAs+hWWXjVNaQ=",
+        "lastModified": 1793676617,
+        "narHash": "sha256-MMhtP0B+F0dJTmURXxOrvvGzbIL2aZ0pRezM4BmCSxc=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "15073346175f34f49a6e80aa17104c2827eb0e05",
+        "rev": "f1507fa4fa3f25842dc73a8b25f747f98bcf55fc",
         "type": "github"
       },
       "original": {
@@ -458,11 +458,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791909798,
-        "narHash": "sha256-VAhpCOmrun/KXimYfR8NM88bciKCui7CqHHhThSzgag=",
+        "lastModified": 1793686154,
+        "narHash": "sha256-Zb/0L3soxrkfcrywpfp0J++0WFLB3tzh0Xtx9up+VNc=",
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "1ba1dbfe28738c9a71c266be6efa5b89e75491a9",
+        "rev": "204b6977e00caac19e2313015a598543ca7be150",
         "type": "github"
       },
       "original": {
@@ -782,11 +782,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793637593,
-        "narHash": "sha256-80aCjA3zIdDrYCElvCXGepOOkv84gmq4HUTEeFzHigw=",
-        "rev": "76abcfc873caee1b9b22c12d34b92f0d6dea1c1b",
+        "lastModified": 1793666740,
+        "narHash": "sha256-GKDWBde1H3WtrXPB0mNxR44REIVQM3b4Vm4p5Ojdlxk=",
+        "rev": "6804a4422b500a90c226c0512936ea35104f47f2",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1106983.76abcfc873ca/nixexprs.tar.zst?lastModified=1793637593&rev=76abcfc873caee1b9b22c12d34b92f0d6dea1c1b"
+        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1107376.6804a4422b50/nixexprs.tar.zst?lastModified=1793666740&rev=6804a4422b500a90c226c0512936ea35104f47f2"
       },
       "original": {
         "type": "tarball",
@@ -833,11 +833,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1793653416,
-        "narHash": "sha256-d7a3Mw1dNGcX3WRiWt6pydPCnZmNJFEGOPLOI8mrzV4=",
+        "lastModified": 1793676314,
+        "narHash": "sha256-/He0g2IYutiafqOvCkR0Nb4tdb9Cnn+gAIZ0hzECIMc=",
         "owner": "noctalia-dev",
         "repo": "noctalia-shell",
-        "rev": "2161aece512deebd26f5fafa3d59edc578489ebb",
+        "rev": "3c7e6343efac4cb683eb102374cccb210c05dc1c",
         "type": "github"
       },
       "original": {
