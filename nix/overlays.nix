@@ -21,6 +21,13 @@ _: [
             old.postBuild;
       });
 
+    # Nixpkgs 26.11 bumped opencode to 2.2.5 with a stale node_modules hash.
+    opencode = prev.opencode.overrideAttrs (old: {
+      node_modules = old.node_modules.overrideAttrs (_: {
+        outputHash = "sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=";
+      });
+    });
+
     # Fix reaper segfault on startup (NixOS/patchelf#446, NixOS/patchelf#447):
     # patchelf corrupts non-PIE (ET_EXEC) ELF binaries when inserting/expanding RPATH
     # by creating an overlapping PT_LOAD segment where .dynamic falls within a page
