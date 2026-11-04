@@ -6,17 +6,20 @@
 
 let
   inherit (allAddresses) monitoring;
-  centralHost = allAddresses.hosts.${monitoring.centralHost};
+  monitoringLib = import ./lib.nix;
+  centralHost = monitoringLib.getCentralHost allAddresses;
+  lokiAddress = centralHost.network.lan.ipv4.host;
   loki = centralHost.services.loki;
   dataDir = monitoring.dataDirs.loki;
   retention = "168h";
 in
 {
   assertions = [
-    {
-      assertion = config.networking.hostName == monitoring.centralHost;
-      message = "modules/services/monitoring/loki.nix: may only be imported on ${monitoring.centralHost}";
-    }
+    (monitoringLib.mkCentralHostAssertion {
+      modulePath = "modules/services/monitoring/loki.nix";
+      inherit monitoring;
+      hostName = config.networking.hostName;
+    })
   ];
 
   services.loki = {
@@ -29,7 +32,7 @@ in
       analytics.reporting_enabled = false;
 
       server = {
-        http_listen_address = centralHost.network.lan.ipv4.host;
+        http_listen_address = lokiAddress;
         http_listen_port = loki.port;
         grpc_listen_address = "0.0.0.0";
         grpc_listen_port = 9096;
@@ -39,7 +42,7 @@ in
         path_prefix = dataDir;
         replication_factor = 1;
         ring = {
-          instance_addr = centralHost.network.lan.ipv4.host;
+          instance_addr = lokiAddress;
           kvstore.store = "inmemory";
         };
       };

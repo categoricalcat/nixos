@@ -1,9 +1,6 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
+_:
 let
-  inherit (pkgs) lib;
-  dashLib = import ./lib.nix { inherit lib; };
+  dashLib = import ./lib.nix;
 in
 dashLib.mkDashboard {
   uid = "postgres";

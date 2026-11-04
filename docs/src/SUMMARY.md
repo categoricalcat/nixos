@@ -23,6 +23,7 @@
   - [Secrets and Host Keys](services/secrets.md)
   - [DNS and Reverse Proxy](services/dns-and-proxy.md)
   - [Monitoring & Observability](services/monitoring.md)
+  - [Podman Operations](services/podman-operations.md)
   - [AI-SSH Restricted Remote Access](services/ai-ssh.md)
 - [Hosted Applications & Storage](<>)
   - [Hosted Web Services Directory](services/hosted-services.md)

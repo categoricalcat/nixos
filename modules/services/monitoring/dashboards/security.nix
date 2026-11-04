@@ -1,9 +1,6 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
+_:
 let
-  inherit (pkgs) lib;
-  dashLib = import ./lib.nix { inherit lib; };
+  dashLib = import ./lib.nix;
 in
 dashLib.mkDashboard {
   uid = "security";
@@ -15,63 +12,31 @@ dashLib.mkDashboard {
       expr = "sum(node_security_vulnerabilities_total{severity=\"CRITICAL\"}) by (host)";
       gridPos = dashLib.mkGridPos 0 0 4 4;
       legendFormat = "{{host}}";
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "red";
-          value = 1;
-        }
-      ];
+      thresholds = dashLib.alertThresholds;
     })
     (dashLib.mkStat {
       title = "High CVEs";
       expr = "sum(node_security_vulnerabilities_total{severity=\"HIGH\"}) by (host)";
       gridPos = dashLib.mkGridPos 4 0 4 4;
       legendFormat = "{{host}}";
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "orange";
-          value = 1;
-        }
-      ];
+      thresholds = dashLib.mkThresholdSteps { orange = 1; };
     })
     (dashLib.mkStat {
       title = "Kernel Reboot Status";
       expr = "node_security_reboot_required";
       gridPos = dashLib.mkGridPos 8 0 4 4;
       legendFormat = "{{host}}";
-      mappings = [
-        {
-          type = "value";
-          options = {
-            "0" = {
-              text = "Clean";
-              color = "green";
-            };
-            "1" = {
-              text = "Reboot Required";
-              color = "red";
-            };
-          };
-        }
-      ];
-      thresholds = [
-        {
+      mappings = dashLib.mkValueMappings {
+        "0" = {
+          text = "Clean";
           color = "green";
-          value = null;
-        }
-        {
+        };
+        "1" = {
+          text = "Reboot Required";
           color = "red";
-          value = 1;
-        }
-      ];
+        };
+      };
+      thresholds = dashLib.alertThresholds;
     })
     (dashLib.mkStat {
       title = "System Generation Age";
@@ -79,56 +44,27 @@ dashLib.mkDashboard {
       gridPos = dashLib.mkGridPos 12 0 4 4;
       legendFormat = "{{host}}";
       unit = "d";
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "orange";
-          value = 14;
-        }
-        {
-          color = "red";
-          value = 30;
-        }
-      ];
+      thresholds = dashLib.mkThresholdSteps {
+        orange = 14;
+        red = 30;
+      };
     })
     (dashLib.mkStat {
       title = "Unsafe Systemd Services";
       expr = "sum(node_systemd_units_by_status_total{status=\"UNSAFE\"}) by (host)";
       gridPos = dashLib.mkGridPos 16 0 4 4;
       legendFormat = "{{host}}";
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "red";
-          value = 1;
-        }
-      ];
+      thresholds = dashLib.alertThresholds;
     })
     (dashLib.mkStat {
       title = "Active Fail2ban Bans";
       expr = "sum(f2b_jail_banned_current) by (host)";
       gridPos = dashLib.mkGridPos 20 0 4 4;
       legendFormat = "{{host}}";
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "orange";
-          value = 1;
-        }
-        {
-          color = "red";
-          value = 10;
-        }
-      ];
+      thresholds = dashLib.mkThresholdSteps {
+        orange = 1;
+        red = 10;
+      };
     })
 
     # --- CVE Scan & Image Row ---
@@ -137,21 +73,16 @@ dashLib.mkDashboard {
       expr = "min by (host, target) (node_security_cve_last_scan_success)";
       gridPos = dashLib.mkGridPos 0 4 4 4;
       legendFormat = "{{host}} {{target}}";
-      mappings = [
-        {
-          type = "value";
-          options = {
-            "0" = {
-              text = "FAILED";
-              color = "red";
-            };
-            "1" = {
-              text = "OK";
-              color = "green";
-            };
-          };
-        }
-      ];
+      mappings = dashLib.mkValueMappings {
+        "0" = {
+          text = "FAILED";
+          color = "red";
+        };
+        "1" = {
+          text = "OK";
+          color = "green";
+        };
+      };
     })
     (dashLib.mkStat {
       title = "CVE Scan Age";
@@ -159,20 +90,10 @@ dashLib.mkDashboard {
       gridPos = dashLib.mkGridPos 0 8 4 4;
       legendFormat = "{{host}}";
       unit = "h";
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "orange";
-          value = 14;
-        }
-        {
-          color = "red";
-          value = 26;
-        }
-      ];
+      thresholds = dashLib.mkThresholdSteps {
+        orange = 14;
+        red = 26;
+      };
     })
     (dashLib.mkBarGauge {
       title = "Critical & High CVEs by Image";
@@ -238,29 +159,24 @@ dashLib.mkDashboard {
             }
             {
               id = "mappings";
-              value = [
-                {
-                  type = "value";
-                  options = {
-                    "CRITICAL" = {
-                      color = "red";
-                      text = "CRITICAL";
-                    };
-                    "HIGH" = {
-                      color = "orange";
-                      text = "HIGH";
-                    };
-                    "MEDIUM" = {
-                      color = "yellow";
-                      text = "MEDIUM";
-                    };
-                    "LOW" = {
-                      color = "blue";
-                      text = "LOW";
-                    };
-                  };
-                }
-              ];
+              value = dashLib.mkValueMappings {
+                "CRITICAL" = {
+                  color = "red";
+                  text = "CRITICAL";
+                };
+                "HIGH" = {
+                  color = "orange";
+                  text = "HIGH";
+                };
+                "MEDIUM" = {
+                  color = "yellow";
+                  text = "MEDIUM";
+                };
+                "LOW" = {
+                  color = "blue";
+                  text = "LOW";
+                };
+              };
             }
           ];
         }
@@ -276,20 +192,6 @@ dashLib.mkDashboard {
       unit = "none";
       min = 0;
       max = 10;
-      thresholds = [
-        {
-          color = "green";
-          value = null;
-        }
-        {
-          color = "orange";
-          value = 4.0;
-        }
-        {
-          color = "red";
-          value = 7.0;
-        }
-      ];
       links = [
         (dashLib.mkLokiDataLink {
           title = "View logs in Loki for unsafe unit";

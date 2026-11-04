@@ -46,21 +46,52 @@ ______________________________________________________________________
 
 Exporters are declaratively registered in `modules/addresses.nix` under `allAddresses.monitoring.exporters` and dynamically instantiated on hosts via `modules/services/monitoring/exporters.nix`:
 
-| Exporter           | Default Port | Target Hosts          | Scrape Interval   | Connection / Backend                              |
-| ------------------ | ------------ | --------------------- | ----------------- | ------------------------------------------------- |
-| **Node**           | `9100`       | `yifuwuqi`, `yirukou` | `15s`             | Systemd and textfile collectors                   |
-| **Smokeping**      | `9374`       | `yifuwuqi`, `yirukou` | `15s` / `1s` ping | Continuous ICMP latency and loss                  |
-| **Blackbox**       | `9115`       | `yifuwuqi`, `yirukou` | `15s`             | ICMP, UDP DNS, and HTTPS `/probe` endpoints       |
-| **Systemd**        | `9558`       | `yifuwuqi`, `yirukou` | `15s`             | Monitored unit state                              |
-| **Smartctl**       | `9633`       | `yifuwuqi`, `yirukou` | `60s`             | Storage drive SMART health                        |
-| **Nginx**          | `9113`       | `yirukou`             | `15s`             | `http://127.0.0.1/nginx_status`                   |
-| **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`             | Local jail metrics                                |
-| **Postgres**       | `9187`       | `yifuwuqi`            | `15s`             | `postgres://postgres@127.0.0.1:5432/postgres`     |
-| **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`             | Custom exporter scraping AGH API (:24333 / :3333) |
-| **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/unbound/unbound.ctl`            |
-| **Redis / Valkey** | `9121`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/redis/redis.sock`               |
+| Exporter           | Default Port | Target Hosts          | Scrape Interval   | Connection / Backend                                    |
+| ------------------ | ------------ | --------------------- | ----------------- | ------------------------------------------------------- |
+| **Node**           | `9100`       | `yifuwuqi`, `yirukou` | `15s`             | Systemd and textfile collectors                         |
+| **Smokeping**      | `9374`       | `yifuwuqi`, `yirukou` | `15s` / `1s` ping | Continuous ICMP latency and loss                        |
+| **Blackbox**       | `9115`       | `yifuwuqi`, `yirukou` | `15s`             | ICMP, UDP DNS, and HTTPS `/probe` endpoints             |
+| **Systemd**        | `9558`       | `yifuwuqi`, `yirukou` | `15s`             | Monitored unit state                                    |
+| **Process**        | `9256`       | `yifuwuqi`, `yirukou` | `15s`             | CPU, memory, disk I/O, and process counts by executable |
+| **Smartctl**       | `9633`       | `yifuwuqi`, `yirukou` | `60s`             | Storage drive SMART health                              |
+| **Nginx**          | `9113`       | `yirukou`             | `15s`             | `http://127.0.0.1/nginx_status`                         |
+| **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`             | Local jail metrics                                      |
+| **Postgres**       | `9187`       | `yifuwuqi`            | `15s`             | `postgres://postgres@127.0.0.1:5432/postgres`           |
+| **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`             | Custom exporter scraping AGH API (:24333 / :3333)       |
+| **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/unbound/unbound.ctl`                  |
+| **Redis / Valkey** | `9121`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/redis/redis.sock`                     |
 
 Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface with `FreeBind = true`.
+
+### Workload resource metrics
+
+cAdvisor runs separately on `yifuwuqi` at `127.0.0.1:8080` and uses the
+rootful Podman socket. Prometheus scrapes it as job `cadvisor`. The collectors
+provide complementary views:
+
+| Scope            | Prometheus job | Coverage                                                 |
+| ---------------- | -------------- | -------------------------------------------------------- |
+| Podman container | `cadvisor`     | CPU, working-set memory, network, filesystem I/O         |
+| Executable group | `process`      | CPU, resident memory, disk I/O, process/thread counts    |
+| systemd unit     | `systemd`      | State, restart count, IP ingress/egress                  |
+| Host             | `node`         | Aggregate CPU, memory, filesystem, and interface traffic |
+
+Process metrics group matching executable names across the host, including
+processes inside containers. Use cAdvisor when container attribution matters.
+Linux does not expose general per-PID network counters through `/proc`, so
+network attribution is per container or per systemd unit.
+
+Useful PromQL:
+
+```promql
+topk(10, sum by (host, name) (rate(container_cpu_usage_seconds_total{name!=""}[5m])))
+topk(10, sum by (host, groupname) (namedprocess_namegroup_memory_bytes{memtype="resident"}))
+topk(10, sum by (host, name) (rate(systemd_service_ip_ingress_bytes[5m])))
+increase(systemd_service_restart_total{name="podman-firecrawl.service"}[15m])
+```
+
+For live commands and Podman storage repair, see
+[Podman Operations](podman-operations.md).
 
 ### Internet Probing & Failover
 
@@ -153,7 +184,12 @@ ______________________________________________________________________
   - `Loki` (uid: `loki`, url: `http://10.42.0.2:24100`)
 - **Provisioned Dashboards**:
   - **Vendored JSON Dashboards**: `adguard.json` (grafana.com 23579 rev 3) and `unbound.json` (grafana.com 21006), sanitized during Nix build with `jq` to remove stale IDs and remap datasources.
-  - **Nix Declarative Dashboards**: `systemd-units.json`, `services-overview.json`, `fail2ban.json`, `prometheus.json`, `loki.json`, `grafana.json`, `postgres.json`, `valkey.json`, `internet.json`.
+  - **Nix Declarative Dashboards**: `systemd-units.json`, `services-overview.json`, `fail2ban.json`, `prometheus.json`, `loki.json`, `grafana.json`, `postgres.json`, `valkey.json`, `internet.json`, `workloads.json`.
+
+The **Workloads** dashboard shows top containers, executable groups, and
+systemd units by resource use. Prometheus evaluates
+`WorkloadExporterDown` and `PodmanServiceRestartLoop`; without Alertmanager,
+firing alerts are visible in Prometheus/Grafana but do not send notifications.
 
 ______________________________________________________________________
 

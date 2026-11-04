@@ -3,7 +3,7 @@
 }:
 let
   inherit (pkgs) lib;
-  dashLib = import ./lib.nix { inherit lib; };
+  dashLib = import ./lib.nix;
 
   units =
     suffix: names: lib.concatMapStringsSep "|" (name: "${name}.${suffix}") (lib.splitString " " names);
@@ -13,24 +13,6 @@ let
   timerAge =
     timers: scale:
     "(time() - max by (host, name) (node_systemd_timer_last_trigger_seconds{name=~\"${timers}\"})) / ${toString scale}";
-  steps =
-    orange: red:
-    [
-      {
-        color = "green";
-        value = null;
-      }
-    ]
-    ++ lib.optional (orange != null) {
-      color = "orange";
-      value = orange;
-    }
-    ++ [
-      {
-        color = "red";
-        value = red;
-      }
-    ];
 in
 dashLib.mkDashboard {
   uid = "systemd-units";
@@ -53,16 +35,14 @@ dashLib.mkDashboard {
       expr = "sum by(host, name) (changes(node_systemd_unit_state{state=\"active\"}[1h])) > 0";
       gridPos = dashLib.mkGridPos 0 4 24 10;
       legendFormat = "{{host}} {{name}}";
-      links = [
-        (dashLib.mkLokiDataLink { })
-      ];
+      links = dashLib.defaultLokiLinks;
     })
     (dashLib.mkStat {
       title = "Failed Maintenance Units";
       expr = "count(node_systemd_unit_state{state=\"failed\", name=~\"${maintenanceServices}\"} == 1) or vector(0)";
       gridPos = dashLib.mkGridPos 0 14 6 6;
       legendFormat = "Failed maintenance units";
-      thresholds = steps null 1;
+      thresholds = dashLib.alertThresholds;
     })
     (dashLib.mkBarGauge {
       title = "Daily Maintenance: Last Run";
@@ -71,7 +51,10 @@ dashLib.mkDashboard {
       legendFormat = "{{host}} {{name}}";
       unit = "h";
       max = 50;
-      thresholds = steps 26 50;
+      thresholds = dashLib.mkThresholdSteps {
+        orange = 26;
+        red = 50;
+      };
     })
     (dashLib.mkBarGauge {
       title = "Weekly Maintenance: Last Run";
@@ -80,7 +63,10 @@ dashLib.mkDashboard {
       legendFormat = "{{host}} {{name}}";
       unit = "d";
       max = 15;
-      thresholds = steps 8 15;
+      thresholds = dashLib.mkThresholdSteps {
+        orange = 8;
+        red = 15;
+      };
     })
   ];
 }

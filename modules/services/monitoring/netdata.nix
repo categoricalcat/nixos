@@ -8,8 +8,23 @@
 
 let
   inherit (config.yi.netdata) childMode;
+  monitoringLib = import ./lib.nix;
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
-  yifuwuqiLan = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
+  parentLan = (monitoringLib.getCentralHost allAddresses).network.lan.ipv4.host;
+  netdataPort = 19999;
+  streamTarget =
+    if childMode then
+      "destination = ${parentLan}:${toString netdataPort}"
+    else
+      "allow from = ${yirukouLan}";
+  chronyDependencies = [
+    "chronyd.service"
+    "network-online.target"
+  ];
+  netdataDependencies = [
+    "network-online.target"
+    "chrony-waitsync-for-netdata.service"
+  ];
 in
 {
   options.yi.netdata = {
@@ -18,7 +33,7 @@ in
       default = false;
       description = ''
         false (default): parent mode, accepts incoming streams from children.
-        true: child mode, streams all metrics to parent at ${yifuwuqiLan}.
+        true: child mode, streams all metrics to parent at ${parentLan}.
       '';
     };
   };
@@ -34,7 +49,7 @@ in
         };
         web = {
           "bind to" = if childMode then "127.0.0.1" else "0.0.0.0";
-          "default port" = "19999";
+          "default port" = toString netdataPort;
           "allow connections from" =
             if childMode then "localhost 127.0.0.1" else "localhost 127.0.0.1 10.42.0.*";
         };
@@ -47,32 +62,15 @@ in
       };
     };
 
-    services.netdata.configDir."stream.conf" = pkgs.writeText "stream.conf" (
-      if childMode then
-        ''
-          [stream]
-              enabled = yes
-              destination = ${yifuwuqiLan}:19999
-        ''
-      else
-        ''
-          [stream]
-              enabled = yes
-              allow from = ${yirukouLan}
-        ''
-    );
+    services.netdata.configDir."stream.conf" = pkgs.writeText "stream.conf" ''
+      [stream]
+          enabled = yes
+          ${streamTarget}
+    '';
 
     systemd.services = {
-      chrony-waitsync-for-netdata = {
+      chrony-waitsync-for-netdata = monitoringLib.mkWantsAfter chronyDependencies // {
         description = "Wait for Chrony synchronization before Netdata";
-        wants = [
-          "chronyd.service"
-          "network-online.target"
-        ];
-        after = [
-          "chronyd.service"
-          "network-online.target"
-        ];
         before = [ "netdata.service" ];
         script = ''
           ${config.services.chrony.package}/bin/chronyc waitsync 30 0.5 5 2 || true
@@ -83,15 +81,7 @@ in
         };
       };
 
-      netdata = {
-        wants = [
-          "network-online.target"
-          "chrony-waitsync-for-netdata.service"
-        ];
-        after = [
-          "network-online.target"
-          "chrony-waitsync-for-netdata.service"
-        ];
+      netdata = monitoringLib.mkWantsAfter netdataDependencies // {
         preStart = "mkdir -p /tmp/netdata";
       };
     };

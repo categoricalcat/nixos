@@ -1,9 +1,6 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
+_:
 let
-  inherit (pkgs) lib;
-  dashLib = import ./lib.nix { inherit lib; };
+  dashLib = import ./lib.nix;
 in
 dashLib.mkDashboard {
   uid = "grafana-self";
@@ -17,7 +14,7 @@ dashLib.mkDashboard {
     })
     (dashLib.mkStat {
       title = "Active Dashboards";
-      expr = "grafana_stat_dashboards";
+      expr = "grafana_stat_totals_dashboard";
       gridPos = dashLib.mkGridPos 0 8 12 4;
     })
   ];

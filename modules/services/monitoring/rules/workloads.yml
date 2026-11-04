@@ -1,0 +1,16 @@
+groups:
+  - name: workload-observability
+    rules:
+      - alert: WorkloadExporterDown
+        expr: up{job=~"cadvisor|process|systemd"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} metrics are unavailable on {{ $labels.instance }}"
+      - alert: PodmanServiceRestartLoop
+        expr: increase(systemd_service_restart_total{name=~"podman-.*\\.service"}[15m]) >= 2
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.name }} is restarting repeatedly on {{ $labels.instance }}"

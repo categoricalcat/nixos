@@ -5,9 +5,9 @@
 }:
 
 let
-  inherit (allAddresses) monitoring;
+  monitoringLib = import ./lib.nix;
   hostName = config.networking.hostName;
-  centralHost = allAddresses.hosts.${monitoring.centralHost};
+  centralHost = monitoringLib.getCentralHost allAddresses;
   loki = centralHost.services.loki;
 in
 {
@@ -36,7 +36,7 @@ in
       sinks.loki = {
         type = "loki";
         inputs = [ "enrich_journal" ];
-        endpoint = "http://${centralHost.network.lan.ipv4.host}:${toString loki.port}";
+        endpoint = monitoringLib.lanHttpEndpoint centralHost loki;
         labels = {
           host = hostName;
           job = "systemd-journal";

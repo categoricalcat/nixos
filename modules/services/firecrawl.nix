@@ -44,6 +44,11 @@ in
     "podman-firecrawl" = {
       requires = [ "init-firecrawl-network.service" ];
       after = [ "init-firecrawl-network.service" ];
+      unitConfig = {
+        StartLimitIntervalSec = "1h";
+        StartLimitBurst = 3;
+      };
+      serviceConfig.RestartSec = "5m";
     };
   };
 

@@ -107,11 +107,11 @@
     "dank-qml-common": {
       "flake": false,
       "locked": {
-        "lastModified": 1793720721,
-        "narHash": "sha256-A266EMSFs169/cqH+9elzMX/6N+ycuEBXFw4qXdTD7k=",
+        "lastModified": 1793813271,
+        "narHash": "sha256-T6reXKRSewShrsF7rz6hvYC8xBYTVrZI7VlsY8aylfw=",
         "owner": "duxlabs-dev",
         "repo": "dux-qml-common",
-        "rev": "be3e16ca62866a749b34cfefe1aaed81cfe21e94",
+        "rev": "b9ccf37012ca74be741f87011b5f354ece46b1b2",
         "type": "github"
       },
       "original": {
@@ -151,11 +151,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793784184,
-        "narHash": "sha256-cLSruvzYjjQ+ipNycEefaRW0xKb5KJmn3Z9tp5iIiLc=",
+        "lastModified": 1793823370,
+        "narHash": "sha256-h2hkT7ZOBkkr1sw91s+tv6N+7LHynXbEEHubBNU2AqE=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "facbf1edb7f5891d8dc4cd82cd46bfac123520eb",
+        "rev": "d94665e69961bcbf467d08d18220fe4b8be1f502",
         "type": "github"
       },
       "original": {
@@ -667,15 +667,15 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793781119,
-        "narHash": "sha256-sCQlYTzUSDCdDJBgeAhaFS9wIh/F8z/Drfa8gGGZpo0=",
-        "rev": "c9e1c5f1b197a28c6935b297a3b2772a9ff69c0b",
+        "lastModified": 1793726008,
+        "narHash": "sha256-iNjybNORi/2+shilhMlkNr01UHWKOHRGzQyIyvobs9o=",
+        "rev": "1d060086d60cb76a40cf37109f979d88a5bd6396",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable-small/nixos-26.11pre1108204.c9e1c5f1b197/nixexprs.tar.zst?lastModified=1793781119&rev=c9e1c5f1b197a28c6935b297a3b2772a9ff69c0b"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1107793.1d060086d60c/nixexprs.tar.zst?lastModified=1793726008&rev=1d060086d60cb76a40cf37109f979d88a5bd6396"
       },
       "original": {
         "type": "tarball",
-        "url": "https://channels.nixos.org/nixos-unstable-small/nixexprs.tar.zst"
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst"
       }
     },
     "nixvim": {

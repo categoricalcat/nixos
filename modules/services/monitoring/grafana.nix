@@ -7,10 +7,34 @@
 
 let
   inherit (allAddresses) monitoring;
-  centralHost = allAddresses.hosts.${monitoring.centralHost};
+  monitoringLib = import ./lib.nix;
+  centralHost = monitoringLib.getCentralHost allAddresses;
   inherit (centralHost) services;
   inherit (services) grafana prometheus loki;
   postgres = services.postgresql;
+
+  customDashboardNames = [
+    "systemd-units"
+    "services-overview"
+    "fail2ban"
+    "prometheus"
+    "loki"
+    "grafana"
+    "postgres"
+    "valkey"
+    "internet"
+    "security"
+    "workloads"
+  ];
+
+  mkDashboardLink =
+    name:
+    let
+      dashboard = pkgs.writeText "${name}.json" (
+        builtins.toJSON (import (./dashboards + "/${name}.nix") { inherit pkgs; })
+      );
+    in
+    "ln -s ${dashboard} $out/${name}.json";
 
   dashboardDir =
     pkgs.runCommand "grafana-dashboards"
@@ -59,50 +83,7 @@ let
         done
 
         # Custom Nix dashboards
-        ln -s ${
-          pkgs.writeText "systemd-units.json" (
-            builtins.toJSON (import ./dashboards/systemd-units.nix { inherit pkgs; })
-          )
-        } $out/systemd-units.json
-        ln -s ${
-          pkgs.writeText "services-overview.json" (
-            builtins.toJSON (import ./dashboards/services-overview.nix { inherit pkgs; })
-          )
-        } $out/services-overview.json
-        ln -s ${
-          pkgs.writeText "fail2ban.json" (
-            builtins.toJSON (import ./dashboards/fail2ban.nix { inherit pkgs; })
-          )
-        } $out/fail2ban.json
-        ln -s ${
-          pkgs.writeText "prometheus.json" (
-            builtins.toJSON (import ./dashboards/prometheus.nix { inherit pkgs; })
-          )
-        } $out/prometheus.json
-        ln -s ${
-          pkgs.writeText "loki.json" (builtins.toJSON (import ./dashboards/loki.nix { inherit pkgs; }))
-        } $out/loki.json
-        ln -s ${
-          pkgs.writeText "grafana.json" (builtins.toJSON (import ./dashboards/grafana.nix { inherit pkgs; }))
-        } $out/grafana.json
-        ln -s ${
-          pkgs.writeText "postgres.json" (
-            builtins.toJSON (import ./dashboards/postgres.nix { inherit pkgs; })
-          )
-        } $out/postgres.json
-        ln -s ${
-          pkgs.writeText "valkey.json" (builtins.toJSON (import ./dashboards/valkey.nix { inherit pkgs; }))
-        } $out/valkey.json
-        ln -s ${
-          pkgs.writeText "internet.json" (
-            builtins.toJSON (import ./dashboards/internet.nix { inherit pkgs; })
-          )
-        } $out/internet.json
-        ln -s ${
-          pkgs.writeText "security.json" (
-            builtins.toJSON (import ./dashboards/security.nix { inherit pkgs; })
-          )
-        } $out/security.json
+        ${builtins.concatStringsSep "\n" (map mkDashboardLink customDashboardNames)}
       '';
 in
 {
@@ -201,7 +182,7 @@ in
             uid = "loki";
             type = "loki";
             access = "proxy";
-            url = "http://${centralHost.network.lan.ipv4.host}:${toString loki.port}";
+            url = monitoringLib.lanHttpEndpoint centralHost loki;
           }
           {
             name = "Infinity";
@@ -216,16 +197,9 @@ in
     };
   };
 
-  systemd.services.grafana = {
-    wants = [
-      "sops-install-secrets.service"
-      "prometheus.service"
-      "loki.service"
-    ];
-    after = [
-      "sops-install-secrets.service"
-      "prometheus.service"
-      "loki.service"
-    ];
-  };
+  systemd.services.grafana = monitoringLib.mkWantsAfter [
+    "sops-install-secrets.service"
+    "prometheus.service"
+    "loki.service"
+  ];
 }

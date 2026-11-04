@@ -312,7 +312,31 @@ in
         settings.configFile = ./services/monitoring/blackbox.yml;
       };
 
-      systemd.hosts = "scrapeHosts";
+      systemd = {
+        hosts = "scrapeHosts";
+        settings.extraFlags = [
+          "--systemd.collector.enable-ip-accounting"
+          "--systemd.collector.enable-restart-count"
+        ];
+      };
+
+      process = {
+        hosts = "scrapeHosts";
+        settings = {
+          user = "root";
+          settings.process_names = [
+            {
+              name = "{{.Comm}}";
+              cmdline = [ ".+" ];
+            }
+          ];
+          extraFlags = [
+            "--gather-smaps=false"
+            "--remove-empty-groups"
+            "--threads=false"
+          ];
+        };
+      };
 
       smartctl = {
         hosts = "scrapeHosts";

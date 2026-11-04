@@ -8,8 +8,18 @@
 
 let
   cfg = config.services.security-monitor;
-  nodeTextfileDir =
-    allAddresses.monitoring.nodeTextfileDir or "/var/lib/prometheus-node-exporter/textfile";
+  monitoringLib = import ../lib.nix;
+  nodeTextfileDir = allAddresses.monitoring.nodeTextfileDir;
+  cacheDirs = {
+    vulnix = "/var/cache/vulnix";
+    trivy = "/var/cache/trivy";
+  };
+  oneshotServiceConfig = {
+    Type = "oneshot";
+    PrivateTmp = true;
+    ProtectSystem = "strict";
+    ProtectHome = true;
+  };
 
   fastAuditScript = pkgs.writeShellApplication {
     name = "security-audit-fast";
@@ -98,7 +108,7 @@ in
       };
       scanContainers = lib.mkOption {
         type = lib.types.bool;
-        default = config.networking.hostName == "yifuwuqi";
+        default = config.networking.hostName == allAddresses.monitoring.centralHost;
         description = "Whether to scan Podman container images with Trivy";
       };
       containerImages = lib.mkOption {
@@ -124,53 +134,46 @@ in
     systemd = {
       tmpfiles.rules = [
         "d ${nodeTextfileDir} 0755 root root - -"
-        "d /var/cache/vulnix 0755 root root - -"
+        "d ${cacheDirs.vulnix} 0755 root root - -"
       ]
-      ++ lib.optional cfg.cveScan.scanContainers "d /var/cache/trivy 0755 root root - -";
+      ++ lib.optional cfg.cveScan.scanContainers "d ${cacheDirs.trivy} 0755 root root - -";
 
       services = {
         security-audit-fast = lib.mkIf cfg.fastAudit.enable {
           description = "Fast Security Audit (Systemd Hardening, Kernel Drift)";
-          serviceConfig = {
-            Type = "oneshot";
+          serviceConfig = oneshotServiceConfig // {
             ExecStart = "${fastAuditScript}/bin/security-audit-fast";
             PrivateNetwork = true;
-            PrivateTmp = true;
-            ProtectSystem = "strict";
-            ProtectHome = true;
             NoNewPrivileges = true;
             ReadWritePaths = [ nodeTextfileDir ];
             TimeoutStartSec = "120s";
           };
         };
 
-        security-audit-cve = lib.mkIf cfg.cveScan.enable {
-          description = "Deep CVE Vulnerability Scan (Vulnix & Trivy)";
-          wants = [ "network-online.target" ];
-          after = [ "network-online.target" ];
-          environment = {
-            NIX_REMOTE = "daemon";
+        security-audit-cve = lib.mkIf cfg.cveScan.enable (
+          monitoringLib.mkWantsAfter [ "network-online.target" ]
+          // {
+            description = "Deep CVE Vulnerability Scan (Vulnix & Trivy)";
+            environment = {
+              NIX_REMOTE = "daemon";
+            }
+            // lib.optionalAttrs cfg.cveScan.scanContainers {
+              TMPDIR = cacheDirs.trivy;
+              DOCKER_HOST = "unix:///run/podman/podman.sock";
+            };
+            serviceConfig = oneshotServiceConfig // {
+              ExecStart = "${cveScanScript}/bin/security-audit-cve";
+              PrivateNetwork = false;
+              ReadWritePaths = [
+                cacheDirs.vulnix
+                nodeTextfileDir
+                "/tmp"
+              ]
+              ++ lib.optional cfg.cveScan.scanContainers cacheDirs.trivy;
+              TimeoutStartSec = "1800s";
+            };
           }
-          // lib.optionalAttrs cfg.cveScan.scanContainers {
-            TMPDIR = "/var/cache/trivy";
-            DOCKER_HOST = "unix:///run/podman/podman.sock";
-          };
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = "${cveScanScript}/bin/security-audit-cve";
-            PrivateNetwork = false;
-            PrivateTmp = true;
-            ProtectSystem = "strict";
-            ProtectHome = true;
-            ReadWritePaths = [
-              "/var/cache/vulnix"
-              nodeTextfileDir
-              "/tmp"
-            ]
-            ++ lib.optional cfg.cveScan.scanContainers "/var/cache/trivy";
-            TimeoutStartSec = "1800s";
-          };
-        };
+        );
       };
 
       timers = {

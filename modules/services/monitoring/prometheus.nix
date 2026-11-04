@@ -6,45 +6,27 @@
 }:
 
 let
-  inherit (allAddresses) hosts monitoring;
-  centralHost = hosts.${monitoring.centralHost};
+  inherit (allAddresses) monitoring;
+  monitoringLib = import ./lib.nix;
+  centralHost = monitoringLib.getCentralHost allAddresses;
   prometheus = centralHost.services.prometheus;
   exporterMetadata = monitoring.exporters;
 
-  resolveHosts =
-    selector:
-    if builtins.isList selector then
-      selector
-    else if selector == "centralHost" then
-      [ monitoring.centralHost ]
-    else if selector == "proxyHost" then
-      [ monitoring.proxyHost ]
-    else
-      monitoring.${selector};
-
-  hostAddress =
-    name: if name == monitoring.centralHost then "127.0.0.1" else hosts.${name}.network.lan.ipv4.host;
-
   mkStaticConfig = exporter: host: {
     targets = [
-      "${hostAddress host}:${toString config.services.prometheus.exporters.${exporter}.port}"
+      "${monitoringLib.exporterAddress allAddresses host}:${
+        toString config.services.prometheus.exporters.${exporter}.port
+      }"
     ];
     labels = { inherit host; };
   };
-
-  hostRelabelConfig = [
-    {
-      source_labels = [ "host" ];
-      target_label = "instance";
-    }
-  ];
 
   mkScrapeConfig =
     exporter: spec:
     {
       job_name = exporter;
-      static_configs = map (mkStaticConfig exporter) (resolveHosts spec.hosts);
-      relabel_configs = hostRelabelConfig;
+      static_configs = map (mkStaticConfig exporter) (monitoringLib.resolveHosts monitoring spec.hosts);
+      relabel_configs = monitoringLib.hostRelabelConfig;
     }
     // lib.optionalAttrs (spec ? scrapeInterval) {
       scrape_interval = spec.scrapeInterval;
@@ -52,6 +34,17 @@ let
     // lib.optionalAttrs (spec ? metricRelabelConfigs) {
       metric_relabel_configs = spec.metricRelabelConfigs;
     };
+
+  mkCentralScrapeJob = jobName: target: {
+    job_name = jobName;
+    static_configs = [
+      {
+        targets = [ target ];
+        labels.host = monitoring.centralHost;
+      }
+    ];
+    relabel_configs = monitoringLib.hostRelabelConfig;
+  };
 
   # One blackbox probe job for every (scrape host x probe), minus the host's
   # own peer entry: pinging itself measures nothing the adguard and unbound
@@ -74,7 +67,7 @@ let
             tier
             ;
           __param_module = probe.layer;
-          __tmp_address = "${hostAddress host}:${toString config.services.prometheus.exporters.blackbox.port}";
+          __tmp_address = "${monitoringLib.exporterAddress allAddresses host}:${toString config.services.prometheus.exporters.blackbox.port}";
         };
       }) (lib.filter (probe: probe.peer != host) monitoring.probes)
     ) monitoring.scrapeHosts;
@@ -96,10 +89,11 @@ let
 in
 {
   assertions = [
-    {
-      assertion = config.networking.hostName == monitoring.centralHost;
-      message = "modules/services/monitoring/prometheus.nix: may only be imported on ${monitoring.centralHost}";
-    }
+    (monitoringLib.mkCentralHostAssertion {
+      modulePath = "modules/services/monitoring/prometheus.nix";
+      inherit monitoring;
+      hostName = config.networking.hostName;
+    })
   ];
 
   services.prometheus = {
@@ -116,36 +110,9 @@ in
     };
 
     scrapeConfigs = [
-      {
-        job_name = "prometheus";
-        static_configs = [
-          {
-            targets = [ "127.0.0.1:${toString prometheus.port}" ];
-            labels.host = monitoring.centralHost;
-          }
-        ];
-        relabel_configs = hostRelabelConfig;
-      }
-      {
-        job_name = "loki";
-        static_configs = [
-          {
-            targets = [ "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.loki.port}" ];
-            labels.host = monitoring.centralHost;
-          }
-        ];
-        relabel_configs = hostRelabelConfig;
-      }
-      {
-        job_name = "grafana";
-        static_configs = [
-          {
-            targets = [ "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.grafana.port}" ];
-            labels.host = monitoring.centralHost;
-          }
-        ];
-        relabel_configs = hostRelabelConfig;
-      }
+      (mkCentralScrapeJob "prometheus" "127.0.0.1:${toString prometheus.port}")
+      (mkCentralScrapeJob "loki" "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.loki.port}")
+      (mkCentralScrapeJob "grafana" "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.grafana.port}")
       probeScrapeConfig
     ]
     ++ lib.mapAttrsToList mkScrapeConfig exporterMetadata;

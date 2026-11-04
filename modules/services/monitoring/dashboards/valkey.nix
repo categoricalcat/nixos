@@ -1,9 +1,19 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
+_:
 let
-  inherit (pkgs) lib;
-  dashLib = import ./lib.nix { inherit lib; };
+  dashLib = import ./lib.nix;
+
+  mkTimeseriesRow =
+    y: panels:
+    builtins.genList (
+      index:
+      dashLib.mkTimeseries (
+        builtins.elemAt panels index
+        // {
+          gridPos = dashLib.mkGridPos (index * 12) y 12 8;
+          legendFormat = "{{host}}";
+        }
+      )
+    ) (builtins.length panels);
 in
 dashLib.mkDashboard {
   uid = "valkey";
@@ -37,29 +47,25 @@ dashLib.mkDashboard {
       legendFormat = "{{host}}";
       unit = "short";
     })
-    (dashLib.mkTimeseries {
+  ]
+  ++ mkTimeseriesRow 4 [
+    {
       title = "Memory Used (MiB)";
       expr = "redis_memory_used_bytes / 1024 / 1024";
-      gridPos = dashLib.mkGridPos 0 4 12 8;
-      legendFormat = "{{host}}";
-    })
-    (dashLib.mkTimeseries {
+    }
+    {
       title = "Memory Max (MiB)";
       expr = "redis_memory_max_bytes / 1024 / 1024";
-      gridPos = dashLib.mkGridPos 12 4 12 8;
-      legendFormat = "{{host}}";
-    })
-    (dashLib.mkTimeseries {
+    }
+  ]
+  ++ mkTimeseriesRow 12 [
+    {
       title = "Evictions + Expired / sec";
       expr = "rate(redis_evicted_keys_total[5m]) + rate(redis_expired_keys_total[5m])";
-      gridPos = dashLib.mkGridPos 0 12 12 8;
-      legendFormat = "{{host}}";
-    })
-    (dashLib.mkTimeseries {
+    }
+    {
       title = "Cache Hits / sec";
       expr = "rate(redis_keyspace_hits_total[5m])";
-      gridPos = dashLib.mkGridPos 12 12 12 8;
-      legendFormat = "{{host}}";
-    })
+    }
   ];
 }

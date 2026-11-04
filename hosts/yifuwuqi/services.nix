@@ -31,6 +31,7 @@
     ../../modules/services/monitoring/adguard-exporter
     ../../modules/services/monitoring/storage.nix
     ../../modules/services/monitoring/prometheus.nix
+    ../../modules/services/monitoring/workload-metrics.nix
     ../../modules/services/monitoring/loki.nix
     ../../modules/services/monitoring/promtail.nix
     ../../modules/services/monitoring/security-monitor

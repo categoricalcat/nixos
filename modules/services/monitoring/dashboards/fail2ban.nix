@@ -1,9 +1,6 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
+_:
 let
-  inherit (pkgs) lib;
-  dashLib = import ./lib.nix { inherit lib; };
+  dashLib = import ./lib.nix;
 in
 dashLib.mkDashboard {
   uid = "fail2ban";
@@ -11,12 +8,12 @@ dashLib.mkDashboard {
   panels = [
     (dashLib.mkStat {
       title = "Currently Banned IPs";
-      expr = "sum(fail2ban_banned_ips)";
+      expr = "sum(f2b_jail_banned_current)";
       gridPos = dashLib.mkGridPos 0 0 12 4;
     })
     (dashLib.mkTimeseries {
       title = "Banned IPs per Jail";
-      expr = "fail2ban_banned_ips";
+      expr = "f2b_jail_banned_current";
       gridPos = dashLib.mkGridPos 0 4 24 10;
       legendFormat = "{{jail}}";
     })

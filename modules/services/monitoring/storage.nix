@@ -6,15 +6,17 @@
 
 let
   inherit (allAddresses) monitoring;
+  monitoringLib = import ./lib.nix;
   inherit (monitoring) dataRoot dataDirs;
   prometheusStateDir = "/var/lib/${config.services.prometheus.stateDir}";
 in
 {
   assertions = [
-    {
-      assertion = config.networking.hostName == monitoring.centralHost;
-      message = "modules/services/monitoring/storage.nix: may only be imported on ${monitoring.centralHost}";
-    }
+    (monitoringLib.mkCentralHostAssertion {
+      modulePath = "modules/services/monitoring/storage.nix";
+      inherit monitoring;
+      hostName = config.networking.hostName;
+    })
   ];
 
   systemd.tmpfiles.rules = [

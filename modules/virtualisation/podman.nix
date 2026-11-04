@@ -23,6 +23,10 @@ in
               labels = lib.mkIf (!isLocalImage config) {
                 "io.containers.autoupdate" = lib.mkDefault "registry";
               };
+              # `--rm` makes Podman store the container as volatile, which
+              # cAdvisor 0.56.2 cannot resolve. The unit already removes the
+              # container in preStart and postStop.
+              autoRemoveOnStop = lib.mkDefault false;
             }
           )
         );

@@ -8,21 +8,11 @@
 
 let
   inherit (allAddresses) monitoring;
+  monitoringLib = import ./lib.nix;
   hostName = config.networking.hostName;
   isCentral = hostName == monitoring.centralHost;
-  listenAddress = if isCentral then "127.0.0.1" else addresses.network.lan.ipv4.host;
+  listenAddress = monitoringLib.exporterAddress allAddresses hostName;
   exporterMetadata = monitoring.exporters;
-
-  resolveHosts =
-    selector:
-    if builtins.isList selector then
-      selector
-    else if selector == "centralHost" then
-      [ monitoring.centralHost ]
-    else if selector == "proxyHost" then
-      [ monitoring.proxyHost ]
-    else
-      monitoring.${selector};
 
   serviceAvailable =
     name:
@@ -35,7 +25,9 @@ let
     else
       true;
 
-  enabledHere = name: spec: serviceAvailable name && lib.elem hostName (resolveHosts spec.hosts);
+  enabledHere =
+    name: spec:
+    serviceAvailable name && lib.elem hostName (monitoringLib.resolveHosts monitoring spec.hosts);
 
   enabledExporters = lib.filterAttrs enabledHere exporterMetadata;
 
@@ -81,10 +73,7 @@ in
       ) enabledExporters
     ))
     (lib.mkIf (enabledHere "smokeping" exporterMetadata.smokeping) {
-      prometheus-smokeping-exporter = {
-        wants = [ "network-online.target" ];
-        after = [ "network-online.target" ];
-      };
+      prometheus-smokeping-exporter = monitoringLib.mkWantsAfter [ "network-online.target" ];
     })
   ];
 }
