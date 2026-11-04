@@ -2,14 +2,14 @@
   config,
   lib,
   pkgs,
-  inputs,
+  # inputs,
   ...
 }:
 
 {
-  imports = [
-    inputs.dank-greeter.nixosModules.default
-  ];
+  # imports = [
+  #   inputs.dank-greeter.nixosModules.default
+  # ];
 
   config = lib.mkMerge [
     (lib.mkIf (config.desktop.greeter == "tuigreet") {
@@ -72,18 +72,20 @@
       };
     })
 
-    (lib.mkIf (config.desktop.greeter == "dms") {
-      programs.dms-greeter = {
-        enable = true;
-        compositor.name =
-          if config.desktop.environment == "mango" then
-            "mango"
-          else if config.desktop.environment == "niri" then
-            "niri"
-          else
-            "mango";
-        configHome = "/home/yi";
-      };
-    })
+    /*
+      (lib.mkIf (config.desktop.greeter == "dms") {
+        programs.dms-greeter = {
+          enable = true;
+          compositor.name =
+            if config.desktop.environment == "mango" then
+              "mango"
+            else if config.desktop.environment == "niri" then
+              "niri"
+            else
+              "mango";
+          configHome = "/home/yi";
+        };
+      })
+    */
   ];
 }

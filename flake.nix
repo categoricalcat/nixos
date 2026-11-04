@@ -55,7 +55,7 @@
                 home-manager.nixosModules.home-manager
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
-                inputs.mango.nixosModules.mango
+                # inputs.mango.nixosModules.mango
                 ./hosts/yixiaoqing/configuration.nix
               ];
             };
@@ -68,7 +68,7 @@
                 inputs.musnix.nixosModules.musnix
                 home-manager.nixosModules.home-manager
                 inputs.lanzaboote.nixosModules.lanzaboote
-                inputs.mango.nixosModules.mango
+                # inputs.mango.nixosModules.mango
                 ./hosts/yitaishi/configuration.nix
               ];
             };
@@ -189,10 +189,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    noctalia = {
-      url = "github:noctalia-dev/noctalia-shell/cachix";
-    };
-
     niri = {
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -215,16 +211,6 @@
 
     niri-float-sticky = {
       url = "github:probeldev/niri-float-sticky";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    mango = {
-      url = "github:mangowm/mango/wl-only";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    dank-greeter = {
-      url = "github:AvengeMedia/dank-greeter";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

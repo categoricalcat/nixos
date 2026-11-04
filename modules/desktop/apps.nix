@@ -14,7 +14,7 @@ in
     shot
     nxd-cursor
     nxd-antigravity
-    brave
+    librewolf
 
     vscode-fhs
     code-cursor-fhs

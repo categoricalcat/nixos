@@ -98,6 +98,7 @@ in
           isNormalUser = true;
           description = "workd";
           group = "workd";
+          linger = true;
         };
       })
     ];

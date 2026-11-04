@@ -1,5 +1,4 @@
 Host *
-    AddKeysToAgent 900
 
     ControlMaster no
     ControlPath none

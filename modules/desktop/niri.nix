@@ -19,7 +19,7 @@ in
     home-manager.users.yi.imports = [
       inputs.dms.homeModules.dank-material-shell
       ../../users/programs/dms.nix
-      ../../users/programs/noctalia
+      # ../../users/programs/noctalia
       ../../users/programs/niri.nix
     ];
 

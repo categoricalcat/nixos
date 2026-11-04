@@ -71,7 +71,7 @@ in
     ./desktop/gnome
     #./desktop/hyprland.nix
     ./desktop/niri.nix
-    ./desktop/mango.nix
+    # ./desktop/mango.nix
     #./desktop/cosmic.nix
     ./desktop/stylix.nix
     ./desktop/dms.nix
