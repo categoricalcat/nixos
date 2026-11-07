@@ -127,10 +127,21 @@ let
     skill: policy: distribute (ref: skillFiles skill "references/${ref}") (_: lib.id) policy.references
   ) skillPolicies;
 
+  # Zed has no per-rule files: always-on rules live in one personal AGENTS.md.
+  # Skills reach Zed via ~/.agents/skills (see agentSkillDirs).
+  zedInstructions = pkgs.writeText "zed-AGENTS.md" (
+    lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: policy: "# ${name}\n\n${policy.body}") rulePolicies
+    )
+  );
+
   agentFiles =
     (distribute skillPaths makeSkillFile skillPolicies)
     // (distribute rulePaths makeRuleFile rulePolicies)
-    // referenceFiles;
+    // referenceFiles
+    // {
+      ".config/zed/AGENTS.md" = zedInstructions;
+    };
 in
 {
   home = {
