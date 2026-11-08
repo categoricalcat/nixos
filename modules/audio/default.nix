@@ -1,4 +1,4 @@
-_:
+{ pkgs, ... }:
 let
   rates = [
     44100
@@ -39,9 +39,10 @@ in
   systemd.services.rtirq.environment.LC_ALL = "C";
 
   # Base PipeWire (alsa, pulse, rtkit) comes from modules/desktop.nix.
-  services.pipewire = {
-    jack.enable = true;
+  # pw-jack wrapper from pipewire.jack replaces deprecated services.pipewire.jack.enable
+  environment.systemPackages = [ pkgs.pipewire.jack ];
 
+  services.pipewire = {
     extraConfig = {
       pipewire."10-low-latency" = {
         "context.properties" = {

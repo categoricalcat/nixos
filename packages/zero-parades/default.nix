@@ -18,6 +18,12 @@ let
       url = "https://files.pythonhosted.org/packages/source/f/fsb5/fsb5-${version}.tar.gz";
       hash = "sha256-MS0otYDpxKADLKrIC8w1RnIhYyf0MNBjw760pPP+Yh0=";
     };
+    postPatch = ''
+      substituteInPlace fsb5/vorbis.py \
+        --replace-fail "load_lib('vorbis')" "ctypes.CDLL('${libvorbis}/lib/libvorbis.so')" \
+        --replace-fail "load_lib('vorbisenc', 'vorbis')" "ctypes.CDLL('${libvorbis}/lib/libvorbisenc.so')" \
+        --replace-fail "load_lib('ogg')" "ctypes.CDLL('${libogg}/lib/libogg.so')"
+    '';
     doCheck = false;
   };
 
@@ -58,11 +64,6 @@ let
     tpk_ar
     unitypy
   ]);
-
-  libPath = lib.makeLibraryPath [
-    libvorbis
-    libogg
-  ];
 in
 stdenv.mkDerivation {
   pname = "zero-parades";
@@ -78,12 +79,10 @@ stdenv.mkDerivation {
 
     # 1. zero-parades-extract
     makeWrapper ${pythonEnv}/bin/python $out/bin/zero-parades-extract \
-      --set LD_LIBRARY_PATH "${libPath}" \
       --add-flags "$out/share/zero-parades/extract_dialogue.py"
 
     # 2. zero-parades-play
     makeWrapper ${pythonEnv}/bin/python $out/bin/zero-parades-play \
-      --set LD_LIBRARY_PATH "${libPath}" \
       --add-flags "$out/share/zero-parades/player_server.py"
 
     # 3. zero-parades (dispatcher)
