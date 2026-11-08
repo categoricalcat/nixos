@@ -135,7 +135,8 @@ LAN addresses through the advertised subnet, not only direct Tailscale IPs.
 
 ## yifuwuqi Firewall
 
-`hosts/yifuwuqi/networking/firewall.nix` enforces default-deny on `eno1` and implements the principle of least privilege for container networking:
+`hosts/yifuwuqi/networking/firewall.nix` enforces default-deny on `eno1` and
+configures least-privilege rules for container traffic to the host:
 
 - Trusted interface: `tailscale0`.
 - Allowed on `eno1` (LAN): SSH, AdGuard Home web UI, AdGuard Home DNS (`53`).
@@ -146,8 +147,12 @@ LAN addresses through the advertised subnet, not only direct Tailscale IPs.
   - DNS resolution: UDP/TCP `53` allowed from container subnets (`10.88.0.0/16`, `172.17.0.0/16`, `172.18.0.0/16`).
   - Scoped host API access: TCP `24686` (Lidarr for soularr) and TCP `24888` (SearXNG for firecrawl) allowed explicitly.
   - Default drop: All other host ports (SSH `24212`, Cockpit `24091`, PostgreSQL `5432`, Valkey `24379`, Prometheus `24090`, Samba `445`, Exporters) are dropped for container subnets.
-- Forwarding isolation:
-  - Containers are blocked from forwarding to private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`).
+- Forwarding isolation is **planned, not active**: the file declares
+  `extraForwardRules`, but does not enable `networking.firewall.filterForward`,
+  so nixpkgs does not install the forward chain. Until
+  [Service Security Phase 0](../plans/service-security-architecture-plan.md)
+  lands, do not rely on these rules to block containers from forwarding to
+  private subnets.
 
 ## Source Files
 

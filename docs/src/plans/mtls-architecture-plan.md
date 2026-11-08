@@ -1,5 +1,7 @@
 # Infrastructure mTLS Architecture & Implementation Plan
 
+## Status: DRAFT — no tier implemented; repository reviewed 2026-11-08
+
 ## Objective
 
 Design and implement a server-side 3-tier Mutual TLS (mTLS) security architecture across the NixOS homelab infrastructure with **zero per-device client certificate overhead**:
@@ -9,7 +11,12 @@ Design and implement a server-side 3-tier Mutual TLS (mTLS) security architectur
 1. **Observability mTLS (Tier 3: Monitoring Mesh)**: Mutually authenticate every cross-host monitoring hop: Prometheus on `yifuwuqi` scraping the exporters on `yirukou`, and Vector on `yirukou` pushing logs to Loki.
 
 > [!NOTE]
-> Personal client devices (laptops, phones, tablets, browsers) require **no** certificate installation. Administrative web services (Cockpit, Forgejo, Arr apps, Grafana) remain protected by `restrictedProxyConfig` (LAN-only after Decision 2 of the [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md)) and by application-level authentication. That authentication still has gaps (SillyTavern without a whitelist, qBittorrent skipping login for whitelisted subnets, Grafana anonymous viewers), tracked in the [Service Security Architecture Plan](service-security-architecture-plan.md).
+> Personal client devices (laptops, phones, tablets, browsers) require **no**
+> certificate installation. Administrative services (Cockpit, Forgejo, Arr
+> apps, Grafana, qBittorrent, and SillyTavern) are managed through SSH on
+> `yifuwuqi`, not directly from client browsers. Explicitly client-facing
+> hosted websites remain a separate ingress category; their proxy access is
+> narrowed by VPN to LAN Phase 2 and protected by their own authentication.
 
 ### Scope
 
@@ -17,7 +24,9 @@ Owns:
 
 - The internal CA (`fufu-service-ca`), certificate issuance and rotation.
 - Cloudflare Authenticated Origin Pulls (Tier 1).
-- TLS settings on the cross-host hops: nginx `proxy_ssl_*` and `sslVerifyClient`, exporter web configs and Prometheus `tls_config`, Vector and Loki TLS.
+- TLS settings on the cross-host hops: nginx `proxy_ssl_*` and
+  `ssl_verify_client`, the shared metrics frontend and Prometheus `tls_config`,
+  and Vector/Loki TLS.
 
 Not owned here:
 
@@ -27,12 +36,39 @@ Not owned here:
 
 ______________________________________________________________________
 
+## Evidence Status
+
+- **Repository-verified**: no service CA, certificate artifacts,
+  `ssl_verify_client`, upstream TLS, shared metrics frontend, or Prometheus TLS
+  scrape configuration has been implemented. Current inter-host traffic is
+  plaintext where this plan intends mTLS.
+- **Live-host verified 2026-11-08**: `yirukou` still uses its persistent Ext4
+  root and has active Tailscale; that confirms no impermanence cutover has
+  coupled key staging to mTLS yet.
+- **External or operational verification pending**: public DNS and Cloudflare
+  Origin Pull state, confirmation that the cloudflared mapping remains
+  SSH-only, and the first public-edge hostname.
+
+______________________________________________________________________
+
 ## Current State
 
 - **Perimeter Ingress**: `yirukou` runs Nginx (`modules/services/nginx-proxy.nix`) with a wildcard ACME certificate for `*.fufu.land` obtained via Cloudflare DNS-01 (`sops.secrets.cloudflare_api_token`).
-- **No Public Origin on yirukou**: `yirukou`'s WAN interfaces accept only UDP `51820` (`hosts/yirukou/networking/firewall.nix`), and public DNS has no records for the names checked on 2026-11-06 (`fufu.land`, `git`, `docs`, `cache`, `search`, `grafana`); the zone serves ACME DNS-01. Nothing reaches `yirukou` Nginx through Cloudflare today, so Tier 1 has no traffic to protect.
-- **Second Cloudflare Ingress**: A cloudflared tunnel container on `yifuwuqi` (`modules/services/cloudflared.nix`) connects outbound to Cloudflare. Its hostname-to-origin rules live in the Cloudflare dashboard, not in this repository. Authenticated Origin Pulls do not apply to tunnel traffic.
-- **Access Control**: Administrative services use `restrictedProxyConfig` (IP allowlisting: LAN `10.42.0.0/24` and VPN CIDRs). Decision 2 of the VPN to LAN plan removes the VPN CIDR.
+- **Public Edge Status Requires Revalidation**: `yirukou` is the intended
+  public edge, but the repository currently configures its WAN interfaces for
+  UDP `51820` only. The 2026-11-06 DNS result and Cloudflare state are external
+  observations, not current facts; recheck both before enabling Tier 1. Until
+  a public Cloudflare-to-`yirukou` origin exists, Origin Pulls remain dormant.
+- **Second Cloudflare Ingress**: A cloudflared tunnel container on `yifuwuqi`
+  (`modules/services/cloudflared.nix`) is an SSH fail-safe only. Its dashboard
+  mapping must remain limited to SSH and must not target the local ingress or
+  hosted application backends. Authenticated Origin Pulls do not apply to this
+  tunnel traffic.
+- **Access Control**: `restrictedProxyConfig` currently allows `yirukou` LAN
+  IPv4/IPv6 CIDRs and `yifuwuqi`'s VPN IPv4 CIDR; the `yifuwuqi` Tailscale
+  CIDR is commented out. VPN to LAN Phase 2 removes the remaining overlay
+  CIDR for designated client-facing vhosts; administrative services stop being
+  browser-facing. The untrusted VLAN CIDRs are intentionally absent.
 - **Inter-Host Traffic**: Reverse proxy on `yirukou` passes traffic to `yifuwuqi` over plain HTTP (`http://${yifuwuqiLan}:${port}`), one backend port per service. The firewall side is in the service-security plan.
 - **Monitoring**: Prometheus on `yifuwuqi` scrapes ten exporter jobs on `yirukou` over plain HTTP (node, smokeping, blackbox, systemd, process, smartctl, nginx, adguard, unbound, redis), generated from `allAddresses.monitoring.exporters` in `modules/services/monitoring/exporters.nix` and `modules/services/monitoring/prometheus.nix`. Exporters on `yifuwuqi` (the central host) listen on loopback.
 - **Log Shipping**: Vector on `yirukou` pushes the journal to Loki at `http://10.42.0.2:24100` (`modules/services/monitoring/promtail.nix`); Loki runs with `auth_enabled = false`.
@@ -45,19 +81,38 @@ ______________________________________________________________________
 1. **PKI Authority Model**:
    - **Cloudflare Edge**: Cloudflare Origin Pull Static Root CA (publicly trusted Cloudflare certificate).
    - **Internal Service & Scrape CA (`fufu-service-ca`)**: Dedicated homelab internal Root CA for inter-host reverse proxying and Prometheus metrics scraping.
+   - **Rotation**: retain the 10-year internal CA and 3-year host-certificate
+     lifetime.
 1. **Zero Device Enrollment**:
    - No user/device PKI (`fufu-client-ca` removed). No `.p12` files, device keychain imports, or mobile profiles.
 1. **100% Declarative Host Deployment**:
    - **Public Certificates & CAs** (`*.crt`): Committed directly to Git (e.g. `modules/services/certs/`) and referenced via Nix store paths.
    - **Private Keys** (`*.key`): Encrypted into `secrets/secrets.yaml` via Sops-nix and mounted automatically at runtime (e.g. `/run/secrets/certs/...`). They are added as root (`su -`), since sops access is root-only.
+   - **Selected model**: use Sops-backed static certificate material; do not
+     deploy a `step-ca` runtime service.
 1. **Tier 2 Terminates on the Local Ingress**:
    - The service-security plan (Decision 4, Phase 3) puts one nginx listener on `yifuwuqi` in front of every proxied backend. Tier 2 adds the server certificate and client verification to that listener, and `yirukou` switches every `yifuwuqi` upstream to it through the vhost helper from the same phase. No per-service TLS vhosts.
-1. **Tier 3 Lives in the Generators**:
-   - Exporter web configs go into `mkExporter`, and Prometheus `scheme`/`tls_config` into `mkScrapeConfig` and `probeScrapeConfig`, once for all jobs. Exporters on the central host stay plain HTTP on loopback.
-   - Either each `yirukou` exporter serves TLS itself (`--web.config.file`, where the binary supports it), or `yirukou`'s nginx fronts all exporters on one TLS port (Open Question 4).
+1. **Tier 3 Uses a Shared Nginx Metrics Frontend**:
+   - `yirukou` Nginx fronts every non-central exporter on one dedicated TLS
+     listener, verifies Prometheus's client certificate, and proxies each
+     exporter path to loopback. This avoids exporter-specific TLS features and
+     private-key distribution.
+   - Prometheus generates HTTPS scrape configs, TLS settings, and metrics
+     paths from the same exporter map. Exporters on the central host stay plain
+     HTTP on loopback.
    - Vector's push: the preferred path is Loki on `127.0.0.1` behind the `yifuwuqi` local ingress, so Tier 2's listener verifies Vector's client certificate while Grafana and Prometheus keep loopback access. The alternative, Loki serving TLS itself, moves Grafana's datasource and the `loki` scrape job to TLS too.
 1. **The cloudflared Tunnel Stays Outside Tier 1**:
-   - The tunnel is a separate Cloudflare-to-`yifuwuqi` hop, authenticated by its tunnel token. Before Tier 2 enforces client certificates on the local ingress, decide how tunnel origins reach backends (Open Question 5).
+   - The tunnel is a separate Cloudflare-to-`yifuwuqi` SSH fail-safe,
+     authenticated by its tunnel token. It does not reach the verified local
+     ingress and therefore needs no internal client certificate.
+1. **Public and LAN Client Access Stay Separate**:
+   - Client-facing hosted vhosts accept trusted LAN
+     `10.42.0.0/24` and `fd75:c55f:6d19:1::/64`, and reject the untrusted VLAN
+     `10.42.42.0/24` and `fd75:c55f:6d19:2::/64`.
+   - The future public listener accepts only Cloudflare-authenticated traffic.
+     It must be separate from the LAN browser path, or use an equivalent
+     policy proven to accept trusted LAN browsers without a Cloudflare client
+     certificate and reject untrusted VLAN clients.
 
 ______________________________________________________________________
 
@@ -70,15 +125,17 @@ flowchart TD
     end
 
     subgraph Yirukou["Host: yirukou (Reverse Proxy & Gateway)"]
-        Y_INGRESS["Nginx Ingress<br/>(sslVerifyClient on; Cloudflare CA)"]
+        Y_INGRESS["Nginx Edge: public Cloudflare mTLS and trusted LAN"]
         Y_UPSTREAM["Nginx Upstream Client<br/>(Cert: yirukou-proxy.crt)"]
-        Y_EXPORTER["Exporters<br/>(exporter.crt)"]
+        Y_METRICS["Nginx Metrics Frontend<br/>(mTLS)"]
+        Y_EXPORTER["Exporters<br/>(loopback)"]
         Y_VECTOR["Vector Log Shipper<br/>(client certificate)"]
         Y_INGRESS -->|proxy_pass over LAN| Y_UPSTREAM
+        Y_METRICS -->|loopback proxy| Y_EXPORTER
     end
 
     subgraph Yifuwuqi["Host: yifuwuqi (Service & Monitoring Host)"]
-        F_BACKEND["Local Ingress<br/>(service-security Phase 3; sslVerifyClient on)"]
+        F_BACKEND["Local Ingress: service-security Phase 3 with mTLS"]
         F_SERVICES["Internal Services<br/>(loopback)"]
         F_PROMETHEUS["Prometheus Scraper<br/>(prometheus-scraper.crt)"]
         F_TUNNEL["cloudflared Tunnel<br/>(outside Tier 1)"]
@@ -90,7 +147,7 @@ flowchart TD
     CF -.->|"tunnel, token-authenticated"| F_TUNNEL
     Y_UPSTREAM -->|"Tier 2: Inter-Host mTLS (LAN)"| F_BACKEND
     Y_VECTOR -->|"Tier 3: log push via the local ingress"| F_BACKEND
-    F_PROMETHEUS -->|"Tier 3: Scrape mTLS (LAN)"| Y_EXPORTER
+    F_PROMETHEUS -->|"Tier 3: Scrape mTLS (LAN)"| Y_METRICS
 ```
 
 ______________________________________________________________________
@@ -101,28 +158,29 @@ ______________________________________________________________________
 
 ### Phase 1: Cloudflare Authenticated Origin Pulls (Tier 1: Edge Ingress)
 
-This tier stays dormant while no hostname is publicly proxied to `yirukou` and its WANs keep TCP closed (Current State). Apply it together with the first such hostname.
+This tier stays dormant while `yirukou` WAN TCP remains closed (Current State).
+Activate it with the `fufu.land` public canary only.
 
 #### 1.1 Declarative Configuration (NixOS)
 
-Fetch Cloudflare's published Authenticated Origin Pull Root CA in `modules/services/nginx-proxy.nix`:
+Pin Cloudflare's published Origin Pull CA in
+`modules/services/nginx-proxy.nix`. The pinned NixOS Nginx module exposes no
+typed `sslClientCertificate` or `sslVerifyClient` virtual-host options, so the
+public listener must emit `ssl_client_certificate` and `ssl_verify_client on`
+through `extraConfig`.
 
-```nix
-let
-  # Cloudflare published Origin Pull CA certificate
-  cloudflareOriginPullCa = pkgs.fetchurl {
-    url = "https://developers.cloudflare.com/ssl/static/authenticated_origin_pull_ca.pem";
-    hash = "sha256-n6M60Q7VvjK6iFk/jXq/79vG3mI70tZkG0h8N4dE8v0=";
-  };
-in
-{
-  # Virtual host configuration for Cloudflare-proxied traffic
-  services.nginx.virtualHosts."*.fufu.land" = {
-    sslClientCertificate = "${cloudflareOriginPullCa}";
-    sslVerifyClient = "on";
-  };
-}
-```
+Create a public Cloudflare-authenticated listener and a separate trusted-LAN
+browser path for each client-facing hostname, or prove an equivalent
+source-and-certificate policy. The public listener rejects direct origin
+traffic; the LAN path accepts only `10.42.0.0/24` and
+`fd75:c55f:6d19:1::/64` while denying the VLAN 42 CIDRs. Do not require a
+Cloudflare client certificate from LAN browsers, and do not add client
+verification to tunnel-only or administrative hosts.
+
+For the canary, convert the existing `fufu.land` static response from
+`forceSSL = false` to an HTTPS vhost using the existing `fufu.land` ACME
+certificate. Its public content remains the fixed `hello world` response; do
+not proxy it to `yifuwuqi` or expose another application in this release.
 
 #### 1.2 Imperative Setup (Cloudflare Dashboard / API)
 
@@ -237,8 +295,10 @@ in
       onlySSL = true;
       sslCertificate = "${yifuwuqiCert}";
       sslCertificateKey = config.sops.secrets."certs/yifuwuqi_backend_key".path;
-      sslClientCertificate = "${serviceCaCert}";
-      sslVerifyClient = "on"; # Require valid yirukou client certificate
+      extraConfig = ''
+        ssl_client_certificate ${serviceCaCert};
+        ssl_verify_client on;
+      '';
       locations."/" = {
         proxyPass = "http://127.0.0.1:3000"; # one location per backend, generated by the vhost helper
       };
@@ -251,7 +311,7 @@ ______________________________________________________________________
 
 ### Phase 3: Metrics & Prometheus Scraper mTLS (Tier 3: Monitoring Mesh)
 
-#### 3.1 One-Time Scraper & Exporter Keypair Generation
+#### 3.1 One-Time Scraper & Metrics Frontend Keypair Generation
 
 ```bash
 # 1. Issue Prometheus Scraper Client Certificate
@@ -262,83 +322,35 @@ openssl x509 -req -in prometheus-scraper.csr -CA service-ca.crt -CAkey service-c
   -CAcreateserial -out prometheus-scraper.crt -days 1095 -sha384 \
   -extfile <(echo "extendedKeyUsage = clientAuth")
 
-# 2. Issue Node Exporter Server Certificate
-openssl ecparam -name secp384r1 -genkey -noout -out exporter-server.key
-openssl req -new -key exporter-server.key -out exporter-server.csr \
-  -subj "/CN=node-exporter.lan"
-openssl x509 -req -in exporter-server.csr -CA service-ca.crt -CAkey service-ca.key \
-  -CAcreateserial -out exporter-server.crt -days 1095 -sha384 \
-  -extfile <(echo -e "subjectAltName=DNS:node-exporter.lan,IP:10.42.0.1,IP:10.42.0.2\nextendedKeyUsage = serverAuth")
+# 2. Issue yirukou Metrics Frontend Server Certificate
+openssl ecparam -name secp384r1 -genkey -noout -out yirukou-metrics.key
+openssl req -new -key yirukou-metrics.key -out yirukou-metrics.csr \
+  -subj "/CN=yirukou-metrics.lan"
+openssl x509 -req -in yirukou-metrics.csr -CA service-ca.crt -CAkey service-ca.key \
+  -CAcreateserial -out yirukou-metrics.crt -days 1095 -sha384 \
+  -extfile <(echo -e "subjectAltName=DNS:yirukou-metrics.lan,IP:10.42.0.1\nextendedKeyUsage = serverAuth")
 
 # 3. Store public certificates in the repo:
-# cp prometheus-scraper.crt exporter-server.crt modules/services/certs/
+# cp prometheus-scraper.crt yirukou-metrics.crt modules/services/certs/
 
 # 4. Encrypt private keys into Sops (as root, `su -`):
 # sops set secrets/secrets.yaml '["certs"]["prometheus_scraper_key"]' "$(cat prometheus-scraper.key)"
-# sops set secrets/secrets.yaml '["certs"]["exporter_server_key"]' "$(cat exporter-server.key)"
+# sops set secrets/secrets.yaml '["certs"]["yirukou_metrics_key"]' "$(cat yirukou-metrics.key)"
 ```
 
 #### 3.2 Declarative Configuration (NixOS)
 
-**In `modules/services/monitoring/exporters.nix`** (on monitored hosts): set once in `mkExporter` for every exporter whose binary supports a web config (Decision 5); the node exporter block below shows the shape:
+**On `yirukou`**: add one Nginx metrics listener using
+`yirukou-metrics.crt`, its Sops-mounted key, and the service CA for
+`ssl_verify_client on`. Generate locations from the exporter map; each location
+proxies to its exporter over loopback. Move the `yirukou` exporter listeners
+to loopback and close their former LAN firewall ports.
 
-```nix
-{ config, pkgs, lib, ... }:
-let
-  serviceCaCert  = ../certs/service-ca.crt;
-  exporterCert   = ../certs/exporter-server.crt;
-
-  webConfig = pkgs.writeText "exporter-web-config.yaml" ''
-    tls_server_config:
-      cert_file: ${exporterCert}
-      key_file: ${config.sops.secrets."certs/exporter_server_key".path}
-      client_ca_file: ${serviceCaCert}
-      client_auth_type: RequireAndVerifyClientCert
-  '';
-in
-{
-  sops.secrets."certs/exporter_server_key" = {
-    owner = "node-exporter";
-    group = "node-exporter";
-  };
-
-  services.prometheus.exporters.node = {
-    extraFlags = [ "--web.config.file=${webConfig}" ];
-  };
-}
-```
-
-**In `modules/services/monitoring/prometheus.nix`** (on `yifuwuqi`): set `scheme` and `tls_config` once in `mkScrapeConfig` and `probeScrapeConfig`; the hand-written `node` job below shows the fields. Only `yirukou` targets need them:
-
-```nix
-{ config, pkgs, ... }:
-let
-  serviceCaCert  = ../certs/service-ca.crt;
-  scraperCert    = ../certs/prometheus-scraper.crt;
-in
-{
-  sops.secrets."certs/prometheus_scraper_key" = {
-    owner = "prometheus";
-    group = "prometheus";
-  };
-
-  services.prometheus.scrapeConfigs = [
-    {
-      job_name = "node";
-      scheme = "https";
-      tls_config = {
-        ca_file = "${serviceCaCert}";
-        cert_file = "${scraperCert}";
-        key_file = config.sops.secrets."certs/prometheus_scraper_key".path;
-        server_name = "node-exporter.lan";
-      };
-      static_configs = [
-        { targets = [ "10.42.0.1:9100" ]; }
-      ];
-    }
-  ];
-}
-```
+**On `yifuwuqi`**: configure the Prometheus generator once with HTTPS,
+`tls_config`, the `prometheus-scraper` client key, the service CA, and
+`server_name = "yirukou-metrics.lan"`. Generate each job's `metrics_path`
+from the same exporter map while targeting the single Nginx metrics listener.
+Central-host exporters remain plain HTTP on loopback.
 
 #### 3.3 Log Push (Vector to Loki)
 
@@ -362,28 +374,38 @@ flowchart TD
     P3 --> Retire
 ```
 
-1. **Step 1: Deploy Phase 1 (Cloudflare)**, once a hostname is publicly proxied to `yirukou`:
+Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md).
+Phase 1 is a conditional edge lane; the internal critical path is Service
+Security Phase 3, then mTLS Phases 2 and 3, then Service Security Phase 4.
+
+1. **Conditional edge lane — deploy Phase 1 (Cloudflare) for `fufu.land`**:
    - Test direct origin connection `curl -k https://<yirukou-public-ip>` (must be rejected with TLS handshake failure).
    - Test via Cloudflare hostname `https://fufu.land` (should succeed normally).
-1. **Step 2: Deploy Phase 2 (Inter-Host Upstream Proxy)**, after the service-security plan's Phase 3:
+   - Test the same client-facing hostname from trusted LAN (must succeed) and
+     from the untrusted VLAN (must be rejected).
+1. **Internal critical path — deploy Phase 2 (Inter-Host Upstream Proxy)** after the service-security plan's Phase 3:
    - Validate upstream proxy connections from `yirukou` to `yifuwuqi` over HTTPS with mutual certificate verification.
-1. **Step 3: Deploy Phase 3 (Monitoring)**:
+1. **Internal critical path — deploy Phase 3 (Monitoring)** after the same local ingress exists:
    - Verify all Prometheus scrape targets report `UP` over TLS in Grafana / Prometheus web UI.
    - Loki keeps receiving `yirukou` logs; a push without the client certificate fails the TLS handshake.
 
 ### Cross-Plan Dependencies
 
+- **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md)
+  is the canonical dependency order.
 - **Depends on** the [Service Security Architecture Plan](service-security-architecture-plan.md): Phase 2 terminates on its Phase 3 local ingress and uses its vhost helper; the preferred log-push path in Phase 3 uses the same ingress.
 - **Unblocks** the [Service Security Architecture Plan](service-security-architecture-plan.md): its Phase 4 removes the interim IP rules once Phases 2 and 3 here pass.
-- **Depends on** the [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md): `restrictedProxyConfig` contents (its Decision 2), and its Decision 7 if Open Question 3 picks Tailscale.
-- **Relies on** [Impermanence on yirukou](impermanence-yirukou-plan.md): keys reach `yirukou` through sops into `/run/secrets`, which needs only that plan's `/persist/keys` staging; no new persistence entries.
+- **Depends on** the [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md):
+  Phase 2 removes the overlay CIDR from `restrictedProxyConfig`. Tier 2 uses
+  LAN mTLS, not a direct Tailscale transport.
+- **Coordinates with** [Impermanence on yirukou](impermanence-yirukou-plan.md):
+  current persistent-root deployments do not depend on impermanence. If its
+  tmpfs-root cutover happens first, its `/persist/keys` staging must complete
+  before these private keys are deployed.
 
 ______________________________________________________________________
 
 ## Open Questions & Review Items
 
-1. **Certificate Lifetime**: Does a 10-year Internal Service CA with 3-year host certificates suit your maintenance rotation preferences?
-1. **`step-ca` vs Sops Key Storage**: Sops + Git declarative storage provides zero runtime overhead. Would you prefer this static Sops model, or deploying `services.step-ca` as an automated CA daemon on `yifuwuqi`?
-1. **Ingress Transport**: mTLS with the internal CA, or proxying over Tailscale, where `yirukou`'s node key already identifies it? Tailscale needs no new PKI, but every proxied request then depends on tailscaled and on the VPN to LAN plan's `tailscale0` policy (its Decision 7).
-1. **Exporter TLS**: each exporter serving TLS itself where its binary supports it, or `yirukou`'s nginx fronting all exporters on one TLS port? Check the custom AdGuard exporter first.
-1. **cloudflared Tunnel**: which hostnames does it serve, and how do its origins pass Tier 2's client verification? cloudflared would need to present a client certificate, or tunnel origins stay off the verified listener.
+No mTLS design choice remains open. The `fufu.land` canary is the first public
+Cloudflare-to-`yirukou` listener and Origin Pull rollout.

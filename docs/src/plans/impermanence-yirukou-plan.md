@@ -1,6 +1,6 @@
 # Impermanence on yirukou (Edge Router & Gateway)
 
-## Status: DRAFT — needs re-verification (DynamicUser state paths, security-monitor cache)
+## Status: DRAFT — not started; repository and live root/memory evidence reviewed 2026-11-08
 
 ## Objective
 
@@ -21,15 +21,37 @@ Persists state the other plans rely on: `/var/lib/tailscale` (the VPN to LAN pla
 
 ______________________________________________________________________
 
+## Evidence Status
+
+- **Repository-verified**: the flake has no impermanence input or module;
+  `hosts/yirukou/hardware.nix` still configures the Ext4 partition as `/`.
+  The keys, SSH, sops, and security-monitor paths below are declared
+  conventions, not proof of a tmpfs-root deployment.
+- **Live-host verified 2026-11-08**: `/dev/nvme0n1p2` is mounted as `/` with
+  Ext4; `tailscaled` is active; `MemTotal` was `7854640 kB` and
+  `Active(anon)` was `852088 kB`.
+- **Operational verification pending**: actual partition free space,
+  DynamicUser state paths on `yirukou`, cache size, key staging, and every
+  post-reboot acceptance check must be repeated in the maintenance window.
+
+______________________________________________________________________
+
 ## Current State
 
-1. **Filesystem Layout**:
+1. **Current Root Layout**:
    - `nvme0n1p1` (1 GiB): EFI System Partition (`/boot`, VFAT, UUID `7B94-F350`).
    - `nvme0n1p2` (~239 GiB): Traditional persistent root (`/`, Ext4, UUID `685d4cb2-aba3-44d5-b9ba-20a9692ff385`).
    - `nvme0n1p3` (~9 GiB): Dedicated Swap (`[SWAP]`, UUID `29757075-8a2d-4171-af0f-1027608f9641`).
+   - The 2026-11-08 live mount check confirms `nvme0n1p2` is still `/`; there
+     is no `/persist` mount or `/nix` bind mount. Recheck partition sizes and
+     free space before staging.
 1. **Memory & Performance**:
-   - 7.8 GiB physical RAM, ~2.6 GiB active anonymous memory (AdGuard Home bounded by `GOMEMLIMIT=2560MiB`, Unbound, Nginx, Vector, Kea).
-   - A 2 GiB tmpfs root will consume only ~50–100 MiB of RAM since `/nix/store` resides on disk via bind mount, provided `/var/cache/vulnix` is persisted (item 5).
+   - The 2026-11-08 observation was `7854640 kB` total RAM and `852088 kB`
+     active anonymous memory. Re-measure under normal and peak gateway load;
+     it supersedes the older 2.6 GiB anonymous-memory estimate.
+   - A 2 GiB tmpfs root is expected to consume ~50–100 MiB while `/nix/store`
+     remains on disk, provided `/var/cache/vulnix` is persisted. Treat this as
+     a sizing hypothesis to verify, not a current measurement.
 1. **Fleet Security & Privilege Model**:
    - `sudo` is disabled fleet-wide via `security.sudo.enable = false` in `modules/common.nix`.
    - Administrative tasks and deployments on servers are conducted strictly via key-based root SSH (`ssh root@yirukou`) or `su -` from authorized operator hosts (`secrets/keys.nix`, `hosts/yirukou/configuration.nix`).
@@ -38,11 +60,21 @@ ______________________________________________________________________
    - `modules/services/ssh/default.nix` asserts that `${keys.paths.sshHostKey}` (`/persist/keys/ssh/ssh_host_ed25519_key`) exists and is non-empty before starting `sshd`.
    - `secrets/sops.nix` targets `defaultSopsFile = "/persist/keys/sops/secrets.yaml"` and uses the host SSH key as its age identity.
    - `docs/src/services/secrets.md` documents: *"This repository assumes impermanence hosts keep private runtime identity under `/persist/keys`."*
+   - Before cutover, `/persist/keys` is a directory on the persistent root, not
+     a separate mount. The path convention becomes the intended mount layout
+     only after the staged reboot.
 1. **Security Monitor State**:
-   - `hosts/yirukou/services.nix` enables `services.security-monitor`. Its CVE scan runs at 05:30 and 17:30 (`modules/maintenance.nix`) and keeps the vulnix NVD database in `/var/cache/vulnix`, which is 1.2 GiB on `yifuwuqi` running the same scan.
+   - `hosts/yirukou/services.nix` enables `services.security-monitor`. The
+     shared schedule is `05:30` and `17:30` with a 15-minute timer delay
+     (`modules/maintenance.nix`); live timer observations can therefore run
+     later than the calendar slot.
+   - The NVD cache size recorded on `yifuwuqi` is a planning reference, not
+     evidence of the current `yirukou` cache size; measure it before migration.
    - Scan results, the fast audit and `gateway_failover.prom` live in `/var/lib/prometheus-node-exporter/textfile`.
 1. **DynamicUser State Directories**:
    - AdGuardHome, kea and vector run with `DynamicUser = true` (nixpkgs modules). Their data lives in `/var/lib/private/<name>`; `/var/lib/<name>` is a symlink that systemd manages, so persisting it does not persist the data. Confirmed on `yifuwuqi` for AdGuardHome and vector.
+   - Confirm this layout on `yirukou` during Phase 2; evidence from
+     `yifuwuqi` is not sufficient for the target host.
 
 ______________________________________________________________________
 
@@ -67,6 +99,8 @@ ______________________________________________________________________
 - **Decision**: Prior to rebooting into the new generation, copy `/persist/keys` to `/keys` on `nvme0n1p2` (`cp -a /persist/keys /keys` as root).
 - **Rationale**:
   - On the traditional root, the host keys reside at `/persist/keys` on partition `nvme0n1p2`.
+  - Before cutover, `/persist/keys` is a directory on the traditional root;
+    it is not proof that an impermanence mount layout is already active.
   - When `nvme0n1p2` is mounted at `/persist`, its root directory becomes `/persist`. An existing `/persist/keys` folder on that disk would therefore be visible at `/persist/persist/keys`.
   - Staging `/keys` on `nvme0n1p2` ensures that when mounted at `/persist`, it resolves precisely to `/persist/keys`.
   - Leaving `/persist/keys` intact on disk guarantees that rolling back to the previous generation continues reading `nvme0n1p2:/persist/keys` seamlessly.
@@ -340,6 +374,11 @@ ______________________________________________________________________
 
 ## Rollout Order
 
+Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md).
+This is a dedicated `yirukou` boot release: it may run after its own
+pre-migration revalidation and before a later `yirukou` feature release, but
+never in the same generation as VPN, service-security, or mTLS changes.
+
 1. **Staging**: Execute `cp -a /persist/keys /keys` as `root` on `yirukou`. Verify `diff -r /persist/keys /keys`.
 1. **Code**: Edit `flake.nix`, `hosts/yirukou/hardware.nix`, `hosts/yirukou/impermanence.nix`, `hosts/yirukou/configuration.nix`.
 1. **Build**: Run `nix flake lock --update-input impermanence` and verify closure evaluation via `nixos-rebuild dry-build --flake .#yirukou`.
@@ -350,10 +389,20 @@ ______________________________________________________________________
 
 ### Cross-Plan Dependencies
 
-- **Needed by** the [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md): `/var/lib/tailscale` keeps the subnet router's node key and approved `10.42.0.0/24` route.
-- **Needed by** the [Service Security Architecture Plan](service-security-architecture-plan.md): its phase gates read the security-monitor metrics that `/var/cache/vulnix`, `/var/lib/prometheus-node-exporter` and `/var/lib/systemd/timers` keep alive across reboots.
-- **Needed by** the [mTLS Architecture Plan](mtls-architecture-plan.md): `/persist/keys` staging lets sops decrypt its keys into `/run/secrets`; no extra persistence entries.
-- **Coordinates with** all three: their `yirukou` changes ship in other generations (step 4).
+- **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md)
+  is the canonical dependency order.
+- **VPN to LAN**: the current persistent Ext4 root already retains
+  `/var/lib/tailscale`. If this plan lands, that directory must be persisted
+  so the subnet router keeps its node key and approved route after reboot.
+- **Service Security**: the current persistent root also retains the
+  security-monitor state used by its gates. After tmpfs cutover,
+  `/var/cache/vulnix`, `/var/lib/prometheus-node-exporter`, and timer state
+  become required persistence entries.
+- **mTLS**: internal mTLS can deploy before this plan while the root remains
+  persistent. `/persist/keys` staging is required only at this plan's tmpfs
+  cutover so sops can continue decrypting keys into `/run/secrets`.
+- **Release isolation**: all other `yirukou` changes ship in different
+  generations (Rollout Order step 4).
 
 ______________________________________________________________________
 

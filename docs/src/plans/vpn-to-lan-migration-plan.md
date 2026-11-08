@@ -1,13 +1,21 @@
 # VPN to LAN Migration Plan
 
+## Status: DRAFT — repository reviewed 2026-11-08; route and ACL gates remain operational
+
 ## Objective
 
 Migrate internal service access controls, firewall rules, and reverse proxy definitions away from overlay network bindings (Tailscale `100.64.0.0/10` and `100.69.0.x`, NetBird `100.42.0.0/16`) to the trusted local LAN (`10.42.0.0/24` and `fd75:c55f:6d19:1::/64`).
 
 Under this architecture:
 
-- Source-address allowlists in server daemons (Samba, Forgejo, Nginx, Cockpit) name only LAN CIDRs and loopback, never overlay CIDRs. Allowlists narrow reachability; authentication belongs to the [Service Security Architecture Plan](service-security-architecture-plan.md).
-- Remote access to internal services is consolidated through `yirukou`'s Tailscale subnet router (`10.42.0.0/24` with SNAT), so remote connections arrive at backend services as gateway LAN traffic (`10.42.0.1`).
+- Source-address allowlists in services that remain LAN-reachable name only LAN
+  CIDRs and loopback, never overlay CIDRs. Allowlists narrow reachability;
+  authentication belongs to the
+  [Service Security Architecture Plan](service-security-architecture-plan.md).
+- Remote access to client-facing and explicitly allowed LAN services is
+  consolidated through `yirukou`'s Tailscale subnet router (`10.42.0.0/24`
+  with SNAT), so remote connections arrive at backend services as gateway LAN
+  traffic (`10.42.0.1`). Internal administration uses SSH on `yifuwuqi`.
 - Servers stop trusting `tailscale0` wholesale. Direct ingress from the VPN overlay to unproxied backend services is eliminated.
 
 ```mermaid
@@ -25,7 +33,8 @@ flowchart TD
         subgraph Yifuwuqi["Host: yifuwuqi (Core Server Daemons)"]
             direction TB
             SMB["Samba Server<br/>(hosts allow LAN)"]
-            APPS["Forgejo / Cockpit<br/>(allowlists and origins LAN)"]
+            APPS["Client-facing hosted services<br/>(allowlists and origins LAN)"]
+            ADMIN["Administrative services<br/>(SSH on yifuwuqi)"]
             PG["PostgreSQL<br/>(auth per service-security plan)"]
         end
     end
@@ -54,11 +63,27 @@ Not owned here:
 
 ______________________________________________________________________
 
+## Evidence Status
+
+- **Repository-verified**: the overlay CIDRs, legacy vhost, unconditional
+  `tailscale0` trust, and NetBird remnants described below remain in the Nix
+  configuration.
+- **Live-host verified 2026-11-08**: `yifuwuqi` prefers its default route via
+  `10.42.0.1`; this does not prove Tailnet route approval or client adoption.
+- **External or operational verification pending**: advertised route approval,
+  client use of the subnet route, and Tailscale SSH behavior after the trust
+  change.
+
+______________________________________________________________________
+
 ## Current State
 
 1. **Reverse Proxy & Web Access**:
 
    - In `modules/services/nginx-proxy.nix`, `trustedProxyCidrs` includes `allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr` (`100.64.0.0/10`).
+   - The same list already contains `yirukou`'s trusted LAN IPv4/IPv6 CIDRs
+     and omits the untrusted VLAN CIDRs (`10.42.42.0/24` and
+     `fd75:c55f:6d19:2::/64`).
    - `nginx-proxy.nix` retains a legacy test virtual host binding directly to `"${addresses.network.vpn.ipv4.host}"`.
    - In `modules/services/forgejo.nix`, `trustedCidrs` includes the VPN CIDR for webhook delivery allowlists.
    - In `modules/services/cockpit.nix`, `allowed-origins` includes `http://${addresses.network.vpn.ipv4.host}:${port}` and `https://${addresses.network.vpn.ipv4.host}:${port}`.
@@ -83,6 +108,9 @@ ______________________________________________________________________
 
 1. **Peerings & Roaming Nodes (Intentional Tailscale Usage)**:
 
+   - `yirukou` declares the `10.42.0.0/24` advertised subnet route. Separately,
+     `yifuwuqi` declares its `192.168.0.1/32` route; these are distinct
+     routing responsibilities and must not be conflated as one ingress path.
    - **`lan-mouse`**: As documented in `docs/src/hardware/lan-mouse.md`, KVM traffic between `yitaishi` and `yixiaoqing` is bound to Tailscale (`100.x.x.x`). This is required because `yixiaoqing` is a laptop with no static LAN reservation that frequently roams across networks, and `yitaishi` does not have a static LAN IP assigned in `modules/addresses.nix`.
    - **Distributed Builds**: `modules/distributed-builds.nix` targets `yitaishi` via its VPN address because `yitaishi`'s sshd binds strictly to VPN interfaces and `hosts.yitaishi` does not possess a static `network.lan` block in `addresses.nix`.
    - **Obsolete Components**: `llama-swap-amdgpu` (port 50052) was completely removed from the gang and replaced by local `llama-cpp-node`. `modules/services/openvscode-server.nix` is unimported dead code replaced by `modules/services/opencode.nix`.
@@ -93,13 +121,21 @@ ______________________________________________________________________
 
 ### 1. Subnet Router as the Single Remote Ingress Boundary
 
-- `yirukou` advertises `10.42.0.0/24` to Tailscale with default SNAT masquerade enabled.
-- Remote devices access homelab services (Nginx, Samba, PostgreSQL) through their LAN IP addresses (`10.42.0.1`, `10.42.0.2`) over the subnet route.
+- `yirukou` declares `10.42.0.0/24` to Tailscale with default SNAT masquerade
+  enabled. Route approval and a client reaching the LAN through it are
+  admission gates before removing overlay allowlists.
+- Remote devices access client-facing services and Samba through their LAN IP
+  addresses (`10.42.0.1`, `10.42.0.2`) over the subnet route. PostgreSQL stays
+  loopback-only under the service-security plan.
 - Remove `100.64.0.0/10` from service allowlists. Remote traffic arrives at host services SNAT'd as `10.42.0.1` and matches LAN allowlists.
 - SNAT consequence: on `yifuwuqi`, every remote client is indistinguishable from `yirukou` itself. Rules keyed on `10.42.0.1` apply to all remote clients; the service-security plan scopes them (its Decision 3), and the mTLS plan's Tier 2 gives the proxy hop a cryptographic identity.
 
 ### 2. Restrict Reverse Proxy Access to LAN Subnets
 
+- Client-facing hosted vhosts allow only `10.42.0.0/24` and
+  `fd75:c55f:6d19:1::/64` for direct LAN access. Do not add the untrusted VLAN
+  `10.42.42.0/24` or `fd75:c55f:6d19:2::/64`; administrative vhosts are
+  SSH-only under the service-security plan.
 - Remove `allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr` from `trustedProxyCidrs` in `modules/services/nginx-proxy.nix`.
 - Delete the legacy `addresses.network.vpn.ipv4.host` virtual host block.
 
@@ -118,7 +154,10 @@ ______________________________________________________________________
 - Remove `allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr` from `modules/services/forgejo.nix` webhook allowlist.
 - Remove `addresses.network.vpn.ipv4.host` from `hosts/yifuwuqi/networking/firewall.nix` `trustedHostDestinations`.
 - Delete unimported legacy module `modules/services/openvscode-server.nix`.
-- Remove NetBird addresses from sshd `listenAddresses` and AdGuard `dnsBindHosts`. If NetBird is retired (Open Question 1), delete `modules/services/netbird.nix` and the `network.netbird` blocks. The qBittorrent whitelist entry goes with the service-security plan's Decision 5.
+- NetBird is retired: remove its addresses from sshd `listenAddresses` and
+  AdGuard `dnsBindHosts`, then delete `modules/services/netbird.nix` and the
+  `network.netbird` blocks. The qBittorrent whitelist entry goes with the
+  service-security plan's Decision 5.
 
 ### 6. Preserve Tailscale for Dynamic and Roaming Peerings
 
@@ -126,11 +165,19 @@ ______________________________________________________________________
 
 ### 7. Servers Stop Trusting `tailscale0`
 
-- `modules/services/tailscale.nix` adds `tailscale0` to `trustedInterfaces` only in `client` routing mode; server and router hosts declare explicit ports instead. Remove the duplicate entry in `hosts/yifuwuqi/networking/firewall.nix`.
+- **Current state**: `modules/services/tailscale.nix` adds `tailscale0` to
+  `trustedInterfaces` in every routing mode, and `yifuwuqi` duplicates that
+  trust in its host firewall.
+- **Target state**: add `tailscale0` to `trustedInterfaces` only in `client`
+  routing mode; server and router hosts declare explicit ports instead.
+  Remove the duplicate entry in `hosts/yifuwuqi/networking/firewall.nix`.
 - `yirukou`: `tailscale0` gets the same ports as `br0` (`lanTcpPorts` plus SSH, and `internalUdpPorts`), because tailnet clients use its DNS and nginx. Forwarding into `10.42.0.0/24` already has its own rule.
 - `yifuwuqi`: `tailscale0` allows SSH `24212` and DNS `53` (AdGuard binds `100.69.0.6`).
 - Clients (`yitaishi`, `yixiaoqing`) keep trusting `tailscale0`; `lan-mouse` and distributed builds depend on it (Decision 6).
 - `yifuwuqi`'s Tailscale route to `192.168.0.1/32` keeps working: the service-security plan's Phase 0 adds its forward accept when it enables forward filtering.
+- Host firewalls are the authoritative service boundary. Tailnet policy needs to
+  permit authorized clients to use the subnet route, but it is not a second
+  per-service authorization system in this plan.
 
 ______________________________________________________________________
 
@@ -147,12 +194,15 @@ ______________________________________________________________________
 1. In `modules/services/forgejo.nix`, remove `yifuwuqi.network.vpn.ipv4.cidr` from `trustedCidrs`.
 1. In `modules/services/cockpit.nix`, remove VPN URLs from `allowed-origins`.
 1. Delete unimported file `modules/services/openvscode-server.nix`.
+1. Verify a designated client-facing vhost accepts trusted LAN traffic and
+   rejects both IPv4 and IPv6 untrusted-VLAN traffic.
 
 ### Phase 3: Host Firewall Rules
 
 1. In `hosts/yifuwuqi/networking/firewall.nix`, remove `addresses.network.vpn.ipv4.host` from `trustedHostDestinations`. The service-security plan's Phase 0 changes how these rules are enforced; this step only removes the entry.
-1. Apply Decision 7 in `modules/services/tailscale.nix`, `hosts/yirukou/networking/firewall.nix` and `hosts/yifuwuqi/networking/firewall.nix`.
-1. Apply the NetBird cleanup from Decision 5 in `modules/addresses.nix` and, if NetBird is retired, `modules/services/netbird.nix`.
+1. Apply Decision 7 in `modules/services/tailscale.nix`, `hosts/yirukou/networking/firewall.nix` and `hosts/yifuwuqi/networking/firewall.nix` only after Service Security Phase 0 has accepted `tailscale0 -> enp4s0` traffic to `192.168.0.1/32`.
+1. Apply the NetBird retirement cleanup from Decision 5 in
+   `modules/addresses.nix` and `modules/services/netbird.nix`.
 
 ### Phase 4: Validation & Evaluation
 
@@ -166,37 +216,52 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart LR
-    P1["Phase 1: Storage & DB<br/>(PostgreSQL, Samba)"]
-    P2["Phase 2: Web & Dev<br/>(Nginx, Forgejo, Cockpit)"]
+    P1["Phase 1: Samba allowlist"]
+    P2["Phase 2: Web and development services"]
     P3["Phase 3: Host Firewall<br/>(Drop VPN from trustedHostDestinations)"]
     P4["Phase 4: Validation & Deploy"]
+    SEC0["Service Security Phase 0"]
 
     P1 --> P2 --> P3 --> P4
+    SEC0 --> P3
 ```
 
-1. Apply changes to `modules/services/samba/server.nix`, `modules/services/forgejo.nix`, `modules/services/cockpit.nix`, and `hosts/yifuwuqi/networking/firewall.nix`.
-1. Apply changes to `modules/services/nginx-proxy.nix`.
-1. Delete `modules/services/openvscode-server.nix`.
-1. Apply Decision 7 and the NetBird cleanup.
-1. Evaluate configurations using `nix build --dry-run`.
-1. Deploy `yirukou` and `yifuwuqi` through [CI/CD](../services/ci-cd.md) section 5: `ci/deploy.sh switch yirukou yifuwuqi`, or `deploy .#<host>` as root (`su -`). sudo is disabled fleet-wide, so `--use-remote-sudo` no longer applies.
-1. Verify from a tailnet client:
-   - `curl -I https://grafana.fufu.land` works over the subnet route;
+Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md).
+Deploy and validate each phase independently:
+
+1. **Admission gate**: verify an approved `yirukou` subnet route and a Tailnet
+   client reaching LAN services through it.
+1. **Phase 1**: remove Samba's VPN allowlist, then verify Samba through the
+   subnet route.
+1. **Phase 2**: remove the proxy, Forgejo, Cockpit, and legacy vhost overlay
+   entries; delete the unimported OpenVSCode module; verify trusted-LAN access
+   succeeds while untrusted-VLAN access fails.
+1. **Phase 3**: after Service Security Phase 0 passes, remove the
+   `trustedHostDestinations` VPN entry, apply Decision 7, and perform the
+   NetBird retirement cleanup.
+1. **Phase 4**: evaluate both hosts, deploy the completed phase through
+   [CI/CD](../services/ci-cd.md) section 5, and verify from a Tailnet client:
+   - a designated client-facing hosted domain works over the subnet route;
    - `nc -zv 100.69.0.6 24200` fails (no direct overlay ingress to `yifuwuqi` backends);
    - Tailscale SSH and plain SSH on `24212` still work on both servers;
    - `tailscale status` still shows `yirukou`'s `10.42.0.0/24` route.
 
 ### Cross-Plan Dependencies
 
+- **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md)
+  is the canonical dependency order.
 - **Coordinates with** the [Service Security Architecture Plan](service-security-architecture-plan.md): it owns Postgres (Decision 3 here defers to it) and the qBittorrent whitelist; its gateway rule decides what SNAT'd remote clients reach on `yifuwuqi`; its Phase 0 keeps the `192.168.0.1/32` tailnet route when it enables forward filtering.
-- **Unblocks** the [mTLS Architecture Plan](mtls-architecture-plan.md): Decision 2 sets the `restrictedProxyConfig` contents its admin-services note relies on, and Decision 7 decides whether its Tier 2 could run over Tailscale instead.
-- **Needs from** [Impermanence on yirukou](impermanence-yirukou-plan.md): `/var/lib/tailscale` stays persisted, so the subnet router keeps its node key and approved routes across reboots.
+- **Unblocks** the [mTLS Architecture Plan](mtls-architecture-plan.md): Phase 2
+  removes overlay access from `restrictedProxyConfig` for client-facing
+  vhosts. Its Tier 2 remains LAN mTLS rather than a direct Tailscale
+  transport.
+- **Coordinates with** [Impermanence on yirukou](impermanence-yirukou-plan.md):
+  the current Ext4 root already persists Tailscale state. If impermanence is
+  deployed, `/var/lib/tailscale` must be persisted before rebooting into its
+  tmpfs-root generation.
 
 ______________________________________________________________________
 
 ## Open Questions
 
-1. **NetBird**: retired for good? If yes, delete the module and the `network.netbird` address blocks. If it stays as a standby overlay, `wt0` needs the same treatment as `tailscale0` in Decision 7.
-1. **Overlay boundary**: are Tailscale ACLs (admin console, not in this repository) meant to restrict which tailnet devices reach which hosts, or is the host firewall the only boundary?
 1. **Tailscale SSH**: confirm it keeps working with `tailscale0` untrusted on one server before rolling out to both.
-1. **Remote Postgres**: decided in the service-security plan (its Open Question 1).
