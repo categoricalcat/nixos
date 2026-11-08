@@ -19,7 +19,7 @@ ______________________________________________________________________
 | **Firecrawl**   | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                          |
 | **SillyTavern** | `ai/sillytavern.nix` | `24000`       | `companion.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                  |
 | **Opencode**    | `opencode.nix`       | `24010`       | `agent.fufu.land`     | Native Agent Daemon                 | Autonomous AI coding agent backend; LAN-bound, unauthenticated         |
-| **Cloudflared** | `cloudflared.nix`    | *Dynamic*     | *Tunnel Egress*       | OCI Container                       | Zero-trust Cloudflare Tunnel connector                                 |
+| **Cloudflared** | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                       | SSH-only fail-safe tunnel connector on static bridge `10.89.0.2`       |
 | **Tor Client**  | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                  |
 
 ______________________________________________________________________

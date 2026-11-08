@@ -2,8 +2,6 @@ _:
 
 let
   addresses = import ../../addresses.nix;
-  # tailscaleCidr = addresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr;
-  vpnCidr = addresses.hosts.yifuwuqi.network.vpn.ipv4.cidr;
   lanCidr = addresses.hosts.yirukou.network.lan.ipv4.cidr;
   lanCidr6 = addresses.hosts.yirukou.network.lan.ipv6.cidr;
 in
@@ -15,7 +13,7 @@ in
 
     settings = {
       global = {
-        "hosts allow" = "${lanCidr} ${lanCidr6} ${vpnCidr} 127.0.0.1 localhost ::1";
+        "hosts allow" = "${lanCidr} ${lanCidr6} 127.0.0.1 localhost ::1";
         "hosts deny" = "0.0.0.0/0";
         "load printers" = "no";
         "printing" = "bsd";

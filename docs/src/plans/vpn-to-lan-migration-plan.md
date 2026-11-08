@@ -1,6 +1,6 @@
 # VPN to LAN Migration Plan
 
-## Status: DRAFT — repository reviewed 2026-11-08; route and ACL gates remain operational
+## Status: DRAFT — Phase 1 deployed and verified 2026-11-08
 
 ## Objective
 
@@ -52,7 +52,7 @@ Owns:
 
 - Subnet routing and the `yirukou` subnet router.
 - `tailscale0` firewall trust on servers (`modules/services/tailscale.nix` and per-host tailnet ports).
-- Overlay CIDRs and addresses in allowlists: nginx `trustedProxyCidrs` and the legacy VPN vhost, Samba `hosts allow`, Cockpit `allowed-origins`, the Forgejo webhook `ALLOWED_HOST_LIST`, and the VPN entry in `yifuwuqi`'s `trustedHostDestinations`.
+- Overlay CIDRs and addresses in allowlists: nginx `trustedProxyCidrs` and the legacy VPN vhost, Samba `hosts allow`, Cockpit `allowed-origins`, and the Forgejo webhook `ALLOWED_HOST_LIST`.
 - NetBird leftovers in `modules/addresses.nix` (`network.netbird`, sshd `listenAddresses`, AdGuard `dnsBindHosts`).
 
 Not owned here:
@@ -65,14 +65,18 @@ ______________________________________________________________________
 
 ## Evidence Status
 
-- **Repository-verified**: the overlay CIDRs, legacy vhost, unconditional
-  `tailscale0` trust, and NetBird remnants described below remain in the Nix
-  configuration.
+- **Repository-verified**: Phase 1's active Samba ACL excludes the VPN CIDR.
+  The overlay CIDRs, legacy vhost, unconditional `tailscale0` trust, and
+  NetBird remnants for later phases remain in the Nix configuration.
 - **Live-host verified 2026-11-08**: `yifuwuqi` prefers its default route via
   `10.42.0.1`; this does not prove Tailnet route approval or client adoption.
-- **External or operational verification pending**: advertised route approval,
-  client use of the subnet route, and Tailscale SSH behavior after the trust
-  change.
+- **Preflight verified 2026-11-08**: `yitaishi` installs
+  `10.42.0.0/24` through `tailscale0` and reaches `10.42.0.2`.
+- **Phase 1 verified 2026-11-08**: yitaishi's enabled automount targets
+  `//10.42.0.2/share`; Samba answers on `10.42.0.2:445` with the LAN-only
+  allowlist.
+- **Operational verification pending**: Tailscale SSH behavior after the later
+  trust change.
 
 ______________________________________________________________________
 
@@ -91,12 +95,15 @@ ______________________________________________________________________
 1. **Storage and Database**:
 
    - In `modules/services/postgresql.nix`, `pg_hba.conf` grants passwordless `trust` to the entire VPN CIDR: `host all all ${allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr} trust`. The service-security plan (Decision 5) removes it along with every other `trust` entry.
-   - In `modules/services/samba/server.nix`, `hosts allow` permits `${vpnCidr}` alongside `${lanCidr}` and `${lanCidr6}`.
+   - The active `modules/services/samba/server.nix` allows only `${lanCidr}`,
+     `${lanCidr6}`, and loopback.
    - In `modules/services/samba/client.nix`, CIFS mounts are **already migrated**: `serverIp` is set to `yifuwuqi.network.lan.ipv4.host` (`10.42.0.2`), with no VPN daemon dependencies.
 
 1. **Firewall & Container Isolation**:
 
-   - In `hosts/yifuwuqi/networking/firewall.nix`, `trustedHostDestinations` permits container egress to `addresses.network.vpn.ipv4.host` in addition to LAN hosts. That is `yifuwuqi`'s own Tailscale address, so it never matches in a forward rule; removing it is cleanup.
+   - Service Security Phase 0's staged forward policy removes
+     `trustedHostDestinations` entirely. VPN Phase 3 no longer has a separate
+     source edit for that former VPN entry.
    - `modules/services/tailscale.nix` adds `tailscale0` to `networking.firewall.trustedInterfaces` on every host that imports it. Tailnet peers reach every listening port on `yifuwuqi` (including Postgres) and `yirukou` directly. On `yirukou` this makes the SSH-only `tailscale0` rule in `hosts/yirukou/networking/firewall.nix` dead config, and `yifuwuqi` lists `tailscale0` a second time in its own firewall file.
 
 1. **NetBird Leftovers**:
@@ -152,7 +159,8 @@ ______________________________________________________________________
 
 - Remove `addresses.network.vpn.ipv4.host` from `modules/services/cockpit.nix` `allowed-origins`.
 - Remove `allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr` from `modules/services/forgejo.nix` webhook allowlist.
-- Remove `addresses.network.vpn.ipv4.host` from `hosts/yifuwuqi/networking/firewall.nix` `trustedHostDestinations`.
+- Service Security Phase 0 removes the former VPN entry with the entire
+  `trustedHostDestinations` allow rule.
 - Delete unimported legacy module `modules/services/openvscode-server.nix`.
 - NetBird is retired: remove its addresses from sshd `listenAddresses` and
   AdGuard `dnsBindHosts`, then delete `modules/services/netbird.nix` and the
@@ -183,10 +191,12 @@ ______________________________________________________________________
 
 ## Phases
 
-### Phase 1: Storage and Database Services
+### Phase 1: Storage and Database Services — Deployed and Verified
 
 1. PostgreSQL: no change in this plan; the service-security plan's Phase 2 replaces `pg_hba`.
-1. In `modules/services/samba/server.nix`, remove `vpnCidr` from `hosts allow`.
+1. `modules/services/samba/server.nix` removes `vpnCidr` from `hosts allow`.
+   The subnet route, automount target, and Samba listener were verified after
+   deployment.
 
 ### Phase 2: Web, Proxy, and Development Services
 
@@ -199,7 +209,8 @@ ______________________________________________________________________
 
 ### Phase 3: Host Firewall Rules
 
-1. In `hosts/yifuwuqi/networking/firewall.nix`, remove `addresses.network.vpn.ipv4.host` from `trustedHostDestinations`. The service-security plan's Phase 0 changes how these rules are enforced; this step only removes the entry.
+1. The former `trustedHostDestinations` VPN entry was removed with Service
+   Security Phase 0; no additional source edit remains for it here.
 1. Apply Decision 7 in `modules/services/tailscale.nix`, `hosts/yirukou/networking/firewall.nix` and `hosts/yifuwuqi/networking/firewall.nix` only after Service Security Phase 0 has accepted `tailscale0 -> enp4s0` traffic to `192.168.0.1/32`.
 1. Apply the NetBird retirement cleanup from Decision 5 in
    `modules/addresses.nix` and `modules/services/netbird.nix`.
@@ -218,7 +229,7 @@ ______________________________________________________________________
 flowchart LR
     P1["Phase 1: Samba allowlist"]
     P2["Phase 2: Web and development services"]
-    P3["Phase 3: Host Firewall<br/>(Drop VPN from trustedHostDestinations)"]
+    P3["Phase 3: Tailnet firewall and NetBird cleanup"]
     P4["Phase 4: Validation & Deploy"]
     SEC0["Service Security Phase 0"]
 
@@ -236,9 +247,8 @@ Deploy and validate each phase independently:
 1. **Phase 2**: remove the proxy, Forgejo, Cockpit, and legacy vhost overlay
    entries; delete the unimported OpenVSCode module; verify trusted-LAN access
    succeeds while untrusted-VLAN access fails.
-1. **Phase 3**: after Service Security Phase 0 passes, remove the
-   `trustedHostDestinations` VPN entry, apply Decision 7, and perform the
-   NetBird retirement cleanup.
+1. **Phase 3**: after Service Security Phase 0 passes, apply Decision 7 and
+   perform the NetBird retirement cleanup.
 1. **Phase 4**: evaluate both hosts, deploy the completed phase through
    [CI/CD](../services/ci-cd.md) section 5, and verify from a Tailnet client:
    - a designated client-facing hosted domain works over the subnet route;
@@ -250,7 +260,7 @@ Deploy and validate each phase independently:
 
 - **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md)
   is the canonical dependency order.
-- **Coordinates with** the [Service Security Architecture Plan](service-security-architecture-plan.md): it owns Postgres (Decision 3 here defers to it) and the qBittorrent whitelist; its gateway rule decides what SNAT'd remote clients reach on `yifuwuqi`; its Phase 0 keeps the `192.168.0.1/32` tailnet route when it enables forward filtering.
+- **Coordinates with** the [Service Security Architecture Plan](service-security-architecture-plan.md): it owns Postgres (Decision 3 here defers to it) and the qBittorrent whitelist; its gateway rule decides what SNAT'd remote clients reach on `yifuwuqi`; its staged Phase 0 removes the former container VPN allow rule and keeps the `192.168.0.1/32` tailnet route when forward filtering activates.
 - **Unblocks** the [mTLS Architecture Plan](mtls-architecture-plan.md): Phase 2
   removes overlay access from `restrictedProxyConfig` for client-facing
   vhosts. Its Tier 2 remains LAN mTLS rather than a direct Tailscale

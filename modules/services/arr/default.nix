@@ -198,10 +198,10 @@ in
       IPAddressAllow = lib.mkForce [ ];
     };
     recyclarr.serviceConfig.EnvironmentFile = envFile;
-    # Restart with gluetun: the torrent-indexer shares its network namespace.
     "podman-torrent-indexer" = {
       after = [ "podman-gluetun.service" ];
       bindsTo = [ "podman-gluetun.service" ];
+      partOf = [ "podman-gluetun.service" ];
     };
   };
 }

@@ -141,14 +141,15 @@ in
   };
 
   systemd.services = {
-    # Both containers share gluetun's namespace, so restart with it.
     "podman-slskd" = {
       after = [ "podman-gluetun.service" ];
       bindsTo = [ "podman-gluetun.service" ];
+      partOf = [ "podman-gluetun.service" ];
     };
     "podman-soularr" = {
       after = [ "podman-gluetun.service" ];
       bindsTo = [ "podman-gluetun.service" ];
+      partOf = [ "podman-gluetun.service" ];
     };
   };
 }

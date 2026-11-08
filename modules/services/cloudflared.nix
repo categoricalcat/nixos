@@ -1,7 +1,14 @@
-{ config, ... }:
-
 {
+  config,
+  addresses,
+  lib,
+  ...
+}:
 
+let
+  network = addresses.containers.cloudflared.network;
+in
+{
   users.groups.cloudflared = { };
   users.users.cloudflared = {
     isSystemUser = true;
@@ -28,9 +35,14 @@
     environment = {
       NO_AUTOUPDATE = "true";
     };
+    networks = [ network.name ];
+    extraOptions = [ "--ip=${network.ipv4.host}" ];
   };
 
   systemd.services."podman-cloudflared" = {
+    serviceConfig.ExecStartPre = lib.mkBefore [
+      "${config.virtualisation.podman.package}/bin/podman network create --ignore --driver bridge --interface-name ${network.interface} --subnet ${network.ipv4.cidr} --gateway ${network.ipv4.gateway} ${network.name}"
+    ];
     wants = [
       "network-online.target"
       "sops-nix.service"

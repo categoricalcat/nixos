@@ -217,6 +217,22 @@ in
     ipv6 = "fd7a:115c:a1e0::53";
   };
 
+  privateDestinations = {
+    ipv4 = [
+      "127.0.0.0/8"
+      "10.0.0.0/8"
+      "100.64.0.0/10"
+      "169.254.0.0/16"
+      "172.16.0.0/12"
+      "192.168.0.0/16"
+    ];
+    ipv6 = [
+      "::1/128"
+      "fc00::/7"
+      "fe80::/10"
+    ];
+  };
+
   monitoring = {
     centralHost = "yifuwuqi";
     proxyHost = "yirukou";
@@ -668,17 +684,19 @@ in
             size = 24;
           }
         ];
+        cloudflared.network = {
+          name = "cloudflared";
+          interface = "cloudflared0";
+          ipv4 = {
+            cidr = "10.89.0.0/24";
+            gateway = "10.89.0.1";
+            host = "10.89.0.2";
+          };
+        };
 
-        isolation = {
-          sourceSubnets = [
-            defaultSubnet
-          ]
-          ++ (map (pool: pool.base) subnetPools);
-          blockedDestinationSubnets = [
-            "10.0.0.0/8"
-            "172.16.0.0/12"
-            "192.168.0.0/16"
-          ];
+        isolation = rec {
+          applicationSourceSubnets = [ defaultSubnet ] ++ (map (pool: pool.base) subnetPools);
+          sourceSubnets = applicationSourceSubnets ++ [ cloudflared.network.ipv4.cidr ];
         };
       };
     };

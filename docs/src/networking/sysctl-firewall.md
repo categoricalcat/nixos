@@ -139,20 +139,29 @@ LAN addresses through the advertised subnet, not only direct Tailscale IPs.
 configures least-privilege rules for container traffic to the host:
 
 - Trusted interface: `tailscale0`.
-- Allowed on `eno1` (LAN): SSH, AdGuard Home web UI, AdGuard Home DNS (`53`).
-  The port rules are family-agnostic, so they cover LAN IPv4 and the ULA
-  `fd75:c55f:6d19:1::2` alike; no explicit `ip6` rules are required.
+- Allowed on `eno1` (LAN): SSH, AdGuard Home web UI, AdGuard Home DNS (`53`),
+  and Samba/NetBIOS (`139`, `445`, `137`, `138`). The port rules are
+  family-agnostic, so they cover LAN IPv4 and the ULA `fd75:c55f:6d19:1::2`
+  alike; no explicit `ip6` rules are required.
 - Gateway traffic: `yirukou` reverse proxy and DNS resolver traffic allowed.
 - Container least-privilege isolation:
-  - DNS resolution: UDP/TCP `53` allowed from container subnets (`10.88.0.0/16`, `172.17.0.0/16`, `172.18.0.0/16`).
-  - Scoped host API access: TCP `24686` (Lidarr for soularr) and TCP `24888` (SearXNG for firecrawl) allowed explicitly.
+  - DNS resolution: UDP/TCP `53` allowed from container subnets
+    (`10.88.0.0/16`, `10.89.0.0/24`, `172.17.0.0/16`, `172.18.0.0/16`).
+  - Scoped host API access: TCP `24686` (Lidarr for soularr) and TCP `24888`
+    (SearXNG for firecrawl) allowed only from application container subnets;
+    Cloudflared is excluded.
   - Default drop: All other host ports (SSH `24212`, Cockpit `24091`, PostgreSQL `5432`, Valkey `24379`, Prometheus `24090`, Samba `445`, Exporters) are dropped for container subnets.
-- Forwarding isolation is **planned, not active**: the file declares
-  `extraForwardRules`, but does not enable `networking.firewall.filterForward`,
-  so nixpkgs does not install the forward chain. Until
-  [Service Security Phase 0](../plans/service-security-architecture-plan.md)
-  lands, do not rely on these rules to block containers from forwarding to
-  private subnets.
+  - Cloudflared has the static `10.89.0.2` source on `cloudflared0`; its only
+    explicit TCP host allowance is SSH `24212`, and it is excluded from the
+    application API rule.
+- The active forwarding configuration enables `filterForward`. It installs a
+  default-drop forward chain:
+  container sources are logged at a rate limit and dropped for private IPv4
+  destinations, then may leave only through `eno1` or `enp4s0`.
+  `tailscale0 -> enp4s0` remains allowed only for `192.168.0.1/32`.
+- NixOS accepts DNAT before custom forward rules. FlareSolverr is consequently
+  loopback-published; the remaining published container ports move behind the
+  local ingress in Service Security Phase 3.
 
 ## Source Files
 

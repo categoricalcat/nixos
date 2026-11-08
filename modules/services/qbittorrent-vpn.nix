@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   allAddresses,
   ...
@@ -48,6 +49,16 @@ let
     };
   };
   flaresolverrRef = "${flaresolverrImage.imageName}:${flaresolverrImage.imageTag}";
+  gluetunUnit = "podman-gluetun.service";
+  # Podman cannot replace Gluetun while a shared-network-namespace container remains.
+  gluetunConsumers = [
+    "soularr"
+    "slskd"
+    "torrent-indexer"
+    "flaresolverr"
+    "qbittorrent"
+  ];
+  gluetunConsumerUnits = map (name: "podman-${name}.service") gluetunConsumers;
 in
 {
   sops.secrets = {
@@ -93,7 +104,7 @@ in
         "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
         "${addrs.network.lan.ipv4.host}:${toString addrs.services.qbittorrent.port}:8080"
         "127.0.0.1:8889:8888"
-        "${toString addrs.services.flaresolverr.port}:${toString addrs.services.flaresolverr.internalPort}"
+        "127.0.0.1:${toString addrs.services.flaresolverr.port}:${toString addrs.services.flaresolverr.internalPort}"
         # Containers sharing gluetun's namespace publish through it
         "127.0.0.1:${toString addrs.services.torrent-indexer.port}:${toString addrs.services.torrent-indexer.port}"
         "${addrs.network.lan.ipv4.host}:${toString addrs.services.torrent-indexer.port}:${toString addrs.services.torrent-indexer.port}"
@@ -140,9 +151,21 @@ in
     ];
 
     services = {
+      "podman-gluetun".serviceConfig = {
+        ExecStartPre = lib.mkBefore [
+          "${pkgs.systemd}/bin/systemctl stop ${lib.concatStringsSep " " gluetunConsumerUnits}"
+          "${config.virtualisation.podman.package}/bin/podman rm -f --ignore ${lib.concatStringsSep " " gluetunConsumers}"
+        ];
+        # Queue after the namespace owner is ready; consumers order after it.
+        ExecStartPost = [
+          "${pkgs.systemd}/bin/systemctl start --no-block ${lib.concatStringsSep " " gluetunConsumerUnits}"
+        ];
+      };
+
       "podman-qbittorrent" = {
-        after = [ "podman-gluetun.service" ];
-        bindsTo = [ "podman-gluetun.service" ];
+        after = [ gluetunUnit ];
+        bindsTo = [ gluetunUnit ];
+        partOf = [ gluetunUnit ];
         preStart =
           let
             conf = "/var/lib/container-volumes/qbittorrent/qBittorrent/qBittorrent.conf";
@@ -178,8 +201,9 @@ in
       };
 
       "podman-flaresolverr" = {
-        after = [ "podman-gluetun.service" ];
-        bindsTo = [ "podman-gluetun.service" ];
+        after = [ gluetunUnit ];
+        bindsTo = [ gluetunUnit ];
+        partOf = [ gluetunUnit ];
         # imageStream would re-stream the whole image on every (re)start
         preStart = "podman image exists ${flaresolverrRef} || ${flaresolverrImage} | podman load";
       };

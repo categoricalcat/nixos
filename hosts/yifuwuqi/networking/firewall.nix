@@ -8,12 +8,15 @@
 let
   nftSet = values: lib.concatStringsSep ", " values;
   containerSourceSubnets = nftSet addresses.containers.isolation.sourceSubnets;
-  privateDestinationSubnets = nftSet addresses.containers.isolation.blockedDestinationSubnets;
-  trustedHostDestinations = nftSet [
-    addresses.network.vpn.ipv4.host
-    addresses.network.lan.ipv4.host
-    allAddresses.hosts.yirukou.network.lan.ipv4.host
-  ];
+  applicationContainerSourceSubnets = nftSet addresses.containers.isolation.applicationSourceSubnets;
+  privateDestinationSubnets = nftSet allAddresses.privateDestinations.ipv4;
+  wanInterfaces = nftSet (
+    map (interface: "\"${interface}\"") [
+      addresses.network.lan.interface
+      addresses.network.secondary.interface
+    ]
+  );
+  cloudflaredSource = addresses.containers.cloudflared.network.ipv4.host;
 in
 
 {
@@ -21,15 +24,11 @@ in
     firewall = {
       enable = true;
       allowPing = true;
-      # Strict rpfilter (the default) drops inbound packets whose source
-      # address doesn't pass a FIB reverse-path check on the arriving
-      # interface.  Because yifuwuqi routes all traffic through a Tailscale
-      # exit node, return traffic arrives on tailscale0 with source IPs that
-      # fail strict rpfilter.  "loose" only verifies the source is routable
-      # via *any* interface, which is compatible with Tailscale + exit nodes.
+      # Gateway failover can make a valid return path differ from ingress.
       checkReversePath = "loose";
       logReversePathDrops = true;
       logRefusedPackets = true;
+      filterForward = true;
       allowedTCPPorts = [ ];
       allowedUDPPorts = [
         5353 # mDNS/Avahi
@@ -60,13 +59,15 @@ in
         # Allow yirukou reverse proxy and DNS resolver to access backend services
         ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} accept comment "allow yirukou gateway"
 
+        ip saddr ${cloudflaredSource} tcp dport ${toString addresses.ssh.listenPort} accept comment "allow cloudflared ssh fallback"
+
         # Container to Host: Principle of Least Privilege
         # 1. Allow containers to reach host DNS (Aardvark-DNS on the bridge gateway; AdGuard Home binds internal IPs only)
         ip saddr { ${containerSourceSubnets} } udp dport 53 accept comment "allow container dns udp"
         ip saddr { ${containerSourceSubnets} } tcp dport 53 accept comment "allow container dns tcp"
 
-        # 2. Allow specific container integrations to required host APIs only
-        ip saddr { ${containerSourceSubnets} } tcp dport {
+        # 2. Exclude Cloudflared from application-container host APIs.
+        ip saddr { ${applicationContainerSourceSubnets} } tcp dport {
           ${toString addresses.services.lidarr.port},
           ${toString addresses.services.searxng.port}
         } accept comment "allow containers to specific host apis"
@@ -74,10 +75,11 @@ in
 
       extraForwardRules = ''
         # Container forwarding isolation:
-        # 1. Allow containers to reach host destinations
-        ip saddr { ${containerSourceSubnets} } ip daddr { ${trustedHostDestinations} } accept comment "allow containers to host"
-        # 2. Block containers from reaching other private subnets
+        ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } limit rate 5/second burst 10 packets log prefix "container private drop: " level warn
         ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } drop comment "drop container to private networks"
+        ip saddr { ${containerSourceSubnets} } oifname { ${wanInterfaces} } accept comment "allow container wan egress"
+
+        iifname "${addresses.network.tailscale.interface}" oifname "${addresses.network.secondary.interface}" ip daddr ${addresses.network.secondary.ipv4.gatewayRoute} accept comment "allow tailscale fallback gateway"
       '';
     };
 

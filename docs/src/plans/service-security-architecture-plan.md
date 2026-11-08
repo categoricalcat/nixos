@@ -1,6 +1,6 @@
 # Service Security Architecture & Defense-in-Depth Plan
 
-## Status: DRAFT — repository reviewed 2026-11-08; deployment gates require revalidation
+## Status: DRAFT — Phase 0 deployed and verified 2026-11-08
 
 ## Objective
 
@@ -33,15 +33,20 @@ ______________________________________________________________________
 
 ## Evidence Status
 
-- **Repository-verified**: the configuration gaps and target files named below
-  were rechecked on 2026-11-08.
+- **Repository-verified**: Phase 0's configuration changes are active:
+  forward filtering, shared private destinations, Cloudflared's source-scoped
+  SSH path, FlareSolverr loopback publishing, and Gluetun consumer restoration.
+  The remaining gaps and every live gate still require revalidation.
 - **Live-host verified 2026-11-08**: `yifuwuqi` has its preferred default route
   through `10.42.0.1`; this does not replace the phase-specific firewall,
   listener, Prometheus, and Loki gates.
+- **Phase 0 verified 2026-11-08**: Gluetun proxy egress reached
+  `cp.cloudflare.com`, private traffic to `192.168.0.1` timed out,
+  FlareSolverr refused the LAN address, and the Tailnet fallback route replied.
 - **External or operational verification pending**: current listener owners,
-  Podman DNAT reachability, the SSH-only Cloudflare tunnel mapping, and
-  client-facing hosted-site classification must be rechecked immediately
-  before their affected phase.
+  Podman DNAT reachability, and client-facing hosted-site classification must
+  be rechecked immediately before their affected phase. The Cloudflare tunnel
+  mapping was confirmed SSH-only on 2026-11-08.
 
 ______________________________________________________________________
 
@@ -64,26 +69,37 @@ must not be treated as current runtime evidence.
   must be re-measured.
 - Service ports moved to the 24xxx range (`dff580b`).
 
+### Activated 2026-11-08
+
+- `filterForward = true` now installs the forward chain. Container sources
+  drop private IPv4 destinations with rate-limited logs, may use only the two
+  WAN interfaces, and preserve `tailscale0 -> enp4s0` access to
+  `192.168.0.1/32`.
+- `privateDestinations` centralizes IPv4 and IPv6 private ranges for the
+  firewall and Forgejo runner. The blanket container-to-`yirukou` forward
+  accept is gone.
+- Cloudflared has a static bridge source whose only explicit TCP host
+  allowance is `yifuwuqi` SSH; it is excluded from application API access.
+  FlareSolverr publishes only on loopback.
+- `podman-gluetun` removes qBittorrent, FlareSolverr, torrent-indexer, slskd,
+  and Soularr before replacement, allowing Gluetun itself to start.
+- `ExecStartPost` queues their starts once Gluetun is active. The corrected
+  deployment has all five units active and FlareSolverr responds on loopback.
+
 ### Gaps
 
-1. **Container forward isolation is not loaded.**
-   - `networking.firewall.filterForward` is absent on `yifuwuqi` and defaults
-     to `false`; nixpkgs renders `extraForwardRules` only when it is `true`.
-     The source configuration therefore does not install its intended forward
-     isolation. Phase 0 must confirm the generated and deployed ruleset.
-   - Until that check and Phase 0 land, container reachability to the LAN,
-     `yirukou`, `192.168.0.1`, and the tailnet remains an operational
-     verification target. `docs/src/networking/sysctl-firewall.md` currently
-     overstates this isolation.
-   - Enabling `filterForward` sets a drop policy, so container egress to WAN and the Tailscale route to `192.168.0.1/32` each need an explicit accept.
-   - The blocked set (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) lacks `100.64.0.0/10`, `169.254.0.0/16` and IPv6. `modules/services/forgejo-runner.nix` keeps its own, fuller list.
-   - In the existing accept for `trustedHostDestinations`, only the `yirukou` entry is a forward destination; the other two are `yifuwuqi`'s own addresses and hit the input chain. Containers may therefore reach every `yirukou` port.
-   - Repository evidence: `hosts/yifuwuqi/networking/firewall.nix` defines
-     `extraForwardRules` without `filterForward = true`. The live ruleset and
-     packet path remain a Phase 0 gate.
+1. **Forward isolation and consumer restoration are verified.**
+   - The active source has the intended default-drop forward chain. Gluetun
+     proxy egress succeeds to the WAN and times out to `192.168.0.1`; its
+     consumers are active.
+   - NixOS evaluates `ct status dnat accept` before `extraForwardRules`.
+     Re-probe published-port reachability from a LAN client after activation.
+   - Gluetun and its five consumers are active after the corrected deployment.
+     Container WAN acceptance remains a separate runtime gate.
 1. **Published Podman ports bypass the input chain.** Netavark DNATs them, so their packets traverse forward, and nixpkgs puts `ct status dnat accept` ahead of `extraForwardRules`. Re-probe this from a LAN client before rollout. Published on LAN addresses:
    - qBittorrent `24080`, torrent-indexer `24181` and slskd `24530` on `10.42.0.2`;
-   - flaresolverr `24191` on all addresses.
+   - FlareSolverr `24191` is loopback-only in staged source; confirm it is no
+     longer reachable from the LAN after activation.
    - qBittorrent's `AuthSubnetWhitelist` includes `10.42.0.0/24`, so LAN clients get its WebUI without a login.
 1. **The gateway rule admits everything.** The configured
    `ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} accept`
@@ -105,7 +121,6 @@ must not be treated as current runtime evidence.
      administration is through SSH on `yifuwuqi`.
 1. **Misleading config:**
    - `IPAddressAllow`/`IPAddressDeny = lib.mkForce [ ]` in `modules/services/arr/default.nix` override nothing today but would silently cancel any future per-unit filter.
-   - The `checkReversePath` comment in `hosts/yifuwuqi/networking/firewall.nix` cites an exit node; `hosts/yifuwuqi/services.nix` sets `exitNodeHost = null`.
    - NixOS's default `services.openssh.openFirewall` behavior opens `24212`
      broadly unless it is disabled. sshd binds explicit internal addresses, so
      nothing should answer on `yirukou` WANs; confirm the rendered firewall
@@ -201,16 +216,22 @@ flowchart LR
 
 P2 and P5 do not depend on the other phases.
 
-### Phase 0: Forward Isolation
+### Phase 0: Forward Isolation — Deployed and Verified
 
-1. `hosts/yifuwuqi/networking/firewall.nix`: `filterForward = true` with the Decision 1 rules; fix the `checkReversePath` comment.
-1. Preserve cloudflared WAN egress and add a source-scoped
-   cloudflared-to-`yifuwuqi` SSH allowance for its fail-safe tunnel; do not
-   add a cloudflared-to-`yirukou` or local-ingress allowance.
-1. `modules/addresses.nix`: add `privateDestinations`; `modules/services/forgejo-runner.nix` reads it.
-1. `modules/services/qbittorrent-vpn.nix`: flaresolverr publish on `127.0.0.1`;
-   Prowlarr already uses that loopback endpoint.
-1. `docs/src/networking/sysctl-firewall.md`: describe the enforced rules.
+1. `hosts/yifuwuqi/networking/firewall.nix`: enables `filterForward`, adds the
+   ordered WAN and fallback-route accepts, removes the blanket
+   `trustedHostDestinations` accept, and fixes the reverse-path comment.
+1. `modules/services/cloudflared.nix`: creates a dedicated static bridge and
+   makes its SSH allowance source-scoped; no Cloudflared exception reaches
+   `yirukou` or a future local ingress.
+1. `modules/addresses.nix`: provides `privateDestinations`;
+   `modules/services/forgejo-runner.nix` reads it.
+1. `modules/services/qbittorrent-vpn.nix`: publishes FlareSolverr on
+   `127.0.0.1` and handles Gluetun's shared-network-namespace consumers
+   before replacement. Its post-start restoration queues the consumers
+   after Gluetun starts.
+1. `docs/src/networking/sysctl-firewall.md`: describes the active rules and
+   remaining runtime gates.
 
 ### Phase 1: Gateway and Exporter Sources
 
@@ -251,10 +272,11 @@ Fleet sequencing is defined by the [Architecture Security Rollout](architecture-
 This plan's Phase 0 must precede VPN Phase 3, and Phase 3 must precede the
 internal mTLS phases.
 
-1. **Phase 0 gate**:
-   - From a LAN client: `nc -zv 10.42.0.2 24191` fails.
-   - As root on `yifuwuqi`, from a container that has `nc`: `nc -zv 192.168.0.1 80` fails and appears on the container-drop panel; `curl -sI https://cp.cloudflare.com` still works.
-   - From a tailnet client: `curl -I http://192.168.0.1/` still works.
+1. **Phase 0 gate (passed 2026-11-08)**:
+   - `nc -zv 10.42.0.2 24191` refused.
+   - The Gluetun HTTP proxy returned `204` from `https://cp.cloudflare.com`
+     and timed out to `http://192.168.0.1/`.
+   - A Tailnet client reached `192.168.0.1` through the fallback route.
 1. **Phase 1 gate**: from a LAN client other than `yifuwuqi`, `curl http://10.42.0.1:9100/metrics` fails; `up{host="yirukou"}` stays `1` for every job; Loki shows no new refusals from `10.42.0.1` on proxied ports.
 1. **Phase 2 gate**: `psql -h 127.0.0.1 -U postgres` without a password fails; Grafana, Forgejo, Attic and `up{job="postgres"}` stay healthy; qBittorrent administration is available only through an SSH session to `yifuwuqi`.
 1. **Phase 3 gate**: every designated client-facing `*.fufu.land` vhost answers through the ingress; `ss -tlnH` on `yifuwuqi` shows no backend on `0.0.0.0` or `*` beyond the ingress, Samba, DNS, SSH and the container-facing exceptions; from a LAN client, `nc -zv 10.42.0.2 24080` fails.

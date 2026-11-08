@@ -16,7 +16,7 @@ ______________________________________________________________________
 │  └───────────▲─────────────┘     └───────────▲───────────┘  │
 └──────────────┼───────────────────────────────┼──────────────┘
                │ SMB2/3 Protocol               │
-               │ (LAN: 10.42.0.2 / VPN)        │
+               │ (LAN 10.42.0.2; Tailnet via yirukou)       │
 ┌──────────────┴───────────────────────────────┴──────────────┐
 │                    Samba Client Gang                        │
 │        (yitaishi, yixiaoqing, yirukou, yichuang)            │
@@ -35,7 +35,9 @@ ______________________________________________________________________
 
 Hosted on `yifuwuqi` using native NixOS Samba integration:
 
-- **Network Binding**: Listens on LAN (`10.42.0.2`) and VPN interfaces.
+- **Access Control**: `hosts allow` accepts trusted LAN/ULA and loopback
+  sources. Tailnet clients reach `10.42.0.2` through `yirukou`'s SNATed
+  subnet route; the direct VPN CIDR is excluded.
 - **Configured Shares**:
   - **`[share]`**: General-purpose high-capacity storage at `/srv/shares/share`. Directory permissions `0775` with `create mask = 0664` and `directory mask = 0775`.
   - **`[the.files]`**: Bind-mount of `/home/yi/the.files` (the primary dotfiles and NixOS repository root). Allows guest read access with authenticated read-write for user `yi`.

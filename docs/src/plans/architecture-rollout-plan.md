@@ -1,6 +1,6 @@
 # Architecture Security Rollout
 
-## Status: DRAFT — repository and read-only host evidence reviewed 2026-11-08
+## Status: DRAFT — Phase 0–1 deployed and verified 2026-11-08
 
 ## Objective
 
@@ -13,12 +13,12 @@ acceptance checks.
 
 ### Repository-Verified
 
-- [Service Security Architecture](service-security-architecture-plan.md) and
-  [VPN to LAN Migration](vpn-to-lan-migration-plan.md) still have their
-  planned rollout phases outstanding.
-  In particular, `yifuwuqi` does not enable
-  `networking.firewall.filterForward`, and `tailscale0` is still trusted on
-  every host importing `modules/services/tailscale.nix`.
+- [Service Security Phase 0](service-security-architecture-plan.md#phase-0-forward-isolation)
+  and [VPN to LAN Phase 1](vpn-to-lan-migration-plan.md#phase-1-storage-and-database-services)
+  were activated on `yifuwuqi`. The active generation declares
+  `networking.firewall.filterForward`, explicit container WAN and fallback-route
+  allowances, and a loopback-only FlareSolverr publish; Samba's active
+  allowlist excludes the VPN CIDR. Later phases remain outstanding.
 - [Impermanence on yirukou](impermanence-yirukou-plan.md) is not implemented:
   the flake has no impermanence input or module, and
   `hosts/yirukou/hardware.nix` still configures an Ext4 root.
@@ -31,6 +31,25 @@ acceptance checks.
 - The existing `fufu.land` vhost is an HTTP-only static response. It is the
   selected public-edge canary and must become the first HTTPS,
   Cloudflare-authenticated listener.
+
+### Preflight Evidence 2026-11-08
+
+- The Cloudflare dashboard mapping was confirmed SSH-only.
+- `yitaishi` installs `10.42.0.0/24` through `tailscale0` and reaches
+  `10.42.0.2`.
+
+### Deployment Evidence 2026-11-08
+
+- The 09:20 activation created `cloudflared0` and started Cloudflared and
+  Gluetun successfully.
+- The corrected 09:28 activation restored qBittorrent, FlareSolverr,
+  torrent-indexer, slskd, and Soularr. FlareSolverr answers on loopback and
+  Cloudflared owns `10.89.0.2`.
+- The Gluetun HTTP proxy returned `204` from `https://cp.cloudflare.com` and
+  timed out to `192.168.0.1`; `10.42.0.2:24191` refused connections. A Tailnet
+  client reached `192.168.0.1` through the advertised fallback route.
+- Samba listens on `10.42.0.2:445` with its LAN-only allowlist. `yitaishi` has
+  an enabled automount for `//10.42.0.2/share`.
 
 ### Live-Host Verified 2026-11-08
 
@@ -45,8 +64,7 @@ acceptance checks.
 ### External or Operational Verification Pending
 
 - Cloudflare DNS and Authenticated Origin Pull state before the conditional
-  edge tier; confirm the cloudflared dashboard mapping remains SSH-only.
-- Tailnet route approval and client adoption of the advertised subnet route.
+  edge tier.
 - The first public hostname and its rollout date.
 
 ## Decisions
@@ -180,15 +198,16 @@ flowchart TD
 
 ## Rollout Checklist
 
-Check an item only after its linked plan's deployment and acceptance gate pass.
+Check deployment items after activation; check acceptance items after their
+runtime gates pass.
 
 - [x] Resolve Cloudflared, internal-administration, NetBird/Tailnet,
   trusted-LAN versus untrusted-VLAN, static-CA/exporter-frontend, and
   certificate-rotation policy decisions.
-- [ ] Close the Phase 0 admission gates for container WAN egress, SSH-only
+- [x] Close the Phase 0 admission gates for container WAN egress, SSH-only
   cloudflared mapping, and subnet-route use.
-- [ ] Deploy [Service Security Phase 0](service-security-architecture-plan.md#phase-0-forward-isolation).
-- [ ] Deploy [VPN to LAN Phase 1](vpn-to-lan-migration-plan.md#phase-1-storage-and-database-services).
+- [x] Deploy [Service Security Phase 0](service-security-architecture-plan.md#phase-0-forward-isolation).
+- [x] Deploy [VPN to LAN Phase 1](vpn-to-lan-migration-plan.md#phase-1-storage-and-database-services).
 - [ ] Deploy the independent Service Security Phase 2 application-auth and
   Phase 5 sandboxing work when their decisions are resolved.
 - [ ] Deploy [VPN to LAN Phase 2](vpn-to-lan-migration-plan.md#phase-2-web-proxy-and-development-services).
@@ -210,4 +229,3 @@ Check an item only after its linked plan's deployment and acceptance gate pass.
 
 No cross-plan design choice remains open. Activate the conditional edge tier
 when the `fufu.land` canary is scheduled for deployment.
-   
