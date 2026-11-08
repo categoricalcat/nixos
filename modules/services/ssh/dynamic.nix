@@ -36,19 +36,23 @@ let
     ) (builtins.attrValues allAddresses.hosts)
   );
 
-  forgejoHost = allAddresses.hosts.yifuwuqi;
-  forgejoDomain = forgejoHost.services.forgejo.domain or null;
-  forgejoLanIp = forgejoHost.network.lan.ipv4.host;
-  forgejoPort = forgejoHost.ssh.listenPort;
+  yifuwuqi = allAddresses.hosts.yifuwuqi;
+  yifuwuqiLanIp = yifuwuqi.network.lan.ipv4.host;
+  yifuwuqiPort = yifuwuqi.ssh.listenPort;
 
-  forgejoRewrite =
-    lib.optionalString (forgejoDomain != null && forgejoLanIp != null && forgejoPort != null)
-      ''
-        Host ${forgejoDomain}
-            HostName ${forgejoLanIp}
-            Port ${toString forgejoPort}
-            HostKeyAlias ${forgejoHost.hostName}
-      '';
+  mkYifuwuqiRewrite =
+    domain:
+    lib.optionalString (domain != null && yifuwuqiLanIp != null && yifuwuqiPort != null) ''
+      Host ${domain}
+          HostName ${yifuwuqiLanIp}
+          Port ${toString yifuwuqiPort}
+          HostKeyAlias ${yifuwuqi.hostName}
+    '';
+
+  yifuwuqiRewrites = lib.concatMapStrings mkYifuwuqiRewrite [
+    (yifuwuqi.services.forgejo.domain or null)
+    (yifuwuqi.ssh.domain or null)
+  ];
 in
 ''
   IdentityFile ${keys.paths.userGitSshKey "~"}
@@ -57,5 +61,5 @@ in
       IdentityFile ${keys.paths.sshHostKey}
 
   ${dynamicSshConfig}
-  ${forgejoRewrite}
+  ${yifuwuqiRewrites}
 ''

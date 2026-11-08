@@ -19,9 +19,10 @@ let
       host = allAddresses.hosts.${name};
       resolvedAliases = lib.filter (a: (ipFor host a) != null) allAddresses.aliases;
       port = host.ssh.listenPort or null;
-      serviceDomains = lib.optional (
-        host.services.forgejo.domain or null != null
-      ) host.services.forgejo.domain;
+      serviceDomains = lib.filter (domain: domain != null) [
+        (host.services.forgejo.domain or null)
+        (host.ssh.domain or null)
+      ];
       rawNames = lib.unique (
         [ name ]
         ++ serviceDomains

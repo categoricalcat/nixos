@@ -30,22 +30,21 @@ Host *
     IdentityFile ~/.ssh/id_ed25519
     ExitOnForwardFailure yes
 
-Host ssh.fufu.land
-    HostName ssh.fufu.land
+# Out-of-band Cloudflare tunnel; its only permitted backend is yifuwuqi sshd.
+Host cloudflare.fufu.land
+    HostName cloudflare.fufu.land
     User yi
     ProxyCommand cloudflared access ssh --hostname %h
+    HostKeyAlias yifuwuqi
     ServerAliveInterval 60
     ServerAliveCountMax 3
     Compression yes
-    # Out-of-band backup path: the backend host key is not pinned because it
-    # may be repointed during maintenance.
-    StrictHostKeyChecking accept-new
 
 Host ssh.workd.land
-    HostName ssh.fufu.land
+    HostName cloudflare.fufu.land
     User workd
     ProxyCommand cloudflared access ssh --hostname %h
+    HostKeyAlias yifuwuqi
     ServerAliveInterval 60
     ServerAliveCountMax 3
     Compression yes
-    StrictHostKeyChecking accept-new

@@ -111,6 +111,10 @@ ______________________________________________________________________
   `ip6` (`fd75:c55f:6d19:1::/64` ↔ `fd75:c55f:6d19:2::/64`) as they are for
   IPv4.
 - **Outbound NAT**: NAT44 remains enabled; there is no NAT66 or NPTv6.
+- **Tailnet ingress SNAT**: The `yirukou-nat` input chain source-NATs
+  `tailscale0` connections to `10.42.0.1` TCP `80`/`443` to `10.42.0.1`.
+  Tailscale masquerades only forwarded subnet-route traffic, so without it
+  nginx's LAN-only allowlist would refuse Tailnet clients.
 - **DNS intercept**: TCP/UDP 53 from LAN, VLAN 42, and Tailscale is redirected
   to yirukou AdGuard Home. Exceptions: queries already aimed at AGH IPv4 or
   ULA binds, local addresses, MagicDNS (`100.100.100.100` and

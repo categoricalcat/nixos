@@ -12,8 +12,6 @@ let
   trustedProxyCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
     allAddresses.hosts.yirukou.network.lan.ipv6.cidr
-    # allAddresses.hosts.yifuwuqi.network.tailscale.ipv4.cidr
-    allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr
   ];
   restrictedProxyConfig = ''
     ${builtins.concatStringsSep "\n" (map (cidr: "allow ${cidr};") trustedProxyCidrs)}
@@ -65,17 +63,6 @@ in
           extraConfig = ''
             add_header Content-Type text/plain;
             return 200 "yirukou.local ok";
-          '';
-        };
-      };
-
-      "${addresses.network.vpn.ipv4.host}" = {
-        serverName = "${addresses.network.vpn.ipv4.host}";
-        forceSSL = false;
-        locations."/" = {
-          extraConfig = ''
-            add_header Content-Type text/plain;
-            return 200 "${addresses.network.vpn.ipv4.host} ok";
           '';
         };
       };

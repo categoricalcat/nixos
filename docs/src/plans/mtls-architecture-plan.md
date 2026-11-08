@@ -64,11 +64,11 @@ ______________________________________________________________________
   mapping must remain limited to SSH and must not target the local ingress or
   hosted application backends. Authenticated Origin Pulls do not apply to this
   tunnel traffic.
-- **Access Control**: `restrictedProxyConfig` currently allows `yirukou` LAN
-  IPv4/IPv6 CIDRs and `yifuwuqi`'s VPN IPv4 CIDR; the `yifuwuqi` Tailscale
-  CIDR is commented out. VPN to LAN Phase 2 removes the remaining overlay
-  CIDR for designated client-facing vhosts; administrative services stop being
-  browser-facing. The untrusted VLAN CIDRs are intentionally absent.
+- **Access Control**: VPN to LAN Phase 2 limits `restrictedProxyConfig` to
+  `yirukou` LAN IPv4/IPv6 CIDRs; subnet-route Tailnet clients reach nginx
+  SNAT'd as `10.42.0.1`. Administrative services stop being browser-facing
+  under the service-security plan. The untrusted VLAN CIDRs are intentionally
+  absent.
 - **Inter-Host Traffic**: Reverse proxy on `yirukou` passes traffic to `yifuwuqi` over plain HTTP (`http://${yifuwuqiLan}:${port}`), one backend port per service. The firewall side is in the service-security plan.
 - **Monitoring**: Prometheus on `yifuwuqi` scrapes ten exporter jobs on `yirukou` over plain HTTP (node, smokeping, blackbox, systemd, process, smartctl, nginx, adguard, unbound, redis), generated from `allAddresses.monitoring.exporters` in `modules/services/monitoring/exporters.nix` and `modules/services/monitoring/prometheus.nix`. Exporters on `yifuwuqi` (the central host) listen on loopback.
 - **Log Shipping**: Vector on `yirukou` pushes the journal to Loki at `http://10.42.0.2:24100` (`modules/services/monitoring/promtail.nix`); Loki runs with `auth_enabled = false`.

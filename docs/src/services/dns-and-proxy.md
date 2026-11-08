@@ -60,6 +60,7 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
 - **DNS Rewrites**:
   - `*.fufu.land` $\\to$ `10.42.0.1` (Points all subdomains to `yirukou` reverse proxy)
   - `smb.fufu.land` $\\to$ `10.42.0.2` (Points SMB file share directly to `yifuwuqi`)
+  - `ssh.fufu.land` $\\to$ `10.42.0.2` (Plain SSH to `yifuwuqi` on `24212` over the LAN and the Tailnet subnet route; the Cloudflare tunnel is `cloudflare.fufu.land`)
   - Dynamic host rewrites generated for `.lan`/`.local`/`.ts`/`.nb` aliases. `.lan` and `.local` answer both A and AAAA (the LAN ULA), so internal names are reached over IPv6; `.ts`/`.nb` and the `fufu.land` wildcards stay IPv4-only because nginx and its backends stay on IPv4.
 - **Encrypted DNS Endpoints**:
   - DNS-over-TLS (DoT): Port `853` on `dns.fufu.land` (manual clients; AGH DDR omits DoT without IP SANs on the ACME cert)
@@ -127,7 +128,7 @@ ______________________________________________________________________
 
 ### 2.2 Access Control & Security
 
-- `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`) and Tailscale/NetBird VPNs, followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts to ensure untrusted VLAN and external networks cannot access backend services.
+- `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`), followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts to ensure untrusted VLAN, overlay, and external networks cannot access backend services. Tailnet clients reach them through `yirukou`'s subnet route, SNAT'd to `10.42.0.1`.
 - WebSocket proxying (`proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) enabled for Grafana, Cockpit, GoAccess, SillyTavern, and Arr apps.
 
 ______________________________________________________________________

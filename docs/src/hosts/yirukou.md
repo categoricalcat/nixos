@@ -104,6 +104,7 @@ ______________________________________________________________________
 - **Bogon Filtering**: Raw prerouting chain drops 14 IPv4 bogon subnets (`0.0.0.0/8`, `10.0.0.0/8`, `100.64.0.0/10`, `127.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, etc.) entering WAN interfaces. No IPv6 bogon set is needed.
 - **Forwarding & NAT**:
   - Outbound NAT44 masquerading on WANs for LAN, VLAN 42, and Tailscale traffic; no NAT66.
+  - Input SNAT: `tailscale0` connections to `10.42.0.1` TCP `80`/`443` are rewritten to source `10.42.0.1`, so subnet-route Tailnet clients pass nginx's LAN-only allowlist.
   - Forwarding enabled between Tailscale and LAN subnet `10.42.0.0/24`.
   - LAN and VLAN 42 are isolated from each other across all forwarding traffic.
 - **IPv6 WAN policy**: IPv6 is dropped on both WANs in prerouting, input,
@@ -149,7 +150,7 @@ ______________________________________________________________________
 ### 5.2 Nginx Ingress Reverse Proxy
 
 - Wildcard ACME certificate for `*.fufu.land` and `fufu.land` via Cloudflare DNS-01 API challenge.
-- Access control (`restrictedProxyConfig`): Allows trusted LAN (`10.42.0.0/24`) and VPN CIDRs, denies public access to internal dashboards.
+- Access control (`restrictedProxyConfig`): Allows only the trusted LAN (`10.42.0.0/24`, `fd75:c55f:6d19:1::/64`) and denies everything else, including direct requests to the Tailscale address `100.69.0.1`. Subnet-route Tailnet clients arrive SNAT'd as `10.42.0.1`.
 - Virtual hosts proxied to `yifuwuqi` over LAN (`10.42.0.2`):
   - `docs.fufu.land` $\\to$ Compiled mdBook documentation (:24083)
   - `grafana.fufu.land` $\\to$ Grafana (:24030)

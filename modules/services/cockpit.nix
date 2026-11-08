@@ -20,8 +20,6 @@ in
       "https://localhost:${port}"
       "http://${addresses.hostName}.local:${port}"
       "https://${addresses.hostName}.local:${port}"
-      "http://${addresses.network.vpn.ipv4.host}:${port}"
-      "https://${addresses.network.vpn.ipv4.host}:${port}"
       "https://${cockpit.domain}"
     ];
     settings = {

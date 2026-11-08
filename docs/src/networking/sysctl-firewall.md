@@ -110,6 +110,9 @@ Edge hardening:
   exists, because the WANs carry no IPv6 at all.
 - NAT44 masquerades traffic from internal interfaces to WAN; NAT66 is absent
   and there is no IPv6 egress path.
+- `tailscale0` connections to `10.42.0.1` TCP `80`/`443` are source-NATed to
+  `10.42.0.1` by the `yirukou-nat` input chain, so nginx's LAN-only allowlist
+  admits subnet-route Tailnet clients.
 - Plain DNS (TCP/UDP 53) from `br0`, VLAN 42, and `tailscale0` is redirected
   to local AdGuard Home unless the destination is already an AGH bind address
   (IPv4 or the segment ULAs), a local address, or Tailscale MagicDNS

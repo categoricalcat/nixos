@@ -1,6 +1,7 @@
 {
   addresses,
   allAddresses,
+  config,
   lib,
   ...
 }:
@@ -12,7 +13,7 @@
 #   filter - 10     yirukou-edge input/forward denies
 #   filter - 1      sinkhole
 #   filter (0)      nixos-fw input/forward accepts then drop
-#   srcnat (100)    yirukou-nat
+#   srcnat (100)    yirukou-nat (WAN masquerade, tailnet-to-nginx input SNAT)
 #
 # yirukou-edge may only drop before nixos-fw. Accepts belong in
 # networking.firewall, since nixos-fw is policy drop.
@@ -28,10 +29,15 @@ let
     wan.primary.interface
     wan.fallback.interface
   ];
+  nginxTcpPorts = [
+    config.services.nginx.defaultHTTPListenPort
+    config.services.nginx.defaultSSLListenPort
+  ];
   lanTcpPorts = [
     53
-    80
-    443
+  ]
+  ++ nginxTcpPorts
+  ++ [
     853
     3443 # AGH DoH (DDR advertises port_https, not nginx 443)
   ];
@@ -210,6 +216,9 @@ in
           '';
         };
 
+        # Tailscale masquerades only forwarded subnet-route traffic, so
+        # connections ending on this host keep their tailnet source; the input
+        # chain gives them nginx's LAN identity.
         yirukou-nat = {
           family = "ip";
           content = ''
@@ -218,6 +227,12 @@ in
               type nat hook postrouting priority srcnat; policy accept;
 
               iifname @internal_ifaces oifname @wan_ifaces masquerade
+            }
+
+            chain input {
+              type nat hook input priority srcnat; policy accept;
+
+              iifname "${vpn}" ip daddr ${lan.ipv4.host} tcp dport { ${join (map toString nginxTcpPorts)} } snat to ${lan.ipv4.host} comment "tailnet subnet route reaches nginx as lan"
             }
           '';
         };

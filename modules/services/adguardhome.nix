@@ -9,6 +9,8 @@
 
 let
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
+  yifuwuqi = allAddresses.hosts.yifuwuqi;
+  yifuwuqiLan = yifuwuqi.network.lan.ipv4.host;
 
   mkRewrite =
     host: alias:
@@ -115,7 +117,12 @@ in
         rewrites = [
           {
             domain = "smb.fufu.land";
-            answer = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
+            answer = yifuwuqiLan;
+            enabled = true;
+          }
+          {
+            inherit (yifuwuqi.ssh) domain;
+            answer = yifuwuqiLan;
             enabled = true;
           }
           {

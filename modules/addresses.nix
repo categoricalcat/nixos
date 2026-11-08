@@ -515,6 +515,9 @@ in
       };
 
       ssh = {
+        # Plain SSH over the LAN and the tailnet subnet route, not the
+        # Cloudflare tunnel (cloudflare.fufu.land).
+        domain = "ssh.fufu.land";
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host

@@ -25,9 +25,11 @@ acceptance checks.
 - [Infrastructure mTLS](mtls-architecture-plan.md) is not implemented:
   inter-host proxying, exporter scrapes, and Vector-to-Loki use plaintext
   HTTP, and no service CA or runtime certificate configuration exists.
-- `restrictedProxyConfig` already allows trusted LAN
-  `10.42.0.0/24` and `fd75:c55f:6d19:1::/64`, while excluding the untrusted
-  VLAN 42 CIDRs. VPN to LAN Phase 2 removes its remaining VPN CIDR.
+- `restrictedProxyConfig` allows only trusted LAN `10.42.0.0/24` and
+  `fd75:c55f:6d19:1::/64`, excluding the untrusted VLAN 42 CIDRs. VPN to LAN
+  Phase 2 removed its VPN CIDR in source and adds a `yirukou` input SNAT that
+  presents subnet-route Tailnet clients to nginx as `10.42.0.1`; that phase
+  awaits deployment.
 - The existing `fufu.land` vhost is an HTTP-only static response. It is the
   selected public-edge canary and must become the first HTTPS,
   Cloudflare-authenticated listener.
@@ -66,6 +68,9 @@ acceptance checks.
 - Cloudflare DNS and Authenticated Origin Pull state before the conditional
   edge tier.
 - The first public hostname and its rollout date.
+- The Cloudflare tunnel's SSH public hostname moving from `ssh.fufu.land` to
+  `cloudflare.fufu.land`, followed by removal of the public `ssh.fufu.land`
+  record.
 
 ## Decisions
 
@@ -85,7 +90,8 @@ acceptance checks.
 1. Cloudflared is an SSH fail-safe only. Forward filtering permits its required
    WAN egress and a source-scoped connection to `yifuwuqi` SSH, but grants no
    cloudflared route to `yirukou`, the local ingress, or hosted application
-   backends.
+   backends. Its tunnel hostname is `cloudflare.fufu.land`; `ssh.fufu.land` is
+   plain SSH to `yifuwuqi` over the LAN and the subnet route.
 1. Internal administration occurs through SSH on `yifuwuqi`: no remote
    PostgreSQL, direct AdGuard administration, or anonymous Grafana Security
    dashboard. This boundary does not apply to explicitly client-facing hosted
@@ -97,7 +103,10 @@ acceptance checks.
 1. NetBird is retired. Tailnet clients reach services through `yirukou`'s LAN
    subnet route; direct `yifuwuqi` Tailscale access is limited to SSH and DNS.
    Host firewalls are the authoritative service boundary, while Tailnet policy
-   must permit authorized clients to use the subnet route.
+   must permit authorized clients to use the subnet route. Tailscale
+   masquerades only forwarded traffic, so `yirukou` SNATs subnet-route
+   connections to its own nginx to `10.42.0.1`, keeping client-facing
+   allowlists LAN-only.
 1. Use a Sops-backed static internal CA and a shared Nginx mTLS frontend for
    exporters. This avoids a runtime CA service and exporter-specific TLS
    capability work.
