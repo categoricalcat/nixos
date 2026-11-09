@@ -112,7 +112,7 @@ ______________________________________________________________________
 
 ## 7. Network & Storage Mounts
 
-- **LAN & Mesh**: NetworkManager with `checkReversePath = "loose"`. Tailscale IP `100.69.0.4/32`, NetBird IP `100.42.0.3/16`.
+- **LAN & Mesh**: NetworkManager with `checkReversePath = "loose"`. Tailscale IP `100.69.0.4/32`.
 - **Samba Client Automounts**:
   - `/mnt/smb/share` $\\to$ `//yifuwuqi.lan/share`
   - `/mnt/smb/the.files` $\\to$ `//yifuwuqi.lan/the.files`

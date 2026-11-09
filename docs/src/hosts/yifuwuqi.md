@@ -29,7 +29,6 @@ ______________________________________________________________________
 | `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)                                                |
 | `wlp2s0`     | Wireless | Disabled                                 | Wireless interface explicitly powered down (`ActivationPolicy = down`)                                           |
 | `tailscale0` | Tunnel   | `100.69.0.6/32`                          | Tailscale subnet router for `192.168.0.1/32` (`exitNodeHost = null`, no route acceptance, Tailscale SSH enabled) |
-| `netbird0`   | Tunnel   | `100.42.0.2/16`                          | NetBird mesh client                                                                                              |
 
 ### Network Tuning & Sysctl
 

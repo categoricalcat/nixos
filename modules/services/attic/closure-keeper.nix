@@ -67,7 +67,12 @@ in
         exit 0
       fi
 
-      printf '%s\n' "''${heads[@]}" | attic push ${attic.cacheName}:${attic.cacheName} --stdin --ignore-upstream-cache-filter -j 10
+      # Push one head at a time: get-missing-paths sends the whole closure as
+      # one JSON body, and atticd (axum) caps buffered bodies at 2 MiB.
+      # .drv heads alone carry ~23k build-time paths, so a combined push 413s.
+      for head in "''${heads[@]}"; do
+        attic push ${attic.cacheName}:${attic.cacheName} --ignore-upstream-cache-filter -j 10 "$head"
+      done
     '';
   };
 

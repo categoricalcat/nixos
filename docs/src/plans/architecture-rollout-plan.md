@@ -27,9 +27,9 @@ acceptance checks.
   HTTP, and no service CA or runtime certificate configuration exists.
 - `restrictedProxyConfig` allows only trusted LAN `10.42.0.0/24` and
   `fd75:c55f:6d19:1::/64`, excluding the untrusted VLAN 42 CIDRs. VPN to LAN
-  Phase 2 removed its VPN CIDR in source and adds a `yirukou` input SNAT that
-  presents subnet-route Tailnet clients to nginx as `10.42.0.1`; that phase
-  awaits deployment.
+  Phase 2 removed its VPN CIDR and added a `yirukou` input SNAT that
+  presents subnet-route Tailnet clients to nginx as `10.42.0.1`; deployed and
+  verified 2026-11-09.
 - The existing `fufu.land` vhost is an HTTP-only static response. It is the
   selected public-edge canary and must become the first HTTPS,
   Cloudflare-authenticated listener.
@@ -219,9 +219,10 @@ runtime gates pass.
 - [x] Deploy [VPN to LAN Phase 1](vpn-to-lan-migration-plan.md#phase-1-storage-and-database-services).
 - [ ] Deploy the independent Service Security Phase 2 application-auth and
   Phase 5 sandboxing work when their decisions are resolved.
-- [ ] Deploy [VPN to LAN Phase 2](vpn-to-lan-migration-plan.md#phase-2-web-proxy-and-development-services).
+- [x] Deploy [VPN to LAN Phase 2](vpn-to-lan-migration-plan.md#phase-2-web-proxy-and-development-services).
 - [ ] Verify designated client-facing vhosts allow trusted LAN and reject the
-  untrusted VLAN.
+  untrusted VLAN. Trusted-LAN and subnet-route acceptance verified
+  2026-11-09; untrusted-VLAN runtime rejection still needs a VLAN client.
 - [ ] Deploy [Service Security Phase 1](service-security-architecture-plan.md#phase-1-gateway-and-exporter-sources).
 - [ ] Deploy and validate [VPN to LAN Phases 3–4](vpn-to-lan-migration-plan.md#phase-3-host-firewall-rules)
   after Service Security Phase 0 preserves the Tailscale route.

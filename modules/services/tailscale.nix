@@ -87,7 +87,9 @@ in
       };
 
       networking.firewall = {
-        trustedInterfaces = [ config.services.tailscale.interfaceName ];
+        # Clients trust the overlay wholesale (lan-mouse, distributed builds);
+        # servers and routers declare explicit ports in their host firewalls.
+        trustedInterfaces = lib.mkIf (!isServer) [ config.services.tailscale.interfaceName ];
         allowedUDPPorts = [ config.services.tailscale.port ];
       };
 

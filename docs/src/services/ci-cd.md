@@ -17,7 +17,7 @@ ______________________________________________________________________
 │  .#hydraJobs: checks, hosts, pkgs, shells                   │
 │                                                             │
 │  1. Run ci/build.sh                                         │
-│     ├── Probe yitaishi on port 24212 (Tailscale / NetBird)  │
+│     ├── Probe yitaishi on port 24212 (Tailscale)            │
 │     ├── If online: offload derivations via ssh-ng           │
 │     └── If offline: compile locally on yifuwuqi             │
 │                                                             │
@@ -47,7 +47,7 @@ ______________________________________________________________________
 
 The build script features automatic network discovery:
 
-1. Tests TCP connectivity to `yitaishi` on port `24212` via Tailscale (`yitaishi.ts`) or NetBird (`yitaishi.nb`) with a 2-second timeout:
+1. Tests TCP connectivity to `yitaishi` on port `24212` via Tailscale (`yitaishi.ts`) with a 2-second timeout:
    ```bash
    timeout 2 bash -c '</dev/tcp/yitaishi.ts/24212'
    ```

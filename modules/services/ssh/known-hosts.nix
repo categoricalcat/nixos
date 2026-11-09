@@ -10,7 +10,7 @@ let
 
   # Regenerate the pinned global known_hosts from secrets/keys.nix ×
   # modules/addresses.nix. Covers the bare name, every reachable alias
-  # (.lan/.local/.ts/.nb) and the underlying IPs for defense-in-depth.
+  # (.lan/.local/.ts) and the underlying IPs for defense-in-depth.
   # For non-standard ports (e.g. 24212), OpenSSH requires '[name]:port' in
   # known_hosts to match.
   knownHostFor =

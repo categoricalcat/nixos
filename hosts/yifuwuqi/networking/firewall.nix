@@ -35,9 +35,15 @@ in
       ];
 
       # eno1 (LAN) is default-deny. Only explicitly declared ports and yirukou gateway traffic are permitted.
-      trustedInterfaces = [
-        "tailscale0"
-      ];
+      # tailscale0 is untrusted: the tailnet reaches this host's SSH and its
+      # AdGuard DNS (bound to 100.69.0.6), everything else via the subnet route.
+      interfaces.${addresses.network.tailscale.interface} = {
+        allowedTCPPorts = [
+          addresses.ssh.listenPort
+          addresses.services.adguardhome.dnsPort
+        ];
+        allowedUDPPorts = [ addresses.services.adguardhome.dnsPort ];
+      };
 
       interfaces."eno1" = {
         allowedTCPPorts = [

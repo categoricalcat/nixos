@@ -15,7 +15,7 @@ BUILDER_ARGS=()
 BUILDER_STATUS="local only (yitaishi offline)"
 LOCAL_JOBS="$(nix config show --json | jq -er '."max-jobs".value | numbers')"
 REMOTE_JOBS=0
-if timeout 2 bash -c '</dev/tcp/yitaishi.ts/24212' 2>/dev/null || timeout 2 bash -c '</dev/tcp/yitaishi.nb/24212' 2>/dev/null; then
+if timeout 2 bash -c '</dev/tcp/yitaishi.ts/24212' 2>/dev/null; then
   printf '%s✔ yitaishi online%s — registering ssh-ng remote builder\n' "$GREEN" "$RESET"
   REMOTE_JOBS=16
   b="ssh-ng://yitaishi x86_64-linux - $REMOTE_JOBS 100 kvm,nixos-test,benchmark,big-parallel"

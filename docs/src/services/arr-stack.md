@@ -43,7 +43,7 @@ For Radarr, Sonarr, Lidarr, and Readarr, configure the root folders to point to 
 - Configure the default save path and incomplete download directories:
   - Complete: `/persist/media/downloads/complete`
   - Incomplete: `/persist/media/downloads/incomplete`
-- **Network Interface**: Verify qBittorrent reports the Gluetun interface and the current Proton forwarded port. **Do not** manually select `wt0` (NetBird).
+- **Network Interface**: Verify qBittorrent reports the Gluetun interface and the current Proton forwarded port.
 
 ## 4. Download Client Integration
 

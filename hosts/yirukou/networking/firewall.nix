@@ -119,8 +119,11 @@ in
           allowedTCPPorts = untrustedTcpPorts;
           allowedUDPPorts = internalUdpPorts;
         };
+        # Tailnet clients use this host's DNS and nginx (SNAT'd to the LAN
+        # identity for the latter), so tailscale0 mirrors br0's port set.
         ${vpn} = {
-          allowedTCPPorts = [ addresses.ssh.listenPort ];
+          allowedTCPPorts = lanTcpPorts ++ [ addresses.ssh.listenPort ];
+          allowedUDPPorts = internalUdpPorts;
         };
         ${wan.primary.interface} = {
           allowedUDPPorts = [ 51820 ];

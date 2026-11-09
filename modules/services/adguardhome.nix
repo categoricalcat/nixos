@@ -215,8 +215,7 @@ in
       "network-online.target"
       "unbound.service"
     ]
-    ++ (lib.optional config.services.tailscale.enable "tailscaled.service")
-    ++ (lib.optional config.services.netbird.enable "netbird.service");
+    ++ (lib.optional config.services.tailscale.enable "tailscaled.service");
 
     environment = {
       GOMEMLIMIT = "2560MiB";

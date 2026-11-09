@@ -10,7 +10,6 @@
     settings = {
       server.allow-interfaces = [
         # "tailscale0"
-        "wt0"
         "eno1"
       ];
       reflector.enable-reflector = true; # Share services between VPN and LAN

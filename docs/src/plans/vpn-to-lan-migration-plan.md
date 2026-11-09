@@ -1,6 +1,6 @@
 # VPN to LAN Migration Plan
 
-## Status: DRAFT — Phase 1 deployed and verified 2026-11-08; Phase 2 implemented, deployment pending
+## Status: DRAFT — Phases 1–2 deployed and verified; Phase 1 on 2026-11-08, Phase 2 on 2026-11-09
 
 ## Objective
 
@@ -70,8 +70,8 @@ ______________________________________________________________________
 - **Repository-verified**: Phase 1's active Samba ACL excludes the VPN CIDR.
   Phase 2's source removes the overlay entries from nginx, Forgejo, and
   Cockpit, deletes the legacy vhost and OpenVSCode module, adds the
-  `yirukou-nat` input SNAT, and maps `ssh.fufu.land` to `yifuwuqi`'s LAN SSH;
-  it is not yet deployed. Unconditional `tailscale0`
+  `yirukou-nat` input SNAT, and maps `ssh.fufu.land` to `yifuwuqi`'s LAN SSH.
+  Unconditional `tailscale0`
   trust and NetBird remnants for later phases remain in the Nix configuration.
 - **Live-host verified 2026-11-08**: `yifuwuqi` prefers its default route via
   `10.42.0.1`; this does not prove Tailnet route approval or client adoption.
@@ -92,7 +92,7 @@ ______________________________________________________________________
 
 ## Current State
 
-1. **Reverse Proxy & Web Access** (Phase 2 source, deployment pending):
+1. **Reverse Proxy & Web Access** (Phase 2, deployed 2026-11-09):
 
    - In `modules/services/nginx-proxy.nix`, `trustedProxyCidrs` names only
      `yirukou`'s trusted LAN IPv4/IPv6 CIDRs and omits the untrusted VLAN
@@ -235,9 +235,16 @@ ______________________________________________________________________
    The subnet route, automount target, and Samba listener were verified after
    deployment.
 
-### Phase 2: Web, Proxy, and Development Services
+### Phase 2: Web, Proxy, and Development Services — Deployed and Verified
 
-Status: implemented, deployment pending.
+Status: deployed 2026-11-09. Verified from `yifuwuqi` and `yitaishi`:
+`docs.fufu.land` returned 200 over trusted LAN IPv4 and over the Tailnet
+subnet route (the 200 proves the `yirukou-nat` input SNAT, since an
+untranslated tailnet source would draw 403), direct `100.69.0.1` requests
+returned 403, and `ssh.fufu.land` resolves to `10.42.0.2` with sshd
+answering. Untrusted-VLAN runtime rejection and the Cloudflare dashboard
+hostname move to `cloudflare.fufu.land` remain operator-side checks; trusted
+LAN IPv6 is config-level only because AdGuard publishes no AAAA rewrite.
 
 1. In `modules/services/nginx-proxy.nix`, remove `yifuwuqi.network.vpn.ipv4.cidr` from `trustedProxyCidrs` and delete the `"${addresses.network.vpn.ipv4.host}"` virtual host.
 1. In `hosts/yirukou/networking/firewall.nix`, add the `yirukou-nat` input

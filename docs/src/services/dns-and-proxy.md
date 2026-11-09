@@ -61,7 +61,7 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   - `*.fufu.land` $\\to$ `10.42.0.1` (Points all subdomains to `yirukou` reverse proxy)
   - `smb.fufu.land` $\\to$ `10.42.0.2` (Points SMB file share directly to `yifuwuqi`)
   - `ssh.fufu.land` $\\to$ `10.42.0.2` (Plain SSH to `yifuwuqi` on `24212` over the LAN and the Tailnet subnet route; the Cloudflare tunnel is `cloudflare.fufu.land`)
-  - Dynamic host rewrites generated for `.lan`/`.local`/`.ts`/`.nb` aliases. `.lan` and `.local` answer both A and AAAA (the LAN ULA), so internal names are reached over IPv6; `.ts`/`.nb` and the `fufu.land` wildcards stay IPv4-only because nginx and its backends stay on IPv4.
+  - Dynamic host rewrites generated for `.lan`/`.local`/`.ts` aliases. `.lan` and `.local` answer both A and AAAA (the LAN ULA), so internal names are reached over IPv6; `.ts` and the `fufu.land` wildcards stay IPv4-only because nginx and its backends stay on IPv4.
 - **Encrypted DNS Endpoints**:
   - DNS-over-TLS (DoT): Port `853` on `dns.fufu.land` (manual clients; AGH DDR omits DoT without IP SANs on the ACME cert)
   - DNS-over-QUIC (DoQ): Port `853` on `dns.fufu.land`

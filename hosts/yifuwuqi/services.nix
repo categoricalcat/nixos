@@ -17,7 +17,6 @@
     ../../modules/services/cloudflared.nix
     ../../modules/services/tailscale.nix
     ../../modules/services/ai/llama-cpp.nix
-    # ../../modules/services/netbird.nix
     # ../../modules/services/playit-agent.nix
     # ../../modules/services/localtonet.nix
     # ../../modules/services/omada-controller.nix

@@ -49,7 +49,6 @@ in
     ../../modules/distributed-builds.nix
     ../../modules/services/lan-mouse.nix
     ../../modules/services/tailscale.nix
-    # ../../modules/services/netbird.nix
     ../../modules/services/tpm-fido2.nix
     ../../modules/services/samba/client.nix
     # ../../modules/services/power-profiles-daemon.nix

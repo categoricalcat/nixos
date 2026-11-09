@@ -430,17 +430,6 @@ in
       network = rec {
         vpn = tailscale;
 
-        netbird = {
-          domain = "nb";
-          interface = "wt0";
-          ipv4 = rec {
-            cidr = "100.42.0.0/16";
-            host = "100.42.0.2";
-            prefixLength = 16;
-            address = "${host}/${toString prefixLength}";
-          };
-        };
-
         lan = {
           interface = "eno1";
           ipv6 = rec {
@@ -521,7 +510,6 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
-          network.netbird.ipv4.host
           network.lan.ipv6.host
           network.lan.ipv4.host
         ];
@@ -635,7 +623,6 @@ in
             "127.0.0.1"
             "10.42.0.2"
             "100.69.0.6"
-            "100.42.0.2"
           ];
         };
         searxng = {
@@ -709,16 +696,6 @@ in
 
       network = rec {
         vpn = tailscale;
-        netbird = {
-          domain = "nb";
-          interface = "wt0";
-          ipv4 = rec {
-            cidr = "100.42.0.0/16";
-            host = "100.42.0.4";
-            prefixLength = 16;
-            address = "${host}/${toString prefixLength}";
-          };
-        };
 
         tailscale = {
           domain = "ts";
@@ -735,7 +712,6 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
-          network.netbird.ipv4.host
         ];
         listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
@@ -756,16 +732,6 @@ in
 
       network = rec {
         vpn = tailscale;
-        netbird = {
-          domain = "nb";
-          interface = "wt0";
-          ipv4 = rec {
-            cidr = "100.42.0.0/16";
-            host = "100.42.0.3";
-            prefixLength = 16;
-            address = "${host}/${toString prefixLength}";
-          };
-        };
 
         tailscale = {
           domain = "ts";
@@ -782,7 +748,6 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
-          network.netbird.ipv4.host
         ];
         listenWildcardIPv4 = null;
         listenWildcardIPv6 = null;
@@ -821,16 +786,6 @@ in
 
       network = rec {
         vpn = tailscale;
-        netbird = {
-          domain = "nb";
-          interface = "wt0";
-          ipv4 = rec {
-            cidr = "100.42.0.0/16";
-            host = "100.42.0.1";
-            prefixLength = 16;
-            address = "${host}/${toString prefixLength}";
-          };
-        };
 
         wan = {
           primary = {
@@ -935,7 +890,6 @@ in
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
-          network.netbird.ipv4.host
           network.lan.ipv6.host
           network.lan.ipv4.host
         ];
@@ -1019,15 +973,6 @@ in
       path = [
         "network"
         "tailscale"
-        "ipv4"
-        "host"
-      ];
-    }
-    {
-      suffix = "nb";
-      path = [
-        "network"
-        "netbird"
         "ipv4"
         "host"
       ];
