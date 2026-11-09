@@ -92,7 +92,7 @@ ______________________________________________________________________
 
 ## 2. Nginx Ingress Reverse Proxy (`modules/services/nginx-proxy.nix`)
 
-`yirukou` serves as the central reverse proxy for the entire infrastructure.
+`yirukou` serves as the central reverse proxy for the entire infrastructure. It terminates TLS and forwards each domain to one local ingress listener on `yifuwuqi`, which routes on the preserved `Host` header to the loopback backend. One canonical service list in `modules/services/proxy-vhosts.nix` generates both proxy hops.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -107,18 +107,14 @@ ______________________________________________________________________
 │ dns.fufu.land                │ 127.0.0.1:3333/dns-query     │
 │ goaccess.fufu.land           │ /var/lib/goaccess + :7890 ws │
 ├──────────────────────────────┼──────────────────────────────┤
-│ docs.fufu.land               │ 10.42.0.2:24083 (yifuwuqi)   │
-│ grafana.fufu.land            │ 10.42.0.2:24030 (yifuwuqi)   │
-│ cockpit.fufu.land            │ 10.42.0.2:24091 (yifuwuqi)   │
-│ search.fufu.land             │ 10.42.0.2:24888 (yifuwuqi)   │
-│ cache.fufu.land              │ 10.42.0.2:24203 (yifuwuqi)   │
-│ git.fufu.land (Forgejo)      │ 10.42.0.2:24200 (yifuwuqi)   │
-│ agent.fufu.land (Opencode)   │ 10.42.0.2:24010 (yifuwuqi)   │
-│ companion.fufu.land          │ 10.42.0.2:24000 (yifuwuqi)   │
-│ home.fufu.land               │ 10.42.0.2:24082 (yifuwuqi)   │
-│ radarr / sonarr / prowlarr...│ 10.42.0.2:24878/24989...(Arr)│
+│ docs / grafana / cockpit /   │ 10.42.0.2:24120 (yifuwuqi    │
+│ search / cache / git / agent │ local ingress, plain HTTP;   │
+│ / companion / home / radarr  │ routes on Host to loopback)  │
+│ / sonarr / prowlarr / ...    │                              │
 └──────────────────────────────┴──────────────────────────────┘
 ```
+
+`yifuwuqi`'s local ingress (`modules/services/local-ingress.nix`) is one plain-HTTP nginx listener on the LAN address, port `24120` (`services.ingress.port`). It has one vhost per proxied domain pointing at the loopback backend (a few that cannot bind loopback — jellyfin, jellyseerr, homepage, lidarr — keep the LAN address, `upstreamLan`), and rejects unknown `Host` headers with `404`. Only `yirukou`'s LAN address may reach it (the `yifuwuqi` firewall allows the gateway only `24120` plus Loki's push port; the vhosts also `allow`/`deny`). It preserves the real client IP, scheme, and host from `yirukou`'s `X-Forwarded-*`/`X-Real-IP` headers. mTLS Tier 2 terminates on this listener later.
 
 ### 2.1 Automated ACME Wildcard Certificates
 
@@ -128,8 +124,8 @@ ______________________________________________________________________
 
 ### 2.2 Access Control & Security
 
-- `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`), followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts to ensure untrusted VLAN, overlay, and external networks cannot access backend services. Tailnet clients reach them through `yirukou`'s subnet route, SNAT'd to `10.42.0.1`.
-- WebSocket proxying (`proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) enabled for Grafana, Cockpit, GoAccess, SillyTavern, and Arr apps.
+- `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`), followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts on `yirukou` to ensure untrusted VLAN, overlay, and external networks cannot reach the proxy. Tailnet clients reach them through `yirukou`'s subnet route, SNAT'd to `10.42.0.1`. On `yifuwuqi` the local-ingress vhosts independently `allow` only `yirukou`'s LAN address (`10.42.0.1`) and `deny all`, so a direct peer that bypasses the gateway gets no backend access.
+- WebSocket proxying (`proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) enabled per-service on both hops (defaults on; disabled for attic, docs, forgejo, and searxng which do not use WebSockets).
 
 ______________________________________________________________________
 
@@ -139,5 +135,7 @@ ______________________________________________________________________
 - `modules/services/unbound.nix`
 - `modules/services/valkey.nix`
 - `modules/services/nginx-proxy.nix`
+- `modules/services/proxy-vhosts.nix`
+- `modules/services/local-ingress.nix`
 - `modules/services/cloudflared.nix`
 - `modules/addresses.nix`

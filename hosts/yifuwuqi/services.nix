@@ -21,6 +21,7 @@
     # ../../modules/services/localtonet.nix
     # ../../modules/services/omada-controller.nix
     ../../modules/services/github-runner.nix
+    ../../modules/services/local-ingress.nix
     ../../modules/services/forgejo.nix
     ../../modules/services/forgejo-runner.nix
     ../../modules/services/cockpit.nix

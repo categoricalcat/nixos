@@ -64,7 +64,7 @@ ______________________________________________________________________
 - **Labels**: `["native:host"]`.
 - **Execution User**: `nix-builder:nogroup`.
 - **Sandboxing Policy**: Default systemd sandboxing (`ProtectSystem`, `ProtectHome`, `PrivateUsers`, `PrivateMounts`) is explicitly relaxed so builds can interact directly with `/nix/store` and utilize Linux mount namespaces. Untrusted auto-maintenance evaluation, builds, and AI repair steps drop privileges via `/run/wrappers/bin/drop-to-none` (util-linux `setpriv` as a setuid/setgid `none:none` wrapper, executable only by group `none`) into an isolated `bubblewrap` mount namespace without access to `/var/lib/nix-builder/.ssh/id_ed25519`, Attic credentials, or `nix-daemon` `trusted-users` capabilities; an nftables output rule keeps that uid off loopback, LAN and tailnet addresses (see [Auto-Maintenance Bot](auto-maintenance.md)).
-- **Attic Push Integration**: Injects `ATTIC_INTERNAL_URL = "http://yifuwuqi:24203"` and `ATTIC_CACHE_NAME = "yi"` into the runner environment.
+- **Attic Push Integration**: Injects `ATTIC_INTERNAL_URL = "http://127.0.0.1:24203"` (attic binds loopback behind the local ingress; the runner is on-host) and `ATTIC_CACHE_NAME = "yi"` into the runner environment.
 
 ### 4.2 GitHub Actions Runner (`modules/services/github-runner.nix`)
 

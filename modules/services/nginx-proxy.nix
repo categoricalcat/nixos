@@ -7,8 +7,6 @@
 }:
 
 let
-  yifuwuqiLan = allAddresses.hosts.yifuwuqi.network.lan.ipv4.host;
-  yifuwuqiServices = allAddresses.hosts.yifuwuqi.services;
   trustedProxyCidrs = [
     allAddresses.hosts.yirukou.network.lan.ipv4.cidr
     allAddresses.hosts.yirukou.network.lan.ipv6.cidr
@@ -20,6 +18,7 @@ let
   # Use Cloudflare's public DNS exclusively for ACME propagation since we use Cloudflare DNS-01
   cloudflareIpv4 = lib.filter (ns: !lib.hasInfix ":" ns) addresses.dns.cloudflare;
   acmeResolvers = map (ns: "--dns.resolvers=${ns}:53") cloudflareIpv4;
+  proxyLib = import ./proxy-vhosts.nix { inherit lib; };
 in
 {
 
@@ -75,20 +74,6 @@ in
         '';
       };
 
-      # Host the mdBook documentation — proxied to yifuwuqi
-      "${yifuwuqiServices.docs.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.docs.port}";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            ${restrictedProxyConfig}
-          '';
-        };
-      };
-
       # Secure AdGuard Web UI
       "adguard.fufu.land" = {
         useACMEHost = "fufu.land";
@@ -115,7 +100,7 @@ in
       #   forceSSL = true;
       #
       #   locations."/" = {
-      #     proxyPass = "http://${yifuwuqiLan}:19999";
+      #     proxyPass = "http://${allAddresses.hosts.yifuwuqi.network.lan.ipv4.host}:19999";
       #     proxyWebsockets = true;
       #     extraConfig = ''
       #       proxy_set_header X-Forwarded-Host $host;
@@ -123,83 +108,6 @@ in
       #     '';
       #   };
       # };
-
-      # Grafana dashboards — yifuwuqi observability stack
-      "${yifuwuqiServices.grafana.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.grafana.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-
-      # Cockpit host management — proxied to yifuwuqi
-      "${yifuwuqiServices.cockpit.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.cockpit.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-
-      # SearXNG private metasearch — proxied to yifuwuqi
-      "search.fufu.land" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.searxng.port}";
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            ${restrictedProxyConfig}
-          '';
-        };
-      };
-
-      # Attic Binary Cache — proxied to yifuwuqi
-      "${yifuwuqiServices.attic.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.attic.port}";
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-
-      # Forgejo git forge — proxied to yifuwuqi
-      "${yifuwuqiServices.forgejo.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.forgejo.httpPort}";
-          extraConfig = ''
-            client_max_body_size 512M;
-            ${restrictedProxyConfig}
-          '';
-        };
-      };
-
-      # Opencode System Server — proxied to yifuwuqi
-      "agent.fufu.land" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.opencode.port}";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_read_timeout 1d;
-            proxy_send_timeout 1d;
-            client_max_body_size 1G;
-            ${restrictedProxyConfig}
-          '';
-        };
-      };
 
       # GoAccess real-time web log analyzer — local on yirukou
       "goaccess.fufu.land" = {
@@ -223,150 +131,7 @@ in
         };
       };
 
-      # Arr stack and qBittorrent — proxied to yifuwuqi
-      "${yifuwuqiServices.radarr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.radarr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.sonarr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.sonarr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.lidarr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.lidarr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.readarr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.readarr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.prowlarr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.prowlarr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.torrent-indexer.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.torrent-indexer.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.bazarr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.bazarr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.jellyfin.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.jellyfin.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.podgrab.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.podgrab.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.jellyseerr.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.jellyseerr.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.qbittorrent.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.qbittorrent.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.slskd.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.slskd.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.homepage.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.homepage.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-      "${yifuwuqiServices.weather.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.weather.port}";
-          proxyWebsockets = true;
-          extraConfig = restrictedProxyConfig;
-        };
-      };
-
-      "${yifuwuqiServices.sillytavern.domain}" = {
-        useACMEHost = "fufu.land";
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yifuwuqiLan}:${toString yifuwuqiServices.sillytavern.port}";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_read_timeout 1d;
-            proxy_send_timeout 1d;
-            client_max_body_size 10M;
-            ${restrictedProxyConfig}
-          '';
-        };
-      };
-    };
+    }
+    // proxyLib.mkRemoteVhosts { inherit allAddresses restrictedProxyConfig; };
   };
 }

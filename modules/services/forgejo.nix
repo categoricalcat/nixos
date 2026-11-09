@@ -37,6 +37,7 @@ in
       server = {
         DOMAIN = forgejo.domain;
         ROOT_URL = "https://${forgejoServer.DOMAIN}/";
+        HTTP_ADDR = "127.0.0.1";
         HTTP_PORT = forgejo.httpPort;
         SSH_PORT = 24212;
         START_SSH_SERVER = false;

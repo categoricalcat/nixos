@@ -12,7 +12,8 @@ KNOWN_HOSTS=(yixiaoqing yitaishi yirukou "$RUNNER_HOST")
 declare -A KNOWN_HOST_MAP
 for h in "${KNOWN_HOSTS[@]}"; do KNOWN_HOST_MAP[$h]=1; done
 
-ATTIC_INTERNAL_URL="${ATTIC_INTERNAL_URL:-http://yifuwuqi:24203}"
+# Attic binds loopback on yifuwuqi (local ingress fronts it); deploys run there.
+ATTIC_INTERNAL_URL="${ATTIC_INTERNAL_URL:-http://127.0.0.1:24203}"
 ATTIC_CACHE_NAME="${ATTIC_CACHE_NAME:-yi}"
 
 usage() {

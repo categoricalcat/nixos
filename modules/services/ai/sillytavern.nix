@@ -50,18 +50,14 @@ in
           kill $ST_PID || true
         fi
 
-        # Force securityOverride to bypass listen 0.0.0.0 crash when whitelisting is disabled
-        if grep -q "securityOverride:" /var/lib/SillyTavern/config.yaml; then
-          ${pkgs.gnused}/bin/sed -i 's/^securityOverride:.*/securityOverride: true/' /var/lib/SillyTavern/config.yaml
-        else
-          echo "securityOverride: true" >> /var/lib/SillyTavern/config.yaml
-        fi
       '';
 
       serviceConfig = {
-        # Client-facing hosted service (companion.fufu.land): stays
-        # LAN-reachable until the yifuwuqi local ingress fronts it.
-        ExecStart = "${pkgs.sillytavern}/bin/sillytavern --port=${toString yifuwuqiServices.sillytavern.port} --listen=true --no-whitelist";
+        # Client-facing hosted service (companion.fufu.land) behind the local
+        # ingress: loopback-only, so no --listen. The whitelist checks the
+        # forwarded client IP and would 403 LAN clients behind two proxy hops,
+        # so it stays disabled; loopback keeps it safe.
+        ExecStart = "${pkgs.sillytavern}/bin/sillytavern --port=${toString yifuwuqiServices.sillytavern.port} --no-whitelist";
         User = "sillytavern";
         Group = "sillytavern";
         StateDirectory = "SillyTavern";

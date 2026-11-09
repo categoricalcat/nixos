@@ -1,4 +1,9 @@
-{ pkgs, addresses, ... }:
+{
+  pkgs,
+  lib,
+  addresses,
+  ...
+}:
 
 let
   cockpit = addresses.services.cockpit;
@@ -46,4 +51,11 @@ in
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
   };
+
+  # Loopback-only behind the local ingress. The leading empty entry matches
+  # the nixpkgs module's socket workaround.
+  systemd.sockets.cockpit.listenStreams = lib.mkForce [
+    ""
+    "127.0.0.1:${port}"
+  ];
 }

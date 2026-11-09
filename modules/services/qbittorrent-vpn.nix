@@ -102,14 +102,11 @@ in
       ];
       ports = [
         "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
-        "${addrs.network.lan.ipv4.host}:${toString addrs.services.qbittorrent.port}:8080"
         "127.0.0.1:8889:8888"
         "127.0.0.1:${toString addrs.services.flaresolverr.port}:${toString addrs.services.flaresolverr.internalPort}"
         # Containers sharing gluetun's namespace publish through it
         "127.0.0.1:${toString addrs.services.torrent-indexer.port}:${toString addrs.services.torrent-indexer.port}"
-        "${addrs.network.lan.ipv4.host}:${toString addrs.services.torrent-indexer.port}:${toString addrs.services.torrent-indexer.port}"
         "127.0.0.1:${toString addrs.services.slskd.port}:${toString addrs.services.slskd.port}"
-        "${addrs.network.lan.ipv4.host}:${toString addrs.services.slskd.port}:${toString addrs.services.slskd.port}"
       ];
     };
 

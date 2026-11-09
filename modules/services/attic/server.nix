@@ -43,7 +43,7 @@ in
     package = pkgs.attic-server;
     environmentFile = config.sops.secrets."tokens/attic-server-jwt-env".path;
     settings = {
-      listen = "[::]:${toString attic.port}";
+      listen = "127.0.0.1:${toString attic.port}";
       database.url = postgres.urls.atticd;
       garbage-collection = {
         interval = "0 seconds";

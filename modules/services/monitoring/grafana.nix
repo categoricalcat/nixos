@@ -126,7 +126,7 @@ in
       };
 
       server = {
-        http_addr = centralHost.network.lan.ipv4.host;
+        http_addr = "127.0.0.1";
         http_port = grafana.port;
         inherit (grafana) domain;
         root_url = "https://${grafana.domain}/";

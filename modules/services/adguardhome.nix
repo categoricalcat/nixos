@@ -35,7 +35,9 @@ in
     settings = {
 
       http = {
-        address = "0.0.0.0:${
+        # Admin UI is loopback-only: yirukou reaches its own through nginx
+        # (adguard.fufu.land), yifuwuqi's is managed through an SSH tunnel.
+        address = "127.0.0.1:${
           toString allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port
         }";
         session_ttl = "12h";

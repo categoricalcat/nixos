@@ -95,7 +95,7 @@ in
           unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
           preStart = "${buildDocs}";
           serviceConfig = commonHardening // {
-            ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/gang-docs/book --port ${toString addresses.services.docs.port} --addr 0.0.0.0 --no-listing --no-server-id --hide-dotfiles";
+            ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/gang-docs/book --port ${toString addresses.services.docs.port} --addr 127.0.0.1 --no-listing --no-server-id --hide-dotfiles";
             CapabilityBoundingSet = "";
             RestrictAddressFamilies = [
               "AF_INET"

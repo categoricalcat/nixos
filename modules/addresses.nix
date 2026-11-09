@@ -631,8 +631,13 @@ in
           maxMemory = "512mb";
         };
         opencode = {
+          domain = "agent.fufu.land";
           port = 24010;
         };
+        # One nginx listener on the LAN address fronts every proxied backend
+        # (local ingress); yirukou proxies each domain to it and mTLS Tier 2
+        # terminates here later.
+        ingress.port = 24120;
         firecrawl = {
           port = 24002;
         };

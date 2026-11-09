@@ -65,27 +65,44 @@ in
     radarr = {
       enable = true;
       group = "media";
-      settings.server.port = addrs.services.radarr.port;
+      settings.server = {
+        port = addrs.services.radarr.port;
+        bindaddress = "127.0.0.1";
+      };
     };
     sonarr = {
       enable = true;
       group = "media";
-      settings.server.port = addrs.services.sonarr.port;
+      settings.server = {
+        port = addrs.services.sonarr.port;
+        bindaddress = "127.0.0.1";
+      };
     };
+    # soularr reaches Lidarr over the LAN address, so it keeps a non-loopback
+    # bind; the local ingress fronts it there too (upstreamLan).
     lidarr = {
       enable = true;
       group = "media";
-      settings.server.port = addrs.services.lidarr.port;
+      settings.server = {
+        port = addrs.services.lidarr.port;
+        bindaddress = addrs.network.lan.ipv4.host;
+      };
     };
     readarr = {
       enable = true;
       group = "media";
-      settings.server.port = addrs.services.readarr.port;
+      settings.server = {
+        port = addrs.services.readarr.port;
+        bindaddress = "127.0.0.1";
+      };
     };
     bazarr = {
       enable = true;
       group = "media";
-      settings.general.port = addrs.services.bazarr.port;
+      settings.general = {
+        port = addrs.services.bazarr.port;
+        ip = "127.0.0.1";
+      };
     };
     jellyfin = {
       enable = true;
@@ -97,7 +114,10 @@ in
     };
     prowlarr = {
       enable = true;
-      settings.server.port = addrs.services.prowlarr.port;
+      settings.server = {
+        port = addrs.services.prowlarr.port;
+        bindaddress = "127.0.0.1";
+      };
     };
 
     recyclarr = {

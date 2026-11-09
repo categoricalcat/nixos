@@ -95,7 +95,7 @@ Setup:
 1. Add an album/artist in Lidarr (interactive search is optional — soularr picks up the wanted list automatically).
 1. Verify with `journalctl -u podman-soularr`.
 
-**Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. The firewall allows containers to reach Lidarr's API for the import step (`extraInputRules` in `hosts/yifuwuqi/networking/firewall.nix`).
+**Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. The firewall allows containers to reach Lidarr's API for the import step (`extraInputRules` in `hosts/yifuwuqi/networking/firewall.nix`). The arr web UIs bind loopback behind the `yifuwuqi` local ingress; Lidarr is the exception, bound to the LAN address so soularr (in the gluetun namespace) can reach it — the ingress fronts it there too.
 
 ## 8. Brazilian Dubbed Content (pt-BR)
 

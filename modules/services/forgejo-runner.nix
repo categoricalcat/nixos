@@ -117,7 +117,8 @@ in
     # Nix builds need full system access — chroot, mount, /nix/store writes,
     # and process namespacing.
     environment = {
-      ATTIC_INTERNAL_URL = "http://${config.networking.hostName}:${toString services.attic.port}";
+      # Attic binds loopback behind the local ingress; the runner is on-host.
+      ATTIC_INTERNAL_URL = "http://127.0.0.1:${toString services.attic.port}";
       ATTIC_CACHE_NAME = services.attic.cacheName;
     };
     serviceConfig = {

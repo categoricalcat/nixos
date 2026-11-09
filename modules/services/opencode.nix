@@ -25,7 +25,7 @@ in
       after = [ "network-online.target" ];
 
       serviceConfig = {
-        ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${toString host.services.opencode.port} --hostname ${host.network.lan.ipv4.host}";
+        ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${toString host.services.opencode.port} --hostname 127.0.0.1";
         Restart = "on-failure";
         RestartSec = 5;
         User = "yi";

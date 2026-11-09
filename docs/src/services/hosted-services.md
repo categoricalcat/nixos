@@ -2,7 +2,7 @@
 
 The monolith server (`yifuwuqi`) runs several central web applications, management tools, and background daemons for the infrastructure.
 
-All services are configured in `modules/services/` and enabled selectively via `hosts/yifuwuqi/services.nix`. Most services are internal-only, bound to the trusted LAN (`10.42.0.0/24`) and Tailscale mesh, terminated through `yirukou`'s Nginx reverse proxy.
+All services are configured in `modules/services/` and enabled selectively via `hosts/yifuwuqi/services.nix`. Most services are internal-only, bound to loopback (`127.0.0.1`) and fronted by the `yifuwuqi` local ingress (`modules/services/local-ingress.nix`), a single nginx listener on the LAN address that routes each domain to its backend. `yirukou`'s Nginx reverse proxy terminates TLS and forwards every domain to that ingress. A few services that cannot bind loopback (jellyfin, jellyseerr, homepage, lidarr) keep the LAN address and are fronted there too.
 
 ______________________________________________________________________
 
@@ -28,7 +28,7 @@ ______________________________________________________________________
 
 ### 2.1 Homepage Dashboard (`modules/services/homepage.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:24082` and proxied to `https://home.fufu.land`.
+- **Web UI**: Served at `http://10.42.0.2:24082` (LAN; homepage has no loopback bind option) and proxied to `https://home.fufu.land` via the local ingress.
 - **Layout Architecture**: 4-column responsive grid with 5 main service groups:
   1. **Media**: Jellyfin, Jellyseerr, Podgrab (`cast.fufu.land`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 ### 2.2 SearXNG ("yi search") (`modules/services/searxng.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:24888` and proxied to `https://search.fufu.land`.
+- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://search.fufu.land`.
 - **Tor Proxy Routing**: All outbound search queries are forced through the local Tor SOCKS5 proxy (`socks5h://127.0.0.1:9050`) to conceal client IP addresses from upstream search providers.
 - **Engines Enabled**: DuckDuckGo (`ddg`), Mojeek (`mjk`), Google Scholar (`gs`), and arXiv (`ar`). Google web search is intentionally disabled to avoid Tor CAPTCHA blocking.
 - **Ephemeral Secret Generation**: `searx-secret-init.service` automatically generates a cryptographically random 32-byte hex secret key on boot into `/run/searx-secret/env` mode `0440`.
@@ -67,7 +67,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.5 SillyTavern Companion UI (`modules/services/ai/sillytavern.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:24000` and proxied to `https://companion.fufu.land`.
+- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://companion.fufu.land`.
 - **Security Context**: Dedicated non-root user `sillytavern` with strict systemd filesystem isolation (`ProtectSystem = strict`, `ProtectHome = true`, `PrivateDevices = true`, `PrivateTmp = true`).
 - **Inference Integration**: Depends directly on the local `llama-cpp-qwen3-6-35b-abliterated.service` Vulkan instance.
 
@@ -84,7 +84,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.8 Gang Documentation (`docs/service.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:24083` and proxied to `https://docs.fufu.land`.
+- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://docs.fufu.land`.
 - **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
 - **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/gang-docs/staging` without modifying the git repository.
 - **Serving Daemon**: `darkhttpd` serves `/var/lib/gang-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).

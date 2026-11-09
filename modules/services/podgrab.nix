@@ -10,7 +10,7 @@ in
 {
   virtualisation.oci-containers.containers.podgrab = {
     image = "docker.io/akhilrex/podgrab:latest";
-    ports = [ "${toString addrs.services.podgrab.port}:8080" ];
+    ports = [ "127.0.0.1:${toString addrs.services.podgrab.port}:8080" ];
     volumes = [
       "/var/lib/container-volumes/podgrab:/config"
       "/persist/media/podcasts:/assets"

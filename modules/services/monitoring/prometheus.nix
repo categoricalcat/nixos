@@ -112,7 +112,7 @@ in
     scrapeConfigs = [
       (mkCentralScrapeJob "prometheus" "127.0.0.1:${toString prometheus.port}")
       (mkCentralScrapeJob "loki" "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.loki.port}")
-      (mkCentralScrapeJob "grafana" "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.grafana.port}")
+      (mkCentralScrapeJob "grafana" "127.0.0.1:${toString centralHost.services.grafana.port}")
       probeScrapeConfig
     ]
     ++ lib.mapAttrsToList mkScrapeConfig exporterMetadata;

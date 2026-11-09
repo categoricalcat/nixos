@@ -42,8 +42,10 @@ in
       };
 
       server = {
-        # Public access still goes through nginx on yirukou, but the backend
-        # must be reachable from the router over LAN and directly via Tailscale.
+        # Firecrawl reaches this from its container via host.containers.internal
+        # (the podman bridge gateway, not loopback), so it cannot bind loopback.
+        # The firewall scopes exposure: eno1 allows only the gateway ingress and
+        # Loki; tailscale0 has its own port list; containers get an explicit rule.
         bind_address = "0.0.0.0";
         port = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
         # `searx-init.service` runs envsubst over this YAML and loads
