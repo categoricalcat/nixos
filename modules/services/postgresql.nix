@@ -26,12 +26,9 @@ in
         }
       ];
 
-    enableTCPIP = true;
-    authentication = ''
-      # type database DBuser auth-method
-      host   all      all    ${allAddresses.hosts.yifuwuqi.network.vpn.ipv4.cidr} trust
-      host   all      all    127.0.0.1/32 trust
-    '';
+    # Socket-only with the nixpkgs default pg_hba: peer on the unix socket,
+    # md5 on loopback TCP. No network trust entries; remote administration
+    # goes through SSH on yifuwuqi, not a database listener.
   };
 
   systemd.tmpfiles.rules = [

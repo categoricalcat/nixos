@@ -49,6 +49,13 @@ let
       openFirewall = false;
     }
     // (spec.settings or { })
+    // lib.optionalAttrs (name == "postgres") {
+      # Postgres is socket-only with peer auth, so scrape through the socket
+      # as the local postgres superuser instead of TCP with a password.
+      runAsLocalSuperUser = true;
+      dataSourceName =
+        "postgresql:///postgres?host=${(monitoringLib.getCentralHost allAddresses).services.postgresql.socketDir}";
+    }
     // lib.optionalAttrs (name == "smokeping") { hosts = smokepingHosts; }
     // (if name == "fail2ban" then { host = listenAddress; } else { inherit listenAddress; });
 in
@@ -59,9 +66,19 @@ in
     prometheus.exporters = lib.mapAttrs mkExporter enabledExporters;
   };
 
-  networking.firewall.interfaces.${addresses.network.lan.interface}.allowedTCPPorts =
-    lib.mkIf (!isCentral)
-      (lib.mapAttrsToList (name: _: config.services.prometheus.exporters.${name}.port) enabledExporters);
+  # Exporters on non-central hosts answer the central scraper only (interim
+  # source rule until mTLS Tier 3 replaces it with client certificates).
+  networking.firewall.extraInputRules = lib.mkIf (!isCentral) (
+    let
+      centralLan = (monitoringLib.getCentralHost allAddresses).network.lan.ipv4.host;
+      exporterPorts = lib.concatMapStringsSep ", " (
+        name: toString config.services.prometheus.exporters.${name}.port
+      ) (lib.attrNames enabledExporters);
+    in
+    ''
+      iifname "${addresses.network.lan.interface}" ip saddr ${centralLan} tcp dport { ${exporterPorts} } accept comment "exporters scraped by central host only"
+    ''
+  );
 
   systemd.services = lib.mkMerge [
     (lib.mkIf (!isCentral) (

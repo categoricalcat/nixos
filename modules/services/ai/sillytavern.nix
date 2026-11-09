@@ -59,6 +59,8 @@ in
       '';
 
       serviceConfig = {
+        # Client-facing hosted service (companion.fufu.land): stays
+        # LAN-reachable until the yifuwuqi local ingress fronts it.
         ExecStart = "${pkgs.sillytavern}/bin/sillytavern --port=${toString yifuwuqiServices.sillytavern.port} --listen=true --no-whitelist";
         User = "sillytavern";
         Group = "sillytavern";

@@ -75,7 +75,7 @@ in
       Connection\InterfaceName=tun0
       WebUI\LocalHostAuth=false
       WebUI\AuthSubnetWhitelistEnabled=true
-      WebUI\AuthSubnetWhitelist=127.0.0.1, 10.42.0.0/24, 100.42.0.0/16, 10.88.0.0/16, 172.16.0.0/12
+      WebUI\AuthSubnetWhitelist=127.0.0.1
     '';
   };
 
@@ -187,7 +187,7 @@ in
             ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'Connection\InterfaceName'          tun0
             ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\LocalHostAuth'               false
             ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelistEnabled'  true
-            ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelist'         "127.0.0.1, 10.42.0.0/24, 100.42.0.0/16, 10.88.0.0/16, 172.16.0.0/12"
+            ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelist'         "127.0.0.1"
 
             # Fetch and inject ngosang's trackerslist
             trackers=$(${pkgs.curl}/bin/curl -s https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt | ${pkgs.gawk}/bin/awk NF | ${pkgs.gawk}/bin/awk 'NR>1 {printf "\\n"} {printf "%s", $0}')

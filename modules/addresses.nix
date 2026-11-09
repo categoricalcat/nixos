@@ -370,10 +370,7 @@ in
         settings.exitOnError = false;
       };
 
-      postgres = {
-        hosts = "centralHost";
-        settings.dataSourceName = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable";
-      };
+      postgres.hosts = "centralHost";
 
       adguard = {
         hosts = "scrapeHosts";

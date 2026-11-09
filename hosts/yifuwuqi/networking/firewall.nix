@@ -17,6 +17,37 @@ let
     ]
   );
   cloudflaredSource = addresses.containers.cloudflared.network.ipv4.host;
+
+  # Backends that yirukou's nginx proxies (see modules/services/nginx-proxy.nix),
+  # plus Loki's push port. The local ingress (service-security Phase 3) will
+  # shrink this to one listener.
+  proxiedBackendPorts = map toString (
+    map (name: addresses.services.${name}.port or addresses.services.${name}.httpPort) [
+      "attic"
+      "bazarr"
+      "cockpit"
+      "docs"
+      "forgejo"
+      "grafana"
+      "homepage"
+      "jellyfin"
+      "jellyseerr"
+      "lidarr"
+      "opencode"
+      "podgrab"
+      "prowlarr"
+      "qbittorrent"
+      "radarr"
+      "readarr"
+      "searxng"
+      "sillytavern"
+      "slskd"
+      "sonarr"
+      "torrent-indexer"
+      "weather"
+    ]
+    ++ [ addresses.services.loki.port ]
+  );
 in
 
 {
@@ -62,8 +93,10 @@ in
       };
 
       extraInputRules = ''
-        # Allow yirukou reverse proxy and DNS resolver to access backend services
-        ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} accept comment "allow yirukou gateway"
+        # The gateway (and SNAT'd tailnet clients arriving with its address)
+        # reaches only the proxied backends and Loki push. A SNAT'd source is
+        # a routing fact, not an identity; mTLS Tier 2 authenticates the hop.
+        iifname "eno1" ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport { ${lib.concatStringsSep ", " proxiedBackendPorts} } accept comment "allow yirukou gateway to proxied services"
 
         ip saddr ${cloudflaredSource} tcp dport ${toString addresses.ssh.listenPort} accept comment "allow cloudflared ssh fallback"
 
