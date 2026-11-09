@@ -51,6 +51,10 @@ in
         };
       };
 
+      # Single-binary: dial the query-frontend directly. The frontend ring
+      # autodetects the LAN address, but gRPC binds loopback only.
+      frontend_worker.frontend_address = "127.0.0.1:9096";
+
       schema_config.configs = [
         {
           from = "2024-01-01";
