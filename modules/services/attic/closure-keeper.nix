@@ -9,7 +9,8 @@
 let
   attic = allAddresses.hosts.yifuwuqi.services.attic;
   atticClient = pkgs.attic-client;
-  atticEndpoint = "http://${config.networking.hostName}:${toString attic.port}";
+  # Attic binds loopback behind the local ingress; this service runs on-host.
+  atticEndpoint = "http://127.0.0.1:${toString attic.port}";
 in
 {
   assertions = [

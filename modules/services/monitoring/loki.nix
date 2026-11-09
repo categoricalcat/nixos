@@ -42,7 +42,9 @@ in
         path_prefix = dataDir;
         replication_factor = 1;
         ring = {
-          instance_addr = lokiAddress;
+          # Ring address must match the loopback gRPC bind; the LAN address
+          # is only for HTTP pushes, not intra-ring RPCs.
+          instance_addr = "127.0.0.1";
           kvstore.store = "inmemory";
         };
       };
