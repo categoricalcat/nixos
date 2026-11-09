@@ -151,16 +151,7 @@ ______________________________________________________________________
 
 - Wildcard ACME certificate for `*.fufu.land` and `fufu.land` via Cloudflare DNS-01 API challenge.
 - Access control (`restrictedProxyConfig`): Allows only the trusted LAN (`10.42.0.0/24`, `fd75:c55f:6d19:1::/64`) and denies everything else, including direct requests to the Tailscale address `100.69.0.1`. Subnet-route Tailnet clients arrive SNAT'd as `10.42.0.1`.
-- Virtual hosts proxied to `yifuwuqi` over LAN (`10.42.0.2`):
-  - `docs.fufu.land` $\\to$ Compiled mdBook documentation (:24083)
-  - `grafana.fufu.land` $\\to$ Grafana (:24030)
-  - `cockpit.fufu.land` $\\to$ Cockpit (:24091)
-  - `search.fufu.land` $\\to$ SearXNG (:24888)
-  - `cache.fufu.land` $\\to$ Attic Binary Cache (:24203)
-  - `git.fufu.land` $\\to$ Forgejo Git (:24200)
-  - `agent.fufu.land` $\\to$ Opencode Server (:24010)
-  - `companion.fufu.land` $\\to$ SillyTavern (:24000)
-  - `radarr.fufu.land` – `sonarr.fufu.land` – `prowlarr.fufu.land` – `jellyfin.fufu.land` – `jellyseerr.fufu.land` – `cast.fufu.land` (Podgrab, :24085) – `home.fufu.land` (Arr & Media stack)
+- Virtual hosts proxied to `yifuwuqi` all terminate TLS here and forward to one local-ingress listener at `10.42.0.2:24120`, which routes on the preserved `Host` header to the loopback backends. One canonical service list (`modules/services/proxy-vhosts.nix`) generates both proxy hops: `docs`, `grafana`, `cockpit`, `search`, `cache`, `git`, `agent`, `companion`, `home`, `radarr`, `sonarr`, `lidarr`, `readarr`, `prowlarr`, `torrent-indexer`, `bazarr`, `jellyfin`, `jellyseerr`, `cast`, `qbittorrent`, `slskd`, `weather`.
 - Host-local virtual hosts:
   - `adguard.fufu.land` $\\to$ Local AdGuard UI (:3333)
   - `dns.fufu.land` $\\to$ Local AdGuard DoH (:3333/dns-query)

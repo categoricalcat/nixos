@@ -103,13 +103,13 @@ ______________________________________________________________________
 
 ### 4.1 Attic Binary Cache
 
-- **Attic Server (`atticd`)**: Port `24203` (`cache.fufu.land`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
-- **Attic Watch-Store (`attic-watch-store.service`)**: Daemon running under user `nix-builder` that watches `/nix/store` and pushes new paths in real time (`-j 10`).
+- **Attic Server (`atticd`)**: Binds `127.0.0.1:24203` behind the local ingress (`cache.fufu.land`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
+- **Attic Watch-Store (`attic-watch-store.service`)**: Daemon running under user `nix-builder` that watches `/nix/store` and pushes new paths in real time (`-j 10`) via `http://127.0.0.1:24203`.
 - **Attic Closure-Keeper (`attic-closure-keeper.timer`)**: Runs every 15 minutes to guarantee all `-nixos-system-` closures are pinned and pushed.
 
 ### 4.2 Git Forge & Actions Runners
 
-- **Forgejo (`git.fufu.land`)**: Port 24200, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
+- **Forgejo (`git.fufu.land`)**: Binds `127.0.0.1:24200` behind the local ingress, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
 - **Forgejo Actions Runner (`forgejo-runner-yifuwuqi`)**: Native host runner (`native:host` label) under `nix-builder` user. Systemd sandbox is intentionally relaxed so builds can access `/nix/store` and mount namespaces. Automatically injects Attic push credentials.
 - **GitHub Actions Runner**: Dedicated self-hosted runner targeting `categoricalcat/nixos` with `setup-ci-env` integration.
 - **Distributed Builder**: Pinned host keys in `secrets/keys.nix`, accepts up to 16 concurrent Nix build jobs.
@@ -140,7 +140,7 @@ ______________________________________________________________________
 - **SillyTavern Companion UI**: Port 24000 (`companion.fufu.land`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.fufu.land`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
-- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.fufu.land`), bound to the LAN address only (`10.42.0.2`, where `yirukou`'s Nginx proxies to it). It has no authentication, so anything that can reach that address (Nginx clients, tailnet peers via `yirukou`'s `10.42.0.0/24` subnet route, local processes) can drive it.
+- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.fufu.land`), bound to loopback behind the local ingress (`yirukou` proxies to the ingress, which forwards to `127.0.0.1:24010`). It has no authentication, so anything that can pass the ingress (trusted-LAN Nginx clients, tailnet peers via `yirukou`'s `10.42.0.0/24` subnet route) or reach loopback locally can drive it.
 
 ______________________________________________________________________
 
@@ -188,6 +188,15 @@ ______________________________________________________________________
   IPv4 for lack of an IPv6 default route. The web UI remains on IPv4
   port 24333. AdGuard returns RFC 7534 AS112 `192.175.48.1` and `2620:4f:8000::1`
   for blocked queries; only yirukou assigns those addresses on `br0`.
+- **Service Sandboxing**: Loki, Vector, opencode, SillyTavern, Seerr, and
+  Cockpit adopt `systemdHardening` from `modules/common.nix`; PostgreSQL and
+  Loki add loopback `IPAddressAllow`. Documented exceptions: Loki keeps
+  `AF_NETLINK` (Go interface autodetect); SillyTavern and Seerr drop
+  `MemoryDenyWriteExecute` and allow `@chown` (Node.js JIT and fs layer);
+  opencode keeps process-management syscalls and no `ProtectHome` (agent runs
+  arbitrary user commands); Cockpit keeps setuid `cockpit-session` (no
+  `NoNewPrivileges`/`RestrictSUIDSGID`). Scores (`systemd-analyze security`):
+  loki 1.4, vector 1.4, seerr/sillytavern 1.5, opencode 2.6, cockpit 4.9.
 
 ______________________________________________________________________
 

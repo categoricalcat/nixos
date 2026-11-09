@@ -14,7 +14,7 @@ Owns:
 
 Not owned here:
 
-- Network policy and service configuration on `yirukou`: [Service Security Architecture Plan](service-security-architecture-plan.md) and [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md).
+- Network policy and service configuration on `yirukou`: the retired Service Security Architecture Plan and VPN to LAN Migration Plan (completed 2026-11-09, git history); live rules in [yirukou](../hosts/yirukou.md).
 - Certificates: [mTLS Architecture Plan](mtls-architecture-plan.md).
 
 Persists state the other plans rely on: `/var/lib/tailscale` (the VPN to LAN plan's subnet router), `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter` (the security monitor that the service-security plan uses as gates), and `/persist/keys` (sops, through which the mTLS keys arrive).

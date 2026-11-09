@@ -47,9 +47,25 @@ in
     sysstat
   ];
 
+  # cockpit-ws only; PAM session processes move into logind scopes and escape
+  # these settings. Not the full systemdHardening set: logins need the setuid
+  # cockpit-session helper (NoNewPrivileges/RestrictSUIDSGID stay off), and
+  # the bridge manages the system by design.
   systemd.services.cockpit = {
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
+    serviceConfig = {
+      ProtectSystem = "full";
+      PrivateTmp = true;
+      ProtectClock = true;
+      ProtectKernelTunables = true;
+      ProtectKernelModules = true;
+      ProtectKernelLogs = true;
+      ProtectControlGroups = true;
+      RestrictRealtime = true;
+      LockPersonality = true;
+      SystemCallArchitectures = "native";
+    };
   };
 
   # Loopback-only behind the local ingress. The leading empty entry matches

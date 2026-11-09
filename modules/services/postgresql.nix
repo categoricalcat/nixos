@@ -35,4 +35,8 @@ in
     "d ${postgres.dataRoot} 0750 postgres postgres -"
     "d ${dataDir} 0750 postgres postgres -"
   ];
+
+  # Socket-only with md5 on loopback; the cgroup filter is a second layer
+  # behind the missing TCP listener.
+  systemd.services.postgresql.serviceConfig.IPAddressAllow = [ "localhost" ];
 }

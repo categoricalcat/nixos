@@ -1,6 +1,6 @@
 # Architecture Security Rollout
 
-## Status: DRAFT — Phase 0–1 deployed and verified 2026-11-08
+## Status: ACTIVE — Service Security Phases 0–3 and 5 and VPN to LAN Phases 1–4 completed 2026-11-09; both plans retired to git history. Remaining lanes: mTLS Phases 2–4, impermanence, conditional edge.
 
 ## Objective
 
@@ -13,12 +13,14 @@ acceptance checks.
 
 ### Repository-Verified
 
-- [Service Security Phase 0](service-security-architecture-plan.md#phase-0-forward-isolation)
-  and [VPN to LAN Phase 1](vpn-to-lan-migration-plan.md#phase-1-storage-and-database-services)
-  were activated on `yifuwuqi`. The active generation declares
+- Service Security Phase 0 and VPN to LAN Phase 1 were activated on
+  `yifuwuqi`. The active generation declares
   `networking.firewall.filterForward`, explicit container WAN and fallback-route
   allowances, and a loopback-only FlareSolverr publish; Samba's active
-  allowlist excludes the VPN CIDR. Later phases remain outstanding.
+  allowlist excludes the VPN CIDR. Service Security Phases 0–3 and 5 and VPN
+  to LAN Phases 1–4 are activated as of 2026-11-09; the local ingress fronts
+  every proxied backend on `yifuwuqi`, every Decision 6 unit is sandboxed, and
+  NetBird is retired. Both completed plans live in git history.
 - [Impermanence on yirukou](impermanence-yirukou-plan.md) is not implemented:
   the flake has no impermanence input or module, and
   `hosts/yirukou/hardware.nix` still configures an Ext4 root.
@@ -184,7 +186,7 @@ flowchart TD
     securityP5["Service Security P5: sandboxing"]
     securityP3["Service Security P3: local ingress"]
     mtlsInternal["mTLS P2 and P3: internal traffic"]
-    securityP4["Service Security P4: retire interim rules"]
+    mtlsP4["mTLS P4: retire interim rules"]
     impermanence["Impermanence: isolated yirukou release"]
     publicOrigin["Public Cloudflare origin"]
     mtlsEdge["mTLS P1: Origin Pulls"]
@@ -200,7 +202,7 @@ flowchart TD
     securityP0 --> securityP3
     securityP1 --> securityP3
     securityP3 --> mtlsInternal
-    mtlsInternal --> securityP4
+    mtlsInternal --> mtlsP4
     preflight --> impermanence
     publicOrigin --> mtlsEdge
 ```
@@ -215,21 +217,24 @@ runtime gates pass.
   certificate-rotation policy decisions.
 - [x] Close the Phase 0 admission gates for container WAN egress, SSH-only
   cloudflared mapping, and subnet-route use.
-- [x] Deploy [Service Security Phase 0](service-security-architecture-plan.md#phase-0-forward-isolation).
-- [x] Deploy [VPN to LAN Phase 1](vpn-to-lan-migration-plan.md#phase-1-storage-and-database-services).
-- [ ] Deploy the independent Service Security Phase 2 application-auth and
-  Phase 5 sandboxing work when their decisions are resolved.
-- [x] Deploy [VPN to LAN Phase 2](vpn-to-lan-migration-plan.md#phase-2-web-proxy-and-development-services).
+- [x] Deploy Service Security Phase 0.
+- [x] Deploy VPN to LAN Phase 1.
+- [x] Deploy Service Security Phase 2 application-auth (gate passed 2026-11-09).
+- [x] Deploy the independent Service Security Phase 5 sandboxing work (gate
+  passed 2026-11-09: loki 1.4, vector 1.4, seerr 1.5, sillytavern 1.5,
+  opencode 2.6, cockpit 4.9).
+- [x] Deploy VPN to LAN Phase 2.
 - [ ] Verify designated client-facing vhosts allow trusted LAN and reject the
   untrusted VLAN. Trusted-LAN and subnet-route acceptance verified
   2026-11-09; untrusted-VLAN runtime rejection still needs a VLAN client.
-- [ ] Deploy [Service Security Phase 1](service-security-architecture-plan.md#phase-1-gateway-and-exporter-sources).
-- [ ] Deploy and validate [VPN to LAN Phases 3–4](vpn-to-lan-migration-plan.md#phase-3-host-firewall-rules)
-  after Service Security Phase 0 preserves the Tailscale route.
-- [ ] Deploy [Service Security Phase 3](service-security-architecture-plan.md#phase-3-local-ingress).
+- [x] Deploy Service Security Phase 1 (2026-11-09; LAN-client negative probe
+  still pending).
+- [x] Deploy and validate VPN to LAN Phases 3–4 after Service Security Phase 0
+  preserves the Tailscale route (2026-11-09).
+- [x] Deploy Service Security Phase 3 (gate passed 2026-11-09).
 - [ ] Deploy [mTLS Phases 2–3](mtls-architecture-plan.md#phase-2-inter-host-upstream-proxy-mtls-tier-2-lan-inter-host)
   after the local ingress is healthy.
-- [ ] Retire interim rules in [Service Security Phase 4](service-security-architecture-plan.md#phase-4-retire-interim-ip-rules).
+- [ ] Retire interim rules in [mTLS Phase 4](mtls-architecture-plan.md#phase-4-retire-interim-ip-rules).
 - [ ] At a separate safe point after preflight, schedule and complete the
   [impermanence maintenance release](impermanence-yirukou-plan.md#rollout-order).
 - [ ] Deploy `fufu.land` as the public Cloudflare canary through

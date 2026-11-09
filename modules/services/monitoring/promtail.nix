@@ -1,6 +1,8 @@
 {
   allAddresses,
   config,
+  lib,
+  systemdHardening,
   ...
 }:
 
@@ -45,5 +47,11 @@ in
         encoding.codec = "text";
       };
     };
+  };
+
+  systemd.services.vector.serviceConfig = systemdHardening // {
+    # Vector here only reads the journal and pushes to Loki; the nixpkgs
+    # default grant is for configs that bind privileged ports.
+    AmbientCapabilities = lib.mkForce "";
   };
 }

@@ -71,11 +71,12 @@ nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
 nix eval .#nixosConfigurations.yirukou.config.networking.firewall.extraForwardRules --raw
 ```
 
-After switching `yirukou`, test from a tailnet client:
+After switching `yirukou`, test from a tailnet client. `yifuwuqi` backends sit
+behind its local ingress (Service Security Phase 3), so the probe target is
+the proxied HTTPS domain through the subnet route, not a direct backend port:
 
 ```sh
-nc -zv 10.42.0.2 24333 -w 4
-curl -I http://10.42.0.2:24333/
+curl -I https://docs.fufu.land/
 ```
 
 If it still times out, inspect live state on `yirukou` (as `root`):

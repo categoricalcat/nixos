@@ -1,6 +1,8 @@
 {
   allAddresses,
   config,
+  lib,
+  systemdHardening,
   ...
 }:
 
@@ -77,5 +79,21 @@ in
         allow_structured_metadata = true;
       };
     };
+  };
+
+  systemd.services.loki.serviceConfig = systemdHardening // {
+    # The nixpkgs module sets ProtectSystem=full; strict wins here.
+    ProtectSystem = lib.mkForce "strict";
+    # Go's net.Interfaces (ring/memberlist address autodetect) needs netlink.
+    RestrictAddressFamilies = lib.splitString " " "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
+    # Data lives outside the state directory.
+    ReadWritePaths = [ dataDir ];
+    # Peers are static: local Grafana/Prometheus scrapes and ring RPCs,
+    # yirukou's Vector push, and this host's Vector via its own LAN address.
+    IPAddressAllow = [
+      "localhost"
+      "${allAddresses.hosts.yirukou.network.lan.ipv4.host}/32"
+      "${lokiAddress}/32"
+    ];
   };
 }

@@ -30,8 +30,8 @@ Owns:
 
 Not owned here:
 
-- Which listeners exist and what binds where, including the `yifuwuqi` local ingress and its vhost helper: [Service Security Architecture Plan](service-security-architecture-plan.md).
-- Who may connect at the network layer: the service-security plan for LAN and container rules, the [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md) for tailnet rules.
+- Which listeners exist and what binds where, including the `yifuwuqi` local ingress and its vhost helper: the retired Service Security Architecture Plan (git history) and [yifuwuqi](../hosts/yifuwuqi.md).
+- Who may connect at the network layer: the host firewall rules in [yirukou](../hosts/yirukou.md) and [yifuwuqi](../hosts/yifuwuqi.md), and the tailnet rules from the retired VPN to LAN Migration Plan (git history).
 - `yirukou` storage: [Impermanence on yirukou](impermanence-yirukou-plan.md).
 
 ______________________________________________________________________
@@ -356,47 +356,55 @@ Central-host exporters remain plain HTTP on loopback.
 
 Preferred path (Decision 5): Loki binds `127.0.0.1`, and the `yifuwuqi` local ingress gets a location for Loki's push API. Vector's `sinks.loki` in `modules/services/monitoring/promtail.nix` switches its endpoint to the ingress over HTTPS and presents a client certificate from the internal CA (`tls.crt_file`, `tls.key_file`, `tls.ca_file`). Grafana and Prometheus keep reaching Loki on loopback.
 
+### Phase 4: Retire Interim IP Rules
+
+Absorbed from the retired Service Security Architecture Plan (completed 2026-11-09). After Phases 2 and 3 pass, drop the interim rules mTLS replaces:
+
+1. The exporter source restriction on `yirukou` (Phase 3 scrapes authenticate by client certificate instead of source address).
+1. The Loki push allowance on the `yifuwuqi` firewall (Vector pushes through the local ingress over mTLS).
+1. The `yirukou` gateway rule keeps only the TLS ingress port.
+
 ______________________________________________________________________
 
 ## Rollout Order
 
 ```mermaid
 flowchart TD
-    SEC3["service-security Phase 3<br/>(local ingress and vhost helper)"]
+    SEC3["yifuwuqi local ingress<br/>(deployed 2026-11-09)"]
     P1["Phase 1: Cloudflare Origin Pulls<br/>(dormant until a hostname is publicly proxied)"]
     P2["Phase 2: Inter-Host Proxy mTLS<br/>(Mutual auth between reverse proxy and backend server)"]
     P3["Phase 3: Monitoring mTLS<br/>(exporter scrapes and log push)"]
-    Retire["service-security Phase 4<br/>(retire interim IP rules)"]
+    P4["Phase 4: retire interim IP rules"]
 
     SEC3 --> P2
     SEC3 -->|log push path| P3
-    P2 --> Retire
-    P3 --> Retire
+    P2 --> P4
+    P3 --> P4
 ```
 
 Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md).
-Phase 1 is a conditional edge lane; the internal critical path is Service
-Security Phase 3, then mTLS Phases 2 and 3, then Service Security Phase 4.
+Phase 1 is a conditional edge lane; the internal critical path is the deployed
+local ingress, then Phases 2 and 3, then Phase 4.
 
 1. **Conditional edge lane — deploy Phase 1 (Cloudflare) for `fufu.land`**:
    - Test direct origin connection `curl -k https://<yirukou-public-ip>` (must be rejected with TLS handshake failure).
    - Test via Cloudflare hostname `https://fufu.land` (should succeed normally).
    - Test the same client-facing hostname from trusted LAN (must succeed) and
      from the untrusted VLAN (must be rejected).
-1. **Internal critical path — deploy Phase 2 (Inter-Host Upstream Proxy)** after the service-security plan's Phase 3:
+1. **Internal critical path — deploy Phase 2 (Inter-Host Upstream Proxy)** on the deployed local ingress:
    - Validate upstream proxy connections from `yirukou` to `yifuwuqi` over HTTPS with mutual certificate verification.
-1. **Internal critical path — deploy Phase 3 (Monitoring)** after the same local ingress exists:
+1. **Internal critical path — deploy Phase 3 (Monitoring)** on the same local ingress:
    - Verify all Prometheus scrape targets report `UP` over TLS in Grafana / Prometheus web UI.
    - Loki keeps receiving `yirukou` logs; a push without the client certificate fails the TLS handshake.
+1. **Internal critical path — deploy Phase 4 (Retire Interim IP Rules)** after Phases 2 and 3 pass:
+   - The exporter source restriction and the Loki push allowance are gone; the `yirukou` gateway rule keeps only the TLS ingress port.
 
 ### Cross-Plan Dependencies
 
 - **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md)
   is the canonical dependency order.
-- **Depends on** the [Service Security Architecture Plan](service-security-architecture-plan.md): Phase 2 terminates on its Phase 3 local ingress and uses its vhost helper; the preferred log-push path in Phase 3 uses the same ingress.
-- **Unblocks** the [Service Security Architecture Plan](service-security-architecture-plan.md): its Phase 4 removes the interim IP rules once Phases 2 and 3 here pass.
-- **Depends on** the [VPN to LAN Migration Plan](vpn-to-lan-migration-plan.md):
-  Phase 2 removes the overlay CIDR from `restrictedProxyConfig`. Tier 2 uses
+- **Depends on** the `yifuwuqi` local ingress and vhost helper (deployed 2026-11-09, formerly the Service Security Architecture Plan's Phase 3): Phase 2 terminates on it, and the Phase 3 log-push path uses the same ingress.
+- Phase 2 removes the overlay CIDR from `restrictedProxyConfig` (the VPN-to-LAN migration completed 2026-11-09): Tier 2 uses
   LAN mTLS, not a direct Tailscale transport.
 - **Coordinates with** [Impermanence on yirukou](impermanence-yirukou-plan.md):
   current persistent-root deployments do not depend on impermanence. If its

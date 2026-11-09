@@ -3,6 +3,7 @@
   lib,
   pkgs,
   allAddresses,
+  systemdHardening,
   ...
 }:
 
@@ -63,22 +64,15 @@ in
         StateDirectory = "SillyTavern";
         WorkingDirectory = "/var/lib/SillyTavern";
 
-        # Hardening
-        LockPersonality = true;
-        NoNewPrivileges = true;
-        PrivateDevices = true;
-        PrivateTmp = true;
-        ProtectClock = true;
-        ProtectControlGroups = true;
-        ProtectHome = true;
-        ProtectHostname = true;
-        ProtectKernelLogs = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        ProtectProc = "invisible";
-        ProtectSystem = "strict";
         Restart = "always";
         Type = "simple";
+      }
+      # Node.js JIT needs writable executable mappings, and its fs layer
+      # chowns (@chown sits outside @system-service; same exception as the
+      # Arr apps in servarrHardening).
+      // removeAttrs systemdHardening [ "MemoryDenyWriteExecute" ]
+      // {
+        SystemCallFilter = lib.splitString " " "@system-service ~@privileged @chown";
       };
     };
   };

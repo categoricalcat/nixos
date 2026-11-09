@@ -3,6 +3,7 @@
   lib,
   config,
   allAddresses,
+  systemdHardening,
   ...
 }:
 
@@ -24,13 +25,24 @@ in
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
 
-      serviceConfig = {
-        ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${toString host.services.opencode.port} --hostname 127.0.0.1";
-        Restart = "on-failure";
-        RestartSec = 5;
-        User = "yi";
-        Group = "yi";
-      };
+      # The agent's job is running arbitrary user commands in home dirs: no
+      # ProtectHome, ProtectSystem stays full (not strict), and bun's JIT,
+      # spawned PTYs and sandboxed tools need the relaxed entries removed.
+      serviceConfig =
+        removeAttrs systemdHardening [
+          "MemoryDenyWriteExecute"
+          "ProtectHome"
+          "PrivateDevices"
+          "RestrictNamespaces"
+        ]
+        // {
+          ProtectSystem = "full";
+          ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${toString host.services.opencode.port} --hostname 127.0.0.1";
+          Restart = "on-failure";
+          RestartSec = 5;
+          User = "yi";
+          Group = "yi";
+        };
 
       environment = {
         HOME = opencodeHome;

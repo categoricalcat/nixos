@@ -27,8 +27,6 @@ let
     UMask = lib.mkForce "0002";
     PrivateUsers = lib.mkForce "identity";
     ReadWritePaths = [ "/persist/media" ];
-    IPAddressDeny = lib.mkForce [ ];
-    IPAddressAllow = lib.mkForce [ ];
   };
 in
 {
@@ -210,12 +208,15 @@ in
         ];
       };
     };
-    seerr.serviceConfig.UMask = lib.mkForce "0002";
+    # Node.js JIT needs writable executable mappings, and its fs layer chowns
+    # (@chown sits outside @system-service; same exception as servarrHardening).
+    seerr.serviceConfig = removeAttrs systemdHardening [ "MemoryDenyWriteExecute" ] // {
+      SystemCallFilter = lib.splitString " " "@system-service ~@privileged @chown";
+      UMask = lib.mkForce "0002";
+    };
     prowlarr.serviceConfig = servarrHardening // {
       PrivateUsers = true;
       EnvironmentFile = envFile;
-      IPAddressDeny = lib.mkForce [ ];
-      IPAddressAllow = lib.mkForce [ ];
     };
     recyclarr.serviceConfig.EnvironmentFile = envFile;
     "podman-torrent-indexer" = {
