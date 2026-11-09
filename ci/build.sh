@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# CI runners without a TTY flood the log with carriage returns when using bar-with-logs.
-export NIX_CONFIG="log-format = multiline-with-logs"$'\n'"${NIX_CONFIG:-}"
+# CI runners without a TTY: bar-with-logs floods the log with carriage returns, and
+# multiline-with-logs renders every progress-meter tick as its own `[0.0 MiB DL]` line.
+# raw-with-logs keeps streamed build logs with no progress meter at all.
+export NIX_CONFIG="log-format = raw-with-logs"$'\n'"${NIX_CONFIG:-}"
 
 GREEN=$'\033[1;32m'
 DIM=$'\033[2m'
@@ -69,7 +71,7 @@ jq -rs --argjson build "${#drvs[@]}" \
 # One `nix build --keep-going` for every job: Nix caches no build failures, so
 # per-job builds would each retry a broken dependency they share.
 if [ "${#drvs[@]}" -gt 0 ]; then
-  nix build "${BUILDER_ARGS[@]}" --log-format multiline-with-logs --keep-going --print-build-logs --no-link "${drvs[@]}" || failed=1
+  nix build "${BUILDER_ARGS[@]}" --log-format raw-with-logs --keep-going --print-build-logs --no-link "${drvs[@]}" || failed=1
 fi
 
 declare -A verdict=()
@@ -106,7 +108,7 @@ develop | bot/auto-maintenance)
   nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]' | while read -r host; do
     job="nixos-$host"
     toplevel="$(jq -r --arg attr "$job" 'select(.attr == $attr) | .outputs.out // empty' "$jobs")"
-    if [[ ${verdict[$job]:-} =~ ^(built|cached)$ ]] && nix build --log-format multiline-with-logs --out-link "$root_dir/$host" "$toplevel"; then
+    if [[ ${verdict[$job]:-} =~ ^(built|cached)$ ]] && nix build --log-format raw-with-logs --out-link "$root_dir/$host" "$toplevel"; then
       printf '%s✔ Rooted%s %s\n' "$GREEN" "$RESET" "$host"
     else
       echo "::warning::could not root the $host toplevel for $ref_name"

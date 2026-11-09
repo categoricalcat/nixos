@@ -19,7 +19,7 @@ jobs:
     env:
       CLICOLOR_FORCE: "1"
       FORCE_COLOR: "1"
-      NIX_CONFIG: "log-format = multiline-with-logs"
+      NIX_CONFIG: "log-format = raw-with-logs"
 
     steps:
       - uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
