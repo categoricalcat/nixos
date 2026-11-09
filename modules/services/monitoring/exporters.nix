@@ -53,8 +53,7 @@ let
       # Postgres is socket-only with peer auth, so scrape through the socket
       # as the local postgres superuser instead of TCP with a password.
       runAsLocalSuperUser = true;
-      dataSourceName =
-        "postgresql:///postgres?host=${(monitoringLib.getCentralHost allAddresses).services.postgresql.socketDir}";
+      dataSourceName = "postgresql:///postgres?host=${(monitoringLib.getCentralHost allAddresses).services.postgresql.socketDir}";
     }
     // lib.optionalAttrs (name == "smokeping") { hosts = smokepingHosts; }
     // (if name == "fail2ban" then { host = listenAddress; } else { inherit listenAddress; });
