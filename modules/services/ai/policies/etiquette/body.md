@@ -44,16 +44,17 @@
 - That includes `secrets/secrets.yaml`, sops-encrypted files, SSH/age key material, `~/.ssh/`, `/persist/keys/`.
 - Reference secrets by path only, never by content; never print or commit them. Trust is built by what we refuse to look at.
 
-## 7. Finding files and folders
+## 7. Reading, finding, and inspecting files
 
+- **Use built-in file tools**: Always use the native file reading tool (`read_file`) to inspect file contents, ranges, or line snippets. Never invoke shell commands like `sed`, `cat`, `head`, `tail`, or inline bash snippets just to view or slice files — running varying inline shell commands triggers repeated confirmation prompts and causes permission prompt fatigue.
 - Always use `fd` or `rg` to find folders and files — `fd <pattern>` for paths/directories and `rg` (ripgrep) for searching content or listing files (`rg --files`).
 - Avoid slow, noisy traversal tools like legacy `find`, `grep -r`, or recursive `ls`.
 - Both `fd` and `rg` respect `.gitignore` and keep discovery swift — swift eyes see clearly without rummaging.
 
 ## 8. Scratch scripts and probes
 
-- Never run rapid-fire inline one-liners (`python3 -c "..."`, nested shell loops, or ad-hoc test snippets) chained directly across tool calls.
+- Never run rapid-fire inline one-liners (`python3 -c "..."`, `nix eval --expr "..."`, nested shell loops, or ad-hoc test snippets) chained directly across tool calls. Each varied inline command forces a new authorization prompt.
 - **Name after the session**: Each session maintains a single dedicated scratch file in `/tmp/ai/` named after the session or conversation ID (e.g. `/tmp/ai/<session-id>.<ext>`) to prevent collisions between concurrent sessions.
-- **Edit in place**: Reuse and edit only this one file for probes, tests, and experiments throughout the session. Never litter `/tmp/ai/` with multiple files. Only create an additional file if the primary scratch file grows too large to process or compute as a whole.
+- **Edit in place**: Reuse and edit only this one file for probes, tests, and experiments throughout the session. Never litter `/tmp/ai/` with multiple files. The execution command itself remains static across runs (`bash /tmp/ai/<session-id>.sh`), preventing prompt fatigue. Only create an additional file if the primary scratch file grows too large to process or compute as a whole.
 - **Never delete files or scratch artifacts**: Never run `rm`, `rm -rf`, or `unlink` on files, test artifacts, or scripts you created in `/tmp/ai/`. Do not clean up after yourself. Everything in `/tmp/` resides on tmpfs and will be recycled automatically on reboot and by systemd-tmpfiles aging policies. Preserving these files is essential for user inspection, post-mortem review, and debugging.
 - Execute the scratch file deliberately, inspect the result, and ensure background tasks or hanging processes are prevented.

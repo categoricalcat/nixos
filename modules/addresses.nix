@@ -668,7 +668,7 @@ in
 
       nixBuild = {
         enable = true;
-        useRemoteBuilders = false;
+        useRemoteBuilders = true;
         remoteBuilder = true;
         systems = [ "x86_64-linux" ];
         maxJobs = 16;

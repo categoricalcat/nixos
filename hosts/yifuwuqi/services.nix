@@ -2,6 +2,7 @@
 
 {
   addresses,
+  allAddresses,
   pkgs,
   ...
 }:
@@ -93,6 +94,10 @@
         "sshd" = {
           settings = {
             mode = "aggressive";
+            # Gateway is key-only for sshd (modules/services/ssh), and a ban
+            # would cut every tailnet client at once. A jail-level ignoreip
+            # replaces the default, so loopback is repeated.
+            ignoreip = "127.0.0.1/8 ::1 ${allAddresses.hosts.yirukou.network.lan.ipv4.host}";
           };
           enabled = true;
         };

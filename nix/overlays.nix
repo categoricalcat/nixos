@@ -21,11 +21,29 @@ _: [
             old.postBuild;
       });
 
+    # rustPlatform sets LIBGIT2_NO_VENDOR=1 but nixpkgs' lan-mouse omits libgit2
+    # from buildInputs, so libgit2-sys aborts with no system library to link.
+    lan-mouse = prev.lan-mouse.overrideAttrs (old: {
+      buildInputs = old.buildInputs ++ [ prev.libgit2 ];
+    });
+
     # Nixpkgs 26.11 bumped opencode to 2.2.5 with a stale node_modules hash.
     opencode = prev.opencode.overrideAttrs (old: {
       node_modules = old.node_modules.overrideAttrs (_: {
         outputHash = "sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=";
       });
+    });
+
+    # mprisence transitively pulls aws-lc-sys (via rustls). nixpkgs' legacy
+    # default-crate-overrides.nix adds aws-lc + AWS_LC_SYS_USE_SYSTEM=1 for
+    # aws-lc-sys, but buildRustPackage does not apply crate overrides, so
+    # mprisence lists only openssl. When AWS_LC_SYS_USE_SYSTEM=1 reaches the
+    # build, aws-lc-sys detection finds OpenSSL, rejects it for lacking the
+    # AWS-LC-specific openssl/base.h, and hard-fails. Provide aws-lc and force
+    # system linking so detection succeeds regardless of the env var's origin.
+    mprisence = prev.mprisence.overrideAttrs (old: {
+      buildInputs = old.buildInputs ++ [ prev.aws-lc ];
+      env.AWS_LC_SYS_USE_SYSTEM = 1;
     });
 
     # Fix reaper segfault on startup (NixOS/patchelf#446, NixOS/patchelf#447):

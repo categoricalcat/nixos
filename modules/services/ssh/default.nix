@@ -13,6 +13,11 @@ let
   formatListenAddr = addr: if lib.hasInfix ":" addr then "[${addr}]" else addr;
   dynamicSshConfig = import ./dynamic.nix { inherit lib allAddresses keys; };
 
+  lan = allAddresses.hosts.yirukou.network.lan.ipv4;
+  # yirukou SNATs every subnet-route client to this address, so it stands for
+  # the whole tailnet rather than for one LAN device.
+  gateway = lan.host;
+
   aiGate = pkgs.writeShellScript "ai-gate" (builtins.readFile ./scripts/ai-gate.sh);
 in
 {
@@ -98,7 +103,13 @@ in
         PermitRootLogin = if config.yi.ssh.permitRootKeyLogin then "prohibit-password" else "no";
         GatewayPorts = "yes";
         # Password auth is off globally; re-enabled only for LAN clients below.
+        # With UsePAM, keyboard-interactive is a second password path, so it
+        # is switched off alongside.
         PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        # The gateway is key-only, so exempting it from sshd's penalty
+        # throttle cannot help a guesser.
+        PerSourcePenaltyExemptList = gateway;
       };
 
       # Additional performance settings
@@ -109,10 +120,12 @@ in
         # Faster SFTP (if using internal-sftp)
         Subsystem sftp internal-sftp
 
-        # LAN clients (10.42.0.0/24) keep password auth; ts/nb/cloudflared do not.
+        # LAN devices keep password auth; ts/nb/cloudflared and the gateway
+        # (which carries the tailnet) do not.
         # Match Address matches the client source address.
-        Match Address 10.42.0.0/24
+        Match Address ${lan.cidr},!${gateway}
           PasswordAuthentication yes
+          KbdInteractiveAuthentication yes
 
         ${lib.optionalString (!config.yi.ssh.permitRootKeyLogin) ''
           # Root login is strictly restricted to Tailscale connections via public key.

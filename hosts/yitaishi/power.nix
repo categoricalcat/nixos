@@ -81,6 +81,7 @@ in
       HandleLidSwitchDocked = "ignore";
       HandleLidSwitchExternalPower = "ignore";
       HandleSuspendKey = "ignore";
+      HandleSuspendKeyLongPress = "ignore";
       HandleHibernateKey = "ignore";
     };
   };
@@ -94,11 +95,19 @@ in
   networking.networkmanager.wifi.powersave = false;
 
   systemd = {
+    sleep.settings.Sleep = {
+      AllowSuspend = "no";
+      AllowHibernation = "no";
+      AllowHybridSleep = "no";
+      AllowSuspendThenHibernate = "no";
+    };
+
     targets = {
       sleep.enable = false;
       suspend.enable = false;
       hibernate.enable = false;
       hybrid-sleep.enable = false;
+      suspend-then-hibernate.enable = false;
     };
 
     services = {

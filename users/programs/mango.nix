@@ -235,10 +235,6 @@ in
 
     wayland.systemd.target = "mango-session.target";
 
-    programs.dank-material-shell.systemd.target = lib.mkIf (
-      desktopShell == "dms"
-    ) "mango-session.target";
-
     xdg.configFile = {
       "${if desktopShell == "dms" then "mango/dms/binds.conf" else "mango/binds.conf"}".text =
         keybinds.generateMangoConfig

@@ -91,7 +91,7 @@
     "niri"
   ],
   "widgetBackgroundColor": "sc",
-  "calendarBackend": "khal",
+  "calendarBackend": "dankcal",
   "syncComponentAnimationSpeeds": true,
   "popoutAnimationDuration": 75,
   "modalAnimationDuration": 75,

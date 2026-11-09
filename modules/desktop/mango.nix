@@ -24,8 +24,6 @@ in
 
     home-manager.users.yi.imports = [
       inputs.mango.hmModules.mango
-      inputs.dms.homeModules.dank-material-shell
-      ../../users/programs/dms.nix
       ../../users/programs/noctalia
       ../../users/programs/mango.nix
       {

@@ -74,7 +74,7 @@ in
     obs-studio-plugins.obs-vkcapture
     feishin
     jellyflix
-    jellyfin-tui
+    # jellyfin-tui
     jellytui
     constrict
     # nextcloud-client

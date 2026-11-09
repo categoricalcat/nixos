@@ -166,8 +166,10 @@ ______________________________________________________________________
   `10.42.0.2`, and the generated client block targets `10.42.0.2:24212` with
   `yifuwuqi`'s pinned host key, so it works on the LAN and over the subnet
   route. The Cloudflare SSH fail-safe is published as `cloudflare.fufu.land`.
-  Subnet-route clients arrive SNAT'd as `10.42.0.1`, so sshd's
-  `Match Address 10.42.0.0/24` password exception also applies to them.
+  Subnet-route clients arrive SNAT'd as `10.42.0.1`, so sshd's password
+  exception excludes that address (`Match Address 10.42.0.0/24,!10.42.0.1`):
+  they are key-only, and neither fail2ban's sshd jail nor sshd's
+  `PerSourcePenalties` throttles the shared address.
 
 ### 2. Restrict Reverse Proxy Access to LAN Subnets
 

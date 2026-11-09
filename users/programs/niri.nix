@@ -78,8 +78,6 @@ in
 {
   imports = [
     inputs.niri.homeModules.config
-    inputs.dms.homeModules.niri
-    ./niri-dms.nix
   ];
 
   config = {
@@ -101,16 +99,15 @@ in
       settings = {
         prefer-no-csd = true;
 
-        spawn-at-startup = [
-          {
+        spawn-at-startup =
+          lib.optional (desktopShell != "dms") {
             argv = [
               "bash"
               "-c"
               "wl-paste --watch cliphist store &"
             ];
           }
-          { argv = [ "niri-float-sticky" ]; }
-        ];
+          ++ [ { argv = [ "niri-float-sticky" ]; } ];
 
         environment = {
           XDG_CURRENT_DESKTOP = "niri";

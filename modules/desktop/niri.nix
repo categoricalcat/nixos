@@ -17,8 +17,6 @@ in
 
   config = lib.mkIf (config.desktop.environment == "niri") {
     home-manager.users.yi.imports = [
-      inputs.dms.homeModules.dank-material-shell
-      ../../users/programs/dms.nix
       # ../../users/programs/noctalia
       ../../users/programs/niri.nix
     ];
@@ -41,8 +39,6 @@ in
           ];
         });
 
-    services.accounts-daemon.enable = true;
-
     xdg.portal = {
       enable = true;
       extraPortals = [
@@ -60,7 +56,7 @@ in
             "gnome"
             "gtk"
           ];
-          "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+          "org.freedesktop.impl.portal.FileChooser" = lib.mkDefault [ "gtk" ];
           "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
           "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
         };

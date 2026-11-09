@@ -139,7 +139,7 @@ in
 
     xdg = {
       mime.defaultApplications = {
-        "inode/directory" = "org.kde.dolphin.desktop";
+        "inode/directory" = lib.mkDefault "org.kde.dolphin.desktop";
         "text/html" = "google-chrome.desktop";
         "x-scheme-handler/http" = "google-chrome.desktop";
         "x-scheme-handler/https" = "google-chrome.desktop";
