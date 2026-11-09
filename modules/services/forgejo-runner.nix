@@ -91,7 +91,9 @@ in
         runner.labels = [ "native:host" ];
         runner.timeout = "12h";
         server.connections.yifuwuqi = {
-          url = "https://${services.forgejo.domain}";
+          # Loopback: the runner is on-host and its startup Declare is fatal,
+          # so it must not depend on the proxy chain being up.
+          url = "http://127.0.0.1:${toString services.forgejo.httpPort}";
           uuid = "e6b2db5f-d74b-41bc-866e-1f530f4a26c4";
         };
       };
@@ -111,6 +113,7 @@ in
       "sops-nix.service"
     ];
     after = [
+      "forgejo.service"
       "network-online.target"
       "sops-nix.service"
     ];
