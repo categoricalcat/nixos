@@ -8,6 +8,20 @@
 let
   firecrawlPort = allAddresses.hosts.${config.networking.hostName}.services.firecrawl.port;
   searxngPort = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
+
+  # Retry a probe inside a container until it answers (~120s cap). A podman
+  # unit is "started" when the container exists, not when the service listens;
+  # ExecStartPost with this makes After=/Requires= mean "ready".
+  waitFor =
+    name: probe:
+    pkgs.writeShellScript "firecrawl-wait-${name}" ''
+      for _ in $(seq 1 60); do
+        ${pkgs.podman}/bin/podman exec ${name} ${probe} >/dev/null 2>&1 && exit 0
+        sleep 2
+      done
+      echo "timed out waiting for ${name} to become ready" >&2
+      exit 1
+    '';
 in
 
 {
@@ -32,10 +46,16 @@ in
     "podman-firecrawl-postgres" = {
       requires = [ "init-firecrawl-network.service" ];
       after = [ "init-firecrawl-network.service" ];
+      # nuq workers connect at boot and crash without retry; mirror upstream's
+      # service_healthy gate (docker-compose depends_on condition).
+      serviceConfig.ExecStartPost = waitFor "firecrawl-postgres" "pg_isready -U postgres -d postgres -q";
     };
     "podman-firecrawl-rabbitmq" = {
       requires = [ "init-firecrawl-network.service" ];
       after = [ "init-firecrawl-network.service" ];
+      # Same race, slower boot: ECONNREFUSED here crashed nuq workers and
+      # failed a nixos activation (deploy run 310). Upstream's health probe.
+      serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "rabbitmq-diagnostics -q check_running";
     };
     "podman-firecrawl-playwright" = {
       requires = [ "init-firecrawl-network.service" ];
@@ -43,12 +63,19 @@ in
     };
     "podman-firecrawl" = {
       requires = [ "init-firecrawl-network.service" ];
-      after = [ "init-firecrawl-network.service" ];
-      unitConfig = {
-        StartLimitIntervalSec = "1h";
-        StartLimitBurst = 3;
-      };
-      serviceConfig.RestartSec = "5m";
+      after = [
+        "init-firecrawl-network.service"
+        "podman-firecrawl-playwright.service"
+      ];
+      # Playwright crash-loops on transient network fetches at boot (corepack
+      # pnpm download); the app survives its absence (per-scrape errors), so
+      # order after it but never let it block startup (Wants, not Requires).
+      wants = [ "podman-firecrawl-playwright.service" ];
+      # No start limit: start-limit-hit turned transient crash loops into
+      # permanent outages needing manual intervention (2026-11-09). Slow
+      # backoff alone is enough; the readiness gates above keep boots clean.
+      unitConfig.StartLimitIntervalSec = 0;
+      serviceConfig.RestartSec = "30s";
     };
   };
 
@@ -60,7 +87,13 @@ in
 
     firecrawl-postgres = {
       image = "ghcr.io/firecrawl/nuq-postgres:latest";
-      extraOptions = [ "--network=firecrawl_internal" ];
+      extraOptions = [
+        "--network=firecrawl_internal"
+        # Podman-level health for auto-update and inspection; the systemd
+        # ordering gate lives in ExecStartPost above.
+        "--health-cmd=pg_isready -U postgres -d postgres -q"
+        "--health-start-period=10s"
+      ];
       environment = {
         POSTGRES_USER = "postgres";
         POSTGRES_PASSWORD = "postgres";
@@ -70,7 +103,11 @@ in
 
     firecrawl-rabbitmq = {
       image = "docker.io/library/rabbitmq:4-management";
-      extraOptions = [ "--network=firecrawl_internal" ];
+      extraOptions = [
+        "--network=firecrawl_internal"
+        "--health-cmd=rabbitmq-diagnostics -q check_running"
+        "--health-start-period=15s"
+      ];
     };
 
     firecrawl-playwright = {
@@ -112,7 +149,6 @@ in
         "firecrawl-redis"
         "firecrawl-postgres"
         "firecrawl-rabbitmq"
-        "firecrawl-playwright"
       ];
     };
   };
