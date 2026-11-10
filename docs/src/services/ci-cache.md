@@ -35,8 +35,8 @@ After deployment the endpoints resolve as:
 
 | Endpoint             | Service        |
 | -------------------- | -------------- |
-| `git.fufu.land`      | Forgejo mirror |
-| `cache.fufu.land/yi` | Attic cache    |
+| `git.aset.love`      | Forgejo mirror |
+| `cache.aset.love/yi` | Attic cache    |
 
 ## Secret Inventory
 
@@ -115,7 +115,7 @@ Expected state after the first switch:
 
 ## Forgejo Bootstrap
 
-Open `git.fufu.land`.
+Open `git.aset.love`.
 
 1. Create the first admin user.
 1. Create a read-only pull mirror from `https://github.com/categoricalcat/nixos`.
@@ -148,7 +148,7 @@ Then:
 1. Put `push_token` in SOPS as `tokens/attic-push-token`.
 1. Copy the public key from `attic cache info yi`.
 1. Replace the placeholder key in `modules/services/attic/client.nix`.
-1. Redeploy every host that should pull from `cache.fufu.land/yi`.
+1. Redeploy every host that should pull from `cache.aset.love/yi`.
 
 ## Trigger Tokens
 
@@ -167,7 +167,7 @@ systemctl status forgejo forgejo-runner-yifuwuqi atticd attic-watch-store attic-
 Check the cache endpoint from a mesh host:
 
 ```bash
-curl -I https://cache.fufu.land/yi/nix-cache-info
+curl -I https://cache.aset.love/yi/nix-cache-info
 ```
 
 Push test:
@@ -184,17 +184,17 @@ If you are adapting this repo for your own domains and secrets, replace every oc
 
 | What                 | Default                | Replace with                                     |
 | -------------------- | ---------------------- | ------------------------------------------------ |
-| Domain               | `fufu.land`            | your domain                                      |
+| Domain               | `aset.love`            | your domain                                      |
 | Attic cache name     | `yi`                   | your cache name                                  |
 | GitHub repo          | `categoricalcat/nixos` | your repo                                        |
 | Attic JWT key        | (generate)             | `openssl genrsa -traditional 4096 \| base64 -w0` |
 | Forgejo runner token | (fetch from UI)        | Forgejo Admin -> Actions -> Runners              |
 | GitHub runner token  | (fetch from UI)        | Settings → Actions → Runners                     |
 
-Search in these files for `fufu.land`, `categoricalcat`, and `yi`:
+Search in these files for `aset.love`, `categoricalcat`, and `yi`:
 
 ```bash
-grep -rn 'fufu\.land\|categoricalcat' modules/ docs/ .github/ ci/
+grep -rn 'aset\.love\|categoricalcat' modules/ docs/ .github/ ci/
 ```
 
 ## Troubleshooting

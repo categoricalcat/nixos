@@ -1,6 +1,6 @@
 # Forgejo Primary & GitHub Push Mirror Runbook
 
-Imperative runbook to transition Forgejo (`git.fufu.land`) from a read-only pull mirror to the primary writable forge, continuously mirroring to GitHub via an SSH Deploy Key.
+Imperative runbook to transition Forgejo (`git.aset.love`) from a read-only pull mirror to the primary writable forge, continuously mirroring to GitHub via an SSH Deploy Key.
 
 No NixOS configuration changes are required.
 
@@ -8,7 +8,7 @@ ______________________________________________________________________
 
 ## 1. Convert Forgejo Repo to Regular (Primary)
 
-1. Open `https://git.fufu.land/yi/nixos/settings`.
+1. Open `https://git.aset.love/yi/nixos/settings`.
 1. Under **Mirror Settings**, click **Convert to regular repository**.
 1. Confirm the conversion. The repository is now writable.
 
@@ -18,7 +18,7 @@ ______________________________________________________________________
 
 ### In Forgejo:
 
-1. Navigate to `https://git.fufu.land/yi/nixos/settings/repository`.
+1. Navigate to `https://git.aset.love/yi/nixos/settings/repository`.
 1. Scroll to **Push Mirrors** and click **Add Push Mirror**.
 1. Fill in:
    - **Target URL**: `git@github.com:categoricalcat/nixos.git`
@@ -47,7 +47,7 @@ Run on each active workstation (`yitaishi`, `yichuang`, etc.):
 
 ```bash
 # Point origin to Forgejo (SSH on port 24212)
-git remote set-url origin ssh://forgejo@git.fufu.land:24212/yi/nixos.git
+git remote set-url origin ssh://forgejo@git.aset.love:24212/yi/nixos.git
 
 # Optional: retain GitHub as a secondary remote
 git remote add github git@github.com:categoricalcat/nixos.git

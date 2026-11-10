@@ -66,6 +66,6 @@ path allowlist and additionally unreadable to the `ai` user.
   there is nothing beyond the allowlist to run.
 - **Host-key pinning**: mesh host keys are pinned in `/etc/ssh/ssh_known_hosts`
   (`modules/services/ssh/known-hosts.nix`), generated from `secrets/keys.nix`.
-  `ssh.fufu.land` (LAN and Tailnet subnet route) and the out-of-band
-  Cloudflare path `cloudflare.fufu.land` both verify `yifuwuqi`'s pinned key
+  `ssh.aset.love` (LAN and Tailnet subnet route) and the out-of-band
+  Cloudflare path `cloudflare.aset.love` both verify `yifuwuqi`'s pinned key
   through `HostKeyAlias`.

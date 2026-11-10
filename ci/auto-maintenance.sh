@@ -58,7 +58,7 @@ api() {
 
 git config core.hooksPath /dev/null
 git config user.name "Auto Maintenance"
-git config user.email "auto-maintenance@fufu.land"
+git config user.email "auto-maintenance@aset.love"
 git fetch --quiet --prune origin "+refs/heads/*:refs/remotes/origin/*"
 git switch --quiet --force-create "$bot_branch" "refs/remotes/origin/$base_branch"
 echo "auto-maintenance: $bot_branch reset to $base_branch at $(git rev-parse --short HEAD)"

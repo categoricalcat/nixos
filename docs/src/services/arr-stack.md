@@ -25,7 +25,7 @@ Nix only moves listen/proxy ports. After switching host ports to the `24xxx` ran
 
 ## 1. Initial Authentication
 
-- Access each service's web UI via their respective `*.fufu.land` domains through Nginx.
+- Access each service's web UI via their respective `*.aset.love` domains through Nginx.
 - Follow initial setup prompts and establish authentication as needed.
 
 ## 2. Root Folders Configuration
@@ -75,7 +75,7 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 - Name: `LimeTorrents (Prowlarr)`
 - URL: `http://localhost:24696/<LimeTorrents-id>/` (the id is the one shown in Prowlarr's indexer list; keep `apiPath` `/api`)
 
-Also remove any stale manual Torznab entries in Lidarr pointing at `prowlarr.fufu.land/1` (a duplicate of The Pirate Bay).
+Also remove any stale manual Torznab entries in Lidarr pointing at `prowlarr.aset.love/1` (a duplicate of The Pirate Bay).
 
 ## 6. Recyclarr (TRaSH Guides Sync)
 
@@ -85,7 +85,7 @@ Recyclarr is fully declarative and automatically uses the API keys configured in
 
 For music that torrent indexers can't provide (J-pop, indie, niche artists), the stack includes `slskd` + `soularr`:
 
-- **slskd**: Soulseek client running in the gluetun VPN namespace. Web UI at `https://slskd.fufu.land` (login: `slskd` / the `services.slskd.web_password` secret). Downloads land in `/persist/media/downloads/soulseek`.
+- **slskd**: Soulseek client running in the gluetun VPN namespace. Web UI at `https://slskd.aset.love` (login: `slskd` / the `services.slskd.web_password` secret). Downloads land in `/persist/media/downloads/soulseek`.
 - **soularr**: also in the gluetun namespace; runs every 5 minutes, scans Lidarr's wanted list, searches Soulseek, downloads, and asks Lidarr to import.
 
 Setup:
@@ -116,6 +116,6 @@ To ensure your media applications prefer files with Brazilian voice acting:
 
 Pinepods (`modules/services/pinepods.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. It runs with its own Postgres and Valkey sidecars on an internal container network; state lives under `/var/lib/container-volumes/pinepods`, with downloaded podcasts stored in `/persist/media/podcasts`:
 
-1. Open `https://cast.fufu.land` and create the first admin account when prompted.
+1. Open `https://cast.aset.love` and create the first admin account when prompted.
 1. Import subscriptions via OPML (Settings → Import/Export) or add podcasts by search/RSS.
 1. Configure automatic downloads or download specific episodes directly from the web interface.

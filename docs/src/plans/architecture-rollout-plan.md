@@ -32,7 +32,7 @@ acceptance checks.
   Phase 2 removed its VPN CIDR and added a `yirukou` input SNAT that
   presents subnet-route Tailnet clients to nginx as `10.42.0.1`; deployed and
   verified 2026-11-09.
-- The existing `fufu.land` vhost is an HTTP-only static response. It is the
+- The existing `aset.love` vhost is an HTTP-only static response. It is the
   selected public-edge canary and must become the first HTTPS,
   Cloudflare-authenticated listener.
 
@@ -70,8 +70,8 @@ acceptance checks.
 - Cloudflare DNS and Authenticated Origin Pull state before the conditional
   edge tier.
 - The first public hostname and its rollout date.
-- The Cloudflare tunnel's SSH public hostname moving from `ssh.fufu.land` to
-  `cloudflare.fufu.land`, followed by removal of the public `ssh.fufu.land`
+- The Cloudflare tunnel's SSH public hostname moving from `ssh.aset.love` to
+  `cloudflare.aset.love`, followed by removal of the public `ssh.aset.love`
   record.
 
 ## Decisions
@@ -86,13 +86,13 @@ acceptance checks.
    but it must not share a generation with VPN, service-security, or mTLS
    changes.
 1. `yirukou` is the future public edge. Its WAN TCP ingress remains closed
-   today; `fufu.land` is the first public Cloudflare-to-`yirukou` canary and
+   today; `aset.love` is the first public Cloudflare-to-`yirukou` canary and
    returns only `hello world`. Internal mTLS has a separate critical path and
    must not wait for that edge tier.
 1. Cloudflared is an SSH fail-safe only. Forward filtering permits its required
    WAN egress and a source-scoped connection to `yifuwuqi` SSH, but grants no
    cloudflared route to `yirukou`, the local ingress, or hosted application
-   backends. Its tunnel hostname is `cloudflare.fufu.land`; `ssh.fufu.land` is
+   backends. Its tunnel hostname is `cloudflare.aset.love`; `ssh.aset.love` is
    plain SSH to `yifuwuqi` over the LAN and the subnet route.
 1. Internal administration occurs through SSH on `yifuwuqi`: no remote
    PostgreSQL, direct AdGuard administration, or anonymous Grafana Security
@@ -165,7 +165,7 @@ but becomes relevant before any later tmpfs-root release.
 
 ### Conditional Edge Lane — Cloudflare Origin Pulls
 
-Deploy mTLS Phase 1 with the `fufu.land` public Cloudflare-proxied canary.
+Deploy mTLS Phase 1 with the `aset.love` public Cloudflare-proxied canary.
 Keep trusted-LAN browser access separate from the Cloudflare-authenticated
 public listener or prove an equivalent policy; never require a Cloudflare
 client certificate from LAN browsers. Validate dashboard state, trusted-LAN
@@ -237,10 +237,10 @@ runtime gates pass.
 - [ ] Retire interim rules in [mTLS Phase 4](mtls-architecture-plan.md#phase-4-retire-interim-ip-rules).
 - [ ] At a separate safe point after preflight, schedule and complete the
   [impermanence maintenance release](impermanence-yirukou-plan.md#rollout-order).
-- [ ] Deploy `fufu.land` as the public Cloudflare canary through
+- [ ] Deploy `aset.love` as the public Cloudflare canary through
   [mTLS Phase 1](mtls-architecture-plan.md#phase-1-cloudflare-authenticated-origin-pulls-tier-1-edge-ingress).
 
 ## Open Questions
 
 No cross-plan design choice remains open. Activate the conditional edge tier
-when the `fufu.land` canary is scheduled for deployment.
+when the `aset.love` canary is scheduled for deployment.

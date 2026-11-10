@@ -145,17 +145,17 @@ ______________________________________________________________________
   backend.
 - **System resolver**: `::1` first, then `127.0.0.1`. Kea DHCPv4 option 6
   stays IPv4-only; SLAAC clients get the segment ULA through RDNSS.
-- **Encrypted DNS**: Serves DoT, DoQ, and DoH on `dns.fufu.land` (853, 3443, nginx `/dns-query` on 443). AGH DDR advertises DoH `:3443` and DoQ `:853` for `_dns.resolver.arpa`; DoT is omitted (no IP SANs). Manual DoT to `:853` still works. No DNR / Kea DHCPv6.
+- **Encrypted DNS**: Serves DoT, DoQ, and DoH on `dns.aset.love` (853, 3443, nginx `/dns-query` on 443). AGH DDR advertises DoH `:3443` and DoQ `:853` for `_dns.resolver.arpa`; DoT is omitted (no IP SANs). Manual DoT to `:853` still works. No DNR / Kea DHCPv6.
 
 ### 5.2 Nginx Ingress Reverse Proxy
 
-- Wildcard ACME certificate for `*.fufu.land` and `fufu.land` via Cloudflare DNS-01 API challenge.
+- Wildcard ACME certificate for `*.aset.love` and `aset.love` via Cloudflare DNS-01 API challenge.
 - Access control (`restrictedProxyConfig`): Allows only the trusted LAN (`10.42.0.0/24`, `fd75:c55f:6d19:1::/64`) and denies everything else, including direct requests to the Tailscale address `100.69.0.1`. Subnet-route Tailnet clients arrive SNAT'd as `10.42.0.1`.
 - Virtual hosts proxied to `yifuwuqi` all terminate TLS here and forward to one local-ingress listener at `10.42.0.2:24120`, which routes on the preserved `Host` header to the loopback backends. One canonical service list (`modules/services/proxy-vhosts.nix`) generates both proxy hops: `docs`, `grafana`, `cockpit`, `search`, `cache`, `git`, `agent`, `companion`, `home`, `radarr`, `sonarr`, `lidarr`, `readarr`, `prowlarr`, `torrent-indexer`, `bazarr`, `jellyfin`, `jellyseerr`, `cast`, `qbittorrent`, `slskd`, `weather`.
 - Host-local virtual hosts:
-  - `adguard.fufu.land` $\\to$ Local AdGuard UI (:3333)
-  - `dns.fufu.land` $\\to$ Local AdGuard DoH (:3333/dns-query)
-  - `goaccess.fufu.land` $\\to$ Static HTML dashboard + WebSocket proxy (:7890)
+  - `adguard.aset.love` $\\to$ Local AdGuard UI (:3333)
+  - `dns.aset.love` $\\to$ Local AdGuard DoH (:3333/dns-query)
+  - `goaccess.aset.love` $\\to$ Static HTML dashboard + WebSocket proxy (:7890)
 
 ______________________________________________________________________
 

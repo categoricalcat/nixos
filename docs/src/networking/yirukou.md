@@ -120,7 +120,7 @@ ______________________________________________________________________
   ULA binds, local addresses, MagicDNS (`100.100.100.100` and
   `fd7a:115c:a1e0::53`), and yifuwuqi Unbound (`10.42.0.2` /
   `fd75:c55f:6d19:1::2` on `br0`). Off-net TCP/UDP 853 is dropped. DoH on 443
-  is not enforced. AGH DDR (`handle_ddr`) advertises `dns.fufu.land` DoH on
+  is not enforced. AGH DDR (`handle_ddr`) advertises `dns.aset.love` DoH on
   `:3443` and DoQ on `:853`; DoT is not in the SVCB set (cert has no IP SANs).
   There is no DNR or Kea DHCPv6.
 - **Sinkhole Drop Table**: Statically rejects IPv4 `192.175.48.1` and IPv6

@@ -78,7 +78,7 @@ ______________________________________________________________________
 
 Every host in the gang automatically imports `modules/services/attic/client.nix` via `modules/nix-settings.nix`:
 
-- **Substituter URL**: `https://cache.fufu.land/yi` (atticd binds loopback behind the `yifuwuqi` local ingress; on-host clients use `http://127.0.0.1:24203/yi`)
+- **Substituter URL**: `https://cache.aset.love/yi` (atticd binds loopback behind the `yifuwuqi` local ingress; on-host clients use `http://127.0.0.1:24203/yi`)
 - **Pinned Public Key**: `yi:wLUC4OacKKUxGtnXwIxTFGBlLwvJ9IU4BNP5OBDQO60=`
 
 When any machine activates a new system generation, pre-built store paths are substituted from Attic rather than re-compiled locally.

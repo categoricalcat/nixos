@@ -10,16 +10,16 @@ ______________________________________________________________________
 
 | Service         | Module File          | Internal Port | Public / Proxy Domain | Primary Backend / Database          | Description                                                                            |
 | --------------- | -------------------- | ------------- | --------------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| **Homepage**    | `homepage.nix`       | `24082`       | `home.fufu.land`      | Native YAML                         | Categorized dashboard with real-time health checks & widgets                           |
-| **Docs**        | `docs/service.nix`   | `24083`       | `docs.fufu.land`      | mdBook + Nginx                      | Gang documentation & architectural plans                                               |
-| **SearXNG**     | `searxng.nix`        | `24888`       | `search.fufu.land`    | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                                     |
+| **Homepage**    | `homepage.nix`       | `24082`       | `home.aset.love`      | Native YAML                         | Categorized dashboard with real-time health checks & widgets                           |
+| **Docs**        | `docs/service.nix`   | `24083`       | `docs.aset.love`      | mdBook + Nginx                      | Gang documentation & architectural plans                                               |
+| **SearXNG**     | `searxng.nix`        | `24888`       | `search.aset.love`    | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                                     |
 | **Valkey**      | `valkey.nix`         | `24379`       | *Internal only*       | In-Memory (LRU, per-host cap)       | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter                 |
-| **Cockpit**     | `cockpit.nix`        | `24091`       | `cockpit.fufu.land`   | Native D-Bus / sysstat / Podman     | System management, metrics, Podman containers & file browser                           |
-| **WebDAV**      | `webdav.nix`         | `80 / 443`    | `webdav.fufu.land`    | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                                            |
+| **Cockpit**     | `cockpit.nix`        | `24091`       | `cockpit.aset.love`   | Native D-Bus / sysstat / Podman     | System management, metrics, Podman containers & file browser                           |
+| **WebDAV**      | `webdav.nix`         | `80 / 443`    | `webdav.aset.love`    | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                                            |
 | **Firecrawl**   | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                                          |
-| **SillyTavern** | `ai/sillytavern.nix` | `24000`       | `companion.fufu.land` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                                  |
-| **Opencode**    | `opencode.nix`       | `24010`       | `agent.fufu.land`     | Native Agent Daemon                 | Autonomous AI coding agent backend; loopback behind the local ingress, unauthenticated |
-| **Cloudflared** | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                       | SSH-only fail-safe tunnel `cloudflare.fufu.land` on bridge `10.89.0.2`                 |
+| **SillyTavern** | `ai/sillytavern.nix` | `24000`       | `companion.aset.love` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                                  |
+| **Opencode**    | `opencode.nix`       | `24010`       | `agent.aset.love`     | Native Agent Daemon                 | Autonomous AI coding agent backend; loopback behind the local ingress, unauthenticated |
+| **Cloudflared** | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                       | SSH-only fail-safe tunnel `cloudflare.aset.love` on bridge `10.89.0.2`                 |
 | **Tor Client**  | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                                  |
 
 ______________________________________________________________________
@@ -28,18 +28,18 @@ ______________________________________________________________________
 
 ### 2.1 Homepage Dashboard (`modules/services/homepage.nix`)
 
-- **Web UI**: Served at `http://10.42.0.2:24082` (LAN; homepage has no loopback bind option) and proxied to `https://home.fufu.land` via the local ingress.
+- **Web UI**: Served at `http://10.42.0.2:24082` (LAN; homepage has no loopback bind option) and proxied to `https://home.aset.love` via the local ingress.
 - **Layout Architecture**: 4-column responsive grid with 5 main service groups:
-  1. **Media**: Jellyfin, Jellyseerr, Podgrab (`cast.fufu.land`, podcast catcher).
+  1. **Media**: Jellyfin, Jellyseerr, Podgrab (`cast.aset.love`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
-  1. **Monitoring**: Grafana (`grafana.fufu.land`), GoAccess (`goaccess.fufu.land`).
+  1. **Monitoring**: Grafana (`grafana.aset.love`), GoAccess (`goaccess.aset.love`).
   1. **Infrastructure**: Cockpit, Forgejo, Opencode Agent, Attic Binary Cache.
   1. **Network**: AdGuard Home, SearXNG.
 - **Widgets**: Real-time CPU, RAM, and root filesystem disk utilization monitors, plus an integrated search bar pointing to SearXNG.
 
 ### 2.2 SearXNG ("yi search") (`modules/services/searxng.nix`)
 
-- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://search.fufu.land`.
+- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://search.aset.love`.
 - **Tor Proxy Routing**: All outbound search queries are forced through the local Tor SOCKS5 proxy (`socks5h://127.0.0.1:9050`) to conceal client IP addresses from upstream search providers.
 - **Engines Enabled**: DuckDuckGo (`ddg`), Mojeek (`mjk`), Google Scholar (`gs`), and arXiv (`ar`). Google web search is intentionally disabled to avoid Tor CAPTCHA blocking.
 - **Ephemeral Secret Generation**: `searx-secret-init.service` automatically generates a cryptographically random 32-byte hex secret key on boot into `/run/searx-secret/env` mode `0440`.
@@ -67,24 +67,24 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.5 SillyTavern Companion UI (`modules/services/ai/sillytavern.nix`)
 
-- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://companion.fufu.land`.
+- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://companion.aset.love`.
 - **Security Context**: Dedicated non-root user `sillytavern` with strict systemd filesystem isolation (`ProtectSystem = strict`, `ProtectHome = true`, `PrivateDevices = true`, `PrivateTmp = true`).
 - **Inference Integration**: Depends directly on the local `llama-cpp-qwen3-6-35b-abliterated.service` Vulkan instance.
 
 ### 2.6 Cockpit System Manager (`modules/services/cockpit.nix`)
 
-- **Web UI**: Port `24091` (`https://cockpit.fufu.land`).
+- **Web UI**: Port `24091` (`https://cockpit.aset.love`).
 - **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin allowlisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing. The Kernel dump page is hidden (`/etc/cockpit/kdump.override.json`): NixOS `kexec` is for fast reboot, not Fedora's `kdump.service`, and that page only shows a false "install kexec-tools" alert.
 - **Plugins**: `cockpit-podman` (Podman containers, replaces the former Portainer CE deployment; PAM login), `cockpit-files` (file browser), `cockpit-dockermanager`, `cockpit-machines` (libvirt UI), `cockpit-zfs` (ZFS UI). The last two only add the pages; libvirt and ZFS are not enabled on this host.
 
 ### 2.7 WebDAV Server (`modules/services/webdav.nix`)
 
-- **Web UI**: `https://webdav.fufu.land`.
+- **Web UI**: `https://webdav.aset.love`.
 - **Configuration**: Built using `pkgs.nginxModules.dav`, root directory `/srv/webdav` (mode 0775, `nginx:nginx`), unlimited client max body size (`client_max_body_size 0`), support for all standard WebDAV methods (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPFIND`, `OPTIONS`, `LOCK`, `UNLOCK`).
 
 ### 2.8 Gang Documentation (`docs/service.nix`)
 
-- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://docs.fufu.land`.
+- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://docs.aset.love`.
 - **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
 - **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/gang-docs/staging` without modifying the git repository.
 - **Serving Daemon**: `darkhttpd` serves `/var/lib/gang-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).

@@ -58,15 +58,15 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   - `Hagezi TIF` (Threat Intelligence Feeds)
   - Custom rules: `||api.miwifi.com^`
 - **DNS Rewrites**:
-  - `*.fufu.land` $\\to$ `10.42.0.1` (Points all subdomains to `yirukou` reverse proxy)
-  - `smb.fufu.land` $\\to$ `10.42.0.2` (Points SMB file share directly to `yifuwuqi`)
-  - `ssh.fufu.land` $\\to$ `10.42.0.2` (Plain SSH to `yifuwuqi` on `24212` over the LAN and the Tailnet subnet route; the Cloudflare tunnel is `cloudflare.fufu.land`)
-  - Dynamic host rewrites generated for `.lan`/`.local`/`.ts` aliases. `.lan` and `.local` answer both A and AAAA (the LAN ULA), so internal names are reached over IPv6; `.ts` and the `fufu.land` wildcards stay IPv4-only because nginx and its backends stay on IPv4.
+  - `*.aset.love` $\\to$ `10.42.0.1` (Points all subdomains to `yirukou` reverse proxy)
+  - `smb.aset.love` $\\to$ `10.42.0.2` (Points SMB file share directly to `yifuwuqi`)
+  - `ssh.aset.love` $\\to$ `10.42.0.2` (Plain SSH to `yifuwuqi` on `24212` over the LAN and the Tailnet subnet route; the Cloudflare tunnel is `cloudflare.aset.love`)
+  - Dynamic host rewrites generated for `.lan`/`.local`/`.ts` aliases. `.lan` and `.local` answer both A and AAAA (the LAN ULA), so internal names are reached over IPv6; `.ts` and the `aset.love` wildcards stay IPv4-only because nginx and its backends stay on IPv4.
 - **Encrypted DNS Endpoints**:
-  - DNS-over-TLS (DoT): Port `853` on `dns.fufu.land` (manual clients; AGH DDR omits DoT without IP SANs on the ACME cert)
-  - DNS-over-QUIC (DoQ): Port `853` on `dns.fufu.land`
-  - DNS-over-HTTPS (DoH): Port `3443` (what DDR advertises) and nginx `https://dns.fufu.land/dns-query` on 443
-- **DDR**: `dns.handle_ddr = true`. AGH answers SVCB for `_dns.resolver.arpa` with target `dns.fufu.land` (DoH `:3443`, DoQ `:853`). The `:53` intercept still delivers those queries to AGH. Unbound does not serve this name. There is no DNR (Kea stays DHCPv4-only; RA is RDNSS only).
+  - DNS-over-TLS (DoT): Port `853` on `dns.aset.love` (manual clients; AGH DDR omits DoT without IP SANs on the ACME cert)
+  - DNS-over-QUIC (DoQ): Port `853` on `dns.aset.love`
+  - DNS-over-HTTPS (DoH): Port `3443` (what DDR advertises) and nginx `https://dns.aset.love/dns-query` on 443
+- **DDR**: `dns.handle_ddr = true`. AGH answers SVCB for `_dns.resolver.arpa` with target `dns.aset.love` (DoH `:3443`, DoQ `:853`). The `:53` intercept still delivers those queries to AGH. Unbound does not serve this name. There is no DNR (Kea stays DHCPv4-only; RA is RDNSS only).
 - **Upstream Forwarding**: Queries prefer local Unbound at `[::1]:5335` with
   `127.0.0.1:5335` retained as fallback. Bootstrap and local PTR upstreams list
   IPv6 first with `bootstrap_prefer_ipv6 = false`, and `ipv6_disabled` stays
@@ -98,14 +98,14 @@ ______________________________________________________________________
 ┌─────────────────────────────────────────────────────────────┐
 │                    Nginx Ingress (yirukou)                  │
 ├─────────────────────────────────────────────────────────────┤
-│ • Wildcard ACME TLS (*.fufu.land via Cloudflare DNS-01)     │
+│ • Wildcard ACME TLS (*.aset.love via Cloudflare DNS-01)     │
 │ • Zero-Trust ACL: LAN (10.42.0.0/24) + VPN CIDRs allowed    │
 ├──────────────────────────────┬──────────────────────────────┤
 │ Virtual Host                 │ Backend Destination          │
 ├──────────────────────────────┼──────────────────────────────┤
-│ adguard.fufu.land            │ 127.0.0.1:3333 (Local)       │
-│ dns.fufu.land                │ 127.0.0.1:3333/dns-query     │
-│ goaccess.fufu.land           │ /var/lib/goaccess + :7890 ws │
+│ adguard.aset.love            │ 127.0.0.1:3333 (Local)       │
+│ dns.aset.love                │ 127.0.0.1:3333/dns-query     │
+│ goaccess.aset.love           │ /var/lib/goaccess + :7890 ws │
 ├──────────────────────────────┼──────────────────────────────┤
 │ docs / grafana / cockpit /   │ 10.42.0.2:24120 (yifuwuqi    │
 │ search / cache / git / agent │ local ingress, plain HTTP;   │
@@ -119,7 +119,7 @@ ______________________________________________________________________
 ### 2.1 Automated ACME Wildcard Certificates
 
 - Managed via `security.acme` using Cloudflare DNS-01 API challenges.
-- Certificate `fufu.land` covers both apex `fufu.land` and wildcard `*.fufu.land`.
+- Certificate `aset.love` covers both apex `aset.love` and wildcard `*.aset.love`.
 - Authenticates using `cloudflare_api_token` managed by Sops-nix.
 
 ### 2.2 Access Control & Security

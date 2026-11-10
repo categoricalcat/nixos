@@ -22,7 +22,7 @@ Design and implement a server-side 3-tier Mutual TLS (mTLS) security architectur
 
 Owns:
 
-- The internal CA (`fufu-service-ca`), certificate issuance and rotation.
+- The internal CA (`aset-service-ca`), certificate issuance and rotation.
 - Cloudflare Authenticated Origin Pulls (Tier 1).
 - TLS settings on the cross-host hops: nginx `proxy_ssl_*` and
   `ssl_verify_client`, the shared metrics frontend and Prometheus `tls_config`,
@@ -53,7 +53,7 @@ ______________________________________________________________________
 
 ## Current State
 
-- **Perimeter Ingress**: `yirukou` runs Nginx (`modules/services/nginx-proxy.nix`) with a wildcard ACME certificate for `*.fufu.land` obtained via Cloudflare DNS-01 (`sops.secrets.cloudflare_api_token`).
+- **Perimeter Ingress**: `yirukou` runs Nginx (`modules/services/nginx-proxy.nix`) with a wildcard ACME certificate for `*.aset.love` obtained via Cloudflare DNS-01 (`sops.secrets.cloudflare_api_token`).
 - **Public Edge Status Requires Revalidation**: `yirukou` is the intended
   public edge, but the repository currently configures its WAN interfaces for
   UDP `51820` only. The 2026-11-06 DNS result and Cloudflare state are external
@@ -80,11 +80,11 @@ ______________________________________________________________________
 
 1. **PKI Authority Model**:
    - **Cloudflare Edge**: Cloudflare Origin Pull Static Root CA (publicly trusted Cloudflare certificate).
-   - **Internal Service & Scrape CA (`fufu-service-ca`)**: Dedicated homelab internal Root CA for inter-host reverse proxying and Prometheus metrics scraping.
+   - **Internal Service & Scrape CA (`aset-service-ca`)**: Dedicated homelab internal Root CA for inter-host reverse proxying and Prometheus metrics scraping.
    - **Rotation**: retain the 10-year internal CA and 3-year host-certificate
      lifetime.
 1. **Zero Device Enrollment**:
-   - No user/device PKI (`fufu-client-ca` removed). No `.p12` files, device keychain imports, or mobile profiles.
+   - No user/device PKI (`aset-client-ca` removed). No `.p12` files, device keychain imports, or mobile profiles.
 1. **100% Declarative Host Deployment**:
    - **Public Certificates & CAs** (`*.crt`): Committed directly to Git (e.g. `modules/services/certs/`) and referenced via Nix store paths.
    - **Private Keys** (`*.key`): Encrypted into `secrets/secrets.yaml` via Sops-nix and mounted automatically at runtime (e.g. `/run/secrets/certs/...`). They are added as root (`su -`), since sops access is root-only.
@@ -159,7 +159,7 @@ ______________________________________________________________________
 ### Phase 1: Cloudflare Authenticated Origin Pulls (Tier 1: Edge Ingress)
 
 This tier stays dormant while `yirukou` WAN TCP remains closed (Current State).
-Activate it with the `fufu.land` public canary only.
+Activate it with the `aset.love` public canary only.
 
 #### 1.1 Declarative Configuration (NixOS)
 
@@ -177,8 +177,8 @@ traffic; the LAN path accepts only `10.42.0.0/24` and
 Cloudflare client certificate from LAN browsers, and do not add client
 verification to tunnel-only or administrative hosts.
 
-For the canary, convert the existing `fufu.land` static response from
-`forceSSL = false` to an HTTPS vhost using the existing `fufu.land` ACME
+For the canary, convert the existing `aset.love` static response from
+`forceSSL = false` to an HTTPS vhost using the existing `aset.love` ACME
 certificate. Its public content remains the fixed `hello world` response; do
 not proxy it to `yifuwuqi` or expose another application in this release.
 
@@ -188,7 +188,7 @@ Enable Authenticated Origin Pulls for the zone:
 
 **Option A: Cloudflare Dashboard**:
 
-1. Log in to Cloudflare Dashboard $\\to$ Select `fufu.land`.
+1. Log in to Cloudflare Dashboard $\\to$ Select `aset.love`.
 1. Navigate to **SSL/TLS** $\\to$ **Origin Server**.
 1. Toggle **Authenticated Origin Pulls** to **ON**.
 
@@ -218,7 +218,7 @@ mkdir -p ~/.pki/service-ca && cd ~/.pki/service-ca
 # 1. Create Internal Service CA (valid 10 years)
 openssl ecparam -name secp384r1 -genkey -noout -out service-ca.key
 openssl req -new -x509 -sha384 -key service-ca.key -out service-ca.crt -days 3650 \
-  -subj "/CN=Fufu Internal Service CA"
+  -subj "/CN=Aset Internal Service CA"
 
 # 2. Issue yirukou Reverse Proxy Client Certificate (valid 3 years)
 openssl ecparam -name secp384r1 -genkey -noout -out yirukou-proxy.key
@@ -386,9 +386,9 @@ Fleet sequencing is defined by the [Architecture Security Rollout](architecture-
 Phase 1 is a conditional edge lane; the internal critical path is the deployed
 local ingress, then Phases 2 and 3, then Phase 4.
 
-1. **Conditional edge lane — deploy Phase 1 (Cloudflare) for `fufu.land`**:
+1. **Conditional edge lane — deploy Phase 1 (Cloudflare) for `aset.love`**:
    - Test direct origin connection `curl -k https://<yirukou-public-ip>` (must be rejected with TLS handshake failure).
-   - Test via Cloudflare hostname `https://fufu.land` (should succeed normally).
+   - Test via Cloudflare hostname `https://aset.love` (should succeed normally).
    - Test the same client-facing hostname from trusted LAN (must succeed) and
      from the untrusted VLAN (must be rejected).
 1. **Internal critical path — deploy Phase 2 (Inter-Host Upstream Proxy)** on the deployed local ingress:
@@ -415,5 +415,5 @@ ______________________________________________________________________
 
 ## Open Questions & Review Items
 
-No mTLS design choice remains open. The `fufu.land` canary is the first public
+No mTLS design choice remains open. The `aset.love` canary is the first public
 Cloudflare-to-`yirukou` listener and Origin Pull rollout.

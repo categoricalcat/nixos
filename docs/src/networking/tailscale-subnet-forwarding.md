@@ -76,7 +76,7 @@ behind its local ingress (Service Security Phase 3), so the probe target is
 the proxied HTTPS domain through the subnet route, not a direct backend port:
 
 ```sh
-curl -I https://docs.fufu.land/
+curl -I https://docs.aset.love/
 ```
 
 If it still times out, inspect live state on `yirukou` (as `root`):

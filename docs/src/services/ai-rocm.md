@@ -65,12 +65,12 @@ ______________________________________________________________________
 
 ### 4.1 SillyTavern Companion (`modules/services/ai/sillytavern.nix`)
 
-- **Domain**: `https://companion.fufu.land` (proxied to port `24000`).
+- **Domain**: `https://companion.aset.love` (proxied to port `24000`).
 - **Security**: Strict systemd isolation under dedicated user `sillytavern`. Pre-start script automatically bootstraps default settings and enables network listening with security overrides.
 
 ### 4.2 Opencode Agent Server (`modules/services/opencode.nix`)
 
-- **Domain**: `https://agent.fufu.land` (proxied to port `24010`).
+- **Domain**: `https://agent.aset.love` (proxied to port `24010`).
 - **Configuration**: Runs as user `yi:yi`, providing a persistent backend for autonomous coding workflows.
 
 ### 4.3 Firecrawl MCP Server (`users/programs/firecrawl-mcp.js`)

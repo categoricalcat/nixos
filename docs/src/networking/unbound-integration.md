@@ -11,7 +11,7 @@ Client (LAN / Mesh)
   │ Port 53 (UDP/TCP)
   ▼
 AdGuard Home (:53)
-  ├── 1. Matches against Hagezi blocklists & local .fufu.land rewrites
+  ├── 1. Matches against Hagezi blocklists & local .aset.love rewrites
   ├── 2. Answers immediately from 64MB optimistic RAM cache if hot
   └── 3. If unblocked & cold: forwards to [::1]:5335
         (127.0.0.1:5335 fallback)

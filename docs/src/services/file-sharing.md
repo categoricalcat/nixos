@@ -72,7 +72,7 @@ ______________________________________________________________________
 
 ## 4. WebDAV Storage (`modules/services/webdav.nix`)
 
-- **Host**: `yifuwuqi` (served at `https://webdav.fufu.land`).
+- **Host**: `yifuwuqi` (served at `https://webdav.aset.love`).
 - **Engine**: Nginx with compiled `nginxModules.dav` extensions.
 - **Root Path**: `/srv/webdav` (owned by `nginx:nginx` with mode `0775`).
 - **Features**: Unlimited file upload sizes (`client_max_body_size 0`), full directory indexing, and support for all RFC 4918 WebDAV methods (`MKCOL`, `PROPFIND`, `LOCK`, `UNLOCK`, etc.).

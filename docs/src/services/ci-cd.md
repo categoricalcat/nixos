@@ -61,7 +61,7 @@ ______________________________________________________________________
 ### 4.1 Forgejo Native Runner (`modules/services/forgejo-runner.nix`)
 
 - **Instance**: `forgejo-runner-yifuwuqi` running on `yifuwuqi`.
-- **Server Connection**: `http://127.0.0.1:24200` — the runner is on-host and its startup `Declare` is fatal, so registration must not depend on the proxy chain. Jobs still clone through `https://git.fufu.land`.
+- **Server Connection**: `http://127.0.0.1:24200` — the runner is on-host and its startup `Declare` is fatal, so registration must not depend on the proxy chain. Jobs still clone through `https://git.aset.love`.
 - **Labels**: `["native:host"]`.
 - **Execution User**: `nix-builder:nogroup`.
 - **Sandboxing Policy**: Default systemd sandboxing (`ProtectSystem`, `ProtectHome`, `PrivateUsers`, `PrivateMounts`) is explicitly relaxed so builds can interact directly with `/nix/store` and utilize Linux mount namespaces. Untrusted auto-maintenance evaluation, builds, and AI repair steps drop privileges via `/run/wrappers/bin/drop-to-none` (util-linux `setpriv` as a setuid/setgid `none:none` wrapper, executable only by group `none`) into an isolated `bubblewrap` mount namespace without access to `/var/lib/nix-builder/.ssh/id_ed25519`, Attic credentials, or `nix-daemon` `trusted-users` capabilities; an nftables output rule keeps that uid off loopback, LAN and tailnet addresses (see [Auto-Maintenance Bot](auto-maintenance.md)).

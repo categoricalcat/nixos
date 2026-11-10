@@ -380,7 +380,7 @@ rm -rf /run/ci-deploy-key
 
 ## Search (yifuwuqi)
 
-`search.fufu.land` -> SearXNG (`modules/services/searxng.nix`). It does not use
+`search.aset.love` -> SearXNG (`modules/services/searxng.nix`). It does not use
 SOPS today and is not behind an authentication proxy.
 
 The signing key is generated into `/run` before each service start:

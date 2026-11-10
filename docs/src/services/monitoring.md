@@ -175,7 +175,7 @@ ______________________________________________________________________
 
 ## 3. Grafana & Declarative Dashboards (`modules/services/monitoring/grafana.nix`)
 
-- **Domain**: `https://grafana.fufu.land` (proxied to port `24030`).
+- **Domain**: `https://grafana.aset.love` (proxied to port `24030`).
 - **Database Engine**: PostgreSQL socket connection (`type = "postgres"`, database `grafana`).
 - **Authentication**: Form login disabled, anonymous access enabled with default `Viewer` organization role.
 - **Secrets**: `services/grafana/secret-key` managed via Sops-nix.

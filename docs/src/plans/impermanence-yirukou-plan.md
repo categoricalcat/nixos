@@ -148,7 +148,7 @@ flowchart TD
         MID["etc/machine-id (Persisted machine ID)"]
         subgraph VARLIB["var/lib/ Bind Mounts"]
             direction TB
-            ACME["acme/ (*.fufu.land certs)"]
+            ACME["acme/ (*.aset.love certs)"]
             TS["tailscale/ (node key & wireguard state)"]
             PRIV["private/ (DynamicUser state: AdGuardHome, kea leases, vector)"]
             UNB["unbound/ (root.key & DNSSEC anchors)"]
@@ -469,7 +469,7 @@ Execute these checks following reboot into the impermanence generation:
   Expected: Positive answers with valid DNSSEC signatures.
 - [ ] **TLS Certificates & Reverse Proxy**:
   ```bash
-  stat /var/lib/acme/fufu.land/fullchain.pem
+  stat /var/lib/acme/aset.love/fullchain.pem
   curl -k https://127.0.0.1/dns-query
   ```
   Expected: ACME certificate valid without requesting a new certificate from Let's Encrypt.
