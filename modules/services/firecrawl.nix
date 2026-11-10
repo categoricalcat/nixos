@@ -54,8 +54,11 @@ in
       requires = [ "init-firecrawl-network.service" ];
       after = [ "init-firecrawl-network.service" ];
       # Same race, slower boot: ECONNREFUSED here crashed nuq workers and
-      # failed a nixos activation (deploy run 310). Upstream's health probe.
-      serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "rabbitmq-diagnostics -q check_running";
+      # failed a nixos activation (deploy run 310). Probe the AMQP port, NOT
+      # rabbitmq-diagnostics: podman exec runs as root, and a root Erlang VM
+      # creates a root-owned .erlang.cookie before the entrypoint writes it —
+      # the broker (user rabbitmq) then crashes with eacces (deploy 2026-11-10).
+      serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5672'";
     };
     "podman-firecrawl-playwright" = {
       requires = [ "init-firecrawl-network.service" ];
@@ -103,11 +106,11 @@ in
 
     firecrawl-rabbitmq = {
       image = "docker.io/library/rabbitmq:4-management";
-      extraOptions = [
-        "--network=firecrawl_internal"
-        "--health-cmd=rabbitmq-diagnostics -q check_running"
-        "--health-start-period=15s"
-      ];
+      # No podman --health-cmd: podman runs healthchecks as root, and a root
+      # rabbitmq-diagnostics VM poisons .erlang.cookie (root-owned, 400) during
+      # boot — the broker then dies with eacces. Readiness is gated by the
+      # unit's ExecStartPost port probe instead.
+      extraOptions = [ "--network=firecrawl_internal" ];
     };
 
     firecrawl-playwright = {

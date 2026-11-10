@@ -128,6 +128,25 @@ diff_closure() {
   fi
 }
 
+# Substituted closures carry no .drv files, so cve-scan.sh's --valid-derivers
+# lookup misses nixpkgs patch metadata and vulnix flags patched builds (seen on
+# yirukou, 2026-11-10). Push the derivation closure so scans see patches.
+push_derivers() {
+  local target="$1" target_ip new_system
+  [ "$target" = "$RUNNER_HOST" ] && return 0
+  echo "::group::Push derivation closure to $target"
+  target_ip=$(eval_host_ip "$target")
+  new_system=$(eval_toplevel "$target")
+  local nix_ssh_opts="-p 24212 -o StrictHostKeyChecking=accept-new ${SSH_KEY_ARGS[*]:-}"
+  if nix-store -qR "$(nix-store -qd "$new_system")" | grep '\.drv$' |
+    xargs -r env NIX_SSHOPTS="$nix_ssh_opts" nix copy --to "ssh-ng://root@$target_ip" --no-check-sigs; then
+    printf '%s✔ Derivation closure pushed%s for %s\n' "$GREEN" "$RESET" "$target"
+  else
+    echo "::warning::derivation push failed for $target; vulnix may report patched CVEs until the next deploy"
+  fi
+  echo "::endgroup::"
+}
+
 deploy_live() {
   local target="$1" new_system
   echo "::group::Deploy switch $target"
@@ -135,6 +154,7 @@ deploy_live() {
   deploy --skip-checks ".#$target" -- --print-build-logs
   printf '%s✔ Live activation complete%s for %s (%s)\n' "$GREEN" "$RESET" "$target" "$new_system"
   echo "::endgroup::"
+  push_derivers "$target"
 
   if [ "${GITHUB_STEP_SUMMARY:-}" != "" ]; then
     {
@@ -153,6 +173,7 @@ deploy_boot() {
   deploy --skip-checks ".#$target" --boot -- --print-build-logs
   printf '%s✔ Boot profile staged%s for %s %s(activates on next reboot)%s\n' "$GREEN" "$RESET" "$target" "$DIM" "$RESET"
   echo "::endgroup::"
+  push_derivers "$target"
 
   if [ "${GITHUB_STEP_SUMMARY:-}" != "" ]; then
     {
