@@ -31,6 +31,7 @@ Verified against the working tree (`rg -i "fufu"`):
 1. **Legacy plan files updated in place** (user call): the 3 other plans under `docs/src/plans/` get their `fufu` occurrences migrated, not retired.
 1. **No AdGuard grace period**: `fufu.land` rewrites are purged in Phase 3. The Phase 1 dual-rewrite staging is what prevents downtime — a grace period would only serve stale *unmanaged* clients with hardcoded `fufu.land` entries, and the entire LAN fleet is flake-managed (updated in Phase 4). Full migration with zero downtime is possible without it.
 1. **The `ffsh` ssh alias is deleted outright** — no `assh` replacement; the alias line is removed from `aliases.zsh`.
+1. **Multi-session AI Copilot execution**: the AI acts as an interactive step-by-step copilot across sessions — orienting on current progress, asking what the user did, giving clear instructions for what to do next, verifying outcomes, and checking off `[x]` items in this plan after each step so work can pause and resume at any point until the plan is retired in Step 5.
 
 ## 1. Phases — Zero-Downtime Architecture & Strategy
 
@@ -115,148 +116,162 @@ All 176 occurrences (38 files) migrate to `aset` (preserving git commit history)
 
 ## 3. Rollout Order & Step-by-Step Instructions
 
+### AI Copilot Session Protocol (Multi-Session Interactive Execution)
+
+This migration is designed to be executed interactively across multiple sessions with the AI acting as a step-by-step copilot:
+
+1. **Session Start Trigger (`"we are running @docs/src/plans/aset-love-migration-plan.md"`)**:
+   At the beginning of each session, the user says `"we are running @docs/src/plans/aset-love-migration-plan.md"`. The AI immediately reads this file, inspects the `[ ]` / `[x]` checkboxes below (plus `git status` / `git diff`), and replies with a concise 3-part status briefing:
+   - **What we are doing**: The migration objective and the active Phase/Step.
+   - **Where we are**: Which `[x]` steps are already done, current working-tree state, and — if a `(User)` step was last in flight — asking: *"What did you do since last session, and did it succeed?"*
+   - **Where we are going**: The immediate next unchecked `[ ]` step and the upcoming verification gate.
+1. **Guide Step-by-Step ("What should I do next?")**: The AI works **one step or phase gate at a time** — never jumping past a manual dashboard action or host deployment before it is confirmed and verified:
+   - **AI tasks** (Nix/config edits, `nix eval`, read-only `ai-ssh` / `dig` / `curl` / `rg` checks): the AI performs the change or check, shows the diff/output, and updates the checkbox to `[x]`.
+   - **User tasks** (Cloudflare Dashboard steps, `deploy .#<host>`, `git remote`, `git commit`): the AI gives exact instructions and commands for the single current step, pauses, and asks: *"What did you do, and did it succeed?"*
+1. **Checkpoint ("What did I do?")**: As soon as a step or verification gate passes, the AI marks its checkbox `[x]` in this file (and updates `Status:` at the top if pausing between phases) so the next session can pick up seamlessly from the exact next unchecked item.
+
 ### Step 0: Manual External Prerequisites (Cloudflare Dashboard)
 
 Both domains are registered with Cloudflare Registrar. `aset.love` is an active zone managed by Cloudflare nameservers. Perform the following three manual configurations:
 
 #### 0.1 Cloudflare API Token Scope
 
-1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com) $\\to$ Top right profile icon $\\to$ **My Profile** $\\to$ **API Tokens**.
-1. Find the API token used for ACME (`cloudflare_api_token`). Click **Edit**:
-   - **Option A (Recommended — Zero Secret Churn)**: Under **Zone Resources**, change the scope from `Specific zone: fufu.land` to **Include $\\to$ All zones from an account $\\to$ [Your Account]** (or add `aset.love` to the list). Click **Continue to summary** $\\to$ **Update Token**.
-     - *Result*: No SOPS secret changes or re-encryption required!
-   - **Option B (Separate Token)**: If creating a new token, set Permissions: `Zone:DNS:Edit` on `Zone:aset.love`.
-     - *SOPS Recipe*: On `yifuwuqi`, run `su -`, then `cd /home/yi/the.files/nixos && sops secrets/secrets.yaml`. Update `cloudflare_api_token: | CLOUDFLARE_DNS_API_TOKEN=<new-token>`, save, and exit. (User task — agents never run `sops`.)
+- [ ] **0.1.1** Log in to [Cloudflare Dashboard](https://dash.cloudflare.com) $\\to$ Top right profile icon $\\to$ **My Profile** $\\to$ **API Tokens**.
+- [ ] **0.1.2** Find the API token used for ACME (`cloudflare_api_token`). Click **Edit**:
+  - **Option A (Recommended — Zero Secret Churn)**: Under **Zone Resources**, change the scope from `Specific zone: fufu.land` to **Include $\\to$ All zones from an account $\\to$ [Your Account]** (or add `aset.love` to the list). Click **Continue to summary** $\\to$ **Update Token**.
+    - *Result*: No SOPS secret changes or re-encryption required!
+  - **Option B (Separate Token)**: If creating a new token, set Permissions: `Zone:DNS:Edit` on `Zone:aset.love`.
+    - *SOPS Recipe*: On `yifuwuqi`, run `su -`, then `cd /home/yi/the.files/nixos && sops secrets/secrets.yaml`. Update `cloudflare_api_token: | CLOUDFLARE_DNS_API_TOKEN=<new-token>`, save, and exit. (User task — agents never run `sops`.)
 
 #### 0.2 Cloudflare Zero Trust Tunnel (SSH Fail-Safe)
 
-1. Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com) $\\to$ **Networks** $\\to$ **Tunnels**.
-1. Click your existing tunnel (running on `yifuwuqi`) $\\to$ **Configure** $\\to$ **Public Hostnames** tab.
-1. Click **Add a public hostname**:
-   - **Subdomain**: `cloudflare`
-   - **Domain**: `aset.love`
-   - **Service**: `SSH`
-   - **URL**: `10.42.0.2:24212` (or `127.0.0.1:24212`)
-1. Click **Save hostname**.
-   - *Result*: Cloudflare automatically creates the public CNAME record for `cloudflare.aset.love`. Both `cloudflare.fufu.land` and `cloudflare.aset.love` now route through the existing tunnel simultaneously.
+- [ ] **0.2.1** Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com) $\\to$ **Networks** $\\to$ **Tunnels**.
+- [ ] **0.2.2** Click your existing tunnel (running on `yifuwuqi`) $\\to$ **Configure** $\\to$ **Public Hostnames** tab.
+- [ ] **0.2.3** Click **Add a public hostname**:
+  - **Subdomain**: `cloudflare`
+  - **Domain**: `aset.love`
+  - **Service**: `SSH`
+  - **URL**: `10.42.0.2:24212` (or `127.0.0.1:24212`)
+- [ ] **0.2.4** Click **Save hostname**.
+  - *Result*: Cloudflare automatically creates the public CNAME record for `cloudflare.aset.love`. Both `cloudflare.fufu.land` and `cloudflare.aset.love` now route through the existing tunnel simultaneously.
 
 #### 0.3 SSL/TLS Mode
 
-1. In Cloudflare Dashboard, select `aset.love` $\\to$ **SSL/TLS** $\\to$ **Overview**.
-1. Confirm the encryption mode is set to **Full (strict)**.
+- [ ] **0.3.1** In Cloudflare Dashboard, select `aset.love` $\\to$ **SSL/TLS** $\\to$ **Overview**.
+- [ ] **0.3.2** Confirm the encryption mode is set to **Full (strict)**.
 
 ### Step 1: Gateway Staging (`yirukou`) — Zero Downtime
 
 Provision the wildcard `aset.love` certificate and add dual DNS rewrites without altering any active `fufu.land` service vhosts.
 
-1. **Introduce `baseDomain` in `modules/addresses.nix`**: add the top-level `baseDomain = "aset.love";` attribute (Decision 2). No existing literal is touched yet, so this deploy is a pure no-op for running services.
-1. **Apply Staging Diff to `modules/services/nginx-proxy.nix`**:
-   - Add `certs."${allAddresses.baseDomain}"` alongside `certs."fufu.land"`.
-1. **Apply Staging Diff to `modules/services/adguardhome.nix`**:
-   - Add rewrites for `*.${baseDomain}`, `${baseDomain}`, `smb.${baseDomain}`, `ssh.${baseDomain}` alongside existing `fufu.land` rewrites.
-1. **Verify evaluation**:
-   ```bash
-   nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
-   ```
-1. **Deploy to Gateway (`yirukou`)** (user runs):
-   ```bash
-   deploy .#yirukou
-   # or on yirukou: sudo nixos-rebuild switch --flake .#yirukou
-   ```
-1. **Verify Certificate Issuance on `yirukou`**:
-   ```bash
-   ai-ssh yirukou systemctl status acme-aset.love.service
-   ai-ssh yirukou test -f /var/lib/acme/aset.love/fullchain.pem && echo "ACME cert for aset.love verified on disk!"
-   ```
-1. **Verify LAN DNS Rewrites**:
-   ```bash
-   dig @10.42.0.1 home.aset.love +short
-   # Output must be: 10.42.0.1
-   ```
+- [ ] **1.1 Introduce `baseDomain` in `modules/addresses.nix`** (AI): add the top-level `baseDomain = "aset.love";` attribute (Decision 2). No existing literal is touched yet, so this deploy is a pure no-op for running services.
+- [ ] **1.2 Apply Staging Diff to `modules/services/nginx-proxy.nix`** (AI):
+  - Add `certs."${allAddresses.baseDomain}"` alongside `certs."fufu.land"`.
+- [ ] **1.3 Apply Staging Diff to `modules/services/adguardhome.nix`** (AI):
+  - Add rewrites for `*.${baseDomain}`, `${baseDomain}`, `smb.${baseDomain}`, `ssh.${baseDomain}` alongside existing `fufu.land` rewrites.
+- [ ] **1.4 Verify evaluation** (AI):
+  ```bash
+  nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
+  ```
+- [ ] **1.5 Deploy to Gateway (`yirukou`)** (User runs, AI waits for confirmation):
+  ```bash
+  deploy .#yirukou
+  # or on yirukou: sudo nixos-rebuild switch --flake .#yirukou
+  ```
+- [ ] **1.6 Verify Certificate Issuance on `yirukou`** (AI):
+  ```bash
+  ai-ssh yirukou systemctl status acme-aset.love.service
+  ai-ssh yirukou test -f /var/lib/acme/aset.love/fullchain.pem && echo "ACME cert for aset.love verified on disk!"
+  ```
+- [ ] **1.7 Verify LAN DNS Rewrites** (AI):
+  ```bash
+  dig @10.42.0.1 home.aset.love +short
+  # Output must be: 10.42.0.1
+  ```
 
 ### Step 2: Core Server Cutover (`yifuwuqi`)
 
 Now that the gateway can resolve and terminate `aset.love`, update `yifuwuqi`'s service definitions.
 
-1. **Apply Code Changes**:
-   - `modules/addresses.nix`: rewrite all 25 literals to `${baseDomain}` references (the binding itself landed in Step 1 — this is the actual cutover).
-   - `modules/services/searxng.nix`, `homepage.nix`, `webdav.nix`: replace literals with `allAddresses.baseDomain` references (Decision 2); `adguard.json`: literal link updates.
-1. **Verify evaluation**:
-   ```bash
-   nix eval .#nixosConfigurations.yifuwuqi.config.system.build.toplevel.drvPath
-   ```
-1. **Deploy to Core Server (`yifuwuqi`)** (user runs):
-   ```bash
-   deploy .#yifuwuqi
-   # or on yifuwuqi: sudo nixos-rebuild switch --flake .#yifuwuqi
-   ```
-1. **Verify Backend Health**:
-   ```bash
-   ai-ssh yifuwuqi systemctl is-active postgresql forgejo atticd grafana nginx
-   ```
+- [ ] **2.1 Apply Code Changes** (AI):
+  - `modules/addresses.nix`: rewrite all 25 literals to `${baseDomain}` references (the binding itself landed in Step 1 — this is the actual cutover).
+  - `modules/services/searxng.nix`, `homepage.nix`, `webdav.nix`: replace literals with `allAddresses.baseDomain` references (Decision 2); `adguard.json`: literal link updates.
+- [ ] **2.2 Verify evaluation** (AI):
+  ```bash
+  nix eval .#nixosConfigurations.yifuwuqi.config.system.build.toplevel.drvPath
+  ```
+- [ ] **2.3 Deploy to Core Server (`yifuwuqi`)** (User runs, AI waits for confirmation):
+  ```bash
+  deploy .#yifuwuqi
+  # or on yifuwuqi: sudo nixos-rebuild switch --flake .#yifuwuqi
+  ```
+- [ ] **2.4 Verify Backend Health** (AI):
+  ```bash
+  ai-ssh yifuwuqi systemctl is-active postgresql forgejo atticd grafana nginx
+  ```
 
 ### Step 3: Gateway Cutover (`yirukou`) & Total Purge of `fufu` in Configs
 
 With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS to `aset.love`, and purge all legacy `fufu.land` vhosts.
 
-1. **Apply Code Changes** (all via `allAddresses.baseDomain` references, Decision 2):
-   - `modules/services/proxy-vhosts.nix`: `useACMEHost = baseDomain;` (import gains `allAddresses`).
-   - `modules/services/nginx-proxy.nix`: remove `certs."fufu.land"`; ACME email and static vhosts reference `baseDomain`.
-   - `modules/services/adguardhome.nix`: remove legacy `fufu.land` rewrites; TLS paths and the `certs` guard reference `baseDomain`.
-   - `hosts/yirukou/goaccess.nix`: WebSocket URL references `baseDomain`.
-1. **Verify evaluation**:
-   ```bash
-   nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
-   ```
-1. **Deploy to Gateway (`yirukou`)** (user runs):
-   ```bash
-   deploy .#yirukou
-   ```
-1. **Verify HTTPS Ingress**:
-   ```bash
-   curl -Ik https://home.aset.love
-   curl -Ik https://git.aset.love
-   curl -Ik https://grafana.aset.love
-   curl -Ik https://cache.aset.love/yi/nix-cache-info
-   ```
+- [ ] **3.1 Apply Code Changes** (AI — all via `allAddresses.baseDomain` references, Decision 2):
+  - `modules/services/proxy-vhosts.nix`: `useACMEHost = baseDomain;` (import gains `allAddresses`).
+  - `modules/services/nginx-proxy.nix`: remove `certs."fufu.land"`; ACME email and static vhosts reference `baseDomain`.
+  - `modules/services/adguardhome.nix`: remove legacy `fufu.land` rewrites; TLS paths and the `certs` guard reference `baseDomain`.
+  - `hosts/yirukou/goaccess.nix`: WebSocket URL references `baseDomain`.
+- [ ] **3.2 Verify evaluation** (AI):
+  ```bash
+  nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
+  ```
+- [ ] **3.3 Deploy to Gateway (`yirukou`)** (User runs, AI waits for confirmation):
+  ```bash
+  deploy .#yirukou
+  ```
+- [ ] **3.4 Verify HTTPS Ingress** (AI):
+  ```bash
+  curl -Ik https://home.aset.love
+  curl -Ik https://git.aset.love
+  curl -Ik https://grafana.aset.love
+  curl -Ik https://cache.aset.love/yi/nix-cache-info
+  ```
 
 ### Step 4: Client & Desktop Fleet Rollout
 
-1. **Update Local Git Remote**:
-   ```bash
-   git remote set-url origin ssh://forgejo@git.aset.love:24212/yi/nixos.git
-   git fetch origin
-   ```
-1. **Apply Code Changes**:
-   - `modules/desktop/web-apps.nix`: app URLs reference `allAddresses.baseDomain` (Decision 2).
-1. **Update User Dotfiles**:
-   - `users/assets/dotfiles/ssh/config`: change `cloudflare.fufu.land` to `cloudflare.aset.love` in **both** Host blocks (3 occurrences).
-   - `users/assets/dotfiles/zsh/aliases.zsh`: delete the `ffsh` alias line (both `fufu.land` references go with it).
-1. **Deploy Desktop Clients** (user runs):
-   ```bash
-   deploy .#yitaishi
-   deploy .#yixiaoqing
-   # yichuang (WSL): rebuild locally inside WSL
-   ```
-1. **Verify Client Operations**:
-   - Test SSH fallback: `ssh cloudflare.aset.love`
-   - Test Attic binary cache pull on client: `nix path-info --store https://cache.aset.love/yi ...`
+- [ ] **4.1 Update Local Git Remote** (User runs, AI confirms):
+  ```bash
+  git remote set-url origin ssh://forgejo@git.aset.love:24212/yi/nixos.git
+  git fetch origin
+  ```
+- [ ] **4.2 Apply Code Changes** (AI):
+  - `modules/desktop/web-apps.nix`: app URLs reference `allAddresses.baseDomain` (Decision 2).
+- [ ] **4.3 Update User Dotfiles** (AI):
+  - `users/assets/dotfiles/ssh/config`: change `cloudflare.fufu.land` to `cloudflare.aset.love` in **both** Host blocks (3 occurrences).
+  - `users/assets/dotfiles/zsh/aliases.zsh`: delete the `ffsh` alias line (both `fufu.land` references go with it).
+- [ ] **4.4 Deploy Desktop Clients** (User runs, AI waits for confirmation):
+  ```bash
+  deploy .#yitaishi
+  deploy .#yixiaoqing
+  # yichuang (WSL): rebuild locally inside WSL
+  ```
+- [ ] **4.5 Verify Client Operations** (User / AI):
+  - Test SSH fallback: `ssh cloudflare.aset.love`
+  - Test Attic binary cache pull on client: `nix path-info --store https://cache.aset.love/yi ...`
 
 ### Step 5: Documentation, Plan Retirement & Final Audit
 
-1. **Update all 23 documents under `docs/src/`** (105 occurrences):
-   - Replace all occurrences of `fufu.land` with `aset.love`.
-   - Replace `fufu-service-ca` with `aset-service-ca`.
-   - Replace `fufu-client-ca` with `aset-client-ca`.
-   - Replace `/CN=Fufu Internal Service CA` with `/CN=Aset Internal Service CA`.
-1. **Update CI Maintenance script**:
-   - `ci/auto-maintenance.sh`: update git commit email to `auto-maintenance@aset.love`.
-1. **Retire this plan**: delete `docs/src/plans/aset-love-migration-plan.md` in the same change set that completes the migration.
-1. **Run Zero-Tolerance Audit**:
-   ```bash
-   rg -i "fufu"
-   # Must return 0 matches across the working tree!
-   ```
+- [ ] **5.1 Update all 23 documents under `docs/src/`** (AI — 105 occurrences):
+  - Replace all occurrences of `fufu.land` with `aset.love`.
+  - Replace `fufu-service-ca` with `aset-service-ca`.
+  - Replace `fufu-client-ca` with `aset-client-ca`.
+  - Replace `/CN=Fufu Internal Service CA` with `/CN=Aset Internal Service CA`.
+- [ ] **5.2 Update CI Maintenance script** (AI):
+  - `ci/auto-maintenance.sh`: update git commit email to `auto-maintenance@aset.love`.
+- [ ] **5.3 Retire this plan** (AI): delete `docs/src/plans/aset-love-migration-plan.md` in the same change set that completes the migration.
+- [ ] **5.4 Run Zero-Tolerance Audit** (AI):
+  ```bash
+  rg -i "fufu"
+  # Must return 0 matches across the working tree!
+  ```
 
 ## 4. Rollback Strategy
 
@@ -267,4 +282,4 @@ If any failure occurs during staging or cutover:
 
 ## Open questions
 
-None — all resolved during review (Decisions 6–8).
+None — all resolved during review (Decisions 6–9).
