@@ -1,4 +1,5 @@
 {
+  allAddresses,
   pkgs,
   lib,
   chromiumDictionaries,
@@ -72,13 +73,13 @@ let
 
     forgejo = {
       name = "Forgejo.git";
-      url = "https://git.fufu.land/";
+      url = "https://git.${allAddresses.baseDomain}/";
       icon = "${iconBase}/git.svg";
     };
 
     grafana = {
       name = "Grafana";
-      url = "https://grafana.fufu.land/";
+      url = "https://grafana.${allAddresses.baseDomain}/";
       icon = "${iconBase}/utilities-system-monitor.svg";
     };
 

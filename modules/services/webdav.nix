@@ -1,4 +1,5 @@
 {
+  allAddresses,
   pkgs,
   ...
 }:
@@ -8,8 +9,8 @@
   services.nginx = {
     additionalModules = [ pkgs.nginxModules.dav ];
 
-    virtualHosts."webdav.fufu.land" = {
-      useACMEHost = "fufu.land";
+    virtualHosts."webdav.${allAddresses.baseDomain}" = {
+      useACMEHost = allAddresses.baseDomain;
       forceSSL = true;
       http2 = false;
 

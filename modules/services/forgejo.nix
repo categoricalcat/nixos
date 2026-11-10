@@ -1,6 +1,6 @@
 # Self-hosted git forge with read-only pull mirror from GitHub.
 #
-# Bootstrap (once, via git.fufu.land UI):
+# Bootstrap (once, via git.aset.love UI):
 #   1. Create admin user, then set service.DISABLE_REGISTRATION = true and redeploy
 #   2. New Migration -> mirror https://github.com/categoricalcat/nixos (read-only)
 #   3. Site Administration -> Actions -> Runners -> Create new runner

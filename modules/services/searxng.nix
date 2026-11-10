@@ -52,7 +52,7 @@ in
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
         # replaced with the runtime-generated value before SearXNG starts.
         secret_key = "$SEARXNG_SECRET";
-        base_url = "https://search.fufu.land/";
+        base_url = "https://search.${allAddresses.baseDomain}/";
         image_proxy = true;
         limiter = false;
         public_instance = false;

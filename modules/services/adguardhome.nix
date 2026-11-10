@@ -8,7 +8,7 @@
 }:
 
 let
-  inherit (allAddresses) baseDomain;
+  inherit (allAddresses) baseDomain legacyDomain;
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
   yifuwuqi = allAddresses.hosts.yifuwuqi;
   yifuwuqiLan = yifuwuqi.network.lan.ipv4.host;
@@ -37,7 +37,7 @@ in
 
       http = {
         # Admin UI is loopback-only: yirukou reaches its own through nginx
-        # (adguard.fufu.land), yifuwuqi's is managed through an SSH tunnel.
+        # (adguard.aset.love), yifuwuqi's is managed through an SSH tunnel.
         address = "127.0.0.1:${
           toString allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port
         }";
@@ -119,22 +119,22 @@ in
 
         rewrites = [
           {
-            domain = "smb.fufu.land";
+            domain = "smb.${legacyDomain}";
             answer = yifuwuqiLan;
             enabled = true;
           }
           {
-            inherit (yifuwuqi.ssh) domain;
+            domain = "ssh.${legacyDomain}";
             answer = yifuwuqiLan;
             enabled = true;
           }
           {
-            domain = "*.fufu.land";
+            domain = "*.${legacyDomain}";
             answer = yirukouLan;
             enabled = true;
           }
           {
-            domain = "fufu.land";
+            domain = legacyDomain;
             answer = yirukouLan;
             enabled = true;
           }
@@ -191,16 +191,16 @@ in
 
       user_rules = [ "||api.miwifi.com^" ];
 
-      tls = lib.mkIf (config.security.acme.certs ? "fufu.land") {
+      tls = lib.mkIf (config.security.acme.certs ? "${baseDomain}") {
         enabled = true;
-        server_name = "dns.fufu.land";
+        server_name = "dns.${baseDomain}";
         port_https = 3443;
         port_dns_over_tls = 853;
         port_dns_over_quic = 853;
 
         # Use the centralized ACME wildcard certificates
-        certificate_path = "/var/lib/acme/fufu.land/fullchain.pem";
-        private_key_path = "/var/lib/acme/fufu.land/key.pem";
+        certificate_path = "/var/lib/acme/${baseDomain}/fullchain.pem";
+        private_key_path = "/var/lib/acme/${baseDomain}/key.pem";
 
         # Enable all secure DNS protocols
         serve_plain_dns = true;

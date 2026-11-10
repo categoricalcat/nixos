@@ -1,6 +1,7 @@
 let
 
   baseDomain = "aset.love";
+  legacyDomain = "fufu.land";
 
   sharedDnsUpstreams = {
     opendns = [
@@ -77,7 +78,7 @@ let
 
   sharedServices = {
     adguardhome = {
-      domain = "adguard.fufu.land";
+      domain = "adguard.${baseDomain}";
       port = 3333;
       dnsPort = 53;
     };
@@ -214,7 +215,7 @@ let
 
 in
 {
-  inherit baseDomain;
+  inherit baseDomain legacyDomain;
 
   tailscale.magicDns = {
     ipv4 = "100.100.100.100";
@@ -506,8 +507,8 @@ in
 
       ssh = {
         # Plain SSH over the LAN and the tailnet subnet route, not the
-        # Cloudflare tunnel (cloudflare.fufu.land).
-        domain = "ssh.fufu.land";
+        # Cloudflare tunnel (cloudflare.aset.love).
+        domain = "ssh.${baseDomain}";
         listenPort = 24212;
         listenAddresses = [
           network.tailscale.ipv4.host
@@ -520,14 +521,14 @@ in
 
       services = {
         grafana = {
-          domain = "grafana.fufu.land";
+          domain = "grafana.${baseDomain}";
           port = 24030;
         };
         prometheus = {
           port = 24090;
         };
         cockpit = {
-          domain = "cockpit.fufu.land";
+          domain = "cockpit.${baseDomain}";
           port = 24091;
         };
         loki = {
@@ -545,72 +546,72 @@ in
           urls.atticd = "postgres://atticd@localhost/${databases.atticd}?host=${socketDir}";
         };
         forgejo = {
-          domain = "git.fufu.land";
+          domain = "git.${baseDomain}";
           httpPort = 24200;
         };
         attic = {
-          domain = "cache.fufu.land";
+          domain = "cache.${baseDomain}";
           port = 24203;
           cacheName = "yi";
         };
         radarr = {
-          domain = "radarr.fufu.land";
+          domain = "radarr.${baseDomain}";
           port = 24878;
         };
         sonarr = {
-          domain = "sonarr.fufu.land";
+          domain = "sonarr.${baseDomain}";
           port = 24989;
         };
         lidarr = {
-          domain = "lidarr.fufu.land";
+          domain = "lidarr.${baseDomain}";
           port = 24686;
         };
         readarr = {
-          domain = "readarr.fufu.land";
+          domain = "readarr.${baseDomain}";
           port = 24787;
         };
         prowlarr = {
-          domain = "prowlarr.fufu.land";
+          domain = "prowlarr.${baseDomain}";
           port = 24696;
         };
         torrent-indexer = {
-          domain = "torrent-indexer.fufu.land";
+          domain = "torrent-indexer.${baseDomain}";
           port = 24181;
         };
         bazarr = {
-          domain = "bazarr.fufu.land";
+          domain = "bazarr.${baseDomain}";
           port = 24767;
         };
         jellyfin = {
-          domain = "jellyfin.fufu.land";
+          domain = "jellyfin.${baseDomain}";
           port = 24096;
         };
         jellyseerr = {
-          domain = "jellyseerr.fufu.land";
+          domain = "jellyseerr.${baseDomain}";
           port = 24055;
         };
         pinepods = {
-          domain = "cast.fufu.land";
+          domain = "cast.${baseDomain}";
           port = 24085;
         };
         flaresolverr = {
-          domain = "flaresolverr.fufu.land";
+          domain = "flaresolverr.${baseDomain}";
           port = 24191;
           # Gluetun netns listen port; host publish is `port:internalPort`.
           internalPort = 8191;
         };
         qbittorrent = {
-          domain = "qbittorrent.fufu.land";
+          domain = "qbittorrent.${baseDomain}";
           port = 24080;
         };
         slskd = {
-          domain = "slskd.fufu.land";
+          domain = "slskd.${baseDomain}";
           # 24030 is taken by grafana, so this one keeps its leading 5
           port = 24530;
           listenPort = 2234;
         };
         homepage = {
-          domain = "home.fufu.land";
+          domain = "home.${baseDomain}";
           port = 24082;
         };
         adguardhome = sharedServices.adguardhome // {
@@ -627,7 +628,7 @@ in
           ];
         };
         searxng = {
-          domain = "search.fufu.land";
+          domain = "search.${baseDomain}";
           port = 24888;
         };
         valkey = {
@@ -635,7 +636,7 @@ in
           maxMemory = "512mb";
         };
         opencode = {
-          domain = "agent.fufu.land";
+          domain = "agent.${baseDomain}";
           port = 24010;
         };
         # One nginx listener on the LAN address fronts every proxied backend
@@ -646,15 +647,15 @@ in
           port = 24002;
         };
         sillytavern = {
-          domain = "companion.fufu.land";
+          domain = "companion.${baseDomain}";
           port = 24000;
         };
         docs = {
-          domain = "docs.fufu.land";
+          domain = "docs.${baseDomain}";
           port = 24083;
         };
         weather = {
-          domain = "weather.fufu.land";
+          domain = "weather.${baseDomain}";
           port = 24084;
         };
       };

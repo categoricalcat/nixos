@@ -32,11 +32,10 @@ let
 
   # Network/Proxy services (via yirukou NGINX config)
   proxyDomains = {
-    adguard = "https://adguard.fufu.land";
-    # netdata = "https://netdata.fufu.land";
-    searxng = "https://search.fufu.land";
-    opencode = "https://agent.fufu.land";
-    goaccess = "https://goaccess.fufu.land";
+    adguard = "https://adguard.${allAddresses.baseDomain}";
+    searxng = "https://search.${allAddresses.baseDomain}";
+    opencode = "https://agent.${allAddresses.baseDomain}";
+    goaccess = "https://goaccess.${allAddresses.baseDomain}";
   };
 in
 {
@@ -83,7 +82,7 @@ in
       {
         search = {
           provider = "custom";
-          url = "https://search.fufu.land/search?q=";
+          url = "https://search.${allAddresses.baseDomain}/search?q=";
           target = "_blank";
         };
       }

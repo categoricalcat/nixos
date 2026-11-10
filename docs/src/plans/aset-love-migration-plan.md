@@ -190,17 +190,17 @@ Provision the wildcard `aset.love` certificate and add dual DNS rewrites without
   ```bash
   nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
   ```
-- [ ] **1.5 Deploy to Gateway (`yirukou`)** (User runs, AI waits for confirmation):
+- [x] **1.5 Deploy to Gateway (`yirukou`)** (User runs, AI waits for confirmation):
   ```bash
   deploy .#yirukou
   # or on yirukou: sudo nixos-rebuild switch --flake .#yirukou
   ```
-- [ ] **1.6 Verify Certificate Issuance on `yirukou`** (AI):
+- [x] **1.6 Verify Certificate Issuance on `yirukou`** (AI):
   ```bash
   ai-ssh yirukou systemctl status acme-aset.love.service
   ai-ssh yirukou test -f /var/lib/acme/aset.love/fullchain.pem && echo "ACME cert for aset.love verified on disk!"
   ```
-- [ ] **1.7 Verify LAN DNS Rewrites** (AI):
+- [x] **1.7 Verify LAN DNS Rewrites** (AI):
   ```bash
   dig @10.42.0.1 home.aset.love +short
   # Output must be: 10.42.0.1
@@ -210,19 +210,19 @@ Provision the wildcard `aset.love` certificate and add dual DNS rewrites without
 
 Now that the gateway can resolve and terminate `aset.love`, update `yifuwuqi`'s service definitions.
 
-- [ ] **2.1 Apply Code Changes** (AI):
+- [x] **2.1 Apply Code Changes** (AI):
   - `modules/addresses.nix`: rewrite all 25 literals to `${baseDomain}` references (the binding itself landed in Step 1 — this is the actual cutover).
   - `modules/services/searxng.nix`, `homepage.nix`, `webdav.nix`: replace literals with `allAddresses.baseDomain` references (Decision 2); `adguard.json`: literal link updates.
-- [ ] **2.2 Verify evaluation** (AI):
+- [x] **2.2 Verify evaluation** (AI):
   ```bash
   nix eval .#nixosConfigurations.yifuwuqi.config.system.build.toplevel.drvPath
   ```
-- [ ] **2.3 Deploy to Core Server (`yifuwuqi`)** (User runs, AI waits for confirmation):
+- [x] **2.3 Deploy to Core Server (`yifuwuqi`)** (User runs, AI waits for confirmation):
   ```bash
   deploy .#yifuwuqi
   # or on yifuwuqi: sudo nixos-rebuild switch --flake .#yifuwuqi
   ```
-- [ ] **2.4 Verify Backend Health** (AI):
+- [x] **2.4 Verify Backend Health** (AI):
   ```bash
   ai-ssh yifuwuqi systemctl is-active postgresql forgejo atticd grafana nginx
   ```
@@ -231,21 +231,21 @@ Now that the gateway can resolve and terminate `aset.love`, update `yifuwuqi`'s 
 
 With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS to `aset.love`, and replace all legacy `fufu.land` vhosts with permanent 301 redirects (Decision 8).
 
-- [ ] **3.1 Apply Code Changes** (AI — new services via `allAddresses.baseDomain`, legacy redirect via `allAddresses.legacyDomain`; Decisions 2 & 8):
+- [x] **3.1 Apply Code Changes** (AI — new services via `allAddresses.baseDomain`, legacy redirect via `allAddresses.legacyDomain`; Decisions 2 & 8):
   - `modules/addresses.nix`: add top-level `legacyDomain = "fufu.land";` — the repo's only intentional remaining `fufu` literal.
   - `modules/services/proxy-vhosts.nix`: `useACMEHost = baseDomain;` (import gains `allAddresses`).
   - `modules/services/nginx-proxy.nix`: ACME email and static vhosts reference `baseDomain`; `certs."fufu.land"` is **kept**, renamed to `certs."${legacyDomain}"`; add two redirect vhosts — regex `~^(?<sub>.+)\.fufu\.land$` → `return 301 https://$sub.aset.love$request_uri;` and apex `fufu.land` → `301 https://aset.love$request_uri` (both `useACMEHost = legacyDomain; forceSSL = true;`).
   - `modules/services/adguardhome.nix`: legacy `fufu.land` rewrites are **kept** as explicit `${legacyDomain}` entries (`smb.`, `ssh.`, wildcard, apex — `ssh.` becomes explicit because `addresses.nix`'s `ssh.domain` flipped to `baseDomain` in Step 2.1); TLS paths and the `certs` guard reference `baseDomain`.
   - `hosts/yirukou/goaccess.nix`: WebSocket URL references `baseDomain`.
-- [ ] **3.2 Verify evaluation** (AI):
+- [x] **3.2 Verify evaluation** (AI):
   ```bash
   nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
   ```
-- [ ] **3.3 Deploy to Gateway (`yirukou`)** (User runs, AI waits for confirmation):
+- [x] **3.3 Deploy to Gateway (`yirukou`)** (User runs, AI waits for confirmation):
   ```bash
   deploy .#yirukou
   ```
-- [ ] **3.4 Verify HTTPS Ingress** (AI):
+- [x] **3.4 Verify HTTPS Ingress** (AI):
   ```bash
   curl -Ik https://home.aset.love
   curl -Ik https://git.aset.love
@@ -262,9 +262,9 @@ With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS t
   git remote set-url origin ssh://forgejo@git.aset.love:24212/yi/nixos.git
   git fetch origin
   ```
-- [ ] **4.2 Apply Code Changes** (AI):
+- [x] **4.2 Apply Code Changes** (AI):
   - `modules/desktop/web-apps.nix`: app URLs reference `allAddresses.baseDomain` (Decision 2).
-- [ ] **4.3 Update User Dotfiles** (AI):
+- [x] **4.3 Update User Dotfiles** (AI):
   - `users/assets/dotfiles/ssh/config`: change `cloudflare.fufu.land` to `cloudflare.aset.love` in **both** Host blocks (3 occurrences).
   - `users/assets/dotfiles/zsh/aliases.zsh`: delete the `ffsh` alias line (both `fufu.land` references go with it).
 - [ ] **4.4 Deploy Desktop Clients** (User runs, AI waits for confirmation):

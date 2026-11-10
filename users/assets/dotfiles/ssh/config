@@ -31,8 +31,8 @@ Host *
     ExitOnForwardFailure yes
 
 # Out-of-band Cloudflare tunnel; its only permitted backend is yifuwuqi sshd.
-Host cloudflare.fufu.land
-    HostName cloudflare.fufu.land
+Host cloudflare.aset.love
+    HostName cloudflare.aset.love
     User yi
     ProxyCommand cloudflared access ssh --hostname %h
     HostKeyAlias yifuwuqi
@@ -41,7 +41,7 @@ Host cloudflare.fufu.land
     Compression yes
 
 Host ssh.workd.land
-    HostName cloudflare.fufu.land
+    HostName cloudflare.aset.love
     User workd
     ProxyCommand cloudflared access ssh --hostname %h
     HostKeyAlias yifuwuqi

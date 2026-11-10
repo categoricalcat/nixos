@@ -75,6 +75,7 @@ _: {
             hostAuditWrapper
           ];
         shellHook = ''
+          ${config.pre-commit.installationScript}
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
           if [ -z "$DIRENV_IN_ENVRC" ]; then
             exec zsh

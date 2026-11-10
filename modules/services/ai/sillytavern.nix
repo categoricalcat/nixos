@@ -54,7 +54,7 @@ in
       '';
 
       serviceConfig = {
-        # Client-facing hosted service (companion.fufu.land) behind the local
+        # Client-facing hosted service (companion.aset.love) behind the local
         # ingress: loopback-only, so no --listen. The whitelist checks the
         # forwarded client IP and would 403 LAN clients behind two proxy hops,
         # so it stays disabled; loopback keeps it safe.

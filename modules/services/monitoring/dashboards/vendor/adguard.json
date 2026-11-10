@@ -637,7 +637,7 @@
                   {
                     "targetBlank": true,
                     "title": "AdGuard Query Log (${__data.fields.domain})",
-                    "url": "https://adguard.fufu.land/#logs?search=${__data.fields.domain}"
+                    "url": "https://adguard.aset.love/#logs?search=${__data.fields.domain}"
                   },
                   {
                     "targetBlank": true,
@@ -1328,7 +1328,7 @@
                   {
                     "targetBlank": true,
                     "title": "AdGuard Query Log (${__data.fields.domain})",
-                    "url": "https://adguard.fufu.land/#logs?search=${__data.fields.domain}"
+                    "url": "https://adguard.aset.love/#logs?search=${__data.fields.domain}"
                   },
                   {
                     "targetBlank": true,

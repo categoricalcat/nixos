@@ -93,7 +93,7 @@ in
         service = resolve host.services name;
       in
       nameValuePair service.domain {
-        useACMEHost = "fufu.land";
+        useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
         locations."/" = {
           proxyPass = ingress;

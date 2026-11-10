@@ -57,7 +57,6 @@ alias nix-dr="nh os build ."
 alias gh-pr="gh pr create -a @me --fill-verbose -B $1"
 alias gen-commit="~/the.files/git-commit-msg.sh"
 alias usb-ssh="~/the.files/usb-ssh.sh"
-alias ffsh="ssh ssh.fufu.land || ssh cloudflare.fufu.land"
 alias zyi="mosh yifuwuqi -- zellij attach -c main"
 
 # open jira in browser like "jira some-company SC-1234"

@@ -28,11 +28,11 @@ in
 
   security.acme = {
     acceptTerms = true;
-    defaults.email = "admin@fufu.land";
+    defaults.email = "admin@${allAddresses.baseDomain}";
 
-    certs."fufu.land" = {
-      domain = "*.fufu.land";
-      extraDomainNames = [ "fufu.land" ];
+    certs."${allAddresses.legacyDomain}" = {
+      domain = "*.${allAddresses.legacyDomain}";
+      extraDomainNames = [ allAddresses.legacyDomain ];
       dnsProvider = "cloudflare";
       environmentFile = config.sops.secrets.cloudflare_api_token.path;
       extraLegoFlags = acmeResolvers;
@@ -75,17 +75,19 @@ in
         };
       };
 
-      "fufu.land" = {
-        forceSSL = false;
+      # Apex aset.love
+      "${allAddresses.baseDomain}" = {
+        useACMEHost = allAddresses.baseDomain;
+        forceSSL = true;
         extraConfig = ''
           add_header Content-Type text/markdown;
-          return 200 "fufu.land is ok";
+          return 200 "${allAddresses.baseDomain} is ok";
         '';
       };
 
       # Secure AdGuard Web UI
-      "adguard.fufu.land" = {
-        useACMEHost = "fufu.land";
+      "adguard.${allAddresses.baseDomain}" = {
+        useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}";
@@ -94,8 +96,8 @@ in
       };
 
       # DNS-over-HTTPS Endpoint
-      "dns.fufu.land" = {
-        useACMEHost = "fufu.land";
+      "dns.${allAddresses.baseDomain}" = {
+        useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
         locations."/dns-query" = {
           proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}/dns-query";
@@ -103,24 +105,9 @@ in
         };
       };
 
-      # # Netdata web UI — yifuwuqi parent (shows both hosts via streaming)
-      # "netdata.fufu.land" = {
-      #   useACMEHost = "fufu.land";
-      #   forceSSL = true;
-      #
-      #   locations."/" = {
-      #     proxyPass = "http://${allAddresses.hosts.yifuwuqi.network.lan.ipv4.host}:19999";
-      #     proxyWebsockets = true;
-      #     extraConfig = ''
-      #       proxy_set_header X-Forwarded-Host $host;
-      #       proxy_set_header X-Forwarded-Proto $scheme;
-      #     '';
-      #   };
-      # };
-
       # GoAccess real-time web log analyzer — local on yirukou
-      "goaccess.fufu.land" = {
-        useACMEHost = "fufu.land";
+      "goaccess.${allAddresses.baseDomain}" = {
+        useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
 
         locations."/" = {
@@ -137,6 +124,23 @@ in
             proxy_send_timeout 3600;
             ${restrictedProxyConfig}
           '';
+        };
+      };
+
+      # Legacy domain redirects
+      "${allAddresses.legacyDomain}" = {
+        useACMEHost = allAddresses.legacyDomain;
+        forceSSL = true;
+        locations."/" = {
+          return = "301 https://${allAddresses.baseDomain}$request_uri";
+        };
+      };
+
+      "~^(?<sub>.+)\\.${lib.replaceStrings [ "." ] [ "\\." ] allAddresses.legacyDomain}$" = {
+        useACMEHost = allAddresses.legacyDomain;
+        forceSSL = true;
+        locations."/" = {
+          return = "301 https://$sub.${allAddresses.baseDomain}$request_uri";
         };
       };
 
