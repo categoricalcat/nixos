@@ -3,11 +3,17 @@
   lib,
   pkgs,
   addresses,
+  allAddresses,
   ...
 }:
 
 let
   inherit (config.yi.maintenance) slots;
+
+  dnsServers = [
+    allAddresses.hosts.yirukou.network.lan.ipv4.host
+    addresses.network.lan.ipv4.host
+  ];
 
   isLocalImage =
     c: c.imageFile != null || c.imageStream != null || lib.hasPrefix "localhost/" c.image;
@@ -88,9 +94,7 @@ in
 
       containersConf.settings = {
         containers = {
-          dns_servers = [
-            addresses.network.lan.ipv4.host
-          ];
+          dns_servers = dnsServers;
           log_driver = "journald";
           log_size_max = 10485760; # 10MB in bytes (10 * 1024 * 1024)
           default_ulimits = [
@@ -99,7 +103,12 @@ in
         };
 
         network = {
+          dns_servers = dnsServers;
           default_subnet_pools = addresses.containers.subnetPools;
+          pasta_options = [
+            "--mtu"
+            "1500"
+          ];
         };
       };
     };
