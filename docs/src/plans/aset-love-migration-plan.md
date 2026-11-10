@@ -24,19 +24,29 @@ Verified against the working tree (`rg -i "fufu"`):
 ## Decisions
 
 1. **Dual-certificate staging**: provision the `aset.love` wildcard on `yirukou` *before* any vhost switches, so Nginx never references a missing cert (a naive single-commit switch would fail Nginx reload and take down every reverse-proxied service).
+
 1. **Unhardcode the base domain repo-wide**: `modules/addresses.nix` gains a top-level `baseDomain = "aset.love";` attribute in its returned attrset (not a `let` binding), so every module reaches it via `allAddresses.baseDomain`. Its own 25 literals become `domain = "adguard.${baseDomain}";` style references, and every other Nix module replaces domain literals with `allAddresses.baseDomain` interpolation (dynamic attrset keys use `"${baseDomain}"` quoting; the `certs ? "fufu.land"` check in `adguardhome.nix` becomes `builtins.hasAttr baseDomain ...`). `proxy-vhosts.nix`'s import in `nginx-proxy.nix` gains `allAddresses`. Literals remain only where Nix cannot reach: vendored `adguard.json`, dotfiles, `ci/auto-maintenance.sh`, and prose comments. Single source of truth; future domain changes become one-line diffs.
+
 1. **API token scope widened, not replaced** (Option A in Step 0.1): no SOPS secret churn.
+
 1. **No git history rewrite**: all changes land as ordinary commits on top of history.
+
 1. **This plan is retired** (deleted) in the final change set, per etiquette — also required for the zero-tolerance audit to pass.
+
 1. **Legacy plan files updated in place** (user call): the 3 other plans under `docs/src/plans/` get their `fufu` occurrences migrated, not retired.
+
 1. **Legacy AdGuard rewrites are kept, not purged** (amended by Decision 8): the four `fufu.land` rewrites survive Phase 3 as `legacyDomain` references — they are the DNS leg of the permanent redirect (LAN clients resolve old names to the gateway, and Nginx 301s them). The Phase 1 dual-rewrite staging is still what prevents downtime during the migration itself.
+
 1. **Permanent 301 redirect from `*.fufu.land` to `*.aset.love`**: old links, bookmarks, and hardcoded URLs keep working indefinitely. `modules/addresses.nix` gains a top-level `legacyDomain = "fufu.land";` attribute — the single intentional `fufu` literal left in the repo (SSOT, mirroring Decision 2) — referenced forever by three things:
+
    - `security.acme.certs."${legacyDomain}"` on `yirukou` (HTTPS 301s require a valid legacy cert; the Cloudflare API token must retain `fufu.land` zone access for renewals — Option A in Step 0.1 already grants all zones);
    - the four legacy AdGuard rewrites (Decision 7);
    - two Nginx vhosts on `yirukou`: a regex server `~^(?<sub>.+)\.fufu\.land$` returning `301 https://$sub.aset.love$request_uri` (subdomain- and path-preserving), and the apex returning `301 https://aset.love$request_uri` — both `useACMEHost = legacyDomain; forceSSL = true;`.
 
    Accepted trade-off: DoH clients pinned to `https://dns.fufu.land/dns-query` will not follow the 301 — the fleet is flake-managed and picks up `dns.aset.love` in Phase 4. Step 5.4's audit expects exactly the `legacyDomain` literal.
+
 1. **The `ffsh` ssh alias is deleted outright** — no `assh` replacement; the alias line is removed from `aliases.zsh`.
+
 1. **Multi-session AI Copilot execution**: the AI acts as an interactive step-by-step copilot across sessions — orienting on current progress, asking what the user did, giving clear instructions for what to do next, verifying outcomes, and checking off `[x]` items in this plan after each step so work can pause and resume at any point until the plan is retired in Step 5.
 
 ## 1. Phases — Zero-Downtime Architecture & Strategy
