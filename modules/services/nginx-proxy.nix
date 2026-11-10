@@ -38,6 +38,15 @@ in
       extraLegoFlags = acmeResolvers;
       group = "nginx";
     };
+
+    certs."${allAddresses.baseDomain}" = {
+      domain = "*.${allAddresses.baseDomain}";
+      extraDomainNames = [ allAddresses.baseDomain ];
+      dnsProvider = "cloudflare";
+      environmentFile = config.sops.secrets.cloudflare_api_token.path;
+      extraLegoFlags = acmeResolvers;
+      group = "nginx";
+    };
   };
 
   users.users.adguardhome = {

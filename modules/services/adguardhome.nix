@@ -8,6 +8,7 @@
 }:
 
 let
+  inherit (allAddresses) baseDomain;
   yirukouLan = allAddresses.hosts.yirukou.network.lan.ipv4.host;
   yifuwuqi = allAddresses.hosts.yifuwuqi;
   yifuwuqiLan = yifuwuqi.network.lan.ipv4.host;
@@ -134,6 +135,26 @@ in
           }
           {
             domain = "fufu.land";
+            answer = yirukouLan;
+            enabled = true;
+          }
+          {
+            domain = "smb.${baseDomain}";
+            answer = yifuwuqiLan;
+            enabled = true;
+          }
+          {
+            domain = "ssh.${baseDomain}";
+            answer = yifuwuqiLan;
+            enabled = true;
+          }
+          {
+            domain = "*.${baseDomain}";
+            answer = yirukouLan;
+            enabled = true;
+          }
+          {
+            domain = baseDomain;
             answer = yirukouLan;
             enabled = true;
           }

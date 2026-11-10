@@ -1,5 +1,7 @@
 let
 
+  baseDomain = "aset.love";
+
   sharedDnsUpstreams = {
     opendns = [
       "https://doh.opendns.com/dns-query"
@@ -212,6 +214,8 @@ let
 
 in
 {
+  inherit baseDomain;
+
   tailscale.magicDns = {
     ipv4 = "100.100.100.100";
     ipv6 = "fd7a:115c:a1e0::53";

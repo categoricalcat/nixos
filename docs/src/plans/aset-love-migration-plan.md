@@ -4,7 +4,7 @@
 
 ## Objective
 
-Migrate the primary homelab domain from `fufu.land` to `aset.love`, eradicating all instances of `fufu` across the repository (code, configurations, dotfiles, scripts, dashboards, and documentation) with **virtually zero service downtime**, **zero data loss**, and **zero git history rewrites**.
+Migrate the primary homelab domain from `fufu.land` to `aset.love`, eradicating all instances of `fufu` across the repository (code, configurations, dotfiles, scripts, dashboards, and documentation) with **virtually zero service downtime**, **zero data loss**, and **zero git history rewrites**. Legacy URLs keep working forever: `*.fufu.land` (and the apex) permanently 301-redirects to its `*.aset.love` counterpart (Decision 8).
 
 ## Current state
 
@@ -29,7 +29,13 @@ Verified against the working tree (`rg -i "fufu"`):
 1. **No git history rewrite**: all changes land as ordinary commits on top of history.
 1. **This plan is retired** (deleted) in the final change set, per etiquette — also required for the zero-tolerance audit to pass.
 1. **Legacy plan files updated in place** (user call): the 3 other plans under `docs/src/plans/` get their `fufu` occurrences migrated, not retired.
-1. **No AdGuard grace period**: `fufu.land` rewrites are purged in Phase 3. The Phase 1 dual-rewrite staging is what prevents downtime — a grace period would only serve stale *unmanaged* clients with hardcoded `fufu.land` entries, and the entire LAN fleet is flake-managed (updated in Phase 4). Full migration with zero downtime is possible without it.
+1. **Legacy AdGuard rewrites are kept, not purged** (amended by Decision 8): the four `fufu.land` rewrites survive Phase 3 as `legacyDomain` references — they are the DNS leg of the permanent redirect (LAN clients resolve old names to the gateway, and Nginx 301s them). The Phase 1 dual-rewrite staging is still what prevents downtime during the migration itself.
+1. **Permanent 301 redirect from `*.fufu.land` to `*.aset.love`**: old links, bookmarks, and hardcoded URLs keep working indefinitely. `modules/addresses.nix` gains a top-level `legacyDomain = "fufu.land";` attribute — the single intentional `fufu` literal left in the repo (SSOT, mirroring Decision 2) — referenced forever by three things:
+   - `security.acme.certs."${legacyDomain}"` on `yirukou` (HTTPS 301s require a valid legacy cert; the Cloudflare API token must retain `fufu.land` zone access for renewals — Option A in Step 0.1 already grants all zones);
+   - the four legacy AdGuard rewrites (Decision 7);
+   - two Nginx vhosts on `yirukou`: a regex server `~^(?<sub>.+)\.fufu\.land$` returning `301 https://$sub.aset.love$request_uri` (subdomain- and path-preserving), and the apex returning `301 https://aset.love$request_uri` — both `useACMEHost = legacyDomain; forceSSL = true;`.
+
+   Accepted trade-off: DoH clients pinned to `https://dns.fufu.land/dns-query` will not follow the 301 — the fleet is flake-managed and picks up `dns.aset.love` in Phase 4. Step 5.4's audit expects exactly the `legacyDomain` literal.
 1. **The `ffsh` ssh alias is deleted outright** — no `assh` replacement; the alias line is removed from `aliases.zsh`.
 1. **Multi-session AI Copilot execution**: the AI acts as an interactive step-by-step copilot across sessions — orienting on current progress, asking what the user did, giving clear instructions for what to do next, verifying outcomes, and checking off `[x]` items in this plan after each step so work can pause and resume at any point until the plan is retired in Step 5.
 
@@ -66,6 +72,7 @@ Verified against the working tree (`rg -i "fufu"`):
 ┌────────────────────────────────────────────────────────────────────────┐
 │ Phase 3: Gateway Cutover (yirukou Reverse Proxy)                       │
 │ • Nginx virtual hosts switch useACMEHost = "aset.love"                 │
+│ • Legacy *.fufu.land vhosts become permanent 301 redirects             │
 │ • Valid *.aset.love cert is already on disk; Nginx reloads cleanly     │
 │ • Rebuild & switch yirukou                                             │
 │ ➔ DOWNTIME: ~0.5 seconds (Nginx graceful reload)                       │
@@ -82,22 +89,22 @@ Verified against the working tree (`rg -i "fufu"`):
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ Phase 5: Final Purge & Verification (Eradicate all "fufu")             │
-│ • Remove legacy fufu.land cert & rewrites                              │
+│ Phase 5: Final Cleanup & Verification                                  │
+│ • Keep legacy cert & rewrites — permanent 301 redirects (Decision 8)   │
 │ • Update all docs/src/ files, vendor dashboards, and CI scripts        │
 │ • Delete this plan file (retired)                                      │
-│ • Run automated audit: rg -i "fufu" -> 0 matches                       │
+│ • Run audit: rg -i "fufu" -> only the legacyDomain literal remains     │
 │ ➔ DOWNTIME: 0 seconds                                                  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## 2. Global Scope & File Inventory
 
-All 176 occurrences (38 files) migrate to `aset` (preserving git commit history):
+All 176 occurrences (38 files) migrate to `aset` (preserving git commit history). One intentional `fufu.land` literal remains forever — `legacyDomain` in `modules/addresses.nix` (Decision 8):
 
-1. **Central Domain Registry (`modules/addresses.nix`)** — 26 occurrences: hardcoded literals replaced via new `baseDomain` binding (Decision 2).
-1. **Reverse Proxy & ACME (`modules/services/nginx-proxy.nix`, `proxy-vhosts.nix`)** — 15 occurrences: ACME email, cert names, `useACMEHost`, and static vhosts all become `allAddresses.baseDomain` references (Decision 2); `proxy-vhosts.nix`'s import gains `allAddresses`.
-1. **Internal Edge DNS (`modules/services/adguardhome.nix`)** — 8 occurrences: rewrites, server name, TLS paths, and the `certs ?` guard all become `allAddresses.baseDomain` references (Decision 2).
+1. **Central Domain Registry (`modules/addresses.nix`)** — 26 occurrences: hardcoded literals replaced via new `baseDomain` binding (Decision 2); gains one intentional permanent literal, `legacyDomain = "fufu.land";` (Decision 8).
+1. **Reverse Proxy & ACME (`modules/services/nginx-proxy.nix`, `proxy-vhosts.nix`)** — 15 occurrences: ACME email, cert names, `useACMEHost`, and static vhosts all become `allAddresses.baseDomain` references (Decision 2); `proxy-vhosts.nix`'s import gains `allAddresses`. The legacy cert and two permanent 301 redirect vhosts reference `allAddresses.legacyDomain` (Decision 8).
+1. **Internal Edge DNS (`modules/services/adguardhome.nix`)** — 8 occurrences: rewrites, server name, TLS paths, and the `certs ?` guard all become `allAddresses.baseDomain` references (Decision 2). The four legacy `fufu.land` rewrites are kept as `legacyDomain` references (Decision 8).
 1. **Standalone Modules & Dashboards**:
    - `modules/services/homepage.nix` (6): service URLs and search widget become `allAddresses.baseDomain` references (Decision 2).
    - `modules/services/searxng.nix` (1): `base_url` becomes an `allAddresses.baseDomain` reference.
@@ -109,7 +116,7 @@ All 176 occurrences (38 files) migrate to `aset` (preserving git commit history)
    - `modules/services/forgejo.nix` (1): comment `git.aset.love`.
 1. **Dotfiles, Scripts & Git Remote**:
    - `users/assets/dotfiles/ssh/config` (3): `cloudflare.aset.love` in both Host blocks.
-   - `users/assets/dotfiles/zsh/aliases.zsh` (2): delete the `ffsh` alias line entirely (Decision 8).
+   - `users/assets/dotfiles/zsh/aliases.zsh` (2): delete the `ffsh` alias line entirely (Decision 9).
    - `ci/auto-maintenance.sh` (1): `user.email "auto-maintenance@aset.love"`.
    - Local working repository git remote: `origin ssh://forgejo@git.aset.love:24212/yi/nixos.git`.
 1. **Documentation (`docs/src/`)** — 105 occurrences across 23 files, including `fufu-service-ca` $\\to$ `aset-service-ca`, `/CN=Fufu Internal Service CA` $\\to$ `/CN=Aset Internal Service CA`, and `fufu-client-ca` $\\to$ `aset-client-ca`. (Counts include 3 other plan files: `mtls-architecture-plan.md`, `architecture-rollout-plan.md`, `impermanence-yirukou-plan.md` — all updated in place, Decision 6.)
@@ -136,8 +143,8 @@ Both domains are registered with Cloudflare Registrar. `aset.love` is an active 
 
 #### 0.1 Cloudflare API Token Scope
 
-- [ ] **0.1.1** Log in to [Cloudflare Dashboard](https://dash.cloudflare.com) $\\to$ Top right profile icon $\\to$ **My Profile** $\\to$ **API Tokens**.
-- [ ] **0.1.2** Find the API token used for ACME (`cloudflare_api_token`). Click **Edit**:
+- [x] **0.1.1** Log in to [Cloudflare Dashboard](https://dash.cloudflare.com) $\\to$ Top right profile icon $\\to$ **My Profile** $\\to$ **API Tokens**.
+- [x] **0.1.2** Find the API token used for ACME (`cloudflare_api_token`). Click **Edit**:
   - **Option A (Recommended — Zero Secret Churn)**: Under **Zone Resources**, change the scope from `Specific zone: fufu.land` to **Include $\\to$ All zones from an account $\\to$ [Your Account]** (or add `aset.love` to the list). Click **Continue to summary** $\\to$ **Update Token**.
     - *Result*: No SOPS secret changes or re-encryption required!
   - **Option B (Separate Token)**: If creating a new token, set Permissions: `Zone:DNS:Edit` on `Zone:aset.love`.
@@ -145,31 +152,31 @@ Both domains are registered with Cloudflare Registrar. `aset.love` is an active 
 
 #### 0.2 Cloudflare Zero Trust Tunnel (SSH Fail-Safe)
 
-- [ ] **0.2.1** Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com) $\\to$ **Networks** $\\to$ **Tunnels**.
-- [ ] **0.2.2** Click your existing tunnel (running on `yifuwuqi`) $\\to$ **Configure** $\\to$ **Public Hostnames** tab.
-- [ ] **0.2.3** Click **Add a public hostname**:
+- [x] **0.2.1** Go to [Cloudflare Zero Trust](https://one.dash.cloudflare.com) $\\to$ **Networks** $\\to$ **Tunnels**.
+- [x] **0.2.2** Click your existing tunnel (running on `yifuwuqi`) $\\to$ **Configure** $\\to$ **Public Hostnames** tab.
+- [x] **0.2.3** Click **Add a public hostname**:
   - **Subdomain**: `cloudflare`
   - **Domain**: `aset.love`
   - **Service**: `SSH`
   - **URL**: `10.42.0.2:24212` (or `127.0.0.1:24212`)
-- [ ] **0.2.4** Click **Save hostname**.
+- [x] **0.2.4** Click **Save hostname**.
   - *Result*: Cloudflare automatically creates the public CNAME record for `cloudflare.aset.love`. Both `cloudflare.fufu.land` and `cloudflare.aset.love` now route through the existing tunnel simultaneously.
 
 #### 0.3 SSL/TLS Mode
 
-- [ ] **0.3.1** In Cloudflare Dashboard, select `aset.love` $\\to$ **SSL/TLS** $\\to$ **Overview**.
-- [ ] **0.3.2** Confirm the encryption mode is set to **Full (strict)**.
+- [x] **0.3.1** In Cloudflare Dashboard, select `aset.love` $\\to$ **SSL/TLS** $\\to$ **Overview**.
+- [x] **0.3.2** Confirm the encryption mode is set to **Full (strict)**.
 
 ### Step 1: Gateway Staging (`yirukou`) — Zero Downtime
 
 Provision the wildcard `aset.love` certificate and add dual DNS rewrites without altering any active `fufu.land` service vhosts.
 
-- [ ] **1.1 Introduce `baseDomain` in `modules/addresses.nix`** (AI): add the top-level `baseDomain = "aset.love";` attribute (Decision 2). No existing literal is touched yet, so this deploy is a pure no-op for running services.
-- [ ] **1.2 Apply Staging Diff to `modules/services/nginx-proxy.nix`** (AI):
+- [x] **1.1 Introduce `baseDomain` in `modules/addresses.nix`** (AI): add the top-level `baseDomain = "aset.love";` attribute (Decision 2). No existing literal is touched yet, so this deploy is a pure no-op for running services.
+- [x] **1.2 Apply Staging Diff to `modules/services/nginx-proxy.nix`** (AI):
   - Add `certs."${allAddresses.baseDomain}"` alongside `certs."fufu.land"`.
-- [ ] **1.3 Apply Staging Diff to `modules/services/adguardhome.nix`** (AI):
+- [x] **1.3 Apply Staging Diff to `modules/services/adguardhome.nix`** (AI):
   - Add rewrites for `*.${baseDomain}`, `${baseDomain}`, `smb.${baseDomain}`, `ssh.${baseDomain}` alongside existing `fufu.land` rewrites.
-- [ ] **1.4 Verify evaluation** (AI):
+- [x] **1.4 Verify evaluation** (AI):
   ```bash
   nix eval .#nixosConfigurations.yirukou.config.system.build.toplevel.drvPath
   ```
@@ -210,14 +217,15 @@ Now that the gateway can resolve and terminate `aset.love`, update `yifuwuqi`'s 
   ai-ssh yifuwuqi systemctl is-active postgresql forgejo atticd grafana nginx
   ```
 
-### Step 3: Gateway Cutover (`yirukou`) & Total Purge of `fufu` in Configs
+### Step 3: Gateway Cutover (`yirukou`) & Legacy-Domain Redirect
 
-With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS to `aset.love`, and purge all legacy `fufu.land` vhosts.
+With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS to `aset.love`, and replace all legacy `fufu.land` vhosts with permanent 301 redirects (Decision 8).
 
-- [ ] **3.1 Apply Code Changes** (AI — all via `allAddresses.baseDomain` references, Decision 2):
+- [ ] **3.1 Apply Code Changes** (AI — new services via `allAddresses.baseDomain`, legacy redirect via `allAddresses.legacyDomain`; Decisions 2 & 8):
+  - `modules/addresses.nix`: add top-level `legacyDomain = "fufu.land";` — the repo's only intentional remaining `fufu` literal.
   - `modules/services/proxy-vhosts.nix`: `useACMEHost = baseDomain;` (import gains `allAddresses`).
-  - `modules/services/nginx-proxy.nix`: remove `certs."fufu.land"`; ACME email and static vhosts reference `baseDomain`.
-  - `modules/services/adguardhome.nix`: remove legacy `fufu.land` rewrites; TLS paths and the `certs` guard reference `baseDomain`.
+  - `modules/services/nginx-proxy.nix`: ACME email and static vhosts reference `baseDomain`; `certs."fufu.land"` is **kept**, renamed to `certs."${legacyDomain}"`; add two redirect vhosts — regex `~^(?<sub>.+)\.fufu\.land$` → `return 301 https://$sub.aset.love$request_uri;` and apex `fufu.land` → `301 https://aset.love$request_uri` (both `useACMEHost = legacyDomain; forceSSL = true;`).
+  - `modules/services/adguardhome.nix`: legacy `fufu.land` rewrites are **kept** as explicit `${legacyDomain}` entries (`smb.`, `ssh.`, wildcard, apex — `ssh.` becomes explicit because `addresses.nix`'s `ssh.domain` flipped to `baseDomain` in Step 2.1); TLS paths and the `certs` guard reference `baseDomain`.
   - `hosts/yirukou/goaccess.nix`: WebSocket URL references `baseDomain`.
 - [ ] **3.2 Verify evaluation** (AI):
   ```bash
@@ -233,6 +241,8 @@ With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS t
   curl -Ik https://git.aset.love
   curl -Ik https://grafana.aset.love
   curl -Ik https://cache.aset.love/yi/nix-cache-info
+  curl -sI https://git.fufu.land -o /dev/null -w '%{http_code} %{redirect_url}\n'
+  # Expected: 301 https://git.aset.love/
   ```
 
 ### Step 4: Client & Desktop Fleet Rollout
@@ -270,7 +280,7 @@ With the backend ready, switch Nginx reverse proxy vhosts and AdGuard Home TLS t
 - [ ] **5.4 Run Zero-Tolerance Audit** (AI):
   ```bash
   rg -i "fufu"
-  # Must return 0 matches across the working tree!
+  # Must return exactly 1 match: the intentional legacyDomain literal in modules/addresses.nix (Decision 8)
   ```
 
 ## 4. Rollback Strategy
@@ -282,4 +292,4 @@ If any failure occurs during staging or cutover:
 
 ## Open questions
 
-None — all resolved during review (Decisions 6–9).
+None — all resolved during review (Decisions 6–10).
