@@ -377,10 +377,10 @@ let
         "Mod+Shift+P".action."power-off-monitors" = [ ];
       }
       // lib.optionalAttrs (cmds.appCommands.launcher != null) {
-        "Mod+Space" = spawnTitleBind "Application Launcher" cmds.appCommands.launcher;
+        "Alt+Space" = spawnTitleBind "Application Launcher" cmds.appCommands.launcher;
       }
       // lib.optionalAttrs (cmds.appCommands.launcherBar != null) {
-        "Alt+Space" = spawnTitleBind "Spotlight Bar" cmds.appCommands.launcherBar;
+        "Mod+Space" = spawnTitleBind "Spotlight Bar" cmds.appCommands.launcherBar;
       }
       // lib.optionalAttrs (cmds.appCommands.clipboard != null) {
         "Mod+V" = spawnTitleBind "Clipboard Manager" cmds.appCommands.clipboard;

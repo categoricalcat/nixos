@@ -101,7 +101,7 @@
   "centeringMode": "geometric",
   "clockDateFormat": "dddd, d MMMM",
   "appLauncherGridColumns": 5,
-  "rememberLastQuery": true,
+  "rememberLastQuery": false,
   "dankLauncherV2Size": "medium",
   "dankLauncherV2BorderThickness": 1,
   "dankLauncherV2IncludeFilesInAll": true,
