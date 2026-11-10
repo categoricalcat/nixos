@@ -58,6 +58,7 @@ in
           addresses.services.adguardhome.dnsPort
           139 # Samba NetBIOS Session
           445 # Samba SMB
+          3000 # workd dev server
         ];
 
         allowedUDPPorts = [
