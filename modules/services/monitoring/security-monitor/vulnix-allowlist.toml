@@ -2,22 +2,22 @@
 # Haskell packages only collide with unrelated NVD products and are masked whole at their current version.
 
 ada.cve = "CVE-2024-9410" # Ada.cx Sentry config, not ada URL parser
-adguardhome.cve = "CVE-2022-32175" # Fixed in v0.107.14; NVD tracks v0.108 betas only
 avahi.cve = ["CVE-2021-26720", "CVE-2025-59529"] # Debian script; commit 4e2e1ea0908d omitted in nixpkgs
-cjson.cve = "CVE-2026-16554" # 32-bit only
-cups.cve = "CVE-2022-26691" # Fixed in 2.4.2; macOS CPE match
-ffmpeg.cve = ["CVE-2025-25468", "CVE-2025-25469"] # Fixed by d5873be583ad in 9.0.2
+binutils.cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2026-6846"] # readelf local DoS / disputed pre-release only / XCOFF (AIX) objects not handled
+bison.cve = "CVE-2026-56389" # Requires `bison --html` on hostile grammar; HTML reports never generated
+brotli.cve = "CVE-2026-111497" # Fixed in 1.2.1 per NVD advisory; vulnix flags on stale CPE range
+cjson.cve = ["CVE-2026-16554", "CVE-2026-67215"] # 32-bit only; cJSONUtils JSON-Patch recursion DoS, no upstream fix
 gcc.cve = "CVE-2023-4039" # Disputed; AArch64 -fstack-protector only
 git.cve = ["CVE-2021-21684", "CVE-2022-30947", "CVE-2022-36882", "CVE-2022-36883", "CVE-2022-36884", "CVE-2022-38663"] # Jenkins Git Plugin
-glibc.cve = ["CVE-2026-5435", "CVE-2026-6238"] # Fixed in 2.44 (sourceware 34033, 34069)
 grafana.cve = "CVE-2023-34111" # taosdata/grafanaplugin CI workflow
-jq.cve = ["CVE-2026-39979", "CVE-2026-44777"] # Fixed in 1.8.2 (2f09060afab2)
 "lapack-3".cve = "CVE-2021-4048" # Backed by OpenBLAS >= 0.3.19
+libsndfile.cve = "CVE-2025-52194" # IRCAM parse overflow, no upstream fix (libsndfile#1082)
 mercurial.cve = "CVE-2022-43410" # Jenkins Mercurial Plugin
 orc.cve = "CVE-2025-47436" # Apache ORC, not GStreamer orc
-perl.cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"] # Fixed in 5.40.5 / 5.42.3
+rsync.cve = "CVE-2026-119741" # DoS needs public daemon module; no rsyncd deployed
 shellcheck.cve = "CVE-2021-28794" # VS Code extension
 snappy.cve = ["CVE-2023-28115", "CVE-2023-41330"] # KnpLabs PHP library
+sqlite.cve = "CVE-2026-119586" # sqlite3 CLI `.recover` piped to shell; interactive misuse only, library unaffected
 zlib.cve = ["CVE-2023-6992", "CVE-2026-27820"] # Cloudflare fork / Ruby gem
 
 ["dbus-1"] # NixOS D-Bus config dir, not dbus

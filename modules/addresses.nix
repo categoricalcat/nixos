@@ -585,7 +585,7 @@ in
           domain = "jellyseerr.fufu.land";
           port = 24055;
         };
-        podgrab = {
+        pinepods = {
           domain = "cast.fufu.land";
           port = 24085;
         };

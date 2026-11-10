@@ -112,10 +112,10 @@ To ensure your media applications prefer files with Brazilian voice acting:
 - Go to your **Profiles** > **Quality Profiles** and assign a positive score to this Custom Format so the system automatically upgrades or prefers these releases.
   *(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr/default.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*
 
-## 9. Podcasts (Podgrab)
+## 9. Podcasts (Pinepods)
 
-Podgrab (`modules/services/podgrab.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. Feeds and database live in its sqlite database under `/var/lib/container-volumes/podgrab`, with downloaded podcasts stored in `/persist/media/podcasts`:
+Pinepods (`modules/services/pinepods.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. It runs with its own Postgres and Valkey sidecars on an internal container network; state lives under `/var/lib/container-volumes/pinepods`, with downloaded podcasts stored in `/persist/media/podcasts`:
 
-1. Open `https://cast.fufu.land`.
-1. Add podcasts by searching via the iTunes search bar or pasting an RSS feed URL.
+1. Open `https://cast.fufu.land` and create the first admin account when prompted.
+1. Import subscriptions via OPML (Settings → Import/Export) or add podcasts by search/RSS.
 1. Configure automatic downloads or download specific episodes directly from the web interface.

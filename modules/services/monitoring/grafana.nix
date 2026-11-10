@@ -15,7 +15,6 @@ let
 
   customDashboardNames = [
     "systemd-units"
-    "services-overview"
     "fail2ban"
     "prometheus"
     "loki"

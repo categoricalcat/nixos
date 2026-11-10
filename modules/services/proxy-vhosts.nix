@@ -38,7 +38,7 @@ let
       bodySize = "1G";
       longTimeouts = true;
     };
-    podgrab = { };
+    pinepods = { };
     prowlarr = { };
     qbittorrent = { };
     radarr = { };

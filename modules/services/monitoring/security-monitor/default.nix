@@ -62,8 +62,8 @@ let
         --textfile-dir "${nodeTextfileDir}" \
         ${
           lib.optionalString (
-            cfg.cveScan.whitelistFile != null
-          ) "--whitelist-file \"${cfg.cveScan.whitelistFile}\""
+            cfg.cveScan.allowlistFile != null
+          ) "--allowlist-file \"${cfg.cveScan.allowlistFile}\""
         } \
         ${lib.optionalString cfg.cveScan.scanContainers "--scan-containers"} \
         ${lib.optionalString (
@@ -122,10 +122,10 @@ in
         ];
         description = "Registry container images to scan if container scanning is enabled (Nix-built images are covered by vulnix)";
       };
-      whitelistFile = lib.mkOption {
+      allowlistFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
-        default = ./vulnix-whitelist.toml;
-        description = "TOML whitelist file passed to vulnix -w (null disables it)";
+        default = ./vulnix-allowlist.toml;
+        description = "TOML allowlist file passed to vulnix -w (null disables it)";
       };
     };
   };

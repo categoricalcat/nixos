@@ -69,7 +69,7 @@ in
     };
 
     firecrawl-rabbitmq = {
-      image = "docker.io/library/rabbitmq:3-management";
+      image = "docker.io/library/rabbitmq:4-management";
       extraOptions = [ "--network=firecrawl_internal" ];
     };
 

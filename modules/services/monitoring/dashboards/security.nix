@@ -113,7 +113,7 @@ dashLib.mkDashboard {
     # --- Vulnerability Breakdown Row ---
     (dashLib.mkTimeseries {
       title = "Vulnerabilities by Severity & Target";
-      expr = "node_security_vulnerabilities_total or label_replace(node_security_vulnerabilities_whitelisted_total, \"severity\", \"SUPPRESSED\", \"\", \"\")";
+      expr = "node_security_vulnerabilities_total or label_replace(node_security_vulnerabilities_allowlisted_total, \"severity\", \"SUPPRESSED\", \"\", \"\")";
       gridPos = dashLib.mkGridPos 0 12 10 8;
       legendFormat = "{{host}} {{target}} {{severity}}";
     })

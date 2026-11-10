@@ -8,6 +8,7 @@
 - Every plan goes to `docs/src/plans/<topic>-plan.md` — that is the single plans folder; no plans anywhere else. One home for every plan keeps the code tidy.
 - Follow the format: Objective / Current state / Decisions / Phases / Rollout order / Open questions.
 - `.cursor/plans/` is ephemeral tool output, not a place for plans — a scrap of paper, not the writing desk.
+- **Retire finished plans**: A plan is scaffolding, not a monument. When every phase is implemented and verified, delete the plan file in the same change set that completes it — code and docs are the record, the plan was the scaffolding. Leave the deletion unstaged like any other change. Plans paused or partially implemented stay, with their `Status:` line updated to reflect reality.
 
 ## 2. Git
 
