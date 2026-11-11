@@ -1,3 +1,5 @@
+# Shared nix/shell/markdown policy. Consumers import this and add their own
+# formatters (prettier, eslint, …) in a later module; options merge.
 { lib, ... }:
 {
   perSystem =

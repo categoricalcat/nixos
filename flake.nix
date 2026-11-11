@@ -32,6 +32,10 @@
         ];
 
         flake = {
+          # Path, not flake-parts' flakeModules module: that module aliases
+          # `flakeModule` to `flakeModules.default`, which `nix flake check` evaluates.
+          flakeModules.treefmt = ./nix/treefmt.nix;
+
           homeConfigurations.yijia = home-manager.lib.homeManagerConfiguration {
             pkgs = import nixpkgs {
               system = "x86_64-linux";
