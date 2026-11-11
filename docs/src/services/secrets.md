@@ -70,10 +70,12 @@ Setting `nixBuild.useRemoteBuilders = true` authorizes the registered host as a
 build-mesh client; `modules/distributed-builds.nix` reads its host key from this
 registry.
 
-SOPS decryption is strictly restricted to `root`. `secrets/sops.nix` sets
-`SOPS_AGE_SSH_PRIVATE_KEY_FILE=/persist/keys/ssh/ssh_host_ed25519_key`, and
-`./users/scripts/setup-sops.sh` also writes `/root/.config/sops/age/keys.txt`
-from the host SSH private key.
+SOPS decryption is strictly restricted to `root`. The payload is encrypted to
+the X25519 recipient produced by `ssh-to-age`, not to the raw SSH key, so
+`SOPS_AGE_SSH_PRIVATE_KEY_FILE` cannot decrypt it. `secrets/sops.nix` exports
+`SOPS_AGE_KEY` in every root zsh by running `ssh-to-age -private-key` on
+`/persist/keys/ssh/ssh_host_ed25519_key`. `./users/scripts/setup-sops.sh` also
+writes that same identity to `/root/.config/sops/age/keys.txt`.
 
 ## Install Encrypted Payloads
 
@@ -100,6 +102,7 @@ keys:
     deploy: string
 passwords:
     nextcloud: string
+    filebrowser: string
 tokens:
     attic-server-jwt-env: |
         ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=<base64-rsa-key>
@@ -168,6 +171,7 @@ Recipes:
 | `tokens/deepseek` | raw API key | DeepSeek console API key |
 | `nix/access-tokens` | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below |
 | `passwords/nextcloud` | plain password | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one |
+| `passwords/filebrowser` | plain password | File Browser login for user `yi` (not the unix password). At least 12 characters: `openssl rand -base64 18` |
 | `proton/wireguard_private_key` | raw token | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf` |
 | `samba/credentials/yi` | credentials file | SMB account credentials: `username=...` and `password=...` |
 
@@ -286,9 +290,9 @@ cd /home/yi/the.files/nixos
 # 1. Regenerate .sops.yaml from secrets/keys.nix
 ./users/scripts/setup-sops.sh
 
-# 2. Rekey secrets/secrets.yaml to match .sops.yaml
-SOPS_AGE_SSH_PRIVATE_KEY_FILE=/persist/keys/ssh/ssh_host_ed25519_key \
-  sops updatekeys -y secrets/secrets.yaml
+# 2. Rekey secrets/secrets.yaml to match .sops.yaml.
+#    A root zsh already has SOPS_AGE_KEY.
+sops updatekeys -y secrets/secrets.yaml
 
 # 3. Sync the rekeyed file to /persist/keys/sops/secrets.yaml
 ./users/scripts/setup-sops.sh
@@ -297,10 +301,8 @@ SOPS_AGE_SSH_PRIVATE_KEY_FILE=/persist/keys/ssh/ssh_host_ed25519_key \
 ## Edit Secrets
 
 Only `root` can decrypt or edit `secrets/secrets.yaml` (`yi` is not an age
-recipient). `setup-sops.sh` derives `/root/.config/sops/age/keys.txt` from the
-host SSH key (`/persist/keys/ssh/ssh_host_ed25519_key`), and
-`SOPS_AGE_SSH_PRIVATE_KEY_FILE` is also set to `/persist/keys/ssh/ssh_host_ed25519_key`
-so `sops` works as root even before `setup-sops.sh` has run:
+recipient). A root zsh sets `SOPS_AGE_KEY` from the host SSH key, so `sops`
+works without a manual `ssh-to-age` export:
 
 ```bash
 su -

@@ -17,6 +17,9 @@ let
     docs = {
       websockets = false;
     };
+    files = {
+      websockets = false;
+    };
     forgejo = {
       websockets = false;
       bodySize = "512M";

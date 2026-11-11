@@ -27,6 +27,7 @@ let
     forgejo = "https://${addrs.services.forgejo.domain}";
     attic = "https://${addrs.services.attic.domain}";
     docs = "https://${addrs.services.docs.domain}";
+    files = "https://${addrs.services.files.domain}";
     weather = "https://${addrs.services.weather.domain}";
   };
 
@@ -228,6 +229,13 @@ in
               icon = "cockpit.png";
               href = serviceDomains.cockpit;
               ping = serviceDomains.cockpit;
+            };
+          }
+          {
+            "Files" = {
+              icon = "filebrowser.png";
+              href = serviceDomains.files;
+              ping = serviceDomains.files;
             };
           }
           {

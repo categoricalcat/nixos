@@ -278,16 +278,21 @@ _:
       # Screenshots
       screenshots = {
         interactive =
-          if desktopShell == "dms" || hdr then
+          if desktopShell == "dms" then
             [
-              "shot"
-              "area"
+              "dms"
+              "screenshot"
             ]
           else if desktopShell == "noctalia" then
             [
               "noctalia"
               "msg"
               "screenshot-region"
+            ]
+          else if hdr then
+            [
+              "shot"
+              "area"
             ]
           else
             [
@@ -296,9 +301,10 @@ _:
               "area"
             ];
         full =
-          if desktopShell == "dms" || hdr then
+          if desktopShell == "dms" then
             [
-              "shot"
+              "dms"
+              "screenshot"
               "full"
             ]
           else if desktopShell == "noctalia" then
@@ -307,6 +313,11 @@ _:
               "msg"
               "screenshot-fullscreen"
             ]
+          else if hdr then
+            [
+              "shot"
+              "full"
+            ]
           else
             [
               "grimshot"
@@ -314,7 +325,13 @@ _:
               "screen"
             ];
         window =
-          if desktopShell == "dms" || desktopShell == "noctalia" || hdr then
+          if desktopShell == "dms" then
+            [
+              "dms"
+              "screenshot"
+              "window"
+            ]
+          else if desktopShell == "noctalia" || hdr then
             [
               "shot"
               "window"

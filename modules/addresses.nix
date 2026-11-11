@@ -654,6 +654,10 @@ in
           domain = "docs.${baseDomain}";
           port = 24083;
         };
+        files = {
+          domain = "files.${baseDomain}";
+          port = 24086;
+        };
         weather = {
           domain = "weather.${baseDomain}";
           port = 24084;

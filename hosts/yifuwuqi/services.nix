@@ -25,6 +25,7 @@
     ../../modules/services/forgejo.nix
     ../../modules/services/forgejo-runner.nix
     ../../modules/services/cockpit.nix
+    ../../modules/services/filebrowser.nix
     # ../../modules/services/terraria.nix
     #../../modules/services/nextcloud
     # ../../modules/services/monitoring/netdata.nix

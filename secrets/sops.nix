@@ -1,5 +1,9 @@
 # sops.nix
-_:
+{
+  lib,
+  pkgs,
+  ...
+}:
 let
   keys = import ./keys.nix;
 in
@@ -15,8 +19,14 @@ in
       validateSopsFiles = false;
     };
 
-    # Let the sops CLI (as root) derive its age identity directly from the host SSH key.
-    # Unprivileged users cannot read /persist/keys/ssh/ssh_host_ed25519_key (0600 root:root).
-    environment.variables.SOPS_AGE_SSH_PRIVATE_KEY_FILE = keys.paths.sshHostKey;
+    # The payload is encrypted to the X25519 recipient from ssh-to-age.
+    # SOPS_AGE_SSH_PRIVATE_KEY_FILE is a different identity (ssh-ed25519) and
+    # cannot decrypt it. Root's zsh, including non-interactive, derives the
+    # matching age key. The host key is 0600 root:root.
+    programs.zsh.shellInit = ''
+      if [ "$(id -u)" = 0 ] && [ -r ${keys.paths.sshHostKey} ]; then
+        export SOPS_AGE_KEY="$(${lib.getExe pkgs.ssh-to-age} -private-key -i ${keys.paths.sshHostKey})"
+      fi
+    '';
   };
 }

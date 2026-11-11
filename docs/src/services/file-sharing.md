@@ -79,9 +79,19 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## 5. Key Source Files
+## 5. File Browser (`modules/services/filebrowser.nix`)
+
+- **Host**: `yifuwuqi`, loopback `127.0.0.1:24086`, proxied at `https://files.aset.love`.
+- **Scope**: `/home/yi`, bind-mounted read-only into the service. Runs as `yi`.
+- **Login**: username `yi` and SOPS `passwords/filebrowser`. That password is not the unix password.
+- **Access**: download only. Dotfiles are visible; `/the.files/nixos/secrets` is denied. Symlinks that leave `/home/yi` are not followed.
+
+______________________________________________________________________
+
+## 6. Key Source Files
 
 - `modules/services/samba/server.nix`
 - `modules/services/samba/client.nix`
 - `modules/services/webdav.nix`
+- `modules/services/filebrowser.nix`
 - `hosts/yifuwuqi/services.nix`
