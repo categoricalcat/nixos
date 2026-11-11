@@ -59,6 +59,7 @@ in
           139 # Samba NetBIOS Session
           445 # Samba SMB
           3000 # workd dev server
+          6006 # workd dev server
         ];
 
         allowedUDPPorts = [

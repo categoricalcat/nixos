@@ -46,6 +46,15 @@ _: [
       env.AWS_LC_SYS_USE_SYSTEM = 1;
     });
 
+    # High Tide's hardcoded Discord Application ID was deleted upstream.
+    # Upstream PR #353 migrated to a newly registered application ID.
+    high-tide = prev.high-tide.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        substituteInPlace src/lib/discord_rpc.py \
+          --replace-fail "1379096506065223680" "1570037786474455050"
+      '';
+    });
+
     # Fix reaper segfault on startup (NixOS/patchelf#446, NixOS/patchelf#447):
     # patchelf corrupts non-PIE (ET_EXEC) ELF binaries when inserting/expanding RPATH
     # by creating an overlapping PT_LOAD segment where .dynamic falls within a page
