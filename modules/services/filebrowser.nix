@@ -60,10 +60,22 @@ in
           --perm.share=false \
           --perm.download=true
       fi
+      # Enforce dotfile visibility: the profile flag must survive UI drift,
+      # and a legacy deny rule with regex (^|/)\. hides dotfiles regardless.
+      ${fb} --database ${database} users update yi --hideDotfiles=false
       rules=$(${fb} --database ${database} rules ls -u yi)
       if ! grep -F '/the.files/nixos/secrets' <<<"$rules" >/dev/null; then
         ${fb} --database ${database} rules add -u yi /the.files/nixos/secrets
       fi
+      while
+        dotrule=$(${fb} --database ${database} rules ls -u yi \
+          | grep -Fm1 '(^|/)\.' \
+          | grep -oE '^\([0-9]+\)' \
+          | tr -d '()')
+        [[ -n $dotrule ]]
+      do
+        ${fb} --database ${database} rules rm -u yi "$dotrule" --index "$dotrule"
+      done
     '';
     serviceConfig = {
       ProtectSystem = "strict";

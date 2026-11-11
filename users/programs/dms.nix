@@ -131,8 +131,6 @@ in
     enableCalendarEvents = true; # Calendar integration (khal)
     enableClipboardPaste = true; # Clipboard paste wtype
 
-    quickshell.package = pkgs.quickshell;
-
     settings = lib.recursiveUpdate dmsSettings {
       customThemeFile = "${pkgs.writeText "yimoka.json" (builtins.toJSON yimokaTheme)}";
       lockScreenInactiveColor = c "base00";
