@@ -68,6 +68,7 @@ in
     ../../secrets/sops.nix
     ../../modules/fonts.nix
     ../../modules/fido2.nix
+    ../../modules/dev-certs.nix
     ../../modules/audio
     ../../modules/common.nix
     ../../modules/gaming.nix

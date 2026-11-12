@@ -17,6 +17,12 @@ SOPS payloads stay outside the Nix store.
     ssh_host_ed25519_key.pub
   sops/
     secrets.yaml
+  dev/            # optional, see Dev Certificates
+    domain
+    ca.pem
+    chrome.json
+    cert.pem
+    key.pem
 ```
 
 Create the directories before the first switch (as root):
@@ -314,6 +320,51 @@ sops secrets/secrets.yaml
 Always run `./users/scripts/setup-sops.sh` after editing `secrets/secrets.yaml`
 so `/persist/keys/sops/secrets.yaml` (`0600 root:root`) stays in sync with the
 repo copy. Do not edit `/persist/keys/sops/secrets.yaml` directly.
+
+## Dev Certificates
+
+`modules/dev-certs.nix` (`yifuwuqi`, `yitaishi`, `yixiaoqing`) trusts a
+name-constrained dev CA host-wide (`NODE_EXTRA_CA_CERTS`, `SSL_CERT_DIR`,
+Chrome policy) and shares one leaf with the `devcert` group (`yi`, `workd`).
+AdGuard on `yirukou` and `yifuwuqi` maps `domain` to `yifuwuqi`. The files live
+in `/persist/keys/dev/` rather than the repo because the CA's constraints name
+the work hostname. Every consumer skips missing files.
+
+Host-wide trust is only safe because the CA carries critical name constraints
+and its key is discarded after signing. List every dev name in both the
+constraints and the leaf SAN, keep the subject (its hash names
+`/etc/ssl/certs/4ce7bcbb.0`), and re-run the recipe to add a name or renew the
+leaf.
+
+```bash
+# as root (su -); keys stay in shell variables and the CA key is discarded
+nix shell nixpkgs#openssl
+read -r DEV_DOMAIN
+cakey=$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256)
+ca=$(openssl req -x509 -new -key <(printf '%s\n' "$cakey") -sha256 -days 3650 \
+  -subj "/CN=aset dev CA" \
+  -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
+  -addext "keyUsage=critical,keyCertSign,cRLSign" \
+  -addext "nameConstraints=critical,permitted;DNS:$DEV_DOMAIN,permitted;DNS:localhost,permitted;DNS:yifuwuqi.lan,permitted;IP:127.0.0.0/255.0.0.0")
+key=$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256)
+cert=$(openssl x509 -req -sha256 -days 825 -set_serial "0x$(openssl rand -hex 16)" \
+  -in <(openssl req -new -key <(printf '%s\n' "$key") -subj /CN=dev) \
+  -CA <(printf '%s\n' "$ca") -CAkey <(printf '%s\n' "$cakey") \
+  -extfile <(printf 'subjectAltName=DNS:%s,DNS:localhost,DNS:yifuwuqi.lan,IP:127.0.0.1\nextendedKeyUsage=serverAuth\nbasicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\n' "$DEV_DOMAIN"))
+d=/persist/keys/dev
+install -d -m 0755 "$d"
+install -m 0644 /dev/stdin "$d/domain" <<<"$DEV_DOMAIN"
+install -m 0644 /dev/stdin "$d/ca.pem" <<<"$ca"
+install -m 0644 /dev/stdin "$d/cert.pem" <<<"$cert"
+install -m 0640 /dev/stdin "$d/key.pem" <<<"$key"
+jq -n --arg c "$(openssl x509 -outform DER <<<"$ca" | base64 -w0)" '{CACertificates: [$c]}' |
+  install -m 0644 /dev/stdin "$d/chrome.json"
+unset cakey key
+```
+
+Copy `/persist/keys/dev/` to the other dev hosts and `domain` to `yirukou`,
+keeping modes. Switching (or `systemd-tmpfiles --create`) sets `key.pem` to
+`root:devcert`. AdGuard rereads `domain` only when it restarts.
 
 ## Distributed Builds Key
 

@@ -19,6 +19,7 @@ Host *
     KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
 
     StrictHostKeyChecking yes
+    GlobalKnownHostsFile /etc/ssh/ssh_known_hosts /etc/static/ssh/ssh_known_hosts
 
     ConnectTimeout 10
 

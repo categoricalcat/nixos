@@ -107,11 +107,11 @@
     "dank-qml-common": {
       "flake": false,
       "locked": {
-        "lastModified": 1794333549,
-        "narHash": "sha256-FYXaBnvHH2JW4GJdgumPYwtnuRm2YgIATK9M42Cz66Q=",
+        "lastModified": 1794494279,
+        "narHash": "sha256-drAkvEDU3iyByqweYW/7H2RQfpqVf9ZEY4bX2b1l2so=",
         "owner": "duxlabs-dev",
         "repo": "dux-qml-common",
-        "rev": "0e924de9e3282143cfa7f30e4ac55382b711882c",
+        "rev": "b0e8ba8a0c78067f8789ad0b61febe390629267f",
         "type": "github"
       },
       "original": {
@@ -152,11 +152,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794473044,
-        "narHash": "sha256-fG+dZrvjAdZtJ0Ian2aPGf8giwi6yVrZwP4v2kTIyJA=",
+        "lastModified": 1794494409,
+        "narHash": "sha256-euoeZjCtq+V2pbFIsJVgtEX89skei6ipMcP9BssX8nk=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "d9f7d05faf118ecf8410e57aa237f8c67ad484ae",
+        "rev": "ea78a8d23296946ff3d8893e34ca85d425a4d11f",
         "type": "github"
       },
       "original": {
@@ -174,11 +174,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794398289,
-        "narHash": "sha256-2g3fv20VaKf6YlRQjLap6REO88fRyCnUVfMpSVRtx1A=",
+        "lastModified": 1794494047,
+        "narHash": "sha256-eQnjxuPCqCW3i5PQsSZQ3H2g3Ok73XJ6XFkiwawuuHw=",
         "owner": "duxlabs-dev",
         "repo": "dux-qt-base",
-        "rev": "e201265a8ad2fcf70a09789fbd88516caef282a7",
+        "rev": "614877387e2832f0e73840a9b9e2dc3d95a82c53",
         "type": "github"
       },
       "original": {
@@ -689,11 +689,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1794192123,
-        "narHash": "sha256-YOhabADcIwaWo9992egosQF3iVpvWysmZAyhbGBzinY=",
-        "rev": "177d0540942fb205af6993b1d5fa0b57799e09f8",
+        "lastModified": 1794386569,
+        "narHash": "sha256-W60urNAgQVS8bhNWH0bQsYoiagds8m38oTDUjEOM9FE=",
+        "rev": "d4f25a3e562008648d45bcf2d70bcc7422cad84e",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1114946.177d0540942f/nixexprs.tar.zst?lastModified=1794192123&rev=177d0540942fb205af6993b1d5fa0b57799e09f8"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1117658.d4f25a3e5620/nixexprs.tar.zst?lastModified=1794386569&rev=d4f25a3e562008648d45bcf2d70bcc7422cad84e"
       },
       "original": {
         "type": "tarball",

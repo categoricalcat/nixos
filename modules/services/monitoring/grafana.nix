@@ -102,13 +102,7 @@ in
       pkgs.grafanaPlugins.grafana-lokiexplore-app
       pkgs.grafanaPlugins.grafana-metricsdrilldown-app
       pkgs.grafanaPlugins.grafana-pyroscope-app
-      (pkgs.grafanaPlugins.yesoreyeram-infinity-datasource.overrideAttrs (old: {
-        src = pkgs.fetchurl {
-          name = "${old.pname}-${old.version}.zip";
-          url = "https://grafana.com/api/plugins/${old.pname}/versions/${old.version}/download";
-          hash = "sha256-E3CBS3xVqdBJq4ylHaFmX75INZjI0fk6RX4yYNL1IhI=";
-        };
-      }))
+      pkgs.grafanaPlugins.yesoreyeram-infinity-datasource
       pkgs.grafanaPlugins.marcusolsson-dynamictext-panel
       pkgs.grafanaPlugins.grafana-polystat-panel
       pkgs.grafanaPlugins.volkovlabs-variable-panel

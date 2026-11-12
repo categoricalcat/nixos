@@ -228,6 +228,17 @@ in
   };
 
   systemd.services.adguardhome = {
+    # The work hostname stays out of the public repo (docs/src/services/secrets.md).
+    # A missing file skips the rewrite instead of failing DNS startup.
+    preStart = lib.mkAfter ''
+      domain=${(import ../../secrets/keys.nix).paths.devCertsDir}/domain
+      if [ -r "$domain" ]; then
+        DOMAIN=$(< "$domain") ${lib.getExe pkgs.yq-go} -i \
+          '.filtering.rewrites += [{"domain": strenv(DOMAIN), "answer": "${yifuwuqiLan}", "enabled": true}]' \
+          "$STATE_DIRECTORY/AdGuardHome.yaml"
+      fi
+    '';
+
     bindsTo = lib.optional config.services.unbound.enable "unbound.service";
     partOf = lib.optional config.services.unbound.enable "unbound.service";
     wants = [

@@ -135,6 +135,7 @@ in
     sshHostPublicKey = "${keysFolder}/ssh/ssh_host_ed25519_key.pub";
     sopsDir = "${keysFolder}/sops";
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
+    devCertsDir = "${keysFolder}/dev";
     userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
     userGitSshKey = homeDir: "${homeDir}/.ssh/id_git_ed25519";
     gitSigningKey = homeDir: "${homeDir}/.ssh/id_git_ed25519.pub";
