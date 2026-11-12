@@ -3,7 +3,9 @@
   stdenv,
   makeDesktopItem,
   copyDesktopItems,
+  coreutils,
   curl,
+  jq,
   appimage-run,
 }:
 
@@ -72,6 +74,8 @@ stdenv.mkDerivation {
     substitute ${./fluxer-launcher.sh} $out/bin/fluxer \
       --subst-var-by system ${stdenv.hostPlatform.system} \
       --subst-var-by curl ${curl}/bin/curl \
+      --subst-var-by coreutils ${coreutils}/bin \
+      --subst-var-by jq ${jq}/bin/jq \
       --subst-var-by appimageRun ${appimage-run}/bin/appimage-run
     patchShebangs $out/bin/fluxer
     chmod +x $out/bin/fluxer
