@@ -27,13 +27,6 @@ _: [
       buildInputs = old.buildInputs ++ [ prev.libgit2 ];
     });
 
-    # Nixpkgs 26.11 bumped opencode to 2.2.5 with a stale node_modules hash.
-    opencode = prev.opencode.overrideAttrs (old: {
-      node_modules = old.node_modules.overrideAttrs (_: {
-        outputHash = "sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=";
-      });
-    });
-
     # mprisence transitively pulls aws-lc-sys (via rustls). nixpkgs' legacy
     # default-crate-overrides.nix adds aws-lc + AWS_LC_SYS_USE_SYSTEM=1 for
     # aws-lc-sys, but buildRustPackage does not apply crate overrides, so
