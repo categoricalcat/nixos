@@ -22,7 +22,9 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
@@ -257,7 +259,9 @@ audio {
   border: 1px solid var(--border-color);
   padding: 8px 14px;
   border-radius: 6px;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .filter-checkbox-label:hover {
@@ -302,11 +306,23 @@ audio {
   z-index: 10;
 }
 
-.th-action { width: 44px; text-align: center; }
-.th-speaker { width: 140px; }
-.th-text { min-width: 320px; }
-.th-check { width: 140px; }
-.th-ids { width: 200px; font-family: monospace; }
+.th-action {
+  width: 44px;
+  text-align: center;
+}
+.th-speaker {
+  width: 140px;
+}
+.th-text {
+  min-width: 320px;
+}
+.th-check {
+  width: 140px;
+}
+.th-ids {
+  width: 200px;
+  font-family: monospace;
+}
 
 .dialogue-table tr.dialogue-row {
   border-bottom: 1px solid var(--border-color);
@@ -361,9 +377,15 @@ audio {
   text-transform: capitalize;
 }
 
-.speaker-herschel { color: #f0883e; }
-.speaker-narrator { color: #58a6ff; }
-.speaker-faculty { color: #bc8cff; }
+.speaker-herschel {
+  color: #f0883e;
+}
+.speaker-narrator {
+  color: #58a6ff;
+}
+.speaker-faculty {
+  color: #bc8cff;
+}
 
 .td-text {
   color: var(--text-primary);

@@ -14,9 +14,7 @@ import sys
 try:
     import UnityPy
 except ImportError:
-    sys.exit(
-        "Error: UnityPy is required. Install with: pip install UnityPy"
-    )
+    sys.exit("Error: UnityPy is required. Install with: pip install UnityPy")
 
 logger = logging.getLogger("zero_parades_extractor")
 
@@ -43,7 +41,9 @@ def find_bundle(bundle_arg: str | None = None) -> Path:
         raise FileNotFoundError(f"Bundle not found at provided path: {bundle_arg}")
 
     if DEFAULT_BUNDLE_DIR.exists():
-        candidates = list(DEFAULT_BUNDLE_DIR.glob("g5ibkj7vdwf2g67g_assets_all_*.bundle"))
+        candidates = list(
+            DEFAULT_BUNDLE_DIR.glob("g5ibkj7vdwf2g67g_assets_all_*.bundle")
+        )
         if candidates:
             return candidates[0]
 
@@ -61,17 +61,15 @@ def determine_chunk_type(chunk_name: str) -> str:
     return "other"
 
 
-def extract_cards_from_chunk(chunk_name: str, chunk_type: str, typetree: dict) -> list[dict]:
+def extract_cards_from_chunk(
+    chunk_name: str, chunk_type: str, typetree: dict
+) -> list[dict]:
     """Extract all dialogue cards from a single chunk's typetree."""
     ref_ids = typetree.get("references", {}).get("RefIds", [])
     if not ref_ids:
         return []
 
-    ref_map = {
-        r["rid"]: r
-        for r in ref_ids
-        if isinstance(r, dict) and "rid" in r
-    }
+    ref_map = {r["rid"]: r for r in ref_ids if isinstance(r, dict) and "rid" in r}
 
     results = []
 
@@ -124,18 +122,20 @@ def extract_cards_from_chunk(chunk_name: str, chunk_type: str, typetree: dict) -
             if alt_val and isinstance(alt_val, str) and alt_val.strip():
                 alternatives.append(alt_val.strip())
 
-        results.append({
-            "chunk_name": chunk_name,
-            "chunk_type": chunk_type,
-            "flow_id": flow_id,
-            "card_id": card_id,
-            "card_type": card_type,
-            "card_class": cls_name,
-            "speaker": speaker,
-            "text": text,
-            "threshold": threshold,
-            "alternatives": alternatives,
-        })
+        results.append(
+            {
+                "chunk_name": chunk_name,
+                "chunk_type": chunk_type,
+                "flow_id": flow_id,
+                "card_id": card_id,
+                "card_type": card_type,
+                "card_class": cls_name,
+                "speaker": speaker,
+                "text": text,
+                "threshold": threshold,
+                "alternatives": alternatives,
+            }
+        )
 
     return results
 
@@ -146,7 +146,8 @@ def run_extraction(bundle_path: Path, output_dir: Path, output_format: str) -> N
     env = UnityPy.load(str(bundle_path))
 
     chunk_asset_paths = [
-        k for k in env.container.keys()
+        k
+        for k in env.container.keys()
         if "Assets/FELDRuntime/Scriptables/Main/Chunks/" in k
     ]
     chunk_asset_paths.sort()
@@ -178,8 +179,12 @@ def run_extraction(bundle_path: Path, output_dir: Path, output_format: str) -> N
             logger.warning("Failed to extract %s: %s", chunk_filename, e)
 
         if idx % 50 == 0 or idx == len(chunk_asset_paths):
-            logger.info("Processed %d/%d chunks... (%d lines extracted so far)",
-                        idx, len(chunk_asset_paths), len(all_records))
+            logger.info(
+                "Processed %d/%d chunks... (%d lines extracted so far)",
+                idx,
+                len(chunk_asset_paths),
+                len(all_records),
+            )
 
     logger.info("Extraction complete! Total dialogue lines: %d", len(all_records))
     logger.info("Unique speakers: %d", len(speaker_counts))
@@ -215,7 +220,9 @@ def run_extraction(bundle_path: Path, output_dir: Path, output_format: str) -> N
                     "speaker": rec["speaker"],
                     "text": rec["text"],
                     "threshold": rec["threshold"],
-                    "alternatives": " | ".join(rec["alternatives"]) if rec["alternatives"] else "",
+                    "alternatives": " | ".join(rec["alternatives"])
+                    if rec["alternatives"]
+                    else "",
                 }
                 writer.writerow(row)
         logger.info("CSV export successful: %s (%d lines)", csv_path, len(all_records))
@@ -261,7 +268,8 @@ def main():
         help="Output format: csv, json, or both (default: both)",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose debug logging",
     )

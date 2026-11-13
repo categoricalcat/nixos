@@ -37,6 +37,10 @@ in
         RouteMetric = fallback.routeMetric;
         UseDNS = true;
         UseRoutes = false;
+        # networkd owns the fallback default route and restores it with every
+        # lease; the primary's belongs to wan-monitor (see
+        # packages/gateway-failover/default.nix).
+        UseGateway = true;
       };
       linkConfig.RequiredForOnline = "no";
     };

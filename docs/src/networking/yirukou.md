@@ -67,19 +67,23 @@ DHCP is provided by Kea (`services.kea.dhcp4`) rather than `systemd-networkd`:
 
 ______________________________________________________________________
 
-## 4. WAN Failover & Keepalived
+## 4. WAN Failover
 
-Both WAN interfaces acquire IPv4 through DHCPv4 with `UseRoutes = false`;
-IPv4 default routing remains owned by `modules/networking/gateway-failover.nix`.
+Both WAN interfaces acquire IPv4 through DHCPv4 with `UseRoutes = false`.
+Each default route has exactly one owner: networkd installs the fallback's
+(`UseGateway = true`, metric 200) and restores it with every lease, while
+`wan-monitor` from `packages/gateway-failover/default.nix` owns the
+primary's (metric 100).
 Both set `DHCP = "ipv4"`, `IPv6AcceptRA = "no"`, and
 `LinkLocalAddressing = "no"`, so neither uplink carries IPv6 at all. Failover
 is IPv4-only, and LAN IPv6 is unaffected by uplink transitions because it
 depends on no uplink.
 
-- **Keepalived VRRP**: Monitored by `check_enp7s0` running `wan-check`.
-- **Target Probing**: `wan-check` tests internet targets (`216.239.35.0`, `200.160.0.8`) via explicit `/32` host routes through the primary gateway.
-- **Failover Action**: On transition to `BACKUP` or `FAULT`, `wan-notify` switches the default route to the fallback WAN.
-- **Conntrack Flush**: State is saved in `/run/gateway-failover-active-gw`. `conntrack -F` executes strictly when the active gateway changes.
+- **`wan-monitor.service`**: One loop on a 2 s tick. It probes, debounces and then re-asserts the primary default route every tick, so that route recovers from whatever disturbed it without anything having to observe the event. A restart adopts the routes it finds.
+- **Target Probing**: Pings internet targets (`216.239.35.0`, `200.160.0.8`) via explicit `/32` host routes through the primary gateway, which is read from the DHCP lease.
+- **Failover Action**: Four straight ticks without a reply, or the primary losing its address or lease, withdraw the primary default route and leave the fallback's in force. Two straight ticks with a reply restore it.
+- **Conntrack Flush**: `conntrack -F` executes only when the primary default route is installed or withdrawn.
+- **Regression Test**: `packages/gateway-failover/test.nix` (flake check `gateway-failover`) boots these uplink units against two fake upstreams and replays soft failures, carrier flaps, reboots and restarts.
 
 ______________________________________________________________________
 
@@ -140,7 +144,7 @@ ______________________________________________________________________
 - `hosts/yirukou/networking/wans.nix`
 - `hosts/yirukou/networking/firewall.nix`
 - `hosts/yirukou/networking/sysctl.nix`
-- `modules/networking/gateway-failover.nix`
+- `packages/gateway-failover/default.nix`
 - `modules/networking/sinkhole.nix`
 - `modules/networking/ipv6.nix`
 - `modules/addresses.nix`

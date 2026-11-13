@@ -3,10 +3,11 @@
 {
   systemd.network = {
     networks = {
-      # Fallback uplink. UseRoutes=false so networkd never installs a default
-      # route here - keepalived owns the default route on both transitions
-      # (see modules/networking/gateway-failover.nix). The interface still
-      # gets an IP and DHCP lease info, which is what discover_lease reads.
+      # Fallback uplink. networkd owns its default route: UseGateway installs
+      # the lease's router at a metric above the primary's and restores it
+      # with every lease, so it is already in place whenever wan-monitor
+      # withdraws the primary default (see
+      # packages/gateway-failover/default.nix).
       "35-enp4s0" = {
         matchConfig.Name = addresses.network.secondary.interface;
         networkConfig = {
@@ -20,6 +21,8 @@
         dhcpV4Config = {
           UseDNS = false;
           UseRoutes = false;
+          UseGateway = true;
+          RouteMetric = addresses.network.secondary.routeMetric;
         };
 
         linkConfig = {

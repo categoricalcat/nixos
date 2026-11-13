@@ -86,6 +86,13 @@ let
 
   nodeTextfileDir = "/var/lib/prometheus-node-exporter/textfile";
 
+  # Off-net addresses each failover host pings to judge its primary uplink
+  # (packages/gateway-failover/default.nix).
+  failoverPingTargets = [
+    "216.239.35.0"
+    "200.160.0.8"
+  ];
+
   # All persistent monitoring state on the central host lives under one root
   # (grafana's DB is in postgres, see hosts.yifuwuqi.services.postgresql).
   monitoringDataRoot = "/persist/monitoring";
@@ -458,6 +465,9 @@ in
         # the tailnet from here (see hosts/yifuwuqi/services.nix).
         secondary = {
           interface = "enp4s0";
+          # Above gatewayFailover.primary.metric, so this default route only
+          # wins once the primary's is withdrawn.
+          routeMetric = 200;
           ipv4 = rec {
             cidr = "192.168.0.0/24";
             prefixLength = 24;
@@ -487,22 +497,9 @@ in
         primary = {
           inherit (network.lan) interface;
           inherit (network.lan.ipv4) gateway;
-          source = network.lan.ipv4.host;
           metric = 100;
         };
-        fallback = {
-          inherit (network.secondary) interface;
-          gateway = null;
-          source = null;
-          metric = 200;
-        };
-        pingTargets = [
-          "216.239.35.0"
-          "200.160.0.8"
-        ];
-        virtualRouterId = 99;
-        priority = 100;
-        unicastPeers = [ "127.0.0.1" ];
+        pingTargets = failoverPingTargets;
       };
 
       ssh = {
@@ -878,23 +875,11 @@ in
       gatewayFailover = {
         primary = {
           inherit (network.wan.primary) interface;
+          # Read from the DHCP lease.
           gateway = null;
-          source = null;
           metric = network.wan.primary.routeMetric;
         };
-        fallback = {
-          inherit (network.wan.fallback) interface;
-          gateway = null;
-          source = null;
-          metric = network.wan.fallback.routeMetric;
-        };
-        pingTargets = [
-          "216.239.35.0"
-          "200.160.0.8"
-        ];
-        virtualRouterId = 99;
-        priority = 100;
-        unicastPeers = [ "127.0.0.1" ];
+        pingTargets = failoverPingTargets;
       };
 
       ssh = {

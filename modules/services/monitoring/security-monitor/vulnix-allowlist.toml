@@ -2,16 +2,37 @@
 # Haskell packages only collide with unrelated NVD products and are masked whole at their current version.
 
 ada.cve = "CVE-2024-9410" # Ada.cx Sentry config, not ada URL parser
-avahi.cve = ["CVE-2021-26720", "CVE-2025-59529"] # Debian script; commit 4e2e1ea0908d omitted in nixpkgs
-binutils.cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2026-6846"] # readelf local DoS / disputed pre-release only / XCOFF (AIX) objects not handled
+avahi.cve = [
+  "CVE-2021-26720",
+  "CVE-2025-59529",
+] # Debian script; commit 4e2e1ea0908d omitted in nixpkgs
+binutils.cve = [
+  "CVE-2025-69649",
+  "CVE-2025-69650",
+  "CVE-2026-6846",
+] # readelf local DoS / disputed pre-release only / XCOFF (AIX) objects not handled
 bison.cve = "CVE-2026-56389" # Requires `bison --html` on hostile grammar; HTML reports never generated
 brotli.cve = "CVE-2026-111497" # Fixed in 1.2.1 per NVD advisory; vulnix flags on stale CPE range
-cjson.cve = ["CVE-2026-16554", "CVE-2026-67215"] # 32-bit only; cJSONUtils JSON-Patch recursion DoS, no upstream fix
+cjson.cve = [
+  "CVE-2026-16554",
+  "CVE-2026-67215",
+] # 32-bit only; cJSONUtils JSON-Patch recursion DoS, no upstream fix
 ffmpeg.cve = "CVE-2025-25469" # Memory leak in IAMF muxer only; no security boundary, muxer unused
 gcc.cve = "CVE-2023-4039" # Disputed; AArch64 -fstack-protector only
 glibc.cve = "CVE-2026-5435" # Fixed in glibc 2.44 (sourceware bug 34033, milestone 2.44); NVD CPE range unbounded
-perl.cve = ["CVE-2026-13221", "CVE-2026-8376", "CVE-2026-57432"] # Affects < 5.42.3-RC1; shipped 5.42.3 final is fixed, vulnix matches stale CPE range
-git.cve = ["CVE-2021-21684", "CVE-2022-30947", "CVE-2022-36882", "CVE-2022-36883", "CVE-2022-36884", "CVE-2022-38663"] # Jenkins Git Plugin
+perl.cve = [
+  "CVE-2026-13221",
+  "CVE-2026-8376",
+  "CVE-2026-57432",
+] # Affects < 5.42.3-RC1; shipped 5.42.3 final is fixed, vulnix matches stale CPE range
+git.cve = [
+  "CVE-2021-21684",
+  "CVE-2022-30947",
+  "CVE-2022-36882",
+  "CVE-2022-36883",
+  "CVE-2022-36884",
+  "CVE-2022-38663",
+] # Jenkins Git Plugin
 grafana.cve = "CVE-2023-34111" # taosdata/grafanaplugin CI workflow
 "lapack-3".cve = "CVE-2021-4048" # Backed by OpenBLAS >= 0.3.19
 libsndfile.cve = "CVE-2025-52194" # IRCAM parse overflow, no upstream fix (libsndfile#1082)

@@ -442,9 +442,9 @@ Execute these checks following reboot into the impermanence generation:
 - [ ] **WAN Routing & Failover**:
   ```bash
   ip route show
-  wan-check
+  systemctl is-active wan-monitor
   ```
-  Expected: Default route points via active WAN (`enp7s0` or `enp6s0`), `wan-check` exits 0.
+  Expected: Default route points via active WAN (`enp7s0` or `enp6s0`), `wan-monitor` is `active`.
 - [ ] **Core Daemon Health**:
   ```bash
   systemctl is-active kea-dhcp4-server adguardhome unbound redis nginx tailscaled vector chronyd

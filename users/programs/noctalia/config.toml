@@ -30,16 +30,16 @@ compositor_blur = false
 contact_shadow = false
 enabled = true
 end = [
-    "temp",
-    "cpu",
-    "ram",
-    "battery",
-    "spacer",
-    "tray",
-    "notifications",
-    "clipboard",
-    "group:control_center_group",
-    "session",
+  "temp",
+  "cpu",
+  "ram",
+  "battery",
+  "spacer",
+  "tray",
+  "notifications",
+  "clipboard",
+  "group:control_center_group",
+  "session",
 ]
 font_scale = 1.05
 font_weight = 400
@@ -69,11 +69,11 @@ enabled = true
 fill = "surface_variant"
 id = "control_center_group"
 members = [
-    "network",
-    "bluetooth",
-    "input_volume",
-    "brightness",
-    "control-center",
+  "network",
+  "bluetooth",
+  "input_volume",
+  "brightness",
+  "control-center",
 ]
 opacity = 0.4
 padding = 8.0

@@ -2,13 +2,6 @@
 
 {
   systemd.network = {
-    # keepalived owns the metric-100 default route (see gateway-failover.nix).
-    # ManageForeignRoutes=no stops networkd from sweeping that route on reload
-    # because it is not declared in any .network file.
-    # ManageForeignRoutes lives in networkd.conf(5) [Network] (global),
-    # not in per-link .network files.
-    config.networkConfig.ManageForeignRoutes = false;
-
     networks = {
       "30-eno1" = {
         matchConfig.Name = addresses.network.lan.interface;
@@ -25,12 +18,11 @@
           addresses.network.lan.ipv4.address
         ];
 
-        # The metric-100 default route is owned exclusively by keepalived
-        # (see ../../../../modules/networking/gateway-failover.nix).
-        # networkd must not install it - that would race with the notify
-        # script. The keepalived check itself installs a /32 host route to
-        # the ping target via the LAN gateway every run, so a host route to
-        # the probe target appearing on eno1 is expected.
+        # The metric-100 default route is owned exclusively by wan-monitor
+        # (see ../../../../packages/gateway-failover/default.nix), which
+        # withdraws it while the uplink is unhealthy, so networkd must not
+        # install it. wan-monitor also pins a /32 host route to each probe
+        # target via the LAN gateway, so those appearing on eno1 is expected.
 
         linkConfig = {
           MTUBytes = 1492;

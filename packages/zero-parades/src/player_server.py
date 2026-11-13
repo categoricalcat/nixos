@@ -31,7 +31,9 @@ DEFAULT_BANKS_DIR = DEFAULT_STEAM_DIR / "ZeroParades_Data/StreamingAssets/SoundB
 DEFAULT_CSV_PATHS = [
     Path("./zero_parades_dialogue_en.csv"),
     Path("./output/zero_parades_dialogue_en.csv"),
-    Path("/mnt/smb/the.files/nixos/tools/zero-parades/output/zero_parades_dialogue_en.csv"),
+    Path(
+        "/mnt/smb/the.files/nixos/tools/zero-parades/output/zero_parades_dialogue_en.csv"
+    ),
     Path.home() / ".cache/zero-parades/zero_parades_dialogue_en.csv",
 ]
 
@@ -39,7 +41,7 @@ FAVICON_SVG = (
     b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
     b'<rect width="32" height="32" rx="6" fill="#1a1d24"/>'
     b'<polygon points="12,9 24,16 12,23" fill="#e5a93b"/>'
-    b'</svg>'
+    b"</svg>"
 )
 
 # Global application state
@@ -126,8 +128,12 @@ def load_dialogue_data(csv_path: Path, banks_dir: Path):
             except Exception as e:
                 logger.debug("Failed reading samples in %s: %s", bnk.name, e)
 
-    logger.info("Indexed %d voiceover bank files and %d unique voiced card samples in %s",
-                len(available_banks), len(voiced_card_keys), banks_dir)
+    logger.info(
+        "Indexed %d voiceover bank files and %d unique voiced card samples in %s",
+        len(available_banks),
+        len(voiced_card_keys),
+        banks_dir,
+    )
 
     with open(csv_path, "r", encoding="utf-8", errors="replace") as f:
         reader = csv.DictReader(f)
@@ -144,9 +150,19 @@ def load_dialogue_data(csv_path: Path, banks_dir: Path):
                 speaker_voiced_counts[spk] = speaker_voiced_counts.get(spk, 0) + 1
 
     # Sort dialogue lines so voiced dialogue lines come first, then flows, then id
-    lines.sort(key=lambda x: (not x.get("has_vo", False), x.get("chunk_type") != "flow", int(x.get("id", 0) or 0)))
+    lines.sort(
+        key=lambda x: (
+            not x.get("has_vo", False),
+            x.get("chunk_type") != "flow",
+            int(x.get("id", 0) or 0),
+        )
+    )
 
-    sorted_speakers = sorted(speaker_counts.items(), key=lambda x: (speaker_voiced_counts.get(x[0], 0), x[1]), reverse=True)
+    sorted_speakers = sorted(
+        speaker_counts.items(),
+        key=lambda x: (speaker_voiced_counts.get(x[0], 0), x[1]),
+        reverse=True,
+    )
 
     STATE["lines"] = lines
     STATE["speakers"] = [
@@ -161,8 +177,13 @@ def load_dialogue_data(csv_path: Path, banks_dir: Path):
     STATE["voiced_card_keys"] = voiced_card_keys
 
     voiced_count = sum(1 for l in lines if l.get("has_vo"))
-    logger.info("Loaded %d dialogue lines (%d voiced, %.1f%%) across %d unique speakers.",
-                len(lines), voiced_count, (voiced_count / len(lines) * 100) if lines else 0, len(sorted_speakers))
+    logger.info(
+        "Loaded %d dialogue lines (%d voiced, %.1f%%) across %d unique speakers.",
+        len(lines),
+        voiced_count,
+        (voiced_count / len(lines) * 100) if lines else 0,
+        len(sorted_speakers),
+    )
 
 
 def extract_audio_sample(flow_id: str, card_id: str) -> bytes | None:
@@ -233,8 +254,12 @@ def extract_audio_sample(flow_id: str, card_id: str) -> bytes | None:
 
         return audio_bytes
     except Exception as e:
-        logger.warning("Failed rebuilding sample %s in %s: %s",
-                       matched_sample.name, bank_path.name, e)
+        logger.warning(
+            "Failed rebuilding sample %s in %s: %s",
+            matched_sample.name,
+            bank_path.name,
+            e,
+        )
         return None
 
 
@@ -247,7 +272,12 @@ class PlayerRequestHandler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         # Silence static asset logs, keep API logs
         if len(args) > 0 and str(args[0]).startswith("GET /api/"):
-            logger.debug("%s - - [%s] %s", self.client_address[0], self.log_date_time_string(), format % args)
+            logger.debug(
+                "%s - - [%s] %s",
+                self.client_address[0],
+                self.log_date_time_string(),
+                format % args,
+            )
 
     def do_HEAD(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -361,9 +391,13 @@ class PlayerRequestHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             if not head_only:
-                self.wfile.write(json.dumps({
-                    "error": f"Voiceover audio not found for card '{card_id}' in flow '{flow_id}'"
-                }).encode("utf-8"))
+                self.wfile.write(
+                    json.dumps(
+                        {
+                            "error": f"Voiceover audio not found for card '{card_id}' in flow '{flow_id}'"
+                        }
+                    ).encode("utf-8")
+                )
             return
 
         # Check for HTTP Range requests from browser audio players
@@ -374,10 +408,12 @@ class PlayerRequestHandler(SimpleHTTPRequestHandler):
                 start = int(ranges[0]) if ranges[0] else 0
                 end = int(ranges[1]) if ranges[1] else len(audio_bytes) - 1
                 end = min(end, len(audio_bytes) - 1)
-                chunk = audio_bytes[start:end + 1]
+                chunk = audio_bytes[start : end + 1]
                 self.send_response(206)
                 self.send_header("Content-Type", "audio/ogg")
-                self.send_header("Content-Range", f"bytes {start}-{end}/{len(audio_bytes)}")
+                self.send_header(
+                    "Content-Range", f"bytes {start}-{end}/{len(audio_bytes)}"
+                )
                 self.send_header("Content-Length", str(len(chunk)))
                 self.send_header("Accept-Ranges", "bytes")
                 self.send_header("Cache-Control", "public, max-age=86400")
@@ -453,7 +489,8 @@ def main():
         help="Do not open the browser automatically on startup",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose debug logging",
     )

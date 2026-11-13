@@ -26,8 +26,8 @@ ______________________________________________________________________
            Primary WAN (enp7s0, metric 100)    │      │ Fallback WAN (enp6s0, metric 200)
                                        ▼      ▼
                         ┌──────────────────────────────────────┐
-                        │      Keepalived Gateway Failover     │
-                        │    (wan-check probe + wan-notify)    │
+                        │     wan-monitor Gateway Failover     │
+                        │ (probes, owns primary default route) │
                         └──────────────────┬───────────────────┘
                                            │
                         ┌──────────────────▼───────────────────┐
@@ -72,13 +72,13 @@ ______________________________________________________________________
 
 ## 3. Core Network Services
 
-### 3.1 Gateway Failover (Keepalived)
+### 3.1 Gateway Failover (`wan-monitor`)
 
-- Configured via `modules/networking/gateway-failover.nix` and `hosts/yirukou/networking/wans.nix`.
-- Both WAN interfaces request DHCP leases but have `UseRoutes = false` to prevent `systemd-networkd` from managing default routing.
-- **`wan-check`**: Periodically pings targets (`216.239.35.0`, `200.160.0.8`) using dedicated `/32` host routes bound through the primary gateway.
-- **`wan-notify`**: On state transitions (primary $\\leftrightarrow$ backup/fault), dynamically replaces the system default route (`ip route replace default via <GW> dev <IFACE>`).
-- **Conntrack Management**: State is recorded in `/run/gateway-failover-active-gw`. `conntrack -F` is executed strictly when the active gateway interface actually changes.
+- Configured via `packages/gateway-failover/default.nix` and `hosts/yirukou/networking/wans.nix`.
+- Both WAN interfaces request DHCP leases with `UseRoutes = false`. The fallback adds `UseGateway = true`, so `systemd-networkd` owns its default route (metric 200) and restores it with every lease; the primary's default route (metric 100) belongs to `wan-monitor`.
+- **Probing**: Every 2 s `wan-monitor` pings targets (`216.239.35.0`, `200.160.0.8`) using dedicated `/32` host routes bound through the primary gateway.
+- **Route Ownership**: The primary default route is present only while the primary is healthy. It is withdrawn after four straight failed ticks, or at once when the address or lease is gone, and restored after two clean ticks. It is re-asserted every tick (`ip route replace default via <GW> dev <IFACE>`), so it recovers without anything having to observe a transition.
+- **Conntrack Management**: `conntrack -F` is executed only when the primary default route is installed or withdrawn. A restart adopts the existing route and flushes nothing.
 
 ### 3.2 Tailscale UDP Generic Receive Offload (GRO)
 
@@ -185,7 +185,7 @@ ______________________________________________________________________
 - `hosts/yirukou/networking/untrusted.nix`
 - `hosts/yirukou/networking/sysctl.nix`
 - `hosts/yirukou/goaccess.nix`
-- `modules/networking/gateway-failover.nix`
+- `packages/gateway-failover/default.nix`
 - `modules/networking/sinkhole.nix`
 - `modules/services/nginx-proxy.nix`
 - `modules/services/adguardhome.nix`

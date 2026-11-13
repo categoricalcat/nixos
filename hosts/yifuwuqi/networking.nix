@@ -7,7 +7,7 @@
   imports = [
     ./networking/firewall.nix
     ../../modules/networking/sinkhole.nix
-    ../../modules/networking/gateway-failover.nix
+    ../../packages/gateway-failover
     ./networking/interfaces/eno1.nix
     ./networking/interfaces/enp4s0.nix
     ./networking/interfaces/wlp2s0.nix

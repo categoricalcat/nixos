@@ -1,5 +1,4 @@
-# Shared nix/shell/markdown policy. Consumers import this and add their own
-# formatters (prettier, eslint, …) in a later module; options merge.
+# Shared formatter policy. Options merge if a consumer imports this module.
 { lib, ... }:
 {
   perSystem =
@@ -46,6 +45,29 @@
               ps.mdformat-gfm-alerts
             ];
             settings.wrap = "keep";
+          };
+          yamlfmt = {
+            enable = true;
+            excludes = [ "secrets/secrets.yaml" ];
+            # Default formatter deletes blank lines.
+            settings.formatter.retain_line_breaks = true;
+          };
+          jsonfmt = {
+            enable = true;
+            excludes = [ "modules/services/monitoring/dashboards/vendor/*" ];
+          };
+          taplo = {
+            enable = true;
+            settings.formatting.align_comments = false;
+          };
+          ruff-format.enable = true;
+          # mdformat owns Markdown; yamlfmt owns YAML. Prettier's defaults include both.
+          prettier = {
+            enable = true;
+            includes = lib.mkForce [
+              "*.css"
+              "*.html"
+            ];
           };
         };
         settings.formatter = {

@@ -16,7 +16,7 @@ in
     ./networking/firewall.nix
     ./networking/untrusted.nix
     ../../modules/networking/sinkhole.nix
-    ../../modules/networking/gateway-failover.nix
+    ../../packages/gateway-failover
   ];
 
   networking = {

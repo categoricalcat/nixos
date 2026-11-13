@@ -11,7 +11,7 @@ ______________________________________________________________________
 | **Role**                | Workstation, Remote Nix Builder, Audio Studio, Sim Racing, VR                       |
 | **Architecture**        | `x86_64-linux` (AMD Ryzen CPU + AMD Radeon RX 7900 XTX)                             |
 | **GPU / Acceleration**  | AMD Radeon RX 7900 XTX (24 GB VRAM, gfx1100, ROCm / HIP enabled)                    |
-| **Kernel & Boot**       | `linuxPackages_zen` kernel, Lanzaboote UEFI Secure Boot (`sbctl`)                   |
+| **Kernel & Boot**       | `linuxPackages_latest` kernel, Lanzaboote UEFI Secure Boot (`sbctl`)                |
 | **Filesystems**         | Btrfs root (`2e6f5a45-d509-48fb-ac15-47788d92fd95`) with `@` and `@home` subvolumes |
 | **Mounted Drives**      | `/mnt/slowass` (XFS), `/mnt/jooj` (XFS), `/mnt/windows` (NTFS3 automount)           |
 | **Swap & Memory**       | Dedicated Swap partition (`a33ec516-9670-4fd7-90ce-e94d7b245051`) + ZRAM            |

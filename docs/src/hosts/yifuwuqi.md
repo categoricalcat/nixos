@@ -26,7 +26,7 @@ ______________________________________________________________________
 | Interface    | Type     | Address / Subnet                         | Role                                                                                                             |
 | ------------ | -------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `eno1`       | Physical | `10.42.0.2/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492)                                                                      |
-| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseRoutes = false`, `UseDNS = false`)                                                |
+| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseGateway = true` at metric 200, `UseRoutes = false`, `UseDNS = false`)             |
 | `wlp2s0`     | Wireless | Disabled                                 | Wireless interface explicitly powered down (`ActivationPolicy = down`)                                           |
 | `tailscale0` | Tunnel   | `100.69.0.6/32`                          | Tailscale subnet router for `192.168.0.1/32` (`exitNodeHost = null`, no route acceptance, Tailscale SSH enabled) |
 
@@ -35,7 +35,7 @@ ______________________________________________________________________
 - **BBR Congestion Control**: `tcp_bbr` kernel module with `fq` queuing discipline.
 - **Socket Buffer Ceiling**: 64 MiB max read/write buffers (`net.core.rmem_max = 67108864`, `net.core.wmem_max = 67108864`).
 - **Nginx Tail Latency Optimization**: `net.ipv4.tcp_notsent_lowat = 16384` (16 KB bounded un-sent buffer).
-- **Foreign Route Preservation**: `ManageForeignRoutes = false` in `eno1.nix` prevents `systemd-networkd` from stripping the Keepalived default route on daemon reload.
+- **Foreign Route Preservation**: `ManageForeignRoutes = false` in `packages/gateway-failover/default.nix` prevents `systemd-networkd` from stripping the `wan-monitor` routes whenever it reconfigures a link.
 - **LAN-only IPv6**: `eno1` holds the static ULA `fd75:c55f:6d19:1::2/64` and
   sets `IPv6AcceptRA = "no"`, so no advertisement can install a default route
   or a second address. There is no global address and no IPv6 egress; IPv6 is

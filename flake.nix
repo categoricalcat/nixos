@@ -122,6 +122,7 @@
               yijia = pkgs.runCommand "check-yijia-eval" { } ''
                 echo "${builtins.unsafeDiscardStringContext self.homeConfigurations.yijia.activationPackage.drvPath}" > "$out"
               '';
+              gateway-failover = pkgs.testers.runNixOSTest ./packages/gateway-failover/test.nix;
             };
           };
 

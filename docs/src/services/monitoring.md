@@ -159,12 +159,13 @@ native `host` label (the ping target) is relabeled to `target`, and metric
 relabeling derives the same `peer`, `family`, `scope` and `tier` labels from the
 address so latency panels can plot both families together and sort by rung.
 
-`wan-notify` atomically writes `gateway_failover.prom` for the node-exporter
-textfile collector. It exposes `gateway_failover_primary_active` and
-`gateway_failover_last_transition_timestamp_seconds`; the node scrape adds
-the source `host` label. On `yirukou`, primary means its primary WAN; on
-`yifuwuqi`, it means the LAN route through `yirukou` rather than its direct
-fallback.
+`wan-monitor` atomically writes `gateway_failover.prom` for the node-exporter
+textfile collector whenever it installs or withdraws the primary default
+route. It exposes `gateway_failover_primary_active`, labelled with the primary
+`interface`, and `gateway_failover_last_transition_timestamp_seconds`; the node
+scrape adds the source `host` label. On `yirukou`, primary means its primary
+WAN; on `yifuwuqi`, it means the LAN route through `yirukou` rather than its
+direct fallback.
 
 The provisioned **Internet** dashboard is split by scope, not by family: each
 panel (availability, reachability, ICMP/DNS/HTTPS duration, smokeping

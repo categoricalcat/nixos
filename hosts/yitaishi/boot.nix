@@ -5,7 +5,9 @@
 }:
 
 {
-  boot.kernelPackages = pkgs.linuxPackages_zen;
+  # zen 7.3.4 (linuxPackages_zen) panics before journald on this host; the
+  # vanilla kernel of the same version boots.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   # system.boot.loader.kernelFile = "vmlinuz";
 
   # Bypasses the CAP_SYS_NICE check in AMDGPU to enable high-priority contexts

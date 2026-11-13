@@ -112,7 +112,7 @@ format = '[($version) ](fg:#@base0B@)'
 style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
-[rust]  
+[rust]
 style = "fg:#@base0B@"
 format = '[($version) ]($style)'
 
