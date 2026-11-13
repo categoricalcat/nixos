@@ -12,14 +12,13 @@
         matchConfig.Name = addresses.network.secondary.interface;
         networkConfig = {
           DHCP = "ipv4";
-          DNS = addresses.dns.systemNameservers;
           MulticastDNS = "yes";
           IPv6AcceptRA = "no";
           LinkLocalAddressing = "no";
         };
 
         dhcpV4Config = {
-          UseDNS = false;
+          UseDNS = true;
           UseRoutes = false;
           UseGateway = true;
           RouteMetric = addresses.network.secondary.routeMetric;

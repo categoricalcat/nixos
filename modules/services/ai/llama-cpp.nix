@@ -1,78 +1,75 @@
-# Per-model llama.cpp servers driven by the models.nix registry.
+# On-demand llama.cpp router server driven by modules/services/ai/models.nix.
 #
-# For every enabled registry entry whose `targetHost` matches this host and
-# which declares a `port`, one systemd unit `llama-cpp-<name>` runs a
-# dedicated llama-server. The GGUF is pulled from HuggingFace on first start
-# into the shared LLAMA_CACHE.
+# Runs a single `llama-server` in router mode (`--models-preset` + `--models-max 1`)
+# so multiple models on one host share a single port and LRU-evict before loading
+# a second model into VRAM, while sleeping idle GPU allocations after 300s.
 {
   config,
   lib,
   pkgs,
+  addresses,
   ...
 }:
-
 let
   cfg = config.services.llama-cpp-node;
-  ai = import ./models.nix;
+  ai = import ./models.nix { inherit lib; };
+  localModels = ai.modelsForHost config.networking.hostName;
 
+  # Explicitly disable the unused GPU backend so hosts with global
+  # `nixpkgs.config.rocmSupport = true` (yitaishi) share the cached Vulkan-only
+  # derivation rather than compiling both HIP and Vulkan backends.
   package =
     if cfg.backend == "vulkan" then
-      pkgs.llama-cpp.override { vulkanSupport = true; }
+      pkgs.llama-cpp.override {
+        vulkanSupport = true;
+        rocmSupport = false;
+      }
     else
-      pkgs.llama-cpp.override { rocmSupport = true; };
+      pkgs.llama-cpp.override {
+        rocmSupport = true;
+        vulkanSupport = false;
+      };
 
-  localModels = lib.filterAttrs (
-    _n: m: (m.targetHost or null) == config.networking.hostName && m ? port
-  ) ai.local.models;
+  presetsFile = pkgs.writeText "llama-cpp-presets.ini" (
+    lib.generators.toINIWithGlobalSection { } {
+      globalSection = {
+        version = 1;
+      };
+      sections = {
+        "*" = {
+          n-gpu-layers = 99;
+          split-mode = "none";
+          flash-attn = "on";
+          cache-type-k = "q8_0";
+          cache-type-v = "q8_0";
+          parallel = 1;
+          jinja = true;
+          no-mmproj = true;
+          sleep-idle-seconds = 300;
+        };
+      }
+      // lib.mapAttrs (
+        _: m:
+        {
+          hf-repo = "${m.llamaCpp.hfRepo}:${m.llamaCpp.quant}";
+          ctx-size = m.contextLength;
+          reasoning = if m.reasoning then "on" else "off";
+        }
+        // lib.optionalAttrs (!m.reasoning) {
+          reasoning-format = "none";
+        }
+      ) localModels;
+    }
+  );
 
-  sanitize = lib.replaceStrings [ ":" "." ] [ "-" "-" ];
-
-  mkUnit = name: m: {
-    description = "llama.cpp server for ${name} (${m.llamaCpp.hfRepo}:${m.llamaCpp.quant})";
-    # First start downloads the GGUF from HuggingFace.
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-
-    # Intentionally omitted wantedBy = [ "multi-user.target" ];
-    # so these don't auto-start on boot or rebuild.
-
-    # HF cache; also HOME so Mesa/RADV gets a writable shader cache (a
-    # DynamicUser's HOME is /, read-only).
-    environment.LLAMA_CACHE = "/var/cache/llama-cpp";
-    environment.HOME = "/var/cache/llama-cpp";
-
-    serviceConfig = {
-      ExecStart = lib.concatStringsSep " " (
-        [
-          "${package}/bin/llama-server"
-          "-hf ${m.llamaCpp.hfRepo}:${m.llamaCpp.quant}"
-          "--host 127.0.0.1"
-          "--port ${toString m.port}"
-          "-ngl 99"
-          "-fa on"
-          "--cache-type-k q8_0"
-          "--cache-type-v q8_0"
-          "--jinja"
-          "-c ${toString m.contextLength}"
-          "--no-webui"
-          "--sleep-idle-seconds 300"
-        ]
-        ++ lib.optional (!(m.reasoning or false)) "--reasoning-format none"
-      );
-      CacheDirectory = "llama-cpp";
-      DynamicUser = true;
-      User = "llama-cpp";
-      SupplementaryGroups = [
-        "video"
-        "render"
-      ];
-      Restart = "on-failure";
-    };
-  };
+  tailscaleDeps = lib.optional (
+    config.services.tailscale.enable
+    && lib.any (addr: addr != "127.0.0.1" && addr != "::1") cfg.listenAddresses
+  ) "tailscaled.service";
 in
 {
   options.services.llama-cpp-node = {
-    enable = lib.mkEnableOption "per-model llama.cpp servers from the models.nix registry";
+    enable = lib.mkEnableOption "llama.cpp router server from the models.nix registry";
 
     backend = lib.mkOption {
       type = lib.types.enum [
@@ -82,15 +79,58 @@ in
       default = "vulkan";
       description = "GPU backend llama.cpp is built with.";
     };
+
+    listenAddresses = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1" ];
+      description = "IP addresses llama-server listens on.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = localModels != { };
+        message = "services.llama-cpp-node: no models in modules/services/ai/models.nix target ${config.networking.hostName}.";
+      }
+    ];
+
     # Registers the RADV ICD under /run/opengl-driver so llama-server finds
     # the Vulkan driver without VK_DRIVER_FILES hacks.
     hardware.graphics.enable = true;
 
-    systemd.services = lib.mapAttrs' (
-      n: m: lib.nameValuePair "llama-cpp-${sanitize n}" (mkUnit n m)
-    ) localModels;
+    systemd.services.llama-cpp = {
+      description = "llama.cpp router server (${lib.concatStringsSep ", " (lib.attrNames localModels)})";
+      after = [ "network-online.target" ] ++ tailscaleDeps;
+      wants = [ "network-online.target" ] ++ tailscaleDeps;
+      wantedBy = [ "multi-user.target" ];
+
+      # HF cache; also HOME so Mesa/RADV gets a writable shader cache (a
+      # DynamicUser's HOME is /, read-only).
+      environment = {
+        LLAMA_CACHE = "/var/cache/llama-cpp";
+        HOME = "/var/cache/llama-cpp";
+      };
+
+      serviceConfig = {
+        ExecStart = lib.concatStringsSep " " [
+          "${package}/bin/llama-server"
+          "--models-preset ${presetsFile}"
+          "--models-max 1"
+          "--host ${lib.concatStringsSep "," cfg.listenAddresses}"
+          "--port ${toString addresses.services.llama-cpp.port}"
+          "--no-ui"
+        ];
+        CacheDirectory = "llama-cpp";
+        DynamicUser = true;
+        User = "llama-cpp";
+        SupplementaryGroups = [
+          "video"
+          "render"
+        ];
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+    };
   };
 }

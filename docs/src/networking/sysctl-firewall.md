@@ -113,14 +113,14 @@ Edge hardening:
 - `tailscale0` connections to `10.42.0.1` TCP `80`/`443` are source-NATed to
   `10.42.0.1` by the `yirukou-nat` input chain, so nginx's LAN-only allowlist
   admits subnet-route Tailnet clients.
-- Plain DNS (TCP/UDP 53) from `br0`, VLAN 42, and `tailscale0` is redirected
-  to local AdGuard Home unless the destination is already an AGH bind address
-  (IPv4 or the segment ULAs), a local address, or Tailscale MagicDNS
-  (`100.100.100.100` or `fd7a:115c:a1e0::53`). yifuwuqi Unbound iteration
-  (`10.42.0.2`, and `fd75:c55f:6d19:1::2` arriving on `br0`) is not
-  redirected.
-- Off-net DoT/DoQ (TCP/UDP 853) from those interfaces to WAN is dropped.
-  DoH on 443 is not intercepted. AGH DDR advertises DoH on TCP 3443 (open on
+- Plain DNS (TCP/UDP 53) from `br0`, VLAN 42, and `tailscale0` is explicitly
+  DNAT-redirected per interface to local AdGuard Home bind addresses unless the
+  destination is already a yirukou AGH bind address (IPv4 or the segment ULAs),
+  Tailscale MagicDNS (`100.100.100.100` or `fd7a:115c:a1e0::53`), or (from
+  `br0` and `tailscale0`) a yifuwuqi stub listener address.
+- Off-net DoT/DoQ (TCP/UDP 853) and DoH/DoH3 (TCP/UDP 443 to
+  `publicDnsResolvers.ipv4`) from those interfaces to WAN are rejected with
+  TCP RST / ICMP port-unreachable. AGH DDR advertises DoH on TCP 3443 (open on
   LAN/VLAN) and DoQ on 853.
 
 Forwarding behavior:
@@ -150,6 +150,11 @@ configures least-privilege rules for container traffic to the host:
 - Container least-privilege isolation:
   - DNS resolution: UDP/TCP `53` allowed from container subnets
     (`10.88.0.0/16`, `10.89.0.0/24`, `172.17.0.0/16`, `172.18.0.0/16`).
+    `yifuwuqi-dns` (`dstnat` prerouting) redirects any container query aimed at
+    a non-local destination (`fib daddr type != local`) to `10.42.0.2:53`,
+    preserving local `aardvark-dns` bridge gateways while capturing hardcoded
+    external resolvers. Off-net container DoT/DoQ (`853`) and DoH (`443` to
+    `publicDnsResolvers.ipv4`) are rejected in `forward`.
   - Scoped host API access: TCP `24686` (Lidarr for soularr) and TCP `24888`
     (SearXNG for firecrawl) allowed only from application container subnets;
     Cloudflared is excluded.

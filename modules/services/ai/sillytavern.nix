@@ -27,9 +27,9 @@ in
       description = "Silly Tavern";
       after = [
         "network.target"
-        "llama-cpp-qwen3-6-35b-abliterated.service"
+        "llama-cpp.service"
       ];
-      wants = [ "llama-cpp-qwen3-6-35b-abliterated.service" ];
+      wants = [ "llama-cpp.service" ];
       wantedBy = [ "multi-user.target" ];
 
       environment = {

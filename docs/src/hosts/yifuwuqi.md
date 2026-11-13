@@ -25,8 +25,8 @@ ______________________________________________________________________
 
 | Interface    | Type     | Address / Subnet                         | Role                                                                                                             |
 | ------------ | -------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `eno1`       | Physical | `10.42.0.2/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492)                                                                      |
-| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseGateway = true` at metric 200, `UseRoutes = false`, `UseDNS = false`)             |
+| `eno1`       | Physical | `10.42.0.2/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492, DNS `yirukou`, `Domains = ~.`)                                       |
+| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseGateway = true` at metric 200, `UseRoutes = false`, `UseDNS = true`)              |
 | `wlp2s0`     | Wireless | Disabled                                 | Wireless interface explicitly powered down (`ActivationPolicy = down`)                                           |
 | `tailscale0` | Tunnel   | `100.69.0.6/32`                          | Tailscale subnet router for `192.168.0.1/32` (`exitNodeHost = null`, no route acceptance, Tailscale SSH enabled) |
 
@@ -42,12 +42,15 @@ ______________________________________________________________________
   used only for host-to-host and host-to-service traffic on the LAN. `enp4s0`
   and `wlp2s0` remain IPv6-disabled, and temporary/privacy addresses are off.
   Why the ISP GUA is unused: [IPv6 ULA vs GUA](../networking/ipv6-ula-gua.md).
-- **Resolver order**: system nameservers are `::1`, `127.0.0.1`,
-  `fd75:c55f:6d19:1::1`, then `10.42.0.1`. IPv6 is preferred within each tier,
-  but the local AdGuard/Unbound chain comes first: the same list is applied to
-  `enp4s0`, which holds the default route whenever `eno1` is down, so leading
-  with yirukou would stall every lookup on an unreachable address.
-- **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`) to reach host DNS and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets.
+- **Per-interface DNS & secondary stub**: `systemd-resolved` runs with
+  `Cache = "no"`, `DNSStubListener = "yes"`, and `DNSStubListenerExtra` bound to
+  `::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, and `100.69.0.6`.
+  `eno1` configures `yirukou` (`fd75:c55f:6d19:1::1`, `10.42.0.1`) with
+  `Domains = ~.`, while `enp4s0` sets `UseDNS = true`. Queries from the host,
+  Podman containers, and LAN/Tailscale clients using `yifuwuqi` as secondary
+  DNS defer to `yirukou` while `eno1` has carrier and automatically fall back
+  to `enp4s0` when `eno1` is down, with zero RAM cache or disk writes.
+- **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`, `10.89.0.0/24`) to reach host DNS (`10.42.0.2` `systemd-resolved` stub and local `aardvark-dns` bridge gateways) and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets, redirecting any non-local TCP/UDP `53` container query to `10.42.0.2:53` (`yifuwuqi-dns`), and rejecting off-net container DoT/DoQ (`853`) and DoH (`443` to `publicDnsResolvers.ipv4`).
 - **Tailscale UDP GRO**: `tailscale-udp-gro.service` sets
   `rx-udp-gro-forwarding on rx-gro-list off` on `eno1` and `enp4s0` at boot,
   which tailscaled asks for once the host forwards tunnel traffic.
@@ -69,8 +72,7 @@ ______________________________________________________________________
 │ PostgreSQL 18 (Socket / VPN) │ databases: forgejo, atticd,  │
 │                              │ grafana                      │
 ├──────────────────────────────┼──────────────────────────────┤
-│ Valkey (Redis fork)          │ DB 0: Unbound L2 DNS Cache   │
-│                              │ DB 1: SearXNG Rate Limiter   │
+│ Valkey (Redis fork)          │ DB 1: SearXNG rate limiter   │
 ├──────────────────────────────┼──────────────────────────────┤
 │ Samba Server                 │ /srv/shares/share            │
 │                              │ /home/yi/the.files           │
@@ -89,8 +91,7 @@ ______________________________________________________________________
 
 - Bound to `127.0.0.1` only; consumers use the unix socket `/run/redis/redis.sock`.
 - Memory limit: 512 MB with `allkeys-lru` eviction policy.
-- **DB 0**: L2 DNS cache for this host's own Unbound. `yirukou` runs a separate instance and does not connect here.
-- **DB 1**: Rate limiting backend for SearXNG.
+- **DB 1**: Rate limiting backend for SearXNG. Unbound's L2 cache is the valkey on `yirukou`, not this one.
 
 ### 3.3 Samba File Server
 
@@ -123,8 +124,8 @@ ______________________________________________________________________
 ┌─────────────────────────────────────────────────────────────┐
 │                   AI Inference & Search                     │
 ├──────────────────────────────┬──────────────────────────────┤
-│ llama.cpp (Vulkan)           │ qwen3.6-35b-abliterated      │
-│ (Radeon 680M APU)            │ port 11437, 16k context      │
+│ llama.cpp Router (Vulkan)    │ gemma-4-12b (+ uncensored)   │
+│ (Radeon 680M APU)            │ port 11436, 32k context      │
 ├──────────────────────────────┼──────────────────────────────┤
 │ SillyTavern Web UI           │ port 24000, hardened systemd │
 ├──────────────────────────────┼──────────────────────────────┤
@@ -136,9 +137,9 @@ ______________________________________________________________________
 └──────────────────────────────┴──────────────────────────────┘
 ```
 
-- **Vulkan llama-cpp Serving (`llama-cpp-node`)**: Runs `llama-server` instances with Vulkan acceleration (`vulkanSupport = true`) on the Radeon 680M APU.
-  - Active model: **`qwen3.6-35b-abliterated`** (port `11437`, IQ2_M quantization, 16,384 context length, FlashAttention enabled, Q8 KV cache, 5-minute idle sleep).
-- **SillyTavern Companion UI**: Port 24000 (`companion.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp-qwen3-6-35b-abliterated.service`.
+- **Vulkan llama-cpp Router (`llama-cpp-node`)**: Runs `llama-server` in router mode (`--models-preset` + `--models-max 1`) with Vulkan acceleration (`vulkanSupport = true`) on `127.0.0.1:11436`.
+  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, direct non-thinking output for roleplay), both at 32,768 context length with FlashAttention, Q8 KV cache, single-slot execution, and 5-minute idle sleep.
+- **SillyTavern Companion UI**: Port 24000 (`companion.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.aset.love`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
 - **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.aset.love`), bound to loopback behind the local ingress (`yirukou` proxies to the ingress, which forwards to `127.0.0.1:24010`). It has no authentication, so anything that can pass the ingress (trusted-LAN Nginx clients, tailnet peers via `yirukou`'s `10.42.0.0/24` subnet route) or reach loopback locally can drive it.
@@ -172,7 +173,6 @@ ______________________________________________________________________
   - `node-exporter` (9100), `systemd-exporter` (9558), `smartctl-exporter` (9633)
   - `postgres-exporter` (9187), `redis-exporter` (9121, Valkey unix socket)
   - `fail2ban-exporter` (9191)
-  - `adguard-exporter` (9617), `unbound-exporter` (9167)
 
 ______________________________________________________________________
 
@@ -181,14 +181,7 @@ ______________________________________________________________________
 - **Homepage Dashboard**: Port 24082 (`home.aset.love`), 5-column layout with ping health checks and resource widgets.
 - **Cockpit**: Port 24091 (`cockpit.aset.love`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
-- **AdGuard Home & Unbound**: Secondary resolver binds explicit addresses
-  (`::1`, the LAN ULA `fd75:c55f:6d19:1::2`, and its IPv4 addresses, not a
-  wildcard, so aardvark-dns keeps the container bridges);
-  local forwarding prefers `[::1]:5335` and falls back to `127.0.0.1:5335`.
-  Unbound keeps `do-ip6` on for the `::1` listener, while outbound iteration is
-  IPv4 for lack of an IPv6 default route. The web UI remains on IPv4
-  port 24333. AdGuard returns RFC 7534 AS112 `192.175.48.1` and `2620:4f:8000::1`
-  for blocked queries; only yirukou assigns those addresses on `br0`.
+- **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, deferring queries to `yirukou` on `eno1` or the fallback DHCP DNS on `enp4s0`.
 - **Service Sandboxing**: Loki, Vector, opencode, SillyTavern, Seerr, and
   Cockpit adopt `systemdHardening` from `modules/common.nix`; PostgreSQL and
   Loki add loopback `IPAddressAllow`. Documented exceptions: Loki keeps

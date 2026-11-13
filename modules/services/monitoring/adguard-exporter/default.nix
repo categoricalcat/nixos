@@ -15,9 +15,6 @@ let
     ;
   cfg = config.services.prometheus.exporters.adguard;
   adguard-exporter = pkgs.callPackage ./package.nix { };
-  aghUrl = "http://127.0.0.1:${
-    toString allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port
-  }";
 in
 {
   options.services.prometheus.exporters.adguard = mkOption {
@@ -74,7 +71,9 @@ in
       wants = [ "adguardhome.service" ];
 
       environment = {
-        ADGUARD_HOST = aghUrl;
+        ADGUARD_HOST = "http://127.0.0.1:${
+          toString allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port
+        }";
         ADGUARD_USER = cfg.adguardUser;
         ADGUARD_PASS = cfg.adguardPass;
         EXPORTER_PORT = toString cfg.port;

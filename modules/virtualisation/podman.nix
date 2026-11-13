@@ -3,7 +3,6 @@
   lib,
   pkgs,
   addresses,
-  allAddresses,
   ...
 }:
 
@@ -11,7 +10,6 @@ let
   inherit (config.yi.maintenance) slots;
 
   dnsServers = [
-    allAddresses.hosts.yirukou.network.lan.ipv4.host
     addresses.network.lan.ipv4.host
   ];
 

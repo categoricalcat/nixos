@@ -22,6 +22,12 @@ let
       config.services.fail2ban.enable
     else if name == "postgres" then
       config.services.postgresql.enable
+    else if name == "adguard" then
+      config.services.adguardhome.enable
+    else if name == "unbound" then
+      config.services.unbound.enable
+    else if name == "redis" then
+      config.services.redis.servers ? "" && config.services.redis.servers."".enable
     else
       true;
 
@@ -59,6 +65,8 @@ let
     // (if name == "fail2ban" then { host = listenAddress; } else { inherit listenAddress; });
 in
 {
+  imports = [ ./adguard-exporter ];
+
   services = {
     nginx.statusPage = lib.mkIf (enabledHere "nginx" exporterMetadata.nginx) true;
 

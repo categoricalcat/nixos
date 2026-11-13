@@ -8,20 +8,20 @@ ______________________________________________________________________
 
 ## 1. Services Overview Table
 
-| Service          | Module File          | Internal Port | Public / Proxy Domain | Primary Backend / Database          | Description                                                                            |
-| ---------------- | -------------------- | ------------- | --------------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| **Homepage**     | `homepage.nix`       | `24082`       | `home.aset.love`      | Native YAML                         | Categorized dashboard with real-time health checks & widgets                           |
-| **Docs**         | `docs/service.nix`   | `24083`       | `docs.aset.love`      | mdBook + Nginx                      | Gang documentation & architectural plans                                               |
-| **SearXNG**      | `searxng.nix`        | `24888`       | `search.aset.love`    | Tor SOCKS5 + Valkey DB 1            | Privacy-respecting metasearch engine ("yi search")                                     |
-| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*       | In-Memory (LRU, per-host cap)       | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter                 |
-| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.aset.love`   | Native D-Bus / sysstat / Podman     | System management, metrics, Podman containers & file browser                           |
-| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.aset.love`    | Nginx DAV module                    | Direct WebDAV file storage at `/srv/webdav`                                            |
-| **File Browser** | `filebrowser.nix`    | `24086`       | `files.aset.love`     | Bolt DB                             | Download-only view of `/home/yi`; login `yi`, password `passwords/filebrowser`         |
-| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG          | LLM web scraping & document extraction engine                                          |
-| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `companion.aset.love` | `llama-cpp-qwen3-6-35b-abliterated` | Advanced conversational frontend & AI persona manager                                  |
-| **Opencode**     | `opencode.nix`       | `24010`       | `agent.aset.love`     | Native Agent Daemon                 | Autonomous AI coding agent backend; loopback behind the local ingress, unauthenticated |
-| **Cloudflared**  | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                       | SSH-only fail-safe tunnel `cloudflare.aset.love` on bridge `10.89.0.2`                 |
-| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                    | Anonymous routing proxy for outbound SearXNG requests                                  |
+| Service          | Module File          | Internal Port | Public / Proxy Domain | Primary Backend / Database            | Description                                                                            |
+| ---------------- | -------------------- | ------------- | --------------------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
+| **Homepage**     | `homepage.nix`       | `24082`       | `home.aset.love`      | Native YAML                           | Categorized dashboard with real-time health checks & widgets                           |
+| **Docs**         | `docs/service.nix`   | `24083`       | `docs.aset.love`      | mdBook + Nginx                        | Gang documentation & architectural plans                                               |
+| **SearXNG**      | `searxng.nix`        | `24888`       | `search.aset.love`    | Tor SOCKS5 + Valkey DB 1              | Privacy-respecting metasearch engine ("yi search")                                     |
+| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*       | In-Memory (LRU, per-host cap)         | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter                 |
+| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.aset.love`   | Native D-Bus / sysstat / Podman       | System management, metrics, Podman containers & file browser                           |
+| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.aset.love`    | Nginx DAV module                      | Direct WebDAV file storage at `/srv/webdav`                                            |
+| **File Browser** | `filebrowser.nix`    | `24086`       | `files.aset.love`     | Bolt DB                               | Download-only view of `/home/yi`; login `yi`, password `passwords/filebrowser`         |
+| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG            | LLM web scraping & document extraction engine                                          |
+| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `companion.aset.love` | `llama-cpp.service` (model set in UI) | Advanced conversational frontend & AI persona manager                                  |
+| **Opencode**     | `opencode.nix`       | `24010`       | `agent.aset.love`     | Native Agent Daemon                   | Autonomous AI coding agent backend; loopback behind the local ingress, unauthenticated |
+| **Cloudflared**  | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                         | SSH-only fail-safe tunnel `cloudflare.aset.love` on bridge `10.89.0.2`                 |
+| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                      | Anonymous routing proxy for outbound SearXNG requests                                  |
 
 ______________________________________________________________________
 
@@ -51,7 +51,7 @@ ______________________________________________________________________
 - **Service**: In-memory Redis-compatible key-value store. Runs on **both** `yifuwuqi` and `yirukou`, bound to `127.0.0.1` only; every consumer is host-local and connects over the unix socket `/run/redis/redis.sock`. Nothing reaches it across the LAN.
 - **Memory Management**: `allkeys-lru` eviction, sized in `modules/addresses.nix` — 1 GB on `yirukou` (primary resolver), 512 MB on `yifuwuqi`.
 - **Multi-Tenant Usage**:
-  - **DB 0**: L2 DNS cache for that host's own Unbound. Not shared between hosts — see [Unbound Architecture](../networking/unbound-integration.md) for why cachedb must not cross a link.
+  - **DB 0**: L2 DNS cache for Unbound on `yirukou`. Not shared between hosts — see [Unbound Architecture](../networking/unbound-integration.md) for why cachedb must not cross a link.
   - **DB 1**: Rate limiting token bucket storage for SearXNG (`yifuwuqi` only), over the same unix socket.
 
 ### 2.4 Firecrawl Web Scraper Stack (`modules/services/firecrawl.nix`)
@@ -70,7 +70,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 - **Web UI**: Bound to loopback behind the local ingress and proxied to `https://companion.aset.love`.
 - **Security Context**: Dedicated non-root user `sillytavern` with strict systemd filesystem isolation (`ProtectSystem = strict`, `ProtectHome = true`, `PrivateDevices = true`, `PrivateTmp = true`).
-- **Inference Integration**: Depends directly on the local `llama-cpp-qwen3-6-35b-abliterated.service` Vulkan instance.
+- **Inference Integration**: Ordered after the local `llama-cpp.service` Vulkan router; the endpoint (`http://127.0.0.1:11436/v1`) and model are selected in the SillyTavern UI.
 
 ### 2.6 Cockpit System Manager (`modules/services/cockpit.nix`)
 

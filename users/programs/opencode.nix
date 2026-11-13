@@ -2,23 +2,25 @@
   pkgs,
   lib,
   config,
+  osConfig ? null,
   ...
 }:
 let
-  ai = import ../../modules/services/ai/models.nix;
-  allAddresses = import ../../modules/addresses.nix;
-  firecrawlPort = allAddresses.hosts.yifuwuqi.services.firecrawl.port;
+  ai = import ../../modules/services/ai/models.nix { inherit lib; };
+  inherit (import ../../modules/addresses.nix) hosts;
+  hostName = if osConfig == null then null else osConfig.networking.hostName;
 
-  # yifuwuqi's llama-server unit (the yifuwuqi registry entry with a `port`
-  # — see modules/services/ai/llama-cpp.nix).
-  yifuwuqiModels = lib.filterAttrs (
-    _n: m: (m.targetHost or null) == "yifuwuqi" && m ? port
-  ) ai.local.models;
-  localModelName = "qwen3.6-35b-abliterated";
-  localPort = yifuwuqiModels.${localModelName}.port;
-
-  uncensoredModelName = "qwen3.6-35b-abliterated";
-  uncensoredPort = yifuwuqiModels.${uncensoredModelName}.port;
+  # yifuwuqi's router listens on loopback only, so only yifuwuqi can reach it.
+  llamaProviders = lib.filterAttrs (host: _: host != "yifuwuqi" || hostName == "yifuwuqi") {
+    yifuwuqi = {
+      id = "local";
+      name = "Local (yifuwuqi)";
+    };
+    yitaishi = {
+      id = "yitaishi";
+      name = "Workstation (yitaishi)";
+    };
+  };
 in
 {
   config = lib.mkIf config.serverMode.developer {
@@ -26,25 +28,18 @@ in
       enable = true;
       package = pkgs.opencode;
 
-      # context = builtins.readFile ./opencode-rules.md;
-
       settings = {
         model = "deepseek/deepseek-v4-flash";
         default_agent = "research";
-        enabled_providers = [
-          "deepseek"
-          "local"
-          "local_uncensored"
-        ];
+        enabled_providers = [ "deepseek" ] ++ lib.mapAttrsToList (_: p: p.id) llamaProviders;
         agent = {
           plan.variant = "max";
           research = {
             description = "Current web research through self-hosted Firecrawl";
             mode = "primary";
-            # Served by the Vulkan llama-server unit on yifuwuqi
-            # (127.0.0.1:11436, 32k ctx). ROCm on this APU corrupts prompts
-            # beyond ~4k tokens; Vulkan does not.
-            model = "local/${localModelName}";
+            # Served by the Vulkan llama-server router on each host (ROCm on the
+            # Ryzen 680M APU corrupts prompts beyond ~4k tokens; Vulkan does not).
+            model = if hostName == "yifuwuqi" then "local/gemma-4-12b" else "yitaishi/qwen3.8-27b";
             temperature = 0.2;
 
             # Gate via tools only. Do not set permission."*" = "deny" here:
@@ -64,23 +59,18 @@ in
         };
         provider = {
           deepseek.options.apiKey = "{file:/run/secrets/tokens/deepseek}";
-          local = {
-            name = "Local";
+        }
+        // lib.mapAttrs' (
+          host: p:
+          lib.nameValuePair p.id {
+            inherit (p) name;
             npm = "@ai-sdk/openai-compatible";
-            options.baseURL = "http://127.0.0.1:${toString localPort}/v1";
-            models = {
-              ${localModelName} = ai.local.opencodeModels.${localModelName};
-            };
-          };
-          local_uncensored = {
-            name = "Local Uncensored";
-            npm = "@ai-sdk/openai-compatible";
-            options.baseURL = "http://127.0.0.1:${toString uncensoredPort}/v1";
-            models = {
-              ${uncensoredModelName} = ai.local.opencodeModels.${uncensoredModelName};
-            };
-          };
-        };
+            options.baseURL = "http://${
+              if hostName == host then "127.0.0.1" else hosts.${host}.network.vpn.ipv4.host
+            }:${toString hosts.${host}.services.llama-cpp.port}/v1";
+            models = ai.opencodeModelsForHost host;
+          }
+        ) llamaProviders;
 
         # Own zero-dependency MCP server (users/programs/firecrawl-mcp.js):
         # natively named tools search/scrape -> OpenCode registers the canonical
@@ -93,7 +83,7 @@ in
               ./firecrawl-mcp.js
             ];
             environment = {
-              FIRECRAWL_API_URL = "http://localhost:${toString firecrawlPort}";
+              FIRECRAWL_API_URL = "http://localhost:${toString hosts.yifuwuqi.services.firecrawl.port}";
             };
           };
         };

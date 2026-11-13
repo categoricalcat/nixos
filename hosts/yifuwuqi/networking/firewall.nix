@@ -10,6 +10,7 @@ let
   containerSourceSubnets = nftSet addresses.containers.isolation.sourceSubnets;
   applicationContainerSourceSubnets = nftSet addresses.containers.isolation.applicationSourceSubnets;
   privateDestinationSubnets = nftSet allAddresses.privateDestinations.ipv4;
+  publicDnsV4 = nftSet allAddresses.publicDnsResolvers.ipv4;
   wanInterfaces = nftSet (
     map (interface: "\"${interface}\"") [
       addresses.network.lan.interface
@@ -43,19 +44,19 @@ in
 
       # eno1 (LAN) is default-deny. Only explicitly declared ports and yirukou gateway traffic are permitted.
       # tailscale0 is untrusted: the tailnet reaches this host's SSH and its
-      # AdGuard DNS (bound to 100.69.0.6), everything else via the subnet route.
+      # systemd-resolved stub (bound to 100.69.0.6), everything else via the subnet route.
       interfaces.${addresses.network.tailscale.interface} = {
         allowedTCPPorts = [
           addresses.ssh.listenPort
-          addresses.services.adguardhome.dnsPort
+          addresses.dns.port
         ];
-        allowedUDPPorts = [ addresses.services.adguardhome.dnsPort ];
+        allowedUDPPorts = [ addresses.dns.port ];
       };
 
       interfaces."eno1" = {
         allowedTCPPorts = [
           addresses.ssh.listenPort
-          addresses.services.adguardhome.dnsPort
+          addresses.dns.port
           139 # Samba NetBIOS Session
           445 # Samba SMB
           3000 # workd dev server
@@ -63,7 +64,7 @@ in
         ];
 
         allowedUDPPorts = [
-          addresses.services.adguardhome.dnsPort
+          addresses.dns.port
           137 # NetBIOS Name Service
           138 # NetBIOS Datagram Service
         ];
@@ -93,6 +94,10 @@ in
         # Container forwarding isolation:
         ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } limit rate 5/second burst 10 packets log prefix "container private drop: " level warn
         ip saddr { ${containerSourceSubnets} } ip daddr { ${privateDestinationSubnets} } drop comment "drop container to private networks"
+        ip saddr { ${containerSourceSubnets} } meta l4proto tcp th dport 853 reject with tcp reset comment "no container off-net DoT"
+        ip saddr { ${containerSourceSubnets} } meta l4proto udp th dport 853 reject with icmpx type port-unreachable comment "no container off-net DoQ"
+        ip saddr { ${containerSourceSubnets} } ip daddr { ${publicDnsV4} } meta l4proto tcp th dport 443 reject with tcp reset comment "no container off-net DoH"
+        ip saddr { ${containerSourceSubnets} } ip daddr { ${publicDnsV4} } meta l4proto udp th dport 443 reject with icmpx type port-unreachable comment "no container off-net DoH3"
         ip saddr { ${containerSourceSubnets} } oifname { ${wanInterfaces} } accept comment "allow container wan egress"
 
         iifname "${addresses.network.tailscale.interface}" oifname "${addresses.network.secondary.interface}" ip daddr ${addresses.network.secondary.ipv4.gatewayRoute} accept comment "allow tailscale fallback gateway"
@@ -101,7 +106,16 @@ in
 
     nftables = {
       enable = true;
-      tables = { };
+      tables.yifuwuqi-dns = {
+        family = "inet";
+        content = ''
+          chain prerouting {
+            type nat hook prerouting priority dstnat; policy accept;
+
+            ip saddr { ${containerSourceSubnets} } fib daddr type != local meta l4proto { tcp, udp } th dport 53 dnat ip to ${addresses.network.lan.ipv4.host}:53
+          }
+        '';
+      };
     };
 
   };

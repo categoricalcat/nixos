@@ -74,17 +74,15 @@ let
   ];
   yifuwuqi = allAddresses.hosts.yifuwuqi.network;
   magicDns = allAddresses.tailscale.magicDns;
+  publicDnsV4 = join allAddresses.publicDnsResolvers.ipv4;
   ourDnsV4 = join [
     lan.ipv4.host
     untrusted.ipv4.host
     addresses.network.vpn.ipv4.host
-    yifuwuqi.lan.ipv4.host
-    yifuwuqi.vpn.ipv4.host
   ];
   ourDnsV6 = join [
     lan.ipv6.host
     untrusted.ipv6.host
-    yifuwuqi.lan.ipv6.host
   ];
   ifaceSets = ''
     set wan_ifaces {
@@ -156,6 +154,10 @@ in
               flags interval
               elements = { ${wanBogonV4} }
             }
+            set public_dns_v4 {
+              type ipv4_addr
+              elements = { ${publicDnsV4} }
+            }
             chain wan_bogon {
               ip saddr @wan_bogon_v4 drop comment "spoofed ipv4 on wan"
             }
@@ -182,7 +184,10 @@ in
             chain forward {
               type filter hook forward priority filter - 10; policy accept;
 
-              iifname @dns_client_ifaces oifname @wan_ifaces meta l4proto { tcp, udp } th dport 853 drop comment "no off-net DoT/DoQ"
+              iifname @dns_client_ifaces oifname @wan_ifaces meta l4proto tcp th dport 853 reject with tcp reset comment "no off-net DoT"
+              iifname @dns_client_ifaces oifname @wan_ifaces meta l4proto udp th dport 853 reject with icmpx type port-unreachable comment "no off-net DoQ"
+              iifname @dns_client_ifaces oifname @wan_ifaces ip daddr @public_dns_v4 meta l4proto tcp th dport 443 reject with tcp reset comment "no off-net DoH"
+              iifname @dns_client_ifaces oifname @wan_ifaces ip daddr @public_dns_v4 meta l4proto udp th dport 443 reject with icmpx type port-unreachable comment "no off-net DoH3"
               iifname @wan_ifaces meta nfproto ipv6 drop comment "disable inbound ipv6 forwarding on wan"
               oifname @wan_ifaces meta nfproto ipv6 drop comment "disable outbound ipv6 forwarding on wan"
               iifname "${untrusted.interface}" oifname "${lan.interface}" drop comment "isolate untrusted from lan"
@@ -211,10 +216,14 @@ in
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip6 daddr ${magicDns.ipv6} return
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip daddr @our_dns_v4 return
               iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 ip6 daddr @our_dns_v6 return
-              iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 fib daddr type local return
-              iifname @dns_client_ifaces ip saddr ${yifuwuqi.lan.ipv4.host} meta l4proto { tcp, udp } th dport 53 return
-              iifname "${lan.interface}" ip6 saddr ${yifuwuqi.lan.ipv6.host} meta l4proto { tcp, udp } th dport 53 return
-              iifname @dns_client_ifaces meta l4proto { tcp, udp } th dport 53 redirect to :53
+              iifname { "${lan.interface}", "${vpn}" } meta l4proto { tcp, udp } th dport 53 ip daddr { ${yifuwuqi.lan.ipv4.host}, ${yifuwuqi.vpn.ipv4.host} } return
+              iifname { "${lan.interface}", "${vpn}" } meta l4proto { tcp, udp } th dport 53 ip6 daddr ${yifuwuqi.lan.ipv6.host} return
+              iifname "${lan.interface}" meta l4proto { tcp, udp } th dport 53 dnat ip to ${lan.ipv4.host}:53
+              iifname "${lan.interface}" meta l4proto { tcp, udp } th dport 53 dnat ip6 to [${lan.ipv6.host}]:53
+              iifname "${untrusted.interface}" meta l4proto { tcp, udp } th dport 53 dnat ip to ${untrusted.ipv4.host}:53
+              iifname "${untrusted.interface}" meta l4proto { tcp, udp } th dport 53 dnat ip6 to [${untrusted.ipv6.host}]:53
+              iifname "${vpn}" meta l4proto { tcp, udp } th dport 53 dnat ip to ${addresses.network.vpn.ipv4.host}:53
+              iifname "${vpn}" meta l4proto { tcp, udp } th dport 53 dnat ip6 to [${lan.ipv6.host}]:53
             }
           '';
         };

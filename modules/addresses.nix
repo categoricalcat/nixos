@@ -77,10 +77,11 @@ let
   };
 
   sharedServices = {
-    adguardhome = {
-      domain = "adguard.${baseDomain}";
-      port = 3333;
-      dnsPort = 53;
+    llama-cpp = {
+      port = 11436;
+    };
+    valkey = {
+      port = 24379;
     };
   };
 
@@ -227,6 +228,28 @@ in
   tailscale.magicDns = {
     ipv4 = "100.100.100.100";
     ipv6 = "fd7a:115c:a1e0::53";
+  };
+
+  publicDnsResolvers = {
+    ipv4 =
+      builtins.filter (entry: builtins.match "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+" entry != null) (
+        builtins.concatLists (builtins.attrValues sharedDnsUpstreams)
+      )
+      ++ [
+        "1.1.1.2"
+        "1.0.0.2"
+        "1.1.1.3"
+        "1.0.0.3"
+        "9.9.9.10"
+        "9.9.9.11"
+        "149.112.112.10"
+        "149.112.112.11"
+        "185.228.168.9"
+        "185.228.169.9"
+        "185.228.168.168"
+        "194.242.2.2"
+        "194.242.2.3"
+      ];
   };
 
   privateDestinations = {
@@ -385,11 +408,11 @@ in
       postgres.hosts = "centralHost";
 
       adguard = {
-        hosts = "scrapeHosts";
+        hosts = "proxyHost";
       };
 
       unbound = {
-        hosts = "scrapeHosts";
+        hosts = "proxyHost";
         settings.unbound = {
           host = "unix:///run/unbound/unbound.ctl";
           ca = null;
@@ -398,9 +421,7 @@ in
         };
       };
 
-      # Per-host valkey (unbound cachedb DNS cache, plus searxng on yifuwuqi).
-      # Every resolver host runs its own instance and reaches it over the local
-      # unix socket. Key name must match the nixpkgs exporter module
+      # Host-local valkey. Key name must match the nixpkgs exporter module
       # (services.prometheus.exporters.redis).
       redis = {
         hosts = "scrapeHosts";
@@ -417,24 +438,28 @@ in
     };
   };
 
-  hosts = {
+  hosts = rec {
     yifuwuqi = rec {
       hostName = "yifuwuqi";
 
       dns = {
-        threads = 6; # unbound num-threads on this host
-        # Local AdGuard -> Unbound first: this list is also applied to enp4s0,
-        # which keeps the default route when eno1 is down. Leading with
-        # yirukou would stall every lookup on an unreachable address.
-        systemNameservers = [
+        port = 53;
+        lanUpstreams = [
+          yirukou.network.lan.ipv6.host
+          yirukou.network.lan.ipv4.host
+        ];
+        # Extra stub listeners for LAN/Tailscale secondary DNS and Podman
+        # containers; avoids wildcard bind so aardvark-dns keeps container
+        # bridge gateways (172.17.x.1, 10.89.0.1).
+        stubListenAddresses = [
           "::1"
+          network.lan.ipv6.host
           "127.0.0.1"
-          "fd75:c55f:6d19:1::1"
-          "10.42.0.1"
+          network.lan.ipv4.host
+          network.tailscale.ipv4.host
         ];
         domain = "vpn";
-      }
-      // sharedDnsUpstreams;
+      };
 
       network = rec {
         vpn = tailscale;
@@ -611,26 +636,9 @@ in
           domain = "home.${baseDomain}";
           port = 24082;
         };
-        adguardhome = sharedServices.adguardhome // {
-          port = 24333;
-          # Explicit addresses only: aardvark-dns owns 172.17.x:53 on the
-          # container bridges, and the firewall's container isolation assumes
-          # AGH is not listening there.
-          dnsBindHosts = [
-            "::1"
-            network.lan.ipv6.host
-            "127.0.0.1"
-            "10.42.0.2"
-            "100.69.0.6"
-          ];
-        };
         searxng = {
           domain = "search.${baseDomain}";
           port = 24888;
-        };
-        valkey = {
-          port = 24379;
-          maxMemory = "512mb";
         };
         opencode = {
           domain = "agent.${baseDomain}";
@@ -642,6 +650,12 @@ in
         ingress.port = 24120;
         firecrawl = {
           port = 24002;
+        };
+        inherit (sharedServices) llama-cpp;
+        valkey = {
+          inherit (sharedServices.valkey) port;
+          # No unbound cachedb here. Cap for local consumers.
+          maxMemory = "512mb";
         };
         sillytavern = {
           domain = "companion.${baseDomain}";
@@ -768,6 +782,10 @@ in
         systems = [ "x86_64-linux" ];
         maxJobs = 16;
         speedFactor = 360;
+      };
+
+      services = {
+        inherit (sharedServices) llama-cpp;
       };
     };
 
@@ -903,7 +921,10 @@ in
       };
 
       services = {
-        adguardhome = sharedServices.adguardhome // {
+        adguardhome = {
+          domain = "adguard.${baseDomain}";
+          port = 3333;
+          dnsPort = 53;
           dnsBindHosts = [
             "::1"
             network.lan.ipv6.host
@@ -920,7 +941,7 @@ in
         # expiry. This box has 7.5 GiB total and also carries unbound's 300m
         # msg + 600m rrset in-memory caches.
         valkey = {
-          port = 24379;
+          inherit (sharedServices.valkey) port;
           maxMemory = "1gb";
         };
       };

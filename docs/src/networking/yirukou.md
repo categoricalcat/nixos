@@ -119,12 +119,17 @@ ______________________________________________________________________
   `tailscale0` connections to `10.42.0.1` TCP `80`/`443` to `10.42.0.1`.
   Tailscale masquerades only forwarded subnet-route traffic, so without it
   nginx's LAN-only allowlist would refuse Tailnet clients.
-- **DNS intercept**: TCP/UDP 53 from LAN, VLAN 42, and Tailscale is redirected
-  to yirukou AdGuard Home. Exceptions: queries already aimed at AGH IPv4 or
-  ULA binds, local addresses, MagicDNS (`100.100.100.100` and
-  `fd7a:115c:a1e0::53`), and yifuwuqi Unbound (`10.42.0.2` /
-  `fd75:c55f:6d19:1::2` on `br0`). Off-net TCP/UDP 853 is dropped. DoH on 443
-  is not enforced. AGH DDR (`handle_ddr`) advertises `dns.aset.love` DoH on
+- **DNS intercept**: TCP/UDP 53 from LAN, VLAN 42, and Tailscale is explicitly
+  DNAT-redirected per interface to yirukou AdGuard Home (`10.42.0.1` /
+  `fd75:c55f:6d19:1::1` on `br0`, `10.42.42.1` / `fd75:c55f:6d19:2::1` on
+  `enp2s0.42`, `100.69.0.1` / `fd75:c55f:6d19:1::1` on `tailscale0`).
+  Exceptions: queries already aimed at yirukou AGH IPv4 or ULA binds,
+  MagicDNS (`100.100.100.100` and `fd7a:115c:a1e0::53`), and queries from `br0`
+  or `tailscale0` aimed at yifuwuqi's secondary stub (`10.42.0.2`, `100.69.0.6`,
+  `fd75:c55f:6d19:1::2`). Off-net TCP/UDP 853 (DoT/DoQ) and TCP/UDP 443
+  (DoH/DoH3) to known public DNS resolver IPs (`publicDnsResolvers.ipv4`) are
+  rejected with TCP RST / ICMP port-unreachable so clients immediately fall
+  back to port 53. AGH DDR (`handle_ddr`) advertises `dns.aset.love` DoH on
   `:3443` and DoQ on `:853`; DoT is not in the SVCB set (cert has no IP SANs).
   There is no DNR or Kea DHCPv6.
 - **Sinkhole Drop Table**: Statically rejects IPv4 `192.175.48.1` and IPv6

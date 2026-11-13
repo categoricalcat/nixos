@@ -28,8 +28,7 @@ in
     environmentFile = secretEnv;
 
     settings = {
-      # Host-local valkey (also backing unbound's cachedb); rate limiter keys
-      # live in logical db 1, separate from the DNS cache.
+      # Rate-limiter keys live in logical db 1 of the host-local valkey.
       valkey.url = "unix://${config.services.redis.servers."".unixSocket}?db=1";
 
       general = {

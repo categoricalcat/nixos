@@ -57,8 +57,8 @@ Exporters are declaratively registered in `modules/addresses.nix` under `allAddr
 | **Nginx**          | `9113`       | `yirukou`             | `15s`             | `http://127.0.0.1/nginx_status`                         |
 | **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`             | Local jail metrics                                      |
 | **Postgres**       | `9187`       | `yifuwuqi`            | `15s`             | `postgres://postgres@127.0.0.1:5432/postgres`           |
-| **AdGuard**        | `9617`       | `yifuwuqi`, `yirukou` | `15s`             | Custom exporter scraping AGH API (:24333 / :3333)       |
-| **Unbound**        | `9167`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/unbound/unbound.ctl`                  |
+| **AdGuard**        | `9617`       | `yirukou`             | `15s`             | Custom exporter scraping AGH API (:3333)                |
+| **Unbound**        | `9167`       | `yirukou`             | `15s`             | Unix socket `/run/unbound/unbound.ctl`                  |
 | **Redis / Valkey** | `9121`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/redis/redis.sock`                     |
 
 Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface with `FreeBind = true`.

@@ -7,7 +7,8 @@
         matchConfig.Name = addresses.network.lan.interface;
         networkConfig = {
           DHCP = "no";
-          DNS = addresses.dns.systemNameservers;
+          DNS = addresses.dns.lanUpstreams;
+          Domains = [ "~." ];
           MulticastDNS = "yes";
           IPv6AcceptRA = "no";
           LinkLocalAddressing = "ipv6";

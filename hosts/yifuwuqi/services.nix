@@ -12,8 +12,6 @@
     ../../modules/services/samba/server.nix
     ../../modules/services/avahi.nix
     ../../modules/services/ssh
-    ../../modules/services/adguardhome.nix
-    ../../modules/services/unbound.nix
     ../../modules/services/cloudflared.nix
     ../../modules/services/tailscale.nix
     ../../modules/services/ai/llama-cpp.nix
@@ -30,7 +28,6 @@
     #../../modules/services/nextcloud
     # ../../modules/services/monitoring/netdata.nix
     ../../modules/services/monitoring/exporters.nix
-    ../../modules/services/monitoring/adguard-exporter
     ../../modules/services/monitoring/storage.nix
     ../../modules/services/monitoring/prometheus.nix
     ../../modules/services/monitoring/workload-metrics.nix

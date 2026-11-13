@@ -17,11 +17,14 @@
   networking = {
     inherit (addresses) hostName;
 
-    nameservers = addresses.dns.systemNameservers;
-
     networkmanager.enable = false;
     useNetworkd = true;
     useDHCP = false;
+  };
+
+  services.resolved.settings.Resolve = {
+    DNSStubListener = "yes";
+    DNSStubListenerExtra = addresses.dns.stubListenAddresses;
   };
 
   systemd.network = {

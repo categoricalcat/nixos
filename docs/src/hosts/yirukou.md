@@ -107,6 +107,7 @@ ______________________________________________________________________
   - Input SNAT: `tailscale0` connections to `10.42.0.1` TCP `80`/`443` are rewritten to source `10.42.0.1`, so subnet-route Tailnet clients pass nginx's LAN-only allowlist.
   - Forwarding enabled between Tailscale and LAN subnet `10.42.0.0/24`.
   - LAN and VLAN 42 are isolated from each other across all forwarding traffic.
+- **DNS Enforcement**: Explicit per-interface DNAT in `yirukou-dns` redirects TCP/UDP `53` on `br0`, `enp2s0.42`, and `tailscale0` to local AdGuard Home bind addresses (exempting MagicDNS and `br0`/`tailscale0` queries to yifuwuqi's secondary stub). Off-net TCP/UDP `853` (DoT/DoQ) and TCP/UDP `443` (DoH/DoH3) to public DNS resolver IPs (`publicDnsResolvers.ipv4`) are rejected with TCP RST / ICMP port-unreachable.
 - **IPv6 WAN policy**: IPv6 is dropped on both WANs in prerouting, input,
   output, and forwarding. No WAN RA, ND, or DHCPv6 handling remains, and no
   IPv6 traffic can enter or leave the edge.
