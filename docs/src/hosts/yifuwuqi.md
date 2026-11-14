@@ -138,7 +138,7 @@ ______________________________________________________________________
 ```
 
 - **Vulkan llama-cpp Router (`llama-cpp-node`)**: Runs `llama-server` in router mode (`--models-preset` + `--models-max 1`) with Vulkan acceleration (`vulkanSupport = true`) on `127.0.0.1:11436`.
-  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, direct non-thinking output for roleplay), both at 32,768 context length with FlashAttention, Q8 KV cache, single-slot execution, and 5-minute idle sleep.
+  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, direct non-thinking output for roleplay), both at 32,768 context length with FlashAttention, Q8 KV cache, single-slot execution, and a 5-minute idle unload.
 - **SillyTavern Companion UI**: Port 24000 (`companion.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.aset.love`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
@@ -182,15 +182,18 @@ ______________________________________________________________________
 - **Cockpit**: Port 24091 (`cockpit.aset.love`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, deferring queries to `yirukou` on `eno1` or the fallback DHCP DNS on `enp4s0`.
-- **Service Sandboxing**: Loki, Vector, opencode, SillyTavern, Seerr, and
-  Cockpit adopt `systemdHardening` from `modules/common.nix`; PostgreSQL and
-  Loki add loopback `IPAddressAllow`. Documented exceptions: Loki keeps
-  `AF_NETLINK` (Go interface autodetect); SillyTavern and Seerr drop
-  `MemoryDenyWriteExecute` and allow `@chown` (Node.js JIT and fs layer);
-  opencode keeps process-management syscalls and no `ProtectHome` (agent runs
-  arbitrary user commands); Cockpit keeps setuid `cockpit-session` (no
-  `NoNewPrivileges`/`RestrictSUIDSGID`). Scores (`systemd-analyze security`):
-  loki 1.4, vector 1.4, seerr/sillytavern 1.5, opencode 2.6, cockpit 4.9.
+- **Service Sandboxing**: Loki, Vector, opencode, SillyTavern, Seerr,
+  `llama-cpp`, `llama-cpp-idle-unload`, and Cockpit adopt `systemdHardening`
+  from `modules/common.nix`; PostgreSQL, Loki, and `llama-cpp-idle-unload` add
+  loopback `IPAddressAllow`. Documented exceptions: Loki keeps `AF_NETLINK`
+  (Go interface autodetect); `llama-cpp` drops `PrivateDevices` with
+  `DeviceAllow = [ "char-drm rwm" ]` for Vulkan GPU access; SillyTavern and
+  Seerr drop `MemoryDenyWriteExecute` and allow `@chown` (Node.js JIT and fs
+  layer); opencode keeps process-management syscalls and no `ProtectHome`
+  (agent runs arbitrary user commands); Cockpit keeps setuid `cockpit-session`
+  (no `NoNewPrivileges`/`RestrictSUIDSGID`). Scores (`systemd-analyze security`):
+  llama-cpp-idle-unload 1.2, loki 1.4, vector 1.4, seerr/sillytavern 1.5,
+  llama-cpp 1.7, opencode 2.6, cockpit 4.9.
 
 ______________________________________________________________________
 

@@ -107,7 +107,7 @@ ______________________________________________________________________
 - **High-Throughput Derivation Worker**: Configured with 16 parallel build jobs (`speedFactor = 360`).
 - **Distributed Build Access**: Accepts remote build derivations from `yifuwuqi` (during CI runs) and `yixiaoqing` (laptop offload) over Tailscale on port `24212`.
 - **Pinned Host Key Authentication**: Registered in `secrets/keys.nix` under `keys.hosts.yitaishi`.
-- **Vulkan llama-cpp Router (`services.llama-cpp-node`)**: Serves `qwen3.8-27b` (`unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL`) and `qwen3.8-27b-uncensored` (`ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF:UD-Q4_K_XL`) at 65,536 context on RX 7900 XTX (`24 GiB` VRAM, `--split-mode none`, `--models-max 1`, 5-minute idle sleep), bound to `127.0.0.1:11436` and Tailscale `100.69.0.4:11436` (`tailscale0`).
+- **Vulkan llama-cpp Router (`services.llama-cpp-node`)**: Serves `qwen3.8-27b` (`unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL`) and `qwen3.8-27b-uncensored` (`ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF:UD-Q4_K_XL`) at 65,536 context on RX 7900 XTX (`24 GiB` VRAM, `--device Vulkan0`, `--split-mode none`, `--models-max 1`, 5-minute idle unload), bound to `127.0.0.1:11436` and Tailscale `100.69.0.4:11436` (`tailscale0`).
 
 ______________________________________________________________________
 

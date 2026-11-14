@@ -2,12 +2,15 @@
 #
 # Runs a single `llama-server` in router mode (`--models-preset` + `--models-max 1`)
 # so multiple models on one host share a single port and LRU-evict before loading
-# a second model into VRAM, while sleeping idle GPU allocations after 300s.
+# a second model into VRAM. Idle children sleep after 300s; a companion service
+# watching `/models/sse` then unloads them, because sleep leaves the process and
+# its swap resident.
 {
   config,
   lib,
   pkgs,
   addresses,
+  systemdHardening,
   ...
 }:
 let
@@ -37,6 +40,7 @@ let
       };
       sections = {
         "*" = {
+          device = if cfg.backend == "vulkan" then "Vulkan0" else "ROCm0";
           n-gpu-layers = 99;
           split-mode = "none";
           flash-attn = "on";
@@ -45,6 +49,7 @@ let
           parallel = 1;
           jinja = true;
           no-mmproj = true;
+          dedup-cache-models = true;
           sleep-idle-seconds = 300;
         };
       }
@@ -99,37 +104,85 @@ in
     # the Vulkan driver without VK_DRIVER_FILES hacks.
     hardware.graphics.enable = true;
 
-    systemd.services.llama-cpp = {
-      description = "llama.cpp router server (${lib.concatStringsSep ", " (lib.attrNames localModels)})";
-      after = [ "network-online.target" ] ++ tailscaleDeps;
-      wants = [ "network-online.target" ] ++ tailscaleDeps;
-      wantedBy = [ "multi-user.target" ];
+    systemd.services = {
+      llama-cpp = {
+        description = "llama.cpp router server (${lib.concatStringsSep ", " (lib.attrNames localModels)})";
+        after = [ "network-online.target" ] ++ tailscaleDeps;
+        wants = [ "network-online.target" ] ++ tailscaleDeps;
+        wantedBy = [ "multi-user.target" ];
 
-      # HF cache; also HOME so Mesa/RADV gets a writable shader cache (a
-      # DynamicUser's HOME is /, read-only).
-      environment = {
-        LLAMA_CACHE = "/var/cache/llama-cpp";
-        HOME = "/var/cache/llama-cpp";
+        # HF cache; also HOME so Mesa/RADV gets a writable shader cache (a
+        # DynamicUser's HOME is /, read-only).
+        environment = {
+          LLAMA_CACHE = "/var/cache/llama-cpp";
+          HOME = "/var/cache/llama-cpp";
+        };
+
+        postStart = ''
+          until ${lib.getExe pkgs.curl} -fso /dev/null http://127.0.0.1:${toString addresses.services.llama-cpp.port}/health; do
+            sleep 0.1
+          done
+        '';
+
+        serviceConfig = removeAttrs systemdHardening [ "PrivateDevices" ] // {
+          ExecStart = lib.concatStringsSep " " [
+            (lib.getExe' package "llama-server")
+            "--models-preset ${presetsFile}"
+            "--models-max 1"
+            "--host ${lib.concatStringsSep "," cfg.listenAddresses}"
+            "--port ${toString addresses.services.llama-cpp.port}"
+            "--no-ui"
+          ];
+          CacheDirectory = "llama-cpp";
+          DeviceAllow = [ "char-drm rwm" ];
+          DynamicUser = true;
+          User = "llama-cpp";
+          SupplementaryGroups = [
+            "video"
+            "render"
+          ];
+          Restart = "on-failure";
+          RestartSec = 5;
+        };
       };
 
-      serviceConfig = {
-        ExecStart = lib.concatStringsSep " " [
-          "${package}/bin/llama-server"
-          "--models-preset ${presetsFile}"
-          "--models-max 1"
-          "--host ${lib.concatStringsSep "," cfg.listenAddresses}"
-          "--port ${toString addresses.services.llama-cpp.port}"
-          "--no-ui"
+      # Router has no idle unload: sleep-idle-seconds only drops weights inside the
+      # child, which stays up (~744 MiB swap observed). Streaming /models/sse
+      # unloads the child as soon as it enters sleeping state.
+      llama-cpp-idle-unload = {
+        description = "Unload llama.cpp models when they enter the idle sleeping state";
+        bindsTo = [ "llama-cpp.service" ];
+        after = [ "llama-cpp.service" ];
+        wantedBy = [ "multi-user.target" ];
+        enableStrictShellChecks = true;
+        path = [
+          pkgs.curl
+          pkgs.jq
         ];
-        CacheDirectory = "llama-cpp";
-        DynamicUser = true;
-        User = "llama-cpp";
-        SupplementaryGroups = [
-          "video"
-          "render"
-        ];
-        Restart = "on-failure";
-        RestartSec = 5;
+        serviceConfig = systemdHardening // {
+          DynamicUser = true;
+          IPAddressDeny = "any";
+          IPAddressAllow = "localhost";
+          Restart = "always";
+          RestartSec = 2;
+        };
+        script = ''
+          url=http://127.0.0.1:${toString addresses.services.llama-cpp.port}/models
+          unload_sleeping() {
+            models=$(curl -fsS --max-time 5 "$url")
+            jq -c '.data[] | select(.status.value == "sleeping") | {model: .id}' <<< "$models" |
+              while IFS= read -r body; do
+                curl -fsS --max-time 60 -X POST "$url/unload" -H 'Content-Type: application/json' -d "$body"
+              done
+          }
+          unload_sleeping
+          curl -fsSN "$url/sse" |
+            while IFS= read -r line; do
+              if [[ $line == *'"sleeping"'* ]]; then
+                unload_sleeping
+              fi
+            done
+        '';
       };
     };
   };
