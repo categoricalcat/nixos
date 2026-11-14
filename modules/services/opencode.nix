@@ -19,6 +19,11 @@ in
   };
 
   config = lib.mkIf config.services.opencode.enable {
+    sops.secrets."passwords/opencode" = { };
+    sops.templates."opencode.env".content = ''
+      OPENCODE_PASSWORD=${config.sops.placeholder."passwords/opencode"}
+    '';
+
     systemd.services.opencode = {
       description = "Opencode Serve Daemon";
       wantedBy = [ "multi-user.target" ];
@@ -37,6 +42,7 @@ in
         ]
         // {
           ProtectSystem = "full";
+          EnvironmentFile = config.sops.templates."opencode.env".path;
           ExecStart = "${pkgs.opencode}/bin/opencode serve --port ${toString host.services.opencode.port} --hostname 127.0.0.1";
           Restart = "on-failure";
           RestartSec = 5;

@@ -109,6 +109,7 @@ keys:
 passwords:
     nextcloud: string
     filebrowser: string
+    opencode: string
 tokens:
     attic-server-jwt-env: |
         ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=<base64-rsa-key>
@@ -178,6 +179,7 @@ Recipes:
 | `nix/access-tokens` | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below |
 | `passwords/nextcloud` | plain password | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one |
 | `passwords/filebrowser` | plain password | File Browser login for user `yi` (not the unix password). At least 12 characters: `openssl rand -base64 18` |
+| `passwords/opencode` | plain password | OpenCode web/API password (`OPENCODE_PASSWORD`); generate with `openssl rand -base64 24` or choose one |
 | `proton/wireguard_private_key` | raw token | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf` |
 | `samba/credentials/yi` | credentials file | SMB account credentials: `username=...` and `password=...` |
 

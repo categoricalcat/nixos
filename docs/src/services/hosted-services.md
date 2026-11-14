@@ -8,20 +8,20 @@ ______________________________________________________________________
 
 ## 1. Services Overview Table
 
-| Service          | Module File          | Internal Port | Public / Proxy Domain | Primary Backend / Database            | Description                                                                            |
-| ---------------- | -------------------- | ------------- | --------------------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
-| **Homepage**     | `homepage.nix`       | `24082`       | `home.aset.love`      | Native YAML                           | Categorized dashboard with real-time health checks & widgets                           |
-| **Docs**         | `docs/service.nix`   | `24083`       | `docs.aset.love`      | mdBook + Nginx                        | Gang documentation & architectural plans                                               |
-| **SearXNG**      | `searxng.nix`        | `24888`       | `search.aset.love`    | Tor SOCKS5 + Valkey DB 1              | Privacy-respecting metasearch engine ("yi search")                                     |
-| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*       | In-Memory (LRU, per-host cap)         | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter                 |
-| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.aset.love`   | Native D-Bus / sysstat / Podman       | System management, metrics, Podman containers & file browser                           |
-| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.aset.love`    | Nginx DAV module                      | Direct WebDAV file storage at `/srv/webdav`                                            |
-| **File Browser** | `filebrowser.nix`    | `24086`       | `files.aset.love`     | Bolt DB                               | Download-only view of `/home/yi`; login `yi`, password `passwords/filebrowser`         |
-| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG            | LLM web scraping & document extraction engine                                          |
-| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `companion.aset.love` | `llama-cpp.service` (model set in UI) | Advanced conversational frontend & AI persona manager                                  |
-| **Opencode**     | `opencode.nix`       | `24010`       | `agent.aset.love`     | Native Agent Daemon                   | Autonomous AI coding agent backend; loopback behind the local ingress, unauthenticated |
-| **Cloudflared**  | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                         | SSH-only fail-safe tunnel `cloudflare.aset.love` on bridge `10.89.0.2`                 |
-| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                      | Anonymous routing proxy for outbound SearXNG requests                                  |
+| Service          | Module File          | Internal Port | Public / Proxy Domain | Primary Backend / Database            | Description                                                                                          |
+| ---------------- | -------------------- | ------------- | --------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Homepage**     | `homepage.nix`       | `24082`       | `home.aset.love`      | Native YAML                           | Categorized dashboard with real-time health checks & widgets                                         |
+| **Docs**         | `docs/service.nix`   | `24083`       | `docs.aset.love`      | mdBook + Nginx                        | Gang documentation & architectural plans                                                             |
+| **SearXNG**      | `searxng.nix`        | `24888`       | `search.aset.love`    | Tor SOCKS5 + Valkey DB 1              | Privacy-respecting metasearch engine ("yi search")                                                   |
+| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*       | In-Memory (LRU, per-host cap)         | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter                               |
+| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.aset.love`   | Native D-Bus / sysstat / Podman       | System management, metrics, Podman containers & file browser                                         |
+| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.aset.love`    | Nginx DAV module                      | Direct WebDAV file storage at `/srv/webdav`                                                          |
+| **File Browser** | `filebrowser.nix`    | `24086`       | `files.aset.love`     | Bolt DB                               | Download-only view of `/home/yi`; login `yi`, password `passwords/filebrowser`                       |
+| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG            | LLM web scraping & document extraction engine                                                        |
+| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `companion.aset.love` | `llama-cpp.service` (model set in UI) | Advanced conversational frontend & AI persona manager                                                |
+| **Opencode**     | `opencode.nix`       | `24010`       | `agent.aset.love`     | Native Agent Daemon                   | Autonomous AI coding agent backend; loopback behind the local ingress, password `passwords/opencode` |
+| **Cloudflared**  | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                         | SSH-only fail-safe tunnel `cloudflare.aset.love` on bridge `10.89.0.2`                               |
+| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                      | Anonymous routing proxy for outbound SearXNG requests                                                |
 
 ______________________________________________________________________
 
