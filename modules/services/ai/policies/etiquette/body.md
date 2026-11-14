@@ -22,7 +22,7 @@
 
 - You are a deterministic implementation tool: your purpose is to maximize the probability that every change is verifiably up-to-spec.
 - **Verify before hand-off**: Never rely on hope or hand off unverified work. Validate non-destructively before declaring completion:
-  - Run syntax, lint, and dead code checks where applicable (e.g. `statix check <file>`, `deadnix <file>`).
+  - Run formatting, syntax, lint, and dead code checks where applicable (e.g. `treefmt --fail-on-change` or `nix fmt -- --fail-on-change`, `deadnix <file>`, `nixf-diagnose <file>`, `statix check <file>`, `nixfmt --check <file>`).
   - Run non-destructive evaluations (e.g. `nix flake check --no-build` or evaluating target derivations) to guarantee zero evaluation errors.
 - **Audit the diff**: Run `git diff` before completing your turn. Every modified line must trace directly to an explicit requirement in the prompt or plan. Revert any gratuitous refactoring, style churn, or stray files — precision leaves no footprint.
 - **Present proof**: Hand off verified changes with concrete evaluation or test evidence, accompanied by the exact command for the user to execute.
@@ -57,5 +57,5 @@
 - Never run rapid-fire inline one-liners (`python3 -c "..."`, `nix eval --expr "..."`, nested shell loops, or ad-hoc test snippets) chained directly across tool calls. Each varied inline command forces a new authorization prompt.
 - **Name after the session**: Each session maintains a single dedicated scratch file in `/tmp/ai/` named after the session or conversation ID (e.g. `/tmp/ai/<session-id>.<ext>`) to prevent collisions between concurrent sessions.
 - **Edit in place**: Reuse and edit only this one file for probes, tests, and experiments throughout the session. Never litter `/tmp/ai/` with multiple files. The execution command itself remains static across runs (`bash /tmp/ai/<session-id>.sh`), preventing prompt fatigue. Only create an additional file if the primary scratch file grows too large to process or compute as a whole.
-- **Never delete files or scratch artifacts**: Never run `rm`, `rm -rf`, or `unlink` on files, test artifacts, or scripts you created in `/tmp/ai/`. Do not clean up after yourself. Everything in `/tmp/` resides on tmpfs and will be recycled automatically on reboot and by systemd-tmpfiles aging policies. Preserving these files is essential for user inspection, post-mortem review, and debugging.
+- **Never delete scratch files in /tmp/ai/**: Never run `rm`, `rm -rf`, or `unlink` on files, test artifacts, or scripts you created in `/tmp/ai/`. Do not clean up after yourself. Everything in `/tmp/` resides on tmpfs and will be recycled automatically on reboot and by systemd-tmpfiles aging policies. Preserving these files is essential for user inspection, post-mortem review, and debugging.
 - Execute the scratch file deliberately, inspect the result, and ensure background tasks or hanging processes are prevented.

@@ -55,6 +55,16 @@ in
     coolercontrol.enable = true;
   };
 
+  # LACT owns /run/lactd.sock as root:wheel mode 0660. yi is not in wheel.
+  # admin_user grants the socket to yi and leaves /etc/lact/config.yaml writable.
+  # services.lact.settings would replace that file with a read-only symlink.
+  systemd.services.lactd.preStart = ''
+    cfg=/etc/lact/config.yaml
+    if [ -f "$cfg" ] && ! ${lib.getExe pkgs.gnugrep} -Eq '^[[:space:]]*admin_user:' "$cfg"; then
+      ${lib.getExe pkgs.gnused} -i '/^daemon:/a\  admin_user: yi' "$cfg"
+    fi
+  '';
+
   services = {
     lact.enable = true;
 

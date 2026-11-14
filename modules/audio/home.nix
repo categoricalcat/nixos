@@ -38,8 +38,9 @@ let
     '';
 in
 {
-  # Writable directories in $HOME for user plugins, NAM models and MIDI packs
-  systemd.user.tmpfiles.rules = map (dir: "d %h/${dir} 0755 - - - -") [
+  # Writable directories in $HOME for user plugins, NAM models and MIDI packs;
+  # d= replaces stale symlinks (e.g. ~/.vst3 -> /run/current-system/sw/lib/vst3).
+  systemd.user.tmpfiles.rules = map (dir: "d= %h/${dir} 0755 - - - -") [
     ".vst"
     ".vst3"
     ".lv2"

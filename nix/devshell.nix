@@ -1,4 +1,5 @@
-_: {
+{ lib, ... }:
+{
   perSystem =
     {
       config,
@@ -6,55 +7,47 @@ _: {
       ...
     }:
     let
-      rustPkgs = with pkgs; [
-        cargo
-        rustc
-        rustfmt
-        clippy
-        rust-analyzer
-        nix-tree
-        nix-inspect
+      rustPkgs = [
+        pkgs.cargo
+        pkgs.rustc
+        pkgs.rustfmt
+        pkgs.clippy
+        pkgs.rust-analyzer
+        pkgs.nix-tree
+        pkgs.nix-inspect
       ];
 
-      nixosRebuildWrapper = pkgs.writeShellScriptBin "nixos-rebuild" ''
-        exec ${pkgs.nixos-rebuild}/bin/nixos-rebuild "$@"
-      '';
-
-      inspectWrapper = pkgs.writeShellScriptBin "inspect" (builtins.readFile ./scripts/inspect.sh);
-      hostTreeWrapper = pkgs.writeShellScriptBin "host-tree" (builtins.readFile ./scripts/host-tree.sh);
-      hostSizeWrapper = pkgs.writeShellScriptBin "host-size" (builtins.readFile ./scripts/host-size.sh);
-      hostDiffWrapper = pkgs.writeShellScriptBin "host-diff" (builtins.readFile ./scripts/host-diff.sh);
-      hostDeadWrapper = pkgs.writeShellScriptBin "host-dead" (builtins.readFile ./scripts/host-dead.sh);
-      dnsWarmWrapper = pkgs.writeShellScriptBin "dns-warm" (builtins.readFile ./scripts/dns-warm.sh);
-      hostWhyWrapper = pkgs.writeShellScriptBin "host-why" (builtins.readFile ./scripts/host-why.sh);
-      hostAuditWrapper = pkgs.writeShellScriptBin "host-audit" (
-        builtins.readFile ./scripts/host-audit.sh
-      );
+      nixosRebuildWrapper = pkgs.writeShellApplication {
+        name = "nixos-rebuild";
+        text = ''
+          exec ${lib.getExe pkgs.nixos-rebuild} "$@"
+        '';
+      };
 
       wrappers = import ../packages/wrappers.nix { inherit pkgs; };
 
-      nixDevPkgs = with pkgs; [
-        statix # Lints and suggestions for Nix
-        deadnix # Nix dead code locator
-        nixf-diagnose # Nix semantic linter and auto-fixer
-        shellcheck # Shell linter
-        shfmt # Shell formatter
-        shellharden # Shell syntax hardener and auto-quoter
+      nixDevPkgs = [
+        pkgs.statix # Lints and suggestions for Nix
+        pkgs.deadnix # Nix dead code locator
+        pkgs.nixf-diagnose # Nix semantic linter and auto-fixer
+        pkgs.shellcheck # Shell linter
+        pkgs.shfmt # Shell formatter
+        pkgs.shellharden # Shell syntax hardener and auto-quoter
         config.treefmt.build.wrapper # Universal multi-file formatter (wrapped with flake config)
-        nixpkgs-hammering # Linter for Nixpkgs packages
-        nil # Nix language server
-        nixd # Nix language server (with statix/deadnix support)
-        nixfmt # Official RFC-166 Nix formatter
-        direnv # Environment switcher for shell
-        nix-update # Swiss-knife for updating nix packages
-        nix-init # Generator for Nix packages from URLs
-        comma # Run software without installing it (, <pkg>)
-        nvd # Package version diff tool for Nix store paths
-        deploy-rs # Multi-profile NixOS deployment tool
-        fzf # Command-line fuzzy finder
-        jq # Command-line JSON processor
-        dnsx # Fast and multi-purpose DNS toolkit
-        curl # Transfer data with URLs
+        pkgs.nixpkgs-hammering # Linter for Nixpkgs packages
+        pkgs.nil # Nix language server
+        pkgs.nixd # Nix language server (with statix/deadnix support)
+        pkgs.nixfmt # Official RFC-166 Nix formatter
+        pkgs.direnv # Environment switcher for shell
+        pkgs.nix-update # Swiss-knife for updating nix packages
+        pkgs.nix-init # Generator for Nix packages from URLs
+        pkgs.comma # Run software without installing it (, <pkg>)
+        pkgs.nvd # Package version diff tool for Nix store paths
+        pkgs.deploy-rs # Multi-profile NixOS deployment tool
+        pkgs.fzf # Command-line fuzzy finder
+        pkgs.jq # Command-line JSON processor
+        pkgs.dnsx # Fast and multi-purpose DNS toolkit
+        pkgs.curl # Transfer data with URLs
       ];
 
       defaultShell = pkgs.mkShell {
@@ -65,15 +58,26 @@ _: {
           ++ [
             pkgs.zsh
             nixosRebuildWrapper
-            inspectWrapper
-            hostTreeWrapper
-            hostSizeWrapper
-            hostDiffWrapper
-            hostDeadWrapper
-            dnsWarmWrapper
-            hostWhyWrapper
-            hostAuditWrapper
-          ];
+          ]
+          ++
+            map
+              (
+                name:
+                pkgs.writeShellApplication {
+                  inherit name;
+                  text = builtins.readFile (./scripts + "/${name}.sh");
+                }
+              )
+              [
+                "inspect"
+                "host-tree"
+                "host-size"
+                "host-diff"
+                "host-dead"
+                "dns-warm"
+                "host-why"
+                "host-audit"
+              ];
         shellHook = ''
           ${config.pre-commit.installationScript}
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
@@ -111,7 +115,7 @@ _: {
             --setenv HOME /home/none \
             --setenv USER none \
             --chdir /home/none \
-            ${pkgs.zsh}/bin/zsh
+            ${lib.getExe pkgs.zsh}
         '';
       };
     in

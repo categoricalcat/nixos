@@ -19,7 +19,7 @@ let
       ruleRefs = [ "etiquette" ];
     };
     nixos = {
-      description = "NixOS configuration, modules, options, flake management, and idiomatic functional combinators. Read local source code from /etc/nix/inputs before searching online. Always verify which host you are on.";
+      description = "Authoring, refactoring, and reviewing Nix code, NixOS/Home Manager modules, packages, overlays, and flakes. Read local source code from /etc/nix/inputs before searching online, follow nix.dev/Nixpkgs/RFC 166 conventions, and verify which host you are on.";
       isRule = false;
       isSkill = true;
       ruleRefs = [
@@ -150,29 +150,23 @@ in
       force = true;
     }) agentFiles;
 
-    activation.realizeAgentPolicies = lib.hm.dag.entryAfter [ "linkGeneration" ] (
-      let
-        files = builtins.attrNames agentFiles;
-        fileListStr = lib.concatMapStringsSep "\n" (f: "  ${lib.escapeShellArg f}") files;
-      in
-      ''
-        files=(
-        ${fileListStr}
-        )
-        for relPath in "''${files[@]}"; do
-          target="$HOME/$relPath"
-          if [ -e "$target.bkp" ]; then
-            run rm -f "$target.bkp"
-          fi
-          if [ -L "$target" ]; then
-            src="$(readlink -f "$target")"
-            dir="$(dirname "$target")"
-            run install -d -m 0755 "$dir"
-            run rm -f "$target"
-            run install -m 0444 "$src" "$target"
-          fi
-        done
-      ''
-    );
+    activation.realizeAgentPolicies = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      files=(
+      ${lib.concatMapStringsSep "\n" (f: "  ${lib.escapeShellArg f}") (builtins.attrNames agentFiles)}
+      )
+      for relPath in "''${files[@]}"; do
+        target="$HOME/$relPath"
+        if [ -e "$target.bkp" ]; then
+          run rm -f "$target.bkp"
+        fi
+        if [ -L "$target" ]; then
+          src="$(readlink -f "$target")"
+          dir="$(dirname "$target")"
+          run install -d -m 0755 "$dir"
+          run rm -f "$target"
+          run install -m 0444 "$src" "$target"
+        fi
+      done
+    '';
   };
 }

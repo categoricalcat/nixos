@@ -110,12 +110,12 @@
         };
 
         perSystem =
-          { pkgs, ... }:
+          { config, pkgs, ... }:
           {
             packages = {
               zero-parades = pkgs.callPackage ./packages/zero-parades { };
               fluxer = pkgs.callPackage ./packages/fluxer { };
-              default = self.packages.x86_64-linux.zero-parades;
+              default = config.packages.zero-parades;
             };
 
             checks = {
@@ -134,7 +134,7 @@
     );
 
   inputs = {
-    nixpkgs.url = "https://channels.nixos.org/nixos-unstable-small/nixexprs.tar.zst";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
     flake-parts = {
       url = "github:hercules-ci/flake-parts";

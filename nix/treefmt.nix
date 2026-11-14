@@ -71,17 +71,21 @@
           };
         };
         settings.formatter = {
+          # Upstream statix program only runs `statix check`; wrap `fix` + `check` for treefmt.
           statix.command = lib.mkForce (
-            pkgs.writeShellScriptBin "statix-fix" ''
-              set -euo pipefail
-              for file in "$@"; do
-                ${lib.getExe pkgs.statix} fix "$file"
-                ${lib.getExe pkgs.statix} check "$file"
-              done
-            ''
+            pkgs.writeShellApplication {
+              name = "statix-fix";
+              runtimeInputs = [ pkgs.statix ];
+              text = ''
+                for file in "$@"; do
+                  statix fix "$file"
+                  statix check "$file"
+                done
+              '';
+            }
           );
           shellharden = {
-            command = "${pkgs.shellharden}/bin/shellharden";
+            command = lib.getExe pkgs.shellharden;
             options = [ "--replace" ];
             includes = [ "*.sh" ];
             excludes = [ ".envrc" ];

@@ -15,7 +15,7 @@ For REAPER, the `yabridge-sync` user service bridges the prefix's VST3 folder in
 - AmpliTube opens inside a 1920x1080 Wine virtual desktop window, which niri floats because its size is fixed. On their own, Wine's dropdowns become separate windows under xwayland-satellite and close as soon as niri moves focus; inside the virtual desktop they behave normally. Maximize AmpliTube inside that window if needed; the size is set in `modules/audio/amplitube.nix`.
 - WineASIO follows the PipeWire graph at 96,000 Hz and 384 samples. Keep its fixed buffer size on (the default): without it, WineASIO accepts only power-of-two buffer sizes, and 384 is not one.
 - Wine's menu builder is disabled, so the IK installers create no extra launchers or file associations. Wine Mono and Gecko are skipped when the prefix is created; none of the IK software needs them, and Wine still offers to install them the first time a program does.
-- The launchers report problems, such as AmpliTube not being installed yet, as desktop notifications.
+- The launchers report problems, such as AmpliTube not being installed yet, as desktop notifications. Wine and WineASIO output, including WineASIO's JACK connection errors, goes to the journal: `journalctl --user -t amplitube-5` (or `-t ik-product-manager`).
 
 ## Maintenance
 

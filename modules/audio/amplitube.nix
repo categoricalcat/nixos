@@ -8,7 +8,13 @@ let
   prefix = ".local/share/wineprefixes/ik-multimedia";
   vst3 = "${config.home.homeDirectory}/${prefix}/drive_c/Program Files/Common Files/VST3";
   wine = pkgs.wineWow64Packages.yabridge;
-  wineAsio = pkgs.wineasio.override { wineWow64Packages.stable = wine; };
+  wineAsio = (pkgs.wineasio.override { wineWow64Packages.stable = wine; }).overrideAttrs (old: {
+    # jackbridge dlopen()s a bare soname, which misses PipeWire JACK without LD_LIBRARY_PATH
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace jackbridge.c \
+        --replace-fail 'dlopen("libjack.so.0"' 'dlopen("${pkgs.pipewire.jack}/lib/libjack.so.0"'
+    '';
+  });
 
   productManagerVersion = "1.1.16";
   # IK's CDN publishes no checksum; trust-on-first-use
@@ -30,6 +36,7 @@ let
       runtimeInputs = [
         pkgs.coreutils
         pkgs.libnotify
+        pkgs.systemd
         wine
         wineAsio
       ];
@@ -39,6 +46,8 @@ let
         WINEDLLOVERRIDES = "winemenubuilder.exe=d";
       };
       text = ''
+        # Desktop-launched stdout/stderr is discarded; WineASIO reports JACK failures only there
+        exec > >(systemd-cat -t ${name}) 2>&1
         export WINEPREFIX="$HOME/${prefix}"
         ik="$WINEPREFIX/drive_c/Program Files/IK Multimedia"
 

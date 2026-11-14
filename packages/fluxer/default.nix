@@ -3,6 +3,7 @@
   stdenv,
   makeDesktopItem,
   copyDesktopItems,
+  bash,
   coreutils,
   curl,
   jq,
@@ -13,10 +14,14 @@ stdenv.mkDerivation {
   pname = "fluxer";
   version = "latest";
 
-  src = ./.;
+  strictDeps = true;
 
   nativeBuildInputs = [
     copyDesktopItems
+  ];
+
+  buildInputs = [
+    bash
   ];
 
   desktopItems = [
@@ -64,6 +69,7 @@ stdenv.mkDerivation {
     })
   ];
 
+  dontUnpack = true;
   dontBuild = true;
 
   installPhase = ''
@@ -73,11 +79,10 @@ stdenv.mkDerivation {
 
     substitute ${./fluxer-launcher.sh} $out/bin/fluxer \
       --subst-var-by system ${stdenv.hostPlatform.system} \
-      --subst-var-by curl ${curl}/bin/curl \
+      --subst-var-by curl ${lib.getExe curl} \
       --subst-var-by coreutils ${coreutils}/bin \
-      --subst-var-by jq ${jq}/bin/jq \
-      --subst-var-by appimageRun ${appimage-run}/bin/appimage-run
-    patchShebangs $out/bin/fluxer
+      --subst-var-by jq ${lib.getExe jq} \
+      --subst-var-by appimageRun ${lib.getExe appimage-run}
     chmod +x $out/bin/fluxer
 
     cp ${./fluxer.png} $out/share/icons/hicolor/1024x1024/apps/fluxer.png
@@ -90,12 +95,12 @@ stdenv.mkDerivation {
       $out/share/applications/fluxer.desktop
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Instant messaging and VoIP application";
     homepage = "https://fluxer.app";
     license = [
-      licenses.agpl3Plus
-      licenses.cc-by-sa-40
+      lib.licenses.agpl3Plus
+      lib.licenses.cc-by-sa-40
     ];
     mainProgram = "fluxer";
     platforms = [
