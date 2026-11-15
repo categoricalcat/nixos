@@ -1,7 +1,12 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  dir = (import ../secrets/keys.nix).paths.devCertsDir;
+  dir = "/persist/keys/dev";
   ca = "${dir}/ca.pem";
 in
 {
@@ -9,8 +14,8 @@ in
 
   # The CA's own name constraints bound every verifier below (OpenSSL, Go,
   # Node, Chrome) and its key is discarded after signing. The files stay out
-  # of the public repo because those constraints name the work hostname;
-  # recipe in docs/src/services/secrets.md. Missing files are skipped.
+  # of the public repo and Nix store; minted by dev-certs-setup (README.md in
+  # this directory). Missing files are skipped.
   systemd.tmpfiles.settings.dev-certs."${dir}/key.pem".z = {
     mode = "0640";
     user = "root";
@@ -30,5 +35,6 @@ in
       SSL_CERT_DIR = "/etc/ssl/certs";
       NODE_EXTRA_CA_CERTS = ca;
     };
+    systemPackages = [ (pkgs.callPackage ./default.nix { }) ];
   };
 }

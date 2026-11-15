@@ -228,13 +228,13 @@ in
   };
 
   systemd.services.adguardhome = {
-    # The work hostname stays out of the public repo (docs/src/services/secrets.md).
-    # A missing file skips the rewrite instead of failing DNS startup.
+    # Private LAN rewrites stay out of the public repo and Nix store
+    # (docs/src/services/dns-and-proxy.md). A missing file skips cleanly.
     preStart = lib.mkAfter ''
-      domain=${(import ../../secrets/keys.nix).paths.devCertsDir}/domain
-      if [ -r "$domain" ]; then
-        DOMAIN=$(< "$domain") ${lib.getExe pkgs.yq-go} -i \
-          '.filtering.rewrites += [{"domain": strenv(DOMAIN), "answer": "${yifuwuqiLan}", "enabled": true}]' \
+      rewrites=/persist/keys/adguardhome/rewrites.yaml
+      if [ -r "$rewrites" ]; then
+        ${lib.getExe pkgs.yq-go} -i \
+          '.filtering.rewrites += ((load("'"$rewrites"'") // []) | map({"enabled": true} * .))' \
           "$STATE_DIRECTORY/AdGuardHome.yaml"
       fi
     '';

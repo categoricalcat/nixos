@@ -17,8 +17,9 @@ SOPS payloads stay outside the Nix store.
     ssh_host_ed25519_key.pub
   sops/
     secrets.yaml
-  dev/            # optional, see Dev Certificates
-    domain
+  adguardhome/    # optional on yirukou, see docs/src/services/dns-and-proxy.md
+    rewrites.yaml
+  dev/            # optional on dev hosts, see packages/dev-certs
     ca.pem
     chrome.json
     cert.pem
@@ -37,8 +38,8 @@ and `/persist/keys/sops/secrets.yaml` are in the expected state.
 
 ## Host SSH Identity
 
-If the host already has an SSH identity that clients trust, copy it. This keeps
-the SSH host fingerprint stable:
+If the host already has an SSH identity that clients trust, copy it (as root).
+This keeps the SSH host fingerprint stable:
 
 ```bash
 install -m 0600 -o root -g root \
@@ -51,7 +52,8 @@ chown root:root /persist/keys/ssh/ssh_host_ed25519_key.pub
 chmod 0644 /persist/keys/ssh/ssh_host_ed25519_key.pub
 ```
 
-For a fresh host with no identity to preserve, generate the key explicitly:
+For a fresh host with no identity to preserve, generate the key explicitly (as
+root):
 
 ```bash
 ssh-keygen -t ed25519 -N '' \
@@ -160,28 +162,28 @@ Edit the encrypted payload as root (`su -`, then `cd /home/yi/the.files/nixos`):
 sops secrets/secrets.yaml
 ```
 
-Recipes:
+Recipes (`openssl` is not on the default PATH; enter `nix shell nixpkgs#openssl`
+first):
 
-| SOPS key                      | Value format  | How to get it                                                                         |
-| ----------------------------- | ------------- | ------------------------------------------------------------------------------------- |
-| `tokens/attic-server-jwt-env` | env file      | Generate locally; command below                                                       |
-| `tokens/attic-push-token`     | raw token     | Generate with `atticd-atticadm` after `atticd` starts; command below                  |
-| `tokens/forgejo-runner`       | raw token     | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner            |
-| `tokens/github-runner-nixos`  | raw token     | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                 |
-| `keys/deploy`                 | PEM string    | Generated via `./users/scripts/setup-sops.sh` (or `--rotate`) on any configured host  |
-| `services/grafana/secret-key` | random string | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets |
-
-| `cloudflare_api_token` | env file | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>` |
-| `tokens/cloudflared` | raw token | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token |
-| `tokens/playit-agent` | env file | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...` |
-| `tokens/localtonet-authtoken` | raw token | Localtonet dashboard auth token |
-| `tokens/deepseek` | raw API key | DeepSeek console API key |
-| `nix/access-tokens` | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below |
-| `passwords/nextcloud` | plain password | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one |
-| `passwords/filebrowser` | plain password | File Browser login for user `yi` (not the unix password). At least 12 characters: `openssl rand -base64 18` |
-| `passwords/opencode` | plain password | OpenCode web/API password (`OPENCODE_PASSWORD`); generate with `openssl rand -base64 24` or choose one |
-| `proton/wireguard_private_key` | raw token | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf` |
-| `samba/credentials/yi` | credentials file | SMB account credentials: `username=...` and `password=...` |
+| SOPS key                                | Value format      | How to get it                                                                                               |
+| --------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `tokens/attic-server-jwt-env`           | env file          | Generate locally; command below                                                                             |
+| `tokens/attic-push-token`               | raw token         | Generate with `atticd-atticadm` after `atticd` starts; command below                                        |
+| `tokens/forgejo-runner`                 | raw token         | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner                                  |
+| `tokens/github-runner-nixos`            | raw token         | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                                       |
+| `keys/deploy`                           | PEM string        | Generated via `./users/scripts/setup-sops.sh` (or `--rotate`) on any configured host                        |
+| `services/grafana/secret-key`           | random string     | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets                       |
+| `cloudflare_api_token`                  | env file          | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>`          |
+| `tokens/cloudflared`                    | raw token         | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token                   |
+| `tokens/playit-agent`                   | env file          | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...`   |
+| `tokens/localtonet-authtoken`           | raw token         | Localtonet dashboard auth token                                                                             |
+| `tokens/deepseek`                       | raw API key       | DeepSeek console API key                                                                                    |
+| `nix/access-tokens`                     | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below                                               |
+| `passwords/nextcloud`                   | plain password    | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one                     |
+| `passwords/filebrowser`                 | plain password    | File Browser login for user `yi` (not the unix password). At least 12 characters: `openssl rand -base64 18` |
+| `passwords/opencode`                    | plain password    | OpenCode web/API password (`OPENCODE_PASSWORD`); generate with `openssl rand -base64 24` or choose one      |
+| `services/proton/wireguard_private_key` | raw token         | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf`                  |
+| `samba/credentials/yi`                  | credentials file  | SMB account credentials: `username=...` and `password=...`                                                  |
 
 Tokens generated by external UIs may expire if unused. If first deploy was long
 after generation and a runner/tunnel fails registration, generate a fresh token
@@ -225,20 +227,17 @@ unset TOKEN
 
 Or edit with `sops secrets/secrets.yaml` (as root) and paste the line under `nix.access-tokens`.
 
-Attic server JWT env:
+Attic server JWT env (prints one line to paste into the sops value):
 
 ```bash
 printf 'ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="%s"\n' \
-  "$(openssl genrsa -traditional 4096 | base64 -w0)"
+  "$(nix run nixpkgs#openssl -- genrsa -traditional 4096 | base64 -w0)"
 ```
-
-Attic push token:
 
 Attic push token (requires Attic bootstrap first, see below):
 
 ```bash
-# as root (su -)
-cd /tmp
+# as root (su -) on yifuwuqi; prints the token to stdout
 atticd-atticadm make-token \
   --sub 'yi' \
   --validity '10 years' \
@@ -249,7 +248,7 @@ atticd-atticadm make-token \
 
 When resetting the database, the Attic caches are destroyed. You must manually recreate the admin token, cache, and push tokens before `attic-watch-store` or CI can push:
 
-1. **Generate a new admin token (as root):**
+1. **Generate a new admin token (as root on yifuwuqi):**
 
    ```bash
    atticd-atticadm make-token --sub "*" --validity "10 years" \
@@ -257,13 +256,7 @@ When resetting the database, the Attic caches are destroyed. You must manually r
      --configure-cache-retention "*" --destroy-cache "*"
    ```
 
-1. **Drop into a shell with the attic client:**
-
-   ```bash
-   nix shell github:zhaofengli/attic#attic
-   ```
-
-1. **Log in locally to the Attic server:**
+1. **Log in locally to the Attic server** (`attic` is installed on yifuwuqi):
 
    ```bash
    attic login yi http://127.0.0.1:24203 <admin-token-from-step-1>
@@ -281,7 +274,7 @@ When resetting the database, the Attic caches are destroyed. You must manually r
    attic cache info yi
    ```
 
-   Take the public key from the output and update `trusted-public-keys` in `modules/nix-settings.nix`.
+   Take the public key from the output and update `trusted-public-keys` in `modules/services/attic/client.nix`.
 
 1. **Generate the new push token** for SOPS (using the command in the table above).
 
@@ -292,8 +285,7 @@ When `secrets/keys.nix` changes recipients, regenerate `.sops.yaml` first, then 
 printing decrypted YAML), and finally sync to `/persist/keys/sops/secrets.yaml`:
 
 ```bash
-su -
-cd /home/yi/the.files/nixos
+# as root (su -) in /home/yi/the.files/nixos
 
 # 1. Regenerate .sops.yaml from secrets/keys.nix
 ./users/scripts/setup-sops.sh
@@ -313,8 +305,7 @@ recipient). A root zsh sets `SOPS_AGE_KEY` from the host SSH key, so `sops`
 works without a manual `ssh-to-age` export:
 
 ```bash
-su -
-cd /home/yi/the.files/nixos
+# as root (su -) in /home/yi/the.files/nixos
 sops secrets/secrets.yaml
 ./users/scripts/setup-sops.sh
 ```
@@ -325,48 +316,8 @@ repo copy. Do not edit `/persist/keys/sops/secrets.yaml` directly.
 
 ## Dev Certificates
 
-`modules/dev-certs.nix` (`yifuwuqi`, `yitaishi`, `yixiaoqing`) trusts a
-name-constrained dev CA host-wide (`NODE_EXTRA_CA_CERTS`, `SSL_CERT_DIR`,
-Chrome policy) and shares one leaf with the `devcert` group (`yi`, `workd`).
-AdGuard on `yirukou` and `yifuwuqi` maps `domain` to `yifuwuqi`. The files live
-in `/persist/keys/dev/` rather than the repo because the CA's constraints name
-the work hostname. Every consumer skips missing files.
-
-Host-wide trust is only safe because the CA carries critical name constraints
-and its key is discarded after signing. List every dev name in both the
-constraints and the leaf SAN, keep the subject (its hash names
-`/etc/ssl/certs/4ce7bcbb.0`), and re-run the recipe to add a name or renew the
-leaf.
-
-```bash
-# as root (su -); keys stay in shell variables and the CA key is discarded
-nix shell nixpkgs#openssl
-read -r DEV_DOMAIN
-cakey=$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256)
-ca=$(openssl req -x509 -new -key <(printf '%s\n' "$cakey") -sha256 -days 3650 \
-  -subj "/CN=aset dev CA" \
-  -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
-  -addext "keyUsage=critical,keyCertSign,cRLSign" \
-  -addext "nameConstraints=critical,permitted;DNS:$DEV_DOMAIN,permitted;DNS:localhost,permitted;DNS:yifuwuqi.lan,permitted;IP:127.0.0.0/255.0.0.0")
-key=$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256)
-cert=$(openssl x509 -req -sha256 -days 825 -set_serial "0x$(openssl rand -hex 16)" \
-  -in <(openssl req -new -key <(printf '%s\n' "$key") -subj /CN=dev) \
-  -CA <(printf '%s\n' "$ca") -CAkey <(printf '%s\n' "$cakey") \
-  -extfile <(printf 'subjectAltName=DNS:%s,DNS:localhost,DNS:yifuwuqi.lan,IP:127.0.0.1\nextendedKeyUsage=serverAuth\nbasicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\n' "$DEV_DOMAIN"))
-d=/persist/keys/dev
-install -d -m 0755 "$d"
-install -m 0644 /dev/stdin "$d/domain" <<<"$DEV_DOMAIN"
-install -m 0644 /dev/stdin "$d/ca.pem" <<<"$ca"
-install -m 0644 /dev/stdin "$d/cert.pem" <<<"$cert"
-install -m 0640 /dev/stdin "$d/key.pem" <<<"$key"
-jq -n --arg c "$(openssl x509 -outform DER <<<"$ca" | base64 -w0)" '{CACertificates: [$c]}' |
-  install -m 0644 /dev/stdin "$d/chrome.json"
-unset cakey key
-```
-
-Copy `/persist/keys/dev/` to the other dev hosts and `domain` to `yirukou`,
-keeping modes. Switching (or `systemd-tmpfiles --create`) sets `key.pem` to
-`root:devcert`. AdGuard rereads `domain` only when it restarts.
+Dev certificates (`/persist/keys/dev/`) are documented in
+`packages/dev-certs/README.md`.
 
 ## Distributed Builds Key
 
@@ -410,9 +361,10 @@ private key delivered via SOPS to `/var/lib/nix-builder/.ssh/id_ed25519`
 - **Non-recipient**: The CI key is **not** an age recipient in `.sops.yaml` /
   `sopsAgeRecipients`. CI has permission to deploy configurations, but cannot decrypt
   SOPS secrets or access host age keys.
-- **Operator Lane**: Remains root-only (`su -` then `deploy`) using
-  `/persist/keys/ssh/ssh_host_ed25519_key`. `nix/deploy.nix` passes both `-i` flags
-  so both operator and CI lanes work without manual reconfiguration.
+- **Operator Lane**: Remains root-only (`su -` then `deploy`). Root's ssh client
+  config (`Match localuser root` in `modules/services/ssh/dynamic.nix`) selects
+  `/persist/keys/ssh/ssh_host_ed25519_key`, while CI's `nix-builder` ssh picks up
+  its default `~/.ssh/id_ed25519` — neither lane needs flags.
 
 ### Key Generation and Rotation
 
@@ -420,7 +372,8 @@ To mint a new key or rotate an existing one (as root via `su -`):
 
 ```bash
 # 1. Generate a new key in tmpfs on any configured host
-./users/scripts/setup-sops.sh [--rotate]
+#    (add --rotate to replace an existing registered key)
+./users/scripts/setup-sops.sh
 
 # 2. Update secrets/keys.nix with the printed `ci = { deployPublicKey = "..."; };` snippet.
 

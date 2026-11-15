@@ -33,7 +33,7 @@ in
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/fido2.nix
-    ../../modules/dev-certs.nix
+    ../../packages/dev-certs/module.nix
     ../../modules/fonts.nix
     ../../modules/common.nix
     ../../modules/gaming.nix

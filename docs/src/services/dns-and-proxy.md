@@ -62,6 +62,7 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   - `smb.aset.love` $\\to$ `10.42.0.2` (Points SMB file share directly to `yifuwuqi`)
   - `ssh.aset.love` $\\to$ `10.42.0.2` (Plain SSH to `yifuwuqi` on `24212` over the LAN and the Tailnet subnet route; the Cloudflare tunnel is `cloudflare.aset.love`)
   - Dynamic host rewrites generated for `.lan`/`.local`/`.ts` aliases. `.lan` and `.local` answer both A and AAAA (the LAN ULA), so internal names are reached over IPv6; `.ts` and the `aset.love` wildcards stay IPv4-only because nginx and its backends stay on IPv4.
+  - Optional private rewrites from `/persist/keys/adguardhome/rewrites.yaml` (`0640 root:nginx` inside `0750 root:nginx` on `yirukou`): YAML list of `{ domain, answer, enabled? }` entries (e.g. `- domain: local.work.com` / `answer: 10.42.0.2`; `enabled` defaults to `true`) appended in `adguardhome` `preStart` via `yq-go`, keeping private hostnames out of git, `/nix/store`, and SOPS. Restart `adguardhome` after editing.
 - **Encrypted DNS Endpoints**:
   - DNS-over-TLS (DoT): Port `853` on `dns.aset.love` (manual clients; AGH DDR omits DoT without IP SANs on the ACME cert)
   - DNS-over-QUIC (DoQ): Port `853` on `dns.aset.love`

@@ -33,7 +33,7 @@ in
     ../../modules/virtualisation/podman.nix
     ../../secrets/sops.nix
     ../../modules/fido2.nix
-    ../../modules/dev-certs.nix
+    ../../packages/dev-certs/module.nix
   ];
 
   security.fido2.enable = true;
