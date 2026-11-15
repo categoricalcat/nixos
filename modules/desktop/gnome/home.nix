@@ -12,6 +12,7 @@ let
   inherit (keybinds) toGnomeKey;
 
   colors = import ../../theme.nix;
+  themeAssets = import ../../theme-assets.nix { inherit pkgs; };
   animRate = config.desktop.animationRate;
   scale = ms: if animRate <= 0.0 then 0 else lib.trivial.max 1 (builtins.floor (ms * animRate));
   panelElements = [
@@ -84,7 +85,7 @@ lib.mkIf (config.home.username != "root") {
         favorite-apps = [
           "google-chrome.desktop"
           "org.kde.dolphin.desktop"
-          "kitty.desktop"
+          themeAssets.terminalDesktopId
         ];
       };
 
@@ -367,8 +368,8 @@ lib.mkIf (config.home.username != "root") {
 
       "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
         binding = toGnomeKey (lib.head keybinds.bindings.terminal.keys);
-        command = "kitty";
-        name = "Kitty Terminal";
+        command = themeAssets.terminalCommand;
+        name = "Zellij Terminal";
       };
 
     };

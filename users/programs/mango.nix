@@ -7,6 +7,7 @@
 
 let
   keybinds = import ../../modules/desktop/keybinds { inherit lib; };
+  themeAssets = import ../../modules/theme-assets.nix { inherit pkgs; };
   keyboard = import ../../modules/keyboard/profiles.nix;
   keyboardProfiles = map (name: keyboard.profiles.${name}) (keyboard.order config.desktop.keyboard);
   desktopShell = config.host.desktopShell;
@@ -239,7 +240,7 @@ in
       "${if desktopShell == "dms" then "mango/dms/binds.conf" else "mango/binds.conf"}".text =
         keybinds.generateMangoConfig
           {
-            terminalCommand = "kitty";
+            inherit (themeAssets) terminalCommand;
             inherit desktopShell;
             inherit (config.desktop) hdr;
           };

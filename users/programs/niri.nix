@@ -13,6 +13,7 @@ let
   hdr = config.desktop.hdr;
   kdl = inputs.niri.lib.kdl;
   colors = import ../../modules/theme.nix;
+  themeAssets = import ../../modules/theme-assets.nix { inherit pkgs; };
   animRate = config.desktop.animationRate;
   mouse = config.desktop.mouse;
   keybinds = import ../../modules/desktop/keybinds { inherit lib; };
@@ -115,7 +116,7 @@ in
           ELECTRON_OZONE_PLATFORM_HINT = "auto";
           QT_QPA_PLATFORMTHEME = "qt6ct";
           QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
-          TERMINAL = "kitty";
+          TERMINAL = themeAssets.terminalCommand;
         };
 
         hotkey-overlay.skip-at-startup = true;
@@ -228,7 +229,7 @@ in
 
         binds = keybinds.getNiriBinds {
           inherit desktopShell hdr;
-          terminalCommand = "kitty";
+          inherit (themeAssets) terminalCommand;
           emojiCommand = "smile";
         };
       };
@@ -287,7 +288,7 @@ in
     xdg.configFile = lib.mkIf (desktopShell == "dms") {
       "niri/dms/binds.kdl".text = keybinds.generateDmsBindsKdl {
         inherit desktopShell hdr;
-        terminalCommand = "kitty";
+        inherit (themeAssets) terminalCommand;
         emojiCommand = "smile";
       };
     };

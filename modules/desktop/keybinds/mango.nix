@@ -9,7 +9,7 @@
   # Generate Mango config file string from source of truth
   generateMangoConfig =
     {
-      terminalCommand ? "kitty",
+      terminalCommand,
       desktopShell ? "dms",
       emojiCommand ? "smile",
       hdr ? false,
@@ -57,6 +57,8 @@
 
       # === Application Launchers ===
       ${bindList bindings.terminal (spawnCmd [ terminalCommand ])}
+      ${bindList bindings.zellijInbox (spawnCmd cmds.zellij.inbox)}
+      ${bindList bindings.zellijSessions (spawnCmd cmds.zellij.sessions)}
       ${bindList bindings.launcher (spawnCmd cmds.appCommands.launcher)}
       ${bindList bindings.launcherBar (spawnCmd cmds.appCommands.launcherBar)}
       ${bindList bindings.clipboard (spawnCmd cmds.appCommands.clipboard)}

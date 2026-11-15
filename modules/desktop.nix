@@ -8,6 +8,7 @@
 let
   keyboard = import ./keyboard/profiles.nix;
   kb = keyboard.profiles.${config.desktop.keyboard};
+  themeAssets = import ./theme-assets.nix { inherit pkgs; };
 in
 {
   options.desktop = {
@@ -148,6 +149,7 @@ in
       terminal-exec = {
         enable = true;
         settings.default = [
+          themeAssets.terminalDesktopId
           "kitty.desktop"
           # "com.mitchellh.ghostty.desktop"
         ];

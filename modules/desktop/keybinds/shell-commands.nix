@@ -6,7 +6,7 @@ _:
     {
       desktopShell ? "dms",
       hdr ? false,
-      terminalCommand ? "kitty",
+      terminalCommand,
       emojiCommand ? "smile",
     }:
     let
@@ -534,6 +534,17 @@ _:
               "5%-"
             ];
           };
+
+      zellij = {
+        inbox = [
+          terminalCommand
+          "--inbox"
+        ];
+        sessions = [
+          terminalCommand
+          "--sessions"
+        ];
+      };
     in
     {
       inherit
@@ -543,6 +554,7 @@ _:
         screenshots
         audio
         brightness
+        zellij
         ;
     };
 }

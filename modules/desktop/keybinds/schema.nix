@@ -13,6 +13,18 @@ _:
         "SUPER,Return"
       ];
     };
+    zellijInbox = {
+      description = "Zellij Inbox";
+      keys = [
+        "SUPER,z"
+      ];
+    };
+    zellijSessions = {
+      description = "Zellij Sessions";
+      keys = [
+        "SUPER+SHIFT,z"
+      ];
+    };
     launcher = {
       description = "Application Launcher (Spotlight)";
       keys = [

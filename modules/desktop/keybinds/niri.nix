@@ -1,5 +1,6 @@
 {
   lib,
+  bindings,
   shellCommands,
   ...
 }:
@@ -45,7 +46,7 @@ let
     {
       desktopShell ? "dms",
       hdr ? false,
-      terminalCommand ? "kitty",
+      terminalCommand,
       emojiCommand ? "smile",
     }:
     let
@@ -364,6 +365,10 @@ let
       appBinds = {
         "Mod+T" = spawnTitleBind "Open Terminal" [ terminalCommand ];
         "Mod+Return" = spawnTitleBind "Open Terminal" [ terminalCommand ];
+        "${toNiriKey (lib.head bindings.zellijInbox.keys)}" =
+          spawnTitleBind "Zellij Inbox" cmds.zellij.inbox;
+        "${toNiriKey (lib.head bindings.zellijSessions.keys)}" =
+          spawnTitleBind "Zellij Sessions" cmds.zellij.sessions;
         "Mod+Period" = spawnTitleBind "Emoji Picker" [ emojiCommand ];
         "Super+Alt+L" = spawnTitleBind "Lock Screen" cmds.appCommands.lockScreen;
         "Super+Alt+S" = {
@@ -465,7 +470,7 @@ let
     {
       desktopShell ? "dms",
       hdr ? false,
-      terminalCommand ? "kitty",
+      terminalCommand,
       emojiCommand ? "smile",
     }:
     let

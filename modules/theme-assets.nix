@@ -19,6 +19,10 @@
     light = "Papirus-Light";
   };
 
+  terminalOpacity = 0.94;
+  terminalCommand = "zellij-terminal";
+  terminalDesktopId = "dev.zellij.Zellij.desktop";
+
   fonts = rec {
     mapleMono = {
       package = pkgs.maple-mono.NF-CN-unhinted;
