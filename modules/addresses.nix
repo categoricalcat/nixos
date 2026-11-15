@@ -786,6 +786,10 @@ in
 
       services = {
         inherit (sharedServices) llama-cpp;
+        sd-cpp = {
+          domain = "image.${baseDomain}";
+          port = 11437;
+        };
       };
     };
 

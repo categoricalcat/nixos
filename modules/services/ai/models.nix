@@ -1,10 +1,11 @@
-# Declarative local LLM registry (2 models per host: censored + uncensored).
+# Declarative local LLM and diffusion model registry.
 #
 # Sized for Q8_0 KV cache on each host's Vulkan device:
 #   - yifuwuqi: Radeon 680M APU (4 GiB carved VRAM + 9.65 GiB GTT out of 19.3 GiB RAM)
 #     -> Gemma 4 12B (~7 GB weights + <0.5 GB 32k KV cache via 8 global-attention layers)
 #   - yitaishi: Radeon RX 7900 XTX (24 GiB GDDR6)
 #     -> Qwen 3.8 27B (~16.4-17.7 GB weights + ~2.4 GB 64k hybrid DeltaNet KV cache)
+#     -> Chroma1-HD Q8_0 (CPU-backed weights, demand-cached on the GPU while rendering)
 { lib }:
 let
   models = {
@@ -57,6 +58,36 @@ let
 
   modelsForHost = host: lib.filterAttrs (_: m: m.targetHost == host) models;
 
+  imageModelsForHost =
+    host:
+    lib.filterAttrs (_: m: m.targetHost == host) {
+      "chroma1-hd" = {
+        targetHost = "yitaishi";
+        width = 1024;
+        height = 1024;
+        steps = 20;
+        cfgScale = "3.5";
+        samplingMethod = "euler";
+        files = {
+          diffusionModel = {
+            hfRepo = "silveroxides/Chroma1-HD-GGUF";
+            file = "Chroma1-HD-Q8_0.gguf";
+            sha256 = "8c8d66177bfc584573dd21584399ebc1f00bde60acbbc48ac3cc8f58f10c6094";
+          };
+          t5xxl = {
+            hfRepo = "city96/t5-v1_1-xxl-encoder-gguf";
+            file = "t5-v1_1-xxl-encoder-Q8_0.gguf";
+            sha256 = "9ec60f6028534b7fe5af439fcb535d75a68592a9ca3fcdeb175ef89e3ee99825";
+          };
+          vae = {
+            hfRepo = "lodestones/Chroma";
+            file = "ae.safetensors";
+            sha256 = "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38";
+          };
+        };
+      };
+    };
+
   opencodeModelsForHost =
     host:
     lib.mapAttrs (
@@ -75,5 +106,5 @@ let
     ) (modelsForHost host);
 in
 {
-  inherit modelsForHost opencodeModelsForHost;
+  inherit imageModelsForHost modelsForHost opencodeModelsForHost;
 }

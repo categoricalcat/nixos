@@ -92,7 +92,7 @@ ______________________________________________________________________
 
 ## 2. Nginx Ingress Reverse Proxy (`modules/services/nginx-proxy.nix`)
 
-`yirukou` serves as the central reverse proxy for the entire infrastructure. It terminates TLS and forwards each domain to one local ingress listener on `yifuwuqi`, which routes on the preserved `Host` header to the loopback backend. One canonical service list in `modules/services/proxy-vhosts.nix` generates both proxy hops.
+`yirukou` serves as the central reverse proxy for the entire infrastructure. It terminates TLS and forwards services hosted on `yifuwuqi` to one local ingress listener, which routes on the preserved `Host` header to the loopback backend. One canonical service list in `modules/services/proxy-vhosts.nix` generates both proxy hops. Services on other mesh hosts use explicit Tailscale upstreams.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -111,10 +111,13 @@ ______________________________________________________________________
 │ search / cache / git / agent │ local ingress, plain HTTP;   │
 │ / companion / home / radarr  │ routes on Host to loopback)  │
 │ / sonarr / prowlarr / ...    │                              │
+│ image.aset.love              │ 100.69.0.4:11437 (yitaishi)  │
 └──────────────────────────────┴──────────────────────────────┘
 ```
 
 `yifuwuqi`'s local ingress (`modules/services/local-ingress.nix`) is one plain-HTTP nginx listener on the LAN address, port `24120` (`services.ingress.port`). It has one vhost per proxied domain pointing at the loopback backend (a few that cannot bind loopback — jellyfin, jellyseerr, homepage, lidarr — keep the LAN address, `upstreamLan`), and rejects unknown `Host` headers with `404`. Only `yirukou`'s LAN address may reach it (the `yifuwuqi` firewall allows the gateway only `24120` plus Loki's push port; the vhosts also `allow`/`deny`). It preserves the real client IP, scheme, and host from `yirukou`'s `X-Forwarded-*`/`X-Real-IP` headers. mTLS Tier 2 terminates on this listener later.
+
+`image.aset.love` bypasses the `yifuwuqi` ingress because its backend runs on `yitaishi`; yirukou proxies directly to the backend's Tailscale-only listener.
 
 ### 2.1 Automated ACME Wildcard Certificates
 

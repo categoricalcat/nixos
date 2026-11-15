@@ -19,6 +19,8 @@ let
   cloudflareIpv4 = lib.filter (ns: !lib.hasInfix ":" ns) addresses.dns.cloudflare;
   acmeResolvers = map (ns: "--dns.resolvers=${ns}:53") cloudflareIpv4;
   proxyLib = import ./proxy-vhosts.nix { inherit lib; };
+  yitaishi = allAddresses.hosts.yitaishi;
+  sdCpp = yitaishi.services.sd-cpp;
 in
 {
 
@@ -122,6 +124,22 @@ in
           extraConfig = ''
             proxy_read_timeout 3600;
             proxy_send_timeout 3600;
+            ${restrictedProxyConfig}
+          '';
+        };
+      };
+
+      # The image backend lives on yitaishi rather than behind yifuwuqi's
+      # local ingress, so proxy to its firewall-scoped Tailscale listener.
+      "${sdCpp.domain}" = {
+        useACMEHost = allAddresses.baseDomain;
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://${yitaishi.network.tailscale.ipv4.host}:${toString sdCpp.port}";
+          extraConfig = ''
+            client_max_body_size 128M;
+            proxy_read_timeout 1d;
+            proxy_send_timeout 1d;
             ${restrictedProxyConfig}
           '';
         };

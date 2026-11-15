@@ -108,6 +108,7 @@ ______________________________________________________________________
 - **Distributed Build Access**: Accepts remote build derivations from `yifuwuqi` (during CI runs) and `yixiaoqing` (laptop offload) over Tailscale on port `24212`.
 - **Pinned Host Key Authentication**: Registered in `secrets/keys.nix` under `keys.hosts.yitaishi`.
 - **Vulkan llama-cpp Router (`services.llama-cpp-node`)**: Serves `qwen3.8-27b` (`unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL`) and `qwen3.8-27b-uncensored` (`ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF:UD-Q4_K_XL`) at 65,536 context on RX 7900 XTX (`24 GiB` VRAM, `--device Vulkan0`, `--split-mode none`, `--models-max 1`, 5-minute idle unload), bound to `127.0.0.1:11436` and Tailscale `100.69.0.4:11436` (`tailscale0`).
+- **Vulkan stable-diffusion.cpp Server (`services.sd-cpp-node`)**: Serves uncensored `chroma1-hd` (`silveroxides/Chroma1-HD-GGUF:Chroma1-HD-Q8_0.gguf` + `t5-v1_1-xxl-encoder-Q8_0.gguf` + `ae.safetensors`) via `sd-server` (`--backend vulkan0`, `--offload-to-cpu`, `--flash-attn on`, `--vae-tiling`) on port `11437` (`tailscale0` + `localhost`), including its pinned native Web UI at `https://image.aset.love`. CPU-backed parameters are cached on the GPU during sampling and reclaimed afterward, saturating the RX 7900 XTX without permanently blocking LLM inference.
 
 ______________________________________________________________________
 
@@ -139,4 +140,5 @@ ______________________________________________________________________
 - `modules/desktop/greetd.nix`
 - `modules/services/lan-mouse.nix`
 - `modules/services/ai/llama-cpp.nix`
+- `modules/services/ai/sd-cpp.nix`
 - `modules/services/ai/models.nix`
