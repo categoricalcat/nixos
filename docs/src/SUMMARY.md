@@ -41,6 +41,7 @@
 
 - [Hardware & Provisioning](<>)
   - [Gang Provisioning Runbook](hardware/bootstrap-runbook.md)
+  - [New Compute Host Research](hardware/new-compute-host-research.md)
   - [Hardware Authentication & Tokens](hardware/bootstrap.md)
   - [Software KVM (Lan Mouse)](hardware/lan-mouse.md)
   - [Troubleshooting USB Boot Delays](hardware/usb-boot-delays.md)

@@ -38,6 +38,7 @@ in
     github-desktop
 
     wl-clipboard
+    kooha
     qbittorrent
 
     # (bitwarden-desktop.override { electron_39 = electron; })
