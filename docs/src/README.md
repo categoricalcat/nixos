@@ -1,39 +1,93 @@
 # Gang Documentation
 
-This book provides the technical reference, network topologies, hosted service specifications, hardware profiles, and bootstrap runbooks for the NixOS gang.
+Technical reference for the yi NixOS gang: five declarative hosts behind a
+custom edge router, documented from the codebase outward. The sidebar is the
+full index; this page orients you and tracks what is undecided.
 
-______________________________________________________________________
+Four invariants shape everything else in this book:
 
-## 1. Maintained Gang Hosts
+- **Forgejo is the git primary.** `git.aset.love` is writable origin; GitHub is
+  a push mirror only.
+- **IPv4-only WAN by design.** On-net uses static ULA; GUA is gated on a
+  prefix-delegation checklist, not a bug.
+- **`sudo` is disabled gang-wide.** Elevation is `su -` as root.
+- **This book auto-builds from `develop`.** Watchexec on `yifuwuqi` rebuilds
+  and serves it at `docs.aset.love` seconds after each commit.
 
-| Host             | Primary Role                                              | IP / Network                                                                 | Hardware & Key Architecture                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Profile                                   |
-| ---------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **`yirukou`**    | Edge Router, Gateway, Reverse Proxy, Primary DNS          | LAN `10.42.0.1/24`<br/>VLAN 42 `10.42.42.1/24`<br/>Tailscale `100.69.0.1/32` | Multi-NIC Intel router. Dual WAN failover (`enp7s0`/`enp6s0`), software bridge `br0`, Kea DHCPv4, Nginx reverse proxy (ACME wildcard `*.aset.love`), AdGuard Home + Unbound recursive DNS with host-local Valkey L2 cache, Tailscale subnet router & exit node, Vector, GoAccess.                                                                                                                                                                                                                                                              | [yirukou Profile](hosts/yirukou.md)       |
-| **`yifuwuqi`**   | Core Server, DB, Monitoring, Binary Cache, AI, Media      | LAN `10.42.0.2/24`<br/>Tailscale `100.69.0.6/32`                             | AMD Ryzen APU (Radeon 680M). PostgreSQL 18, Valkey (port 24379, DNS L2 cache), Attic binary cache pipeline (`cache.aset.love/yi`), Forgejo Git (`git.aset.love`) + native runner, GitHub Actions runner, Prometheus/Loki/Grafana/Vector stack, AdGuard Home + Unbound, Arr stack (Gluetun ProtonVPN), llama-cpp router (Vulkan `:11436`, `gemma-4-12b` + uncensored), SillyTavern, SearXNG (Tor), Firecrawl (5 containers), Samba server, WebDAV, Cockpit (podman/files/docker/machines/zfs plugins), Homepage, distributed builder (16 jobs). | [yifuwuqi Profile](hosts/yifuwuqi.md)     |
-| **`yitaishi`**   | Workstation, Remote Builder, Pro-Audio Studio, Sim Racing | Tailscale `100.69.0.4/32`                                                    | AMD Ryzen CPU + AMD Radeon RX 7900 XTX (gfx1100, ROCm). Btrfs `@`/`@home`, Lanzaboote Secure Boot, latest stable kernel, Musnix RT kernel + PipeWire pro-audio studio (96kHz/384q), triple monitors, GNOME/Niri + tuigreet, Fanatec racing, GameMode hooks, WiVRn VR, llama-cpp router (Vulkan `:11436`, `qwen3.8-27b` + uncensored), FIDO2 PAM, Lan Mouse KVM, Samba client, remote builder (16 jobs, speedFactor 360).                                                                                                                       | [yitaishi Profile](hosts/yitaishi.md)     |
-| **`yixiaoqing`** | Mobile Laptop, Roaming Development Client                 | Tailscale `100.69.0.3/32`                                                    | Intel Core CPU + Intel Iris Xe Graphics. ThinkPad i915 tuning, 2.8K HiDPI display (scale 1.5), Niri Wayland compositor + DMS shell (tuigreet), TLP battery profiles, Thinkfan ACPI fan curve, S3 deep sleep + suspend-then-hibernate, TPM2-FIDO2 virtual token + physical FIDO2 + fprintd fingerprint PAM, Lan Mouse KVM, Tailscale exit node via `yirukou`, Samba client.                                                                                                                                                                     | [yixiaoqing Profile](hosts/yixiaoqing.md) |
-| **`yichuang`**   | WSL2 Development Environment                              | Host Networking / WSL                                                        | Windows Subsystem for Linux 2 via `nixos-wsl`, developer mode, ROCm compute support, OpenSSH server (port 22), Samba client, Home Manager profile `yijia`.                                                                                                                                                                                                                                                                                                                                                                                     | [yichuang Profile](hosts/yichuang.md)     |
+## Topology
 
-______________________________________________________________________
+```mermaid
+flowchart TD
+    wan([Dual WAN failover])
+    yirukou["yirukou · edge router<br/>NAT44 · DNS interception · guest VLAN 42 isolated<br/>*.aset.love ingress · tailnet subnet router + exit node"]
+    yifuwuqi["yifuwuqi · core server<br/>git/cache/monitoring · media · AI"]
+    yitaishi["yitaishi · workstation<br/>remote builder · image inference"]
+    yixiaoqing["yixiaoqing · roaming laptop"]
+    yichuang["yichuang · WSL2 dev node"]
 
-## 2. Source of Truth Flow
+    wan --- yirukou
+    yirukou -- "LAN 10.42.0.0/24 · proxies *.aset.love → :24120" --- yifuwuqi
+    yifuwuqi -- "offload builds :24212 (tailnet)" --> yitaishi
+    yitaishi <-. "Lan Mouse KVM (tailnet)" .-> yixiaoqing
+    yixiaoqing ~~~ yichuang
+    yixiaoqing -. "full-tunnel exit via yirukou (tailnet)" .-> yirukou
+    yichuang -. "CI matrix target · Attic client (tailnet)" .-> yifuwuqi
+```
 
-The documentation adheres strictly to a **Codebase → Documentation** flow:
+| Host             | Role                                             | Networks                    |
+| ---------------- | ------------------------------------------------ | --------------------------- |
+| **`yirukou`**    | Edge router, gateway, reverse proxy, primary DNS | `10.42.0.1` · `100.69.0.1`  |
+| **`yifuwuqi`**   | Core server: git, cache, monitoring, media, AI   | `10.42.0.2` · `100.69.0.6`  |
+| **`yitaishi`**   | Workstation, remote builder, pro-audio studio    | `100.69.0.4` (tailnet only) |
+| **`yixiaoqing`** | Mobile laptop, roaming dev client                | `100.69.0.3` (tailnet only) |
+| **`yichuang`**   | WSL2 development environment                     | WSL host networking         |
 
-- **Network Topology & Address Registry**: `modules/addresses.nix`
-- **Host Hardware & Networking**: `hosts/<hostname>/`
-- **Shared Service Implementations**: `modules/services/`
-- **Host Service Enablement**: `hosts/<hostname>/services.nix`
-- **Cryptographic Keys & Identities**: `secrets/keys.nix`
-- **User Configurations & Dotfiles**: `users/`
+Hardware and architecture detail lives on each host's page under **Gang Hosts**.
 
-______________________________________________________________________
+## In this book
 
-## 3. Quick Navigation
+**Gang & Architecture**
 
-- **Gang Hosts**: [yirukou](hosts/yirukou.md) · [yifuwuqi](hosts/yifuwuqi.md) · [yitaishi](hosts/yitaishi.md) · [yixiaoqing](hosts/yixiaoqing.md) · [yichuang](hosts/yichuang.md)
-- **Networking**: [yirukou Router](networking/yirukou.md) · [IPv6 ULA vs GUA](networking/ipv6-ula-gua.md) · [Sysctl & Firewall](networking/sysctl-firewall.md) · [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md) · [Unbound Architecture](networking/unbound-integration.md)
-- **Core Infrastructure**: [Secrets Management](services/secrets.md) · [DNS & Reverse Proxy](services/dns-and-proxy.md) · [Monitoring Stack](services/monitoring.md) · [AI-SSH Restricted Lane](services/ai-ssh.md)
-- **Applications & Storage**: [Hosted Services Directory](services/hosted-services.md) · [Arr Stack](services/arr-stack.md) · [File Sharing (Samba/WebDAV)](services/file-sharing.md) · [AI & Local Inference](services/ai-rocm.md)
-- **Nix Mesh & CI/CD**: [Nix Build & Cache Mesh](services/nix-build-cache.md) · [CI/CD Pipeline](services/ci-cd.md) · [CI & Binary Cache Bootstrap](services/ci-cache.md)
-- **Hardware & Workstation**: [Bootstrap Runbook](hardware/bootstrap-runbook.md) · [Hardware Authentication](hardware/bootstrap.md) · [Software KVM (Lan Mouse)](hardware/lan-mouse.md) · [USB Boot Delays](hardware/usb-boot-delays.md) · [AmpliTube 5](audio/amplitube.md) · [Pro-Audio Drums](audio/drums.md)
+- [Host profiles](hosts/yirukou.md) — per-machine hardware, roles, and quirks, from `yirukou` to `yichuang`.
+- [yirukou Router & Edge](networking/yirukou.md) — address plan, dual-WAN failover, DHCP, and DNS interception at the perimeter.
+- [IPv6: ULA now, GUA later](networking/ipv6-ula-gua.md) — why the WAN is IPv4-only and what must be true before that changes.
+- [Sysctl & Firewall Hardening](networking/sysctl-firewall.md) — the authoritative port and sysctl matrix for router vs server.
+- [Tailscale Subnet Forwarding](networking/tailscale-subnet-forwarding.md) — how tailnet clients reach LAN services, and the CPE-admin exception.
+
+**Services & Infrastructure**
+
+- [Hosted Services Directory](services/hosted-services.md) — every web service, its port, and its `*.aset.love` domain.
+- [DNS & Reverse Proxy](services/dns-and-proxy.md) — AdGuard → Unbound → Valkey resolution and the nginx ingress chain.
+- [Monitoring & Observability](services/monitoring.md) — Prometheus, Loki, Grafana, and the internet probe ladder.
+- [Podman Operations](services/podman-operations.md) — container triage and repair runbook.
+- [Nix Build Mesh & Binary Cache](services/nix-build-cache.md) · [CI/CD Pipeline](services/ci-cd.md) — how closures are built, cached, and deployed across hosts.
+- [Secrets and Host Keys](services/secrets.md) — SOPS recipients, `/persist/keys`, and key-rotation recipes.
+- [AI-SSH Restricted Lane](services/ai-ssh.md) — the only sanctioned remote-access path for agents.
+
+**Hardware & Workstation**
+
+- [Gang Provisioning Runbook](hardware/bootstrap-runbook.md) — end-to-end onboarding of a new machine.
+- [New Compute Host Research](hardware/new-compute-host-research.md) — the open R$ 12.000 capacity question.
+- [Hardware Authentication & Tokens](hardware/bootstrap.md) — FIDO2, fingerprint, TPM, and Secure Boot enrollment.
+- [AmpliTube 5](audio/amplitube.md) · [Pro-Audio Drum Kits](audio/drums.md) — the `yitaishi` studio stack on Wine/yabridge.
+
+## Open decisions & status
+
+- **New compute host — purchase undecided.** Options B2/E/A′ all fit the
+  R$ 12.000 ceiling; RAM alone on `yifuwuqi` does not fix QLC/CPU stalls for
+  Minecraft. See [New Compute Host Research](hardware/new-compute-host-research.md).
+- **IPv6 GUA — gated.** Waiting on a PD large enough for LAN + VLAN plus
+  Happy-Eyeballs validation. See [IPv6: ULA now, GUA later](networking/ipv6-ula-gua.md).
+- **mTLS phases 2–4 and `yirukou` impermanence — draft/active.** See the
+  **Architecture Plans & RFCs** section in the sidebar.
+
+## Source of truth
+
+Documentation follows a strict **Codebase → Documentation** flow:
+
+- **Address registry & topology**: `modules/addresses.nix`
+- **Host hardware & networking**: `hosts/<hostname>/`
+- **Service implementations**: `modules/services/`
+- **Per-host service enablement**: `hosts/<hostname>/services.nix`
+- **Keys & identities**: `secrets/keys.nix`
+- **User dotfiles**: `users/`

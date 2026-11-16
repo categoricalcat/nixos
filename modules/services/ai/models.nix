@@ -23,9 +23,12 @@ let
     "gemma-4-12b-uncensored" = {
       targetHost = "yifuwuqi";
       tools = true;
-      # Gemma 4 Heretic abliteration targets direct responses; keeping thinking
-      # off avoids CoT consuming SillyTavern's generation budget.
-      reasoning = false;
+      # The Heretic template force-prefills the thought channel on every turn,
+      # so thinking cannot be disabled; `reasoning = false` only added
+      # `reasoning-format=none`, leaking raw thought markers into `content`.
+      # Keep reasoning on so llama.cpp's gemma4 parser extracts thoughts into
+      # `reasoning_content` (SillyTavern can collapse/hide them).
+      reasoning = true;
       contextLength = 32768;
       llamaCpp = {
         hfRepo = "zaakirio/gemma-4-12b-it-uncensored-GGUF";

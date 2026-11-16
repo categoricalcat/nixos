@@ -93,8 +93,8 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 - **Web UI**: Bound to loopback behind the local ingress and proxied to `https://docs.aset.love`.
 - **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
-- **Out-of-Tree RAM Staging**: Dynamically generates `# Architecture Plans & RFCs` navigation from `src/plans/*.md` inside `/run/gang-docs/staging` without modifying the git repository.
-- **Serving Daemon**: `darkhttpd` serves `/var/lib/gang-docs/book` under `DynamicUser = true` with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).
+- **Out-of-Tree RAM Staging**: Copies the bind-mounted `docs/` tree into a `mktemp` directory and dynamically appends the `# Architecture Plans & RFCs` navigation from `src/plans/*.md` there, without modifying the git repository.
+- **Serving Daemon**: `darkhttpd` serves `/var/lib/gang-docs/book` as the dedicated `docs` system user with strong systemd sandboxing (`ProtectHome = true`, `SystemCallFilter = [...]`).
 
 ______________________________________________________________________
 
