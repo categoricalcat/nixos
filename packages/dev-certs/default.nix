@@ -1,20 +1,40 @@
 {
   lib,
+  symlinkJoin,
   writeShellApplication,
   coreutils,
+  gnugrep,
   jq,
   openssl,
 }:
-writeShellApplication {
-  name = "dev-certs-setup";
-  runtimeInputs = [
-    coreutils
-    jq
-    openssl
+let
+  app =
+    name: description: runtimeInputs: file:
+    writeShellApplication {
+      inherit name runtimeInputs;
+      text = builtins.readFile file;
+      meta = {
+        inherit description;
+        license = lib.licenses.mit;
+        platforms = lib.platforms.linux;
+      };
+    };
+in
+symlinkJoin {
+  name = "dev-certs";
+  paths = [
+    (app "dev-certs-setup" "Mint name-constrained local development TLS certificates" [
+      coreutils
+      jq
+      openssl
+    ] ./setup.sh)
+    (app "dev-certs-copy" "Copy the dev leaf into a folder (default: .)" [
+      coreutils
+      gnugrep
+    ] ./copy.sh)
   ];
-  text = builtins.readFile ./setup.sh;
   meta = {
-    description = "Mint name-constrained local development TLS certificates";
+    description = "Name-constrained local development TLS certificates (setup and project copy)";
     license = lib.licenses.mit;
     platforms = lib.platforms.linux;
   };

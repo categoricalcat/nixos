@@ -22,3 +22,28 @@ for h in yitaishi yixiaoqing; do
   ssh "$h" "systemd-tmpfiles --create --prefix=/persist/keys/dev"
 done
 ```
+
+## Project copy
+
+As `yi` or `workd`:
+
+```bash
+dev-certs-copy [folder]   # no folder writes into .
+dev-certs-copy certificates
+next dev --experimental-https
+```
+
+That writes `localhost.pem`, `localhost-key.pem` (`0600`), and `ca.pem` into
+the folder (asking once before overwriting), and appends that folder (or
+those three names, when the folder is `.`) to `.gitignore` when that file
+exists. With the folder named
+`certificates/`, `next dev --experimental-https` reuses
+`certificates/localhost.pem` and `certificates/localhost-key.pem` with no
+flags, and Node already trusts the CA host-wide via `NODE_EXTRA_CA_CERTS`
+(`module.nix`). Only a differently-named folder needs the explicit paths:
+
+```bash
+next dev --experimental-https \
+  --experimental-https-key myfolder/localhost-key.pem \
+  --experimental-https-cert myfolder/localhost.pem
+```
