@@ -19,9 +19,13 @@ case "$host" in
 esac
 
 # If passed as a single quoted string (e.g. ai-ssh host "cmd arg1 arg2"),
-# parse it into positional arguments so the server gate receives individual tokens.
+# split it into positional arguments so the server gate receives individual
+# tokens. read, not eval: eval would execute shell metacharacters (;, |, $(),
+# globs) locally on the calling host before any server-side gate sees them.
+# Word-splitting only; pass multiple arguments when quoting must survive.
 if [ "$#" -eq 1 ]; then
-  eval "set -- $1"
+  read -r -a argv <<<"$1" || true
+  set -- "${argv[@]}"
 fi
 
 # Encode argv so the server gate reconstructs it exactly (spaces/quotes intact,

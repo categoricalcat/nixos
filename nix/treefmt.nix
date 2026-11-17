@@ -37,6 +37,9 @@
           };
           shellcheck = {
             enable = true;
+            # Info-level checks are advisory notes (e.g. SC2016/SC2029 on ssh
+            # remote-script quoting); gate on actionable findings only.
+            severity = "warning";
             priority = 3;
           };
           mdformat = {

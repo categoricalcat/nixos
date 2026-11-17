@@ -64,6 +64,7 @@ fi
 
 case "${1:-}" in
 hostname)
+  shift
   exec "$BIN/hostname" "$@"
   ;;
 ip)
