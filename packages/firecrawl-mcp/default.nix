@@ -56,7 +56,7 @@ let
 in
 stdenv.mkDerivation {
   pname = "firecrawl-mcp";
-  version = "1.1.1";
+  version = "1.1.2";
 
   # Only the build inputs, so editing default.nix never changes the store hash.
   src = lib.fileset.toSource {

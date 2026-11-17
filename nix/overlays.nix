@@ -1,6 +1,16 @@
-_: [
+{ inputs }:
+[
   (_final: prev: {
     fluxer = prev.callPackage ../packages/fluxer { };
+
+    # Upstream master pins a stale go vendorHash: 5a51c1f (2026-11-16) bumped
+    # core/go.mod deps without updating flake.nix, so the dms input's dms-shell
+    # FOD fails. Build the locked master source with the real hash until
+    # upstream catches up. Shadows the nixpkgs alias of the stable dux-shell;
+    # pkgs.dux-shell stays untouched.
+    dms-shell = (inputs.dms.lib.mkDmsShell prev).overrideAttrs (_old: {
+      vendorHash = "sha256-DinkXtyVURJ5I00B+j/otCcjm2MD9B0vessdqwd8zoU=";
+    });
 
     # Timing-sensitive like the e2e tests nixpkgs already skips: under parallel CI
     # load the daemon gives up with "took too long to redact" and the build fails.

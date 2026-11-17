@@ -11,8 +11,8 @@ ______________________________________________________________________
 │                     yifuwuqi (24/7 Core Server)                         │
 │  AMD Ryzen 9 6900HX · Radeon 680M APU (4 GiB VRAM + 9.65 GiB GTT)       │
 │  llama-cpp.service (Vulkan RADV · 127.0.0.1:11436 · --models-max 1)     │
-│   ├─ gemma-4-12b             (UD-Q4_K_XL · 32k ctx · thinking on)       │
-│   └─ gemma-4-12b-uncensored  (Q4_K_M     · 32k ctx · thinking off)      │
+│   ├─ gemma-4-12b             (UD-Q4_K_XL · 64k ctx · thinking on)       │
+│   └─ gemma-4-12b-uncensored  (Q4_K_M     · 64k ctx · thinking on)       │
 └───────────────────┬───────────────────────────────┬─────────────────────┘
                     │ loopback                      │ loopback
                     ▼                               ▼
@@ -26,8 +26,8 @@ ______________________________________________________________________
 │                     yitaishi (24 GiB Workstation)                       │
 │  AMD Ryzen 7 7700X · Radeon RX 7900 XTX (24 GiB GDDR6 · gfx1100)        │
 │  llama-cpp.service (Vulkan RADV · 127.0.0.1,100.69.0.4:11436 · max 1)   │
-│   ├─ qwen3.8-27b             (UD-Q4_K_XL · 64k ctx · thinking on)       │
-│   └─ qwen3.8-27b-uncensored  (UD-Q4_K_XL · 64k ctx · thinking on)       │
+│   ├─ qwen3.8-27b             (UD-Q4_K_XL · 96k ctx · thinking on)       │
+│   └─ qwen3.8-27b-uncensored  (UD-Q4_K_XL · 96k ctx · thinking on)       │
 │  sd-cpp.service (Vulkan RADV · 0.0.0.0:11437 · tailscale0 + localhost)  │
 │   └─ chroma1-hd              (Q8_0 · 1024x1024 · --offload-to-cpu)      │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -51,10 +51,10 @@ ______________________________________________________________________
 
 | Model ID                 | Target Host | Port    | Context / Resolution | Quantization | Source Repository                          | Notes                      |
 | ------------------------ | ----------- | ------- | -------------------- | ------------ | ------------------------------------------ | -------------------------- |
-| `gemma-4-12b`            | `yifuwuqi`  | `11436` | `32768`              | `UD-Q4_K_XL` | `unsloth/gemma-4-12b-it-GGUF`              | Tools: Yes, Reasoning: Yes |
-| `gemma-4-12b-uncensored` | `yifuwuqi`  | `11436` | `32768`              | `Q4_K_M`     | `zaakirio/gemma-4-12b-it-uncensored-GGUF`  | Tools: Yes, Reasoning: No  |
-| `qwen3.8-27b`            | `yitaishi`  | `11436` | `65536`              | `UD-Q4_K_XL` | `unsloth/Qwen3.8-27B-GGUF`                 | Tools: Yes, Reasoning: Yes |
-| `qwen3.8-27b-uncensored` | `yitaishi`  | `11436` | `65536`              | `UD-Q4_K_XL` | `ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF` | Tools: Yes, Reasoning: Yes |
+| `gemma-4-12b`            | `yifuwuqi`  | `11436` | `65536`              | `UD-Q4_K_XL` | `unsloth/gemma-4-12b-it-GGUF`              | Tools: Yes, Reasoning: Yes |
+| `gemma-4-12b-uncensored` | `yifuwuqi`  | `11436` | `65536`              | `Q4_K_M`     | `zaakirio/gemma-4-12b-it-uncensored-GGUF`  | Tools: Yes, Reasoning: Yes |
+| `qwen3.8-27b`            | `yitaishi`  | `11436` | `98304`              | `UD-Q4_K_XL` | `unsloth/Qwen3.8-27B-GGUF`                 | Tools: Yes, Reasoning: Yes |
+| `qwen3.8-27b-uncensored` | `yitaishi`  | `11436` | `98304`              | `UD-Q4_K_XL` | `ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF` | Tools: Yes, Reasoning: Yes |
 | `chroma1-hd`             | `yitaishi`  | `11437` | `1024x1024`          | `Q8_0`       | `silveroxides/Chroma1-HD-GGUF`             | Uncensored 8.9B Flux DiT   |
 
 ______________________________________________________________________

@@ -93,6 +93,7 @@ ______________________________________________________________________
 - **Fingerprint PAM Auth**: `services.fprintd.enable = true` provides fast biometric unlock.
 - **Hardware FIDO2**: `security.pam.u2f` configured for interactive passwordless or dual-factor prompt.
 - **TPM2 Virtual FIDO2 Token**: Configured in `modules/services/tpm-fido2.nix` to expose a hardware-backed virtual security key through Linux `uhid`.
+- **DMS Lock-Screen U2F Unlock**: The DMS lock screen accepts the FIDO2 security key via the `dankshell-u2f` PAM service (`programs.dank-material-shell.lockscreen.securityKey.enable` on the NixOS-side DMS module).
 
 ______________________________________________________________________
 

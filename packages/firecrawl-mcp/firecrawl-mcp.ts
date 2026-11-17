@@ -64,6 +64,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 // Single source for the time_range schema enum and the search() whitelist.
 const TIME_RANGES = new Set(["day", "month", "week", "year"]);
 
+// Non-markdown formats: single source for the scrape schema enum and the
+// content-presence check in scrape().
+const SCRAPE_FORMATS = ["html", "rawHtml", "links", "summary"] as const;
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value !== "";
+
 const TOOLS = [
   {
     description:
@@ -137,7 +144,7 @@ const TOOLS = [
       properties: {
         formats: {
           items: {
-            enum: ["markdown", "html", "rawHtml", "links", "summary"],
+            enum: ["markdown", ...SCRAPE_FORMATS],
             type: "string",
           },
           type: "array",
@@ -177,9 +184,7 @@ async function callApi(path: string, body: unknown): Promise<ApiResponse> {
   if (!response.ok || json.success === false) {
     const error = json.error;
     throw new Error(
-      typeof error === "string" && error !== ""
-        ? error
-        : `firecrawl HTTP ${response.status}`,
+      isNonEmptyString(error) ? error : `firecrawl HTTP ${response.status}`,
     );
   }
   return json;
@@ -217,9 +222,31 @@ async function scrape(arguments_: Record<string, unknown>) {
     ...(typeof onlyMainContent === "boolean" && { onlyMainContent }),
   });
   const data = json.data;
-  const markdown = isRecord(data) ? data["markdown"] : undefined;
-  return textResult(
-    typeof markdown === "string" ? markdown : JSON.stringify(data ?? {}),
+  if (!isRecord(data)) throw new Error(`scrape: ${url} returned no data`);
+  const markdown = data["markdown"];
+  if (isNonEmptyString(markdown)) {
+    // The engine warns on degraded renders (e.g. stealthProxy fallback);
+    // partial content must not silently pass as complete.
+    const warning = data["warning"];
+    return textResult(
+      isNonEmptyString(warning)
+        ? `${markdown}\n\n[firecrawl warning] ${warning}`
+        : markdown,
+    );
+  }
+  if (SCRAPE_FORMATS.some((format) => Object.hasOwn(data, format)))
+    return textResult(JSON.stringify(data));
+  // Firecrawl answers 200/success:true with empty markdown when an engine
+  // fails to render; the reason hides in warning/metadata.error. Surface it
+  // instead of handing the agent an empty result.
+  const metadata = data["metadata"];
+  const reasons = [
+    data["warning"],
+    isRecord(metadata) ? metadata["error"] : undefined,
+  ].filter((reason) => isNonEmptyString(reason));
+  throw new Error(
+    `scrape: ${url} returned no content` +
+      (reasons.length > 0 ? ` (${reasons.join("; ")})` : ""),
   );
 }
 
@@ -248,8 +275,7 @@ async function search(arguments_: Record<string, unknown>) {
     searchParameters.set("categories", categories.join(","));
   if (Array.isArray(engines) && engines.length > 0)
     searchParameters.set("engines", engines.join(","));
-  if (typeof language === "string" && language !== "")
-    searchParameters.set("language", language);
+  if (isNonEmptyString(language)) searchParameters.set("language", language);
   if (typeof pageno === "number")
     searchParameters.set("pageno", clampInt(pageno, 1, Infinity));
   if (typeof safesearch === "number")
@@ -278,15 +304,13 @@ function textResult(text: string) {
 const handlers: Record<string, (parameters: unknown) => unknown> = {
   initialize: (parameters) => {
     const requested =
-      isRecord(parameters) &&
-      typeof parameters["protocolVersion"] === "string" &&
-      parameters["protocolVersion"] !== ""
+      isRecord(parameters) && isNonEmptyString(parameters["protocolVersion"])
         ? parameters["protocolVersion"]
         : "2025-06-18";
     return {
       capabilities: { tools: {} },
       protocolVersion: requested,
-      serverInfo: { name: "firecrawl", version: "1.1.1" },
+      serverInfo: { name: "firecrawl", version: "1.1.2" },
     };
   },
 

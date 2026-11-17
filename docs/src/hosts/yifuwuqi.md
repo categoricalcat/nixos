@@ -17,6 +17,13 @@ ______________________________________________________________________
 | **Power Profile**       | 24/7 server mode (`performance` governor, power management sleep disabled, weekly fstrim) |
 | **Secrets Integration** | Sops-nix with host ED25519 SSH key (`/persist/keys/ssh/ssh_host_ed25519_key`)             |
 
+### 1.1 Power and Clocking Behavior (measured 2026-11-17)
+
+- CPU runs `amd-pstate` active EPP: governor + EPP `performance`, boost enabled, active-core floor 1.1 GHz (`lowest_nonlinear`), rated max 4.94 GHz. Idle cores park at ~400 MHz — per-core frequency metrics reading 400 MHz on idle cores is normal, not throttling.
+- Measured ceilings come from the chassis SMU power budget, not from NixOS: ~3.6 GHz all-core sustained, ~4.3 GHz single-core boost, and Radeon 680M sclk ~1.3 GHz under sustained llama.cpp inference — dpm level 2 (2400 MHz) never entered even with the CPU idle; ~7.4 tok/s on `gemma-4-12b`.
+- Under combined CPU + GPU load the SMU arbitrates the single SoC envelope: 100%-busy cores get clamped to ~400 MHz for seconds while the iGPU draws its share (verified live: all-core stress concurrent with token generation). Platform power arbitration, not a cpufreq misconfiguration; no OS knob raises the envelope.
+- `power_dpm_force_performance_level=high` was live A/B-tested and rejected: decode is UMA-bandwidth-bound (7.2 → 7.7 tok/s, within run noise) and cold prefill gains only ~1.5x (72-74 → 107 tok/s) while driving Tctl to 98 C with SMU throttle cycling — GPU bursts to 65 W exceed what the chassis cooler sustains. The SMU `auto` policy (sclk ~1.3 GHz, ~25 W, Tctl \<= 71 C, cold prefill ~73 tok/s) is the correct design point; no NixOS-side dpm forcing is warranted.
+
 ______________________________________________________________________
 
 ## 2. Network Topology & Interfaces
@@ -125,7 +132,7 @@ ______________________________________________________________________
 │                   AI Inference & Search                     │
 ├──────────────────────────────┬──────────────────────────────┤
 │ llama.cpp Router (Vulkan)    │ gemma-4-12b (+ uncensored)   │
-│ (Radeon 680M APU)            │ port 11436, 32k context      │
+│ (Radeon 680M APU)            │ port 11436, 64k context      │
 ├──────────────────────────────┼──────────────────────────────┤
 │ SillyTavern Web UI           │ port 24000, hardened systemd │
 ├──────────────────────────────┼──────────────────────────────┤
@@ -138,7 +145,7 @@ ______________________________________________________________________
 ```
 
 - **Vulkan llama-cpp Router (`llama-cpp-node`)**: Runs `llama-server` in router mode (`--models-preset` + `--models-max 1`) with Vulkan acceleration (`vulkanSupport = true`) on `127.0.0.1:11436`.
-  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, direct non-thinking output for roleplay), both at 32,768 context length with FlashAttention, Q8 KV cache, single-slot execution, and a 5-minute idle unload.
+  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, thinking forced on by the Heretic template, extracted into `reasoning_content` for roleplay), both at 65,536 context length with FlashAttention, Q8 KV cache, single-slot execution, and a 5-minute idle unload.
 - **SillyTavern Companion UI**: Port 24000 (`companion.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.aset.love`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.

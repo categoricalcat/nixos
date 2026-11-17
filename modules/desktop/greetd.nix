@@ -73,6 +73,10 @@
     })
 
     /*
+      DMS greeter lives in its own flake since DMS 2.x:
+      github.com/duxlabs-dev/dux-greeter (input name `dank-greeter`,
+      options under programs.dms-greeter).
+
       (lib.mkIf (config.desktop.greeter == "dms") {
         programs.dms-greeter = {
           enable = true;

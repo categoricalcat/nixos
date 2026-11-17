@@ -82,6 +82,10 @@ in
       QS_ICON_THEME = themeAssets.icons.dark;
     };
 
+    # Night-mode settings are declarative (SSOT: noctalia/config.toml), but session.json
+    # also holds runtime state, so merge instead of overwrite. Fresh state bootstraps
+    # location automation via geoclue (dms is allowed in geoclue2.appConfig); stored
+    # coordinates win and disable IP location.
     activation.mergeDmsNightMode = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       merge_dms_night_mode() {
         local target="${config.xdg.stateHome}/dms/session.json"
@@ -91,11 +95,10 @@ in
         tmp=$(mktemp "$target.XXXXXX")
         if ${lib.getExe pkgs.jq} --argjson nightMode ${lib.escapeShellArg (builtins.toJSON dmsNightMode)} '
           . + $nightMode +
-          (if (.latitude == null or .latitude == 0) and .weatherCoordinates and (.weatherCoordinates | contains(",")) then
-             (.weatherCoordinates | split(",")) as $c |
-             {latitude: ($c[0] | tonumber), longitude: ($c[1] | tonumber), nightModeUseIPLocation: false}
-           elif (.latitude != null and .latitude != 0) then
+          (if (.latitude != null and .latitude != 0) then
              {nightModeUseIPLocation: false}
+           elif (.nightModeUseIPLocation == null) then
+             {nightModeUseIPLocation: true}
            else
              {}
            end)
@@ -124,12 +127,15 @@ in
 
     systemd.enable = true;
 
+    # Upstream master's own vendorHash is stale (see overlays.nix); use the
+    # corrected master build instead of the module default.
+    package = pkgs.dms-shell;
+
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableVPN = true; # VPN management widget
     enableDynamicTheming = true; # Wallpaper-based theming (matugen)
     enableAudioWavelength = true; # Audio visualizer (cava)
     enableCalendarEvents = true; # Calendar integration (khal)
-    enableClipboardPaste = true; # Clipboard paste wtype
 
     settings = lib.recursiveUpdate dmsSettings {
       customThemeFile = "${pkgs.writeText "yimoka.json" (builtins.toJSON yimokaTheme)}";

@@ -52,6 +52,9 @@ in
     ../../modules/services/tailscale.nix
     ../../modules/services/tpm-fido2.nix
     ../../modules/services/samba/client.nix
+    # NixOS-side DMS module, used only for the lock-screen U2F PAM service
+    # (see programs.dank-material-shell below)
+    inputs.dms.nixosModules.dank-material-shell
     # ../../modules/services/power-profiles-daemon.nix
   ];
 
@@ -77,6 +80,16 @@ in
     inherit greeter;
     keyboard = "br";
     inherit monitors;
+  };
+
+  # DMS itself runs via Home Manager (modules/desktop/dms.nix); this NixOS-level
+  # instance exists only for lock-screen FIDO2/U2F unlock (dankshell-u2f PAM
+  # service), so its systemd unit stays off and deps come from the HM side.
+  programs.dank-material-shell = {
+    enable = true;
+    systemd.enable = false;
+    package = pkgs.dms-shell; # module default vendorHash is stale; see overlays.nix
+    lockscreen.securityKey.enable = true;
   };
 
   nixpkgs.config = {

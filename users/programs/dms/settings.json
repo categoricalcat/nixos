@@ -1,6 +1,5 @@
 {
   "currentThemeName": "custom",
-  "customThemeFile": "/home/yi/.config/DankMaterialShell/themes/yimoka.json",
   "radiusStrength": 25,
   "clockFormat": "24h",
   "animationDuration": 125,
@@ -198,7 +197,7 @@
         },
         {
           "enabled": true,
-          "focusedWindowCompactMode": true,
+          "focusedWindowShowAppName": false,
           "focusedWindowShowIcon": true,
           "focusedWindowSize": 0,
           "id": "focusedWindow"
@@ -302,5 +301,5 @@
   },
   "barInsetPaddingShared": 0,
   "barInsetPaddingSyncAll": true,
-  "configVersion": 42
+  "configVersion": 44
 }
