@@ -40,7 +40,7 @@
             pkgs = import nixpkgs {
               system = "x86_64-linux";
               config.allowUnfree = true;
-              overlays = import ./nix/overlays.nix { inherit inputs; };
+              overlays = import ./nix/overlays.nix;
             };
             extraSpecialArgs = {
               inherit inputs global;

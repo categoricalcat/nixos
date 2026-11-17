@@ -88,7 +88,6 @@ in
   programs.dank-material-shell = {
     enable = true;
     systemd.enable = false;
-    package = pkgs.dms-shell; # module default vendorHash is stale; see overlays.nix
     lockscreen.securityKey.enable = true;
   };
 

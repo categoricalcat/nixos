@@ -63,6 +63,9 @@ let
         // lib.optionalAttrs (!m.reasoning) {
           reasoning-format = "none";
         }
+        // lib.optionalAttrs ((m.reasoningBudget or null) != null) {
+          reasoning-budget = m.reasoningBudget;
+        }
       ) localModels;
     }
   );

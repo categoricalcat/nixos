@@ -1,17 +1,5 @@
-{ inputs }:
 [
   (_final: prev: {
-    fluxer = prev.callPackage ../packages/fluxer { };
-
-    # Upstream master pins a stale go vendorHash: 5a51c1f (2026-11-16) bumped
-    # core/go.mod deps without updating flake.nix, so the dms input's dms-shell
-    # FOD fails. Build the locked master source with the real hash until
-    # upstream catches up. Shadows the nixpkgs alias of the stable dux-shell;
-    # pkgs.dux-shell stays untouched.
-    dms-shell = (inputs.dms.lib.mkDmsShell prev).overrideAttrs (_old: {
-      vendorHash = "sha256-DinkXtyVURJ5I00B+j/otCcjm2MD9B0vessdqwd8zoU=";
-    });
-
     # Timing-sensitive like the e2e tests nixpkgs already skips: under parallel CI
     # load the daemon gives up with "took too long to redact" and the build fails.
     atuin = prev.atuin.overrideAttrs (old: {
@@ -30,24 +18,6 @@
             [ "while IFS= read -r f; do if [ -f \"$f\" ]; then cat \"$f\"; fi; done >> modules.cer" ]
             old.postBuild;
       });
-
-    # rustPlatform sets LIBGIT2_NO_VENDOR=1 but nixpkgs' lan-mouse omits libgit2
-    # from buildInputs, so libgit2-sys aborts with no system library to link.
-    lan-mouse = prev.lan-mouse.overrideAttrs (old: {
-      buildInputs = old.buildInputs ++ [ prev.libgit2 ];
-    });
-
-    # mprisence transitively pulls aws-lc-sys (via rustls). nixpkgs' legacy
-    # default-crate-overrides.nix adds aws-lc + AWS_LC_SYS_USE_SYSTEM=1 for
-    # aws-lc-sys, but buildRustPackage does not apply crate overrides, so
-    # mprisence lists only openssl. When AWS_LC_SYS_USE_SYSTEM=1 reaches the
-    # build, aws-lc-sys detection finds OpenSSL, rejects it for lacking the
-    # AWS-LC-specific openssl/base.h, and hard-fails. Provide aws-lc and force
-    # system linking so detection succeeds regardless of the env var's origin.
-    mprisence = prev.mprisence.overrideAttrs (old: {
-      buildInputs = old.buildInputs ++ [ prev.aws-lc ];
-      env.AWS_LC_SYS_USE_SYSTEM = 1;
-    });
 
     # High Tide's hardcoded Discord Application ID was deleted upstream.
     # Upstream PR #353 migrated to a newly registered application ID.

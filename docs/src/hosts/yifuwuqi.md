@@ -145,7 +145,7 @@ ______________________________________________________________________
 ```
 
 - **Vulkan llama-cpp Router (`llama-cpp-node`)**: Runs `llama-server` in router mode (`--models-preset` + `--models-max 1`) with Vulkan acceleration (`vulkanSupport = true`) on `127.0.0.1:11436`.
-  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, thinking forced on by the Heretic template, extracted into `reasoning_content` for roleplay), both at 65,536 context length with FlashAttention, Q8 KV cache, single-slot execution, and a 5-minute idle unload.
+  - Registered presets: **`gemma-4-12b`** (`UD-Q4_K_XL`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, thinking forced on by the Heretic template, extracted into `reasoning_content` with a 512-token `reasoning-budget` cap for roleplay), both at 65,536 context length with FlashAttention, Q8 KV cache, single-slot execution, and a 5-minute idle unload.
 - **SillyTavern Companion UI**: Port 24000 (`companion.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening, depends on `llama-cpp.service`.
 - **SearXNG Privacy Metasearch**: Port 24888 (`search.aset.love`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.

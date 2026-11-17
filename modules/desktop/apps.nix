@@ -2,6 +2,7 @@
 
 let
   shot = import ../../packages/shot.nix { inherit pkgs; };
+  fluxer = pkgs.callPackage ../../packages/fluxer { };
   nxd-cursor = pkgs.writeShellScriptBin "nxd-cursor" ''
     exec nix run github:jacopone/code-cursor-nix#cursor -- "$@"
   '';

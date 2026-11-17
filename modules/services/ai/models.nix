@@ -34,6 +34,8 @@ let
       # Keep reasoning on so llama.cpp's gemma4 parser extracts thoughts into
       # `reasoning_content` (SillyTavern can collapse/hide them).
       reasoning = true;
+      # Cap thinking tokens so SillyTavern's 2048 max_tokens budget leaves room for the reply.
+      reasoningBudget = 512;
       contextLength = 65536;
       llamaCpp = {
         hfRepo = "zaakirio/gemma-4-12b-it-uncensored-GGUF";

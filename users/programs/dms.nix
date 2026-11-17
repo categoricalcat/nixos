@@ -127,10 +127,6 @@ in
 
     systemd.enable = true;
 
-    # Upstream master's own vendorHash is stale (see overlays.nix); use the
-    # corrected master build instead of the module default.
-    package = pkgs.dms-shell;
-
     enableSystemMonitoring = true; # System monitoring widgets (dgop)
     enableVPN = true; # VPN management widget
     enableDynamicTheming = true; # Wallpaper-based theming (matugen)

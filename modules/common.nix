@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  inputs,
   config,
   ...
 }:
@@ -58,7 +57,7 @@
     # input-method gtk2 cache, lutris, onlyoffice and ir-lv2 still depend on it.
     problems.handlers."gtk+".broken = "warn";
   };
-  nixpkgs.overlays = import ../nix/overlays.nix { inherit inputs; };
+  nixpkgs.overlays = import ../nix/overlays.nix;
   environment.defaultPackages = lib.mkForce [ ];
 
   systemd.tmpfiles.rules = [
