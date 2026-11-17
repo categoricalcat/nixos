@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// Minimal MCP stdio server for the self-hosted Firecrawl instance.
+// Minimal MCP stdio server: `search` hits the local SearXNG JSON API with a
+// 1:1 param mapping (Firecrawl's searxng adapter drops tbs and pins
+// categories via the SEARXNG_CATEGORIES env, so per-request category/date
+// filters are impossible through Firecrawl), `scrape` hits the self-hosted
+// Firecrawl API.
 //
 // Replaces the npx firecrawl-mcp package + rename shim: upstream advertises
 // tools as firecrawl_search/firecrawl_scrape, which OpenCode then doubles to
@@ -18,9 +22,11 @@ import * as readline from "node:readline";
 const API = (
   process.env["FIRECRAWL_API_URL"] || "http://localhost:24002"
 ).replace(/\/$/, "");
+const SEARXNG = (process.env["SEARXNG_URL"] || "").replace(/\/$/, "");
 
-// Shapes read from the Firecrawl API response. Cast after response.json(); a null
-// body still throws on property access inside callApi, which callers catch.
+// Shapes read from the Firecrawl API response. Cast after response.json(); a
+// null body still throws on property access inside callApi, which callers
+// catch.
 interface ApiResponse {
   data?: unknown;
   error?: unknown;
@@ -44,28 +50,79 @@ type RpcResponse =
   | { error: RpcError; id: JsonRpcId; jsonrpc: "2.0" }
   | { id: JsonRpcId; jsonrpc: "2.0"; result: unknown };
 
+// Shapes read from the SearXNG JSON response. Cast after response.json().
+interface SearxResult {
+  content?: unknown;
+  publishedDate?: unknown;
+  title?: unknown;
+  url?: unknown;
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
+
+// Single source for the time_range schema enum and the search() whitelist.
+const TIME_RANGES = new Set(["day", "month", "week", "year"]);
 
 const TOOLS = [
   {
     description:
-      "Search the web. Best for finding current information when you don't know the exact page.",
+      "Search the web. Best for finding current information without a known " +
+      'page. categories ["news"] = news only, ["science"] = scholarly; ' +
+      "time_range = recency; language = locale, e.g. pt-BR.",
     inputSchema: {
       additionalProperties: false,
       properties: {
-        limit: { type: "number" },
-        query: { minLength: 1, type: "string" },
-        sources: {
+        categories: {
+          description: "Result categories to search.",
           items: {
-            additionalProperties: false,
-            properties: {
-              type: { enum: ["web", "images", "news"], type: "string" },
-            },
-            required: ["type"],
-            type: "object",
+            enum: [
+              "general",
+              "news",
+              "science",
+              "images",
+              "videos",
+              "it",
+              "music",
+              "files",
+              "social media",
+            ],
+            type: "string",
           },
           type: "array",
+        },
+        engines: {
+          description:
+            "Engine names, not shortcuts: duckduckgo, mojeek, google " +
+            "scholar, arxiv, bing news; unknown names are dropped.",
+          items: { type: "string" },
+          type: "array",
+        },
+        language: {
+          description:
+            "BCP-47 locale, e.g. en, pt-BR, de; 'auto' for any language.",
+          type: "string",
+        },
+        pageno: {
+          description: "1-indexed result page.",
+          minimum: 1,
+          type: "number",
+        },
+        query: { minLength: 1, type: "string" },
+        safesearch: {
+          description: "0 off, 1 moderate, 2 strict.",
+          maximum: 2,
+          minimum: 0,
+          type: "number",
+        },
+        time_range: {
+          description: "Restrict to results from this period.",
+          enum: [...TIME_RANGES],
+          type: "string",
+        },
+        timeout_limit: {
+          description: "Max seconds engines may take.",
+          type: "number",
         },
       },
       required: ["query"],
@@ -128,6 +185,18 @@ async function callApi(path: string, body: unknown): Promise<ApiResponse> {
   return json;
 }
 
+// Only fields the agent needs; SearXNG also returns score/engine/category.
+function compactResult(result: SearxResult) {
+  return {
+    ...(typeof result.content === "string" && { content: result.content }),
+    ...(typeof result.publishedDate === "string" && {
+      publishedDate: result.publishedDate,
+    }),
+    ...(typeof result.title === "string" && { title: result.title }),
+    ...(typeof result.url === "string" && { url: result.url }),
+  };
+}
+
 function parseToolCall(parameters: unknown): null | ToolCall {
   if (!isRecord(parameters)) return null;
   const name = parameters["name"];
@@ -154,23 +223,52 @@ async function scrape(arguments_: Record<string, unknown>) {
   );
 }
 
+const clampInt = (value: number, min: number, max: number) => {
+  const truncated = Math.trunc(value);
+  return String(Math.min(max, Math.max(min, truncated)));
+};
+
 async function search(arguments_: Record<string, unknown>) {
   const query = arguments_["query"];
   if (typeof query !== "string" || query === "") {
     throw new Error("search: query must be a non-empty string");
   }
-  const limit = arguments_["limit"];
-  const sources = arguments_["sources"];
-  const json = await callApi("/v2/search", {
-    query,
-    ...(typeof limit === "number" && { limit }),
-    ...(Array.isArray(sources) && { sources }),
+  if (SEARXNG === "") throw new Error("search: SEARXNG_URL is not configured");
+  const categories = arguments_["categories"];
+  const engines = arguments_["engines"];
+  const language = arguments_["language"];
+  const pageno = arguments_["pageno"];
+  const safesearch = arguments_["safesearch"];
+  const time_range = arguments_["time_range"];
+  const timeout_limit = arguments_["timeout_limit"];
+  const searchParameters = new URLSearchParams({ format: "json", q: query });
+  // llama.cpp grammars enforce types/enums but not minimum/maximum or array
+  // length; clamp here so malformed values don't waste a searxng 400.
+  if (Array.isArray(categories) && categories.length > 0)
+    searchParameters.set("categories", categories.join(","));
+  if (Array.isArray(engines) && engines.length > 0)
+    searchParameters.set("engines", engines.join(","));
+  if (typeof language === "string" && language !== "")
+    searchParameters.set("language", language);
+  if (typeof pageno === "number")
+    searchParameters.set("pageno", clampInt(pageno, 1, Infinity));
+  if (typeof safesearch === "number")
+    searchParameters.set("safesearch", clampInt(safesearch, 0, 2));
+  if (typeof time_range === "string" && TIME_RANGES.has(time_range))
+    searchParameters.set("time_range", time_range);
+  if (typeof timeout_limit === "number")
+    searchParameters.set("timeout_limit", String(Math.max(0, timeout_limit)));
+  const response = await fetch(`${SEARXNG}/search?${searchParameters}`, {
+    // Tor-routed engines add seconds per request; without a bound a hung
+    // fetch hangs the tool call forever (searxng caps engine waits at 25s).
+    signal: AbortSignal.timeout(30_000),
   });
-  // With explicit sources, data may hold images/news alongside web.
-  const data = json.data;
-  if (Array.isArray(sources)) return textResult(JSON.stringify(data ?? {}));
-  const web = isRecord(data) ? data["web"] : undefined;
-  return textResult(JSON.stringify(web ?? data ?? []));
+  if (!response.ok) throw new Error(`searxng HTTP ${response.status}`);
+  const json = (await response.json()) as { results?: SearxResult[] };
+  const results = Array.isArray(json.results) ? json.results : [];
+  return textResult(
+    JSON.stringify(results.map((result) => compactResult(result))),
+  );
 }
 
 function textResult(text: string) {
@@ -188,7 +286,7 @@ const handlers: Record<string, (parameters: unknown) => unknown> = {
     return {
       capabilities: { tools: {} },
       protocolVersion: requested,
-      serverInfo: { name: "firecrawl", version: "1.0.0" },
+      serverInfo: { name: "firecrawl", version: "1.1.1" },
     };
   },
 

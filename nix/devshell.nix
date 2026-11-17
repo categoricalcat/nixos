@@ -82,6 +82,15 @@
         shellHook = ''
           ${config.pre-commit.installationScript}
           export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
+          # `nix develop` can start in any subdir (or outside the repo via an
+          # explicit flake ref); anchor at the flake root, not cwd.
+          hook_root=$PWD
+          while [ "$hook_root" != / ] && [ ! -e "$hook_root/flake.nix" ]; do
+            hook_root=$(dirname "$hook_root")
+          done
+          if [ -d "$hook_root/packages/firecrawl-mcp" ] && { [ ! -e "$hook_root/packages/firecrawl-mcp/node_modules" ] || [ -L "$hook_root/packages/firecrawl-mcp/node_modules" ]; }; then
+            ln -sfn ${config.packages.firecrawl-mcp.nodeModules}/node_modules "$hook_root/packages/firecrawl-mcp/node_modules"
+          fi
           if [ -z "$DIRENV_IN_ENVRC" ]; then
             exec zsh
           fi

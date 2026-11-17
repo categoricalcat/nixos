@@ -8,3 +8,4 @@ docs/mermaid*.js
 .direnv
 .agents
 .opencode
+node_modules

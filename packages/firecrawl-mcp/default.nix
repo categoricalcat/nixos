@@ -18,17 +18,45 @@ let
       url = "https://registry.npmjs.org/${name}/-/${name}-${version}.tgz";
       inherit hash;
     };
+  nodeTypesVersion = "24.19.2";
   nodeTypes =
-    npmTarball "@types/node" "24.19.2"
+    npmTarball "@types/node" nodeTypesVersion
       "sha256-4BzJC9r7FClfFajfvN3TeDQlDp36tHY/9ob7dRkV2c4=";
   # Hard dep of @types/node 24 (fetch/Response globals).
   undiciTypes =
     npmTarball "undici-types" "7.24.6"
       "sha256-Kr9ZWoa4fdIpUSGISOxK2JwBjbDmVnFtwEuLL5KQoPQ=";
+
+  # Unpack a vendored npm tarball into a shared node_modules tree for both the
+  # Nix build and the devShell (so tsserver resolves @types/node in-editor).
+  # The tarball's single root dir is not stable across releases (e.g. "node
+  # v24.19"), so extract whatever it is. cut+sort drain the listing fully;
+  # head would SIGPIPE tar into a spurious build failure.
+  nodeModules = stdenv.mkDerivation {
+    pname = "firecrawl-mcp-node-modules";
+    version = nodeTypesVersion;
+    dontUnpack = true;
+    dontBuild = true;
+    dontFixup = true;
+    installPhase = ''
+      npmUnpack() {
+        local dest=$1 tarball=$2 root
+        root=$(tar -tf "$tarball" | cut -d/ -f1 | sort -u)
+        tar -xf "$tarball"
+        mv "$root" "$dest"
+      }
+      # Nested one level deep: tsc realpaths the node_modules symlink, then
+      # resolves undici-types by walking ancestors of the real store path —
+      # which only finds a dir literally named node_modules at the store root.
+      mkdir -p "$out/node_modules/@types"
+      npmUnpack "$out/node_modules/@types/node" ${nodeTypes}
+      npmUnpack "$out/node_modules/undici-types" ${undiciTypes}
+    '';
+  };
 in
 stdenv.mkDerivation {
   pname = "firecrawl-mcp";
-  version = "1.0.0";
+  version = "1.1.1";
 
   # Only the build inputs, so editing default.nix never changes the store hash.
   src = lib.fileset.toSource {
@@ -50,19 +78,7 @@ stdenv.mkDerivation {
   buildPhase = ''
     runHook preBuild
 
-    # Unpack a vendored npm tarball into node_modules/<name>. The tarball's
-    # single root dir is not stable across releases (e.g. "node v24.19"), so
-    # extract whatever it is. cut+sort drain the listing fully; head would
-    # SIGPIPE tar into a spurious build failure.
-    npmUnpack() {
-      local name=$1 tarball=$2 root
-      root=$(tar -tf "$tarball" | cut -d/ -f1 | sort -u)
-      tar -xf "$tarball"
-      mv "$root" "node_modules/$name"
-    }
-    mkdir -p node_modules/@types
-    npmUnpack "@types/node" ${nodeTypes}
-    npmUnpack "undici-types" ${undiciTypes}
+    ln -s ${nodeModules}/node_modules node_modules
 
     # Strictest gate: any type error fails the build (noEmit; node runs the
     # .ts itself via native type stripping).
@@ -79,8 +95,12 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
+  passthru = {
+    inherit nodeModules;
+  };
+
   meta = {
-    description = "Zero-dependency MCP stdio server for a self-hosted Firecrawl instance";
+    description = "Zero-dependency MCP stdio server: SearXNG search (1:1 params) + self-hosted Firecrawl scrape";
     platforms = lib.platforms.linux;
     mainProgram = "firecrawl-mcp";
   };

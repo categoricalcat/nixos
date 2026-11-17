@@ -147,6 +147,26 @@ in
           name = "google";
           disabled = true;
         }
+        # Disabling by name covers exact names only; the bumped default pool
+        # grew google cse/news/videos/cse images entries that the "google"
+        # entry above no longer covers — and google cse was serving general
+        # results, against the "Google stays disabled" intent.
+        {
+          name = "google cse";
+          disabled = true;
+        }
+        {
+          name = "google cse images";
+          disabled = true;
+        }
+        {
+          name = "google news";
+          disabled = true;
+        }
+        {
+          name = "google videos";
+          disabled = true;
+        }
       ];
 
       enabled_plugins = [

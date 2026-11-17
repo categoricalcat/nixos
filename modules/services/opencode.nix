@@ -30,6 +30,13 @@ in
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
 
+      # HM activation relinks opencode.json without changing this unit, so a
+      # switch never restarts the daemon and it serves stale config. Restart
+      # whenever the opencode settings change.
+      restartTriggers = [
+        (builtins.toJSON config.home-manager.users.yi.programs.opencode.settings)
+      ];
+
       # The agent's job is running arbitrary user commands in home dirs: no
       # ProtectHome, ProtectSystem stays full (not strict), and bun's JIT,
       # spawned PTYs and sandboxed tools need the relaxed entries removed.

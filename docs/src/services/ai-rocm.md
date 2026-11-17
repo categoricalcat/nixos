@@ -82,11 +82,11 @@ ______________________________________________________________________
 ### 5.2 Opencode Agent (`modules/services/opencode.nix`, `users/programs/opencode.nix`)
 
 - **Domain**: `https://agent.aset.love` (proxied to port `24010`).
-- **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The `research` agent and the Firecrawl MCP are registered only on `yifuwuqi`, where the Firecrawl API listens on `localhost:24002`; other hosts use the built-in default agent (remote Firecrawl use goes via `ssh`).
+- **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The Firecrawl MCP is registered only on `yifuwuqi`, where the Firecrawl API listens on `localhost:24002`; its tools are wired into the `research` (web-only lockdown), `build`, and `plan` agents there. Other hosts use the built-in default agent (remote Firecrawl use goes via `ssh`).
 
 ### 5.3 Firecrawl MCP Server (`packages/firecrawl-mcp`)
 
-- **Strictly-Type-Checked Stdio Bridge**: Custom MCP server for the self-hosted Firecrawl instance — strictest-`tsc` type-checked at build, zero runtime dependencies (Node native type stripping), registered only on `yifuwuqi`.
+- **Strictly-Type-Checked Stdio Bridge**: Custom MCP server — strictest-`tsc` type-checked at build, zero runtime dependencies (Node native type stripping), registered only on `yifuwuqi`. `scrape` targets the self-hosted Firecrawl API; `search` targets the local SearXNG JSON API (`localhost:24888`) with a 1:1 param mapping (categories, engines, language, time_range, pageno, safesearch) — Firecrawl's searxng adapter drops date filters and pins categories via env, so per-request filters are impossible through Firecrawl.
 - **Canonical Tooling**: Natively advertises `firecrawl_search` and `firecrawl_scrape` tools with clean, flat JSON schemas compatible with llama.cpp grammar compilers.
 
 ______________________________________________________________________
