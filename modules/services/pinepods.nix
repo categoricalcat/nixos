@@ -45,7 +45,7 @@ in
       environment = {
         POSTGRES_DB = "pinepods_database";
         POSTGRES_USER = "postgres";
-        # Internal-only network, unreachable off-box (same posture as firecrawl-db)
+        # Internal-only network, unreachable off-box (same posture as firecrawl_internal)
         POSTGRES_PASSWORD = "pinepods";
         PGDATA = "/var/lib/pgdata/pgdata";
       };

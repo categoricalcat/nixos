@@ -9,14 +9,16 @@ let
   firecrawlPort = allAddresses.hosts.${config.networking.hostName}.services.firecrawl.port;
   searxngPort = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
 
-  # Retry a probe inside a container until it answers (~120s cap). A podman
-  # unit is "started" when the container exists, not when the service listens;
-  # ExecStartPost with this makes After=/Requires= mean "ready".
+  # Retry a probe command until it succeeds (~120s cap). A podman unit is
+  # "started" when the container exists, not when the service listens;
+  # ExecStartPost with this makes After=/Requires= mean "ready". Container
+  # probes run via podman exec; the app probe uses the published host port
+  # (the firecrawl image can't be assumed to ship curl/bash).
   waitFor =
-    name: probe:
+    name: probeCmd:
     pkgs.writeShellScript "firecrawl-wait-${name}" ''
       for _ in $(seq 1 60); do
-        ${pkgs.podman}/bin/podman exec ${name} ${probe} >/dev/null 2>&1 && exit 0
+        ${probeCmd} >/dev/null 2>&1 && exit 0
         sleep 2
       done
       echo "timed out waiting for ${name} to become ready" >&2
@@ -48,7 +50,7 @@ in
       after = [ "init-firecrawl-network.service" ];
       # nuq workers connect at boot and crash without retry; mirror upstream's
       # service_healthy gate (docker-compose depends_on condition).
-      serviceConfig.ExecStartPost = waitFor "firecrawl-postgres" "pg_isready -U postgres -d postgres -q";
+      serviceConfig.ExecStartPost = waitFor "firecrawl-postgres" "${pkgs.podman}/bin/podman exec firecrawl-postgres pg_isready -U postgres -d postgres -q";
     };
     "podman-firecrawl-rabbitmq" = {
       requires = [ "init-firecrawl-network.service" ];
@@ -58,7 +60,7 @@ in
       # rabbitmq-diagnostics: podman exec runs as root, and a root Erlang VM
       # creates a root-owned .erlang.cookie before the entrypoint writes it —
       # the broker (user rabbitmq) then crashes with eacces (deploy 2026-11-10).
-      serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5672'";
+      serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "${pkgs.podman}/bin/podman exec firecrawl-rabbitmq bash -c 'exec 3<>/dev/tcp/127.0.0.1/5672'";
     };
     "podman-firecrawl-playwright" = {
       requires = [ "init-firecrawl-network.service" ];
@@ -79,6 +81,9 @@ in
       # backoff alone is enough; the readiness gates above keep boots clean.
       unitConfig.StartLimitIntervalSec = 0;
       serviceConfig.RestartSec = "30s";
+      # Gate "ready" on the API answering (GET / returns 200), same rationale
+      # as the postgres/rabbitmq gates: After= now means "usable by clients".
+      serviceConfig.ExecStartPost = waitFor "firecrawl" "${pkgs.curl}/bin/curl -sf -o /dev/null http://localhost:${toString firecrawlPort}/";
     };
   };
 

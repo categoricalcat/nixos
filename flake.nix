@@ -115,6 +115,8 @@
             packages = {
               zero-parades = pkgs.callPackage ./packages/zero-parades { };
               fluxer = pkgs.callPackage ./packages/fluxer { };
+              firecrawl-mcp = pkgs.callPackage ./packages/firecrawl-mcp { };
+              eslint-env = pkgs.callPackage ./nix/eslint { };
               default = config.packages.zero-parades;
             };
 

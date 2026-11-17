@@ -106,7 +106,10 @@ the root path need not return `200`.
 
 ## Restart-loop guard
 
-`podman-firecrawl.service` allows at most three starts per hour and waits five
-minutes before an automatic retry. After the limit is reached, diagnose and
-repair the cause, then explicitly clear the counter with
-`systemctl reset-failed`.
+`podman-firecrawl.service` has no systemd start limit
+(`StartLimitIntervalSec = 0`): a start-limit-hit once turned a transient
+crash loop into a permanent outage needing manual intervention (2026-11-09).
+Instead it backs off 30 s between automatic restarts, and the `ExecStartPost`
+readiness gates keep dependent ordering clean, so slow starts self-heal.
+Diagnose repeated restarts with
+`journalctl -u podman-firecrawl.service --since today --no-pager`.

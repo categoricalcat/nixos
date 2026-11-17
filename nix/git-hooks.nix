@@ -1,6 +1,10 @@
 _: {
   perSystem =
-    { pkgs, ... }:
+    {
+      config,
+      pkgs,
+      ...
+    }:
     {
       pre-commit = {
         check.enable = true;
@@ -8,6 +12,15 @@ _: {
           treefmt.enable = true;
           statix.enable = true;
           deadnix.enable = true;
+
+          # Repo-wide JS/TS lint (perfectionist + unicorn + typescript-eslint
+          # recommended, untyped), all resolved inside the eslint-env
+          # derivation (nix/eslint).
+          eslint = {
+            enable = true;
+            package = config.packages.eslint-env;
+            files = "\\.(js|ts)$";
+          };
 
           nixf-diagnose = {
             enable = true;

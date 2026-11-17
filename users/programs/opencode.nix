@@ -9,6 +9,11 @@ let
   ai = import ../../modules/services/ai/models.nix { inherit lib; };
   inherit (import ../../modules/addresses.nix) hosts;
   hostName = if osConfig == null then null else osConfig.networking.hostName;
+  # Firecrawl's API listens on yifuwuqi's localhost only, so the MCP and the
+  # research agent exist there alone; other hosts use the built-in default
+  # agent and reach Firecrawl by ssh.
+  onYifuwuqi = hostName == "yifuwuqi";
+  firecrawl-mcp = pkgs.callPackage ../../packages/firecrawl-mcp { };
 
   # yifuwuqi's router listens on loopback only, so only yifuwuqi can reach it.
   llamaProviders = lib.filterAttrs (host: _: host != "yifuwuqi" || hostName == "yifuwuqi") {
@@ -30,30 +35,31 @@ in
 
       settings = {
         model = "deepseek/deepseek-v4-flash";
-        default_agent = "research";
+        default_agent = lib.mkIf onYifuwuqi "research";
         enabled_providers = [ "deepseek" ] ++ lib.mapAttrsToList (_: p: p.id) llamaProviders;
         agent = {
           plan.variant = "max";
-          research = {
+          research = lib.mkIf onYifuwuqi {
             description = "Current web research through self-hosted Firecrawl";
             mode = "primary";
-            # Served by the Vulkan llama-server router on each host (ROCm on the
-            # Ryzen 680M APU corrupts prompts beyond ~4k tokens; Vulkan does not).
-            model = if hostName == "yifuwuqi" then "local/gemma-4-12b" else "yitaishi/qwen3.8-27b";
+            # Served by the Vulkan llama-server router (ROCm on the Ryzen 680M
+            # APU corrupts prompts beyond ~4k tokens; Vulkan does not).
+            model = "local/gemma-4-12b";
             temperature = 0.2;
 
             # Gate via tools only. Do not set permission."*" = "deny" here:
             # OpenCode last-match can let that blanket deny win over
             # firecrawl_* allows when rules are merged.
-            # Search-only: the proven fast path. Scrape stays advertised for
-            # other agents (DeepSeek handles any schema); re-adding it here is
-            # a follow-up once e2e is green.
+            # Search + scrape, both verified e2e against the self-hosted
+            # instance (2026-11-16, via packages/firecrawl-mcp).
             tools = {
               "*" = false;
               firecrawl_search = true;
+              firecrawl_scrape = true;
             };
             permission = {
               firecrawl_search = "allow";
+              firecrawl_scrape = "allow";
             };
           };
         };
@@ -72,19 +78,16 @@ in
           }
         ) llamaProviders;
 
-        # Own zero-dependency MCP server (users/programs/firecrawl-mcp.js):
+        # Own zero-dependency MCP server (packages/firecrawl-mcp):
         # natively named tools search/scrape -> OpenCode registers the canonical
         # firecrawl_search / firecrawl_scrape, with small whitelisted schemas.
-        mcp = {
-          firecrawl = {
-            type = "local";
-            command = [
-              "${pkgs.nodejs}/bin/node"
-              ./firecrawl-mcp.js
-            ];
-            environment = {
-              FIRECRAWL_API_URL = "http://localhost:${toString hosts.yifuwuqi.services.firecrawl.port}";
-            };
+        # Registered only on yifuwuqi: the Firecrawl API is localhost-only
+        # there; remote hosts reach it by ssh.
+        mcp.firecrawl = lib.mkIf onYifuwuqi {
+          type = "local";
+          command = [ "${firecrawl-mcp}/bin/firecrawl-mcp" ];
+          environment = {
+            FIRECRAWL_API_URL = "http://localhost:${toString hosts.yifuwuqi.services.firecrawl.port}";
           };
         };
 

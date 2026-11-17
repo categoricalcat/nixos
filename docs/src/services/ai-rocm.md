@@ -82,11 +82,11 @@ ______________________________________________________________________
 ### 5.2 Opencode Agent (`modules/services/opencode.nix`, `users/programs/opencode.nix`)
 
 - **Domain**: `https://agent.aset.love` (proxied to port `24010`).
-- **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The `research` agent defaults to `local/gemma-4-12b` on `yifuwuqi` and `yitaishi/qwen3.8-27b` elsewhere.
+- **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The `research` agent and the Firecrawl MCP are registered only on `yifuwuqi`, where the Firecrawl API listens on `localhost:24002`; other hosts use the built-in default agent (remote Firecrawl use goes via `ssh`).
 
-### 5.3 Firecrawl MCP Server (`users/programs/firecrawl-mcp.js`)
+### 5.3 Firecrawl MCP Server (`packages/firecrawl-mcp`)
 
-- **Zero-Dependency Stdio Bridge**: Custom MCP server interfacing with the self-hosted Firecrawl instance.
+- **Strictly-Type-Checked Stdio Bridge**: Custom MCP server for the self-hosted Firecrawl instance — strictest-`tsc` type-checked at build, zero runtime dependencies (Node native type stripping), registered only on `yifuwuqi`.
 - **Canonical Tooling**: Natively advertises `firecrawl_search` and `firecrawl_scrape` tools with clean, flat JSON schemas compatible with llama.cpp grammar compilers.
 
 ______________________________________________________________________
@@ -99,6 +99,7 @@ ______________________________________________________________________
 - `modules/services/ai/sillytavern.nix`
 - `modules/services/opencode.nix`
 - `users/programs/opencode.nix`
-- `users/programs/firecrawl-mcp.js`
+- `packages/firecrawl-mcp/default.nix`
+- `packages/firecrawl-mcp/firecrawl-mcp.ts`
 - `hosts/yifuwuqi/services.nix`
 - `hosts/yitaishi/services.nix`

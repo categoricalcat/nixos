@@ -33,6 +33,7 @@
         pkgs.shellcheck # Shell linter
         pkgs.shfmt # Shell formatter
         pkgs.shellharden # Shell syntax hardener and auto-quoter
+        config.packages.eslint-env # Repo-wide TS linter (eslint + perfectionist)
         config.treefmt.build.wrapper # Universal multi-file formatter (wrapped with flake config)
         pkgs.nixpkgs-hammering # Linter for Nixpkgs packages
         pkgs.nil # Nix language server

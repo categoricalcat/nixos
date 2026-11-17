@@ -28,6 +28,8 @@
             package = pkgs.nixfmt;
             priority = 4;
           };
+          # zsh dotfiles (users/assets/dotfiles/zsh/*.zsh) stay deliberately
+          # unformatted: shfmt/shellcheck support bash/POSIX only, not zsh.
           shfmt = {
             enable = true;
             indent_size = 2;
@@ -54,6 +56,8 @@
           };
           jsonfmt = {
             enable = true;
+            # modules/keyboard/vial.vil is JSON; appended to the default *.json.
+            includes = [ "*.vil" ];
             excludes = [ "modules/services/monitoring/dashboards/vendor/*" ];
           };
           taplo = {
@@ -67,6 +71,8 @@
             includes = lib.mkForce [
               "*.css"
               "*.html"
+              "*.js"
+              "*.ts"
             ];
           };
         };

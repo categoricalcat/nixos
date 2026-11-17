@@ -1,0 +1,17 @@
+{
+  "name": "eslint-env",
+  "version": "1.0.0",
+  "description": "Repo-wide ESLint environment for JavaScript and TypeScript linting",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-perfectionist": "^5.14.0",
+    "eslint-plugin-unicorn": "^80.0.0",
+    "globals": "^17.14.0",
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.73.0"
+  }
+}
