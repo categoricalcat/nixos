@@ -30,15 +30,25 @@ let
 in
 {
   config = lib.mkIf config.serverMode.tui {
+    # fd is embedded in fzf's FZF_DEFAULT_COMMAND and useful directly.
+    home.packages = [ pkgs.fd ];
+
     programs = {
       mcfly = {
         enable = true;
         package = pkgs.mcfly;
+        # Binary kept for manual `mcfly search`; no shell init, no binds.
+        enableZshIntegration = false;
       };
 
       atuin = {
         enable = true;
         package = pkgs.atuin;
+      };
+
+      scmpuff = {
+        enable = true;
+        package = pkgs.scmpuff;
       };
 
       yazi = {
@@ -158,6 +168,13 @@ in
       fzf = {
         enable = true;
         package = pkgs.fzf;
+        defaultCommand = "${lib.getExe pkgs.fd} --type f";
+        defaultOptions = [
+          "--height=40%"
+          "--layout=reverse"
+          "--border"
+        ];
+        # Keep Ctrl-R free for atuin.
         historyWidget.command = "";
       };
 
@@ -178,8 +195,5 @@ in
         settings = fromTOML starshipToml;
       };
     };
-
-    home.file."${config.xdg.configHome}/starship.toml".force = true;
-
   };
 }

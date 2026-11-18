@@ -28,8 +28,8 @@
             package = pkgs.nixfmt;
             priority = 4;
           };
-          # zsh dotfiles (users/assets/dotfiles/zsh/*.zsh) stay deliberately
-          # unformatted: shfmt/shellcheck support bash/POSIX only, not zsh.
+          # users/assets/dotfiles/zshrc stays deliberately unformatted:
+          # shfmt/shellcheck support bash/POSIX only, not zsh.
           shfmt = {
             enable = true;
             indent_size = 2;
