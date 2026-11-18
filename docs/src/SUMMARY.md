@@ -48,3 +48,4 @@
 - [Studio & Audio](<>)
   - [AmpliTube 5 (Wine/yabridge)](audio/amplitube.md)
   - [Pro-Audio Drum Kits](audio/drums.md)
+  - [MIDI Controllers](audio/midi-controllers.md)

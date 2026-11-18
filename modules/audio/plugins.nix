@@ -107,5 +107,9 @@ in
     pkgs.easyeffects
     pkgs.pavucontrol
     pkgs.alsa-scarlett-gui
+
+    # MIDI CLI (aconnect/amidi/aplaymidi): port verification + Launchkey bootloader
+    # firmware flash fallback, see docs/src/audio/midi-controllers.md
+    pkgs.alsa-utils
   ];
 }

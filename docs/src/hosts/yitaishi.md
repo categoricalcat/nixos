@@ -78,6 +78,7 @@ Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM
 - **Synthesizers & Processors**: Vital, Surge-XT, Helm, Odin2, Dexed, Cardinal, Stochas, Fluidsynth, LSP-Plugins suite, Calf Studio Gear, Dragonfly Reverb, Guitarix, ToneLib, Neural Amp Modeler LV2, ChowDSP.
 - **Guitar Rig**: Rustortion (standalone, VST3, CLAP), Amp Locker 1.6.0 (standalone, VST3, LV2), KPP (Kapitonov Plugins Pack: tubeAmp profiler and pedals).
 - **Windows Amp Compatibility**: AmpliTube 5 runs from a dedicated `yi` Wine prefix, bridges its VST3 into REAPER with yabridge, and uses WineASIO over PipeWire JACK in standalone mode.
+- **MIDI Controller**: Novation Launchkey Mk4 25 — port layout, REAPER HUI control surface, firmware updates: [MIDI Controllers](../audio/midi-controllers.md).
 - **MIDI Reference Library (`~/Music/midi-library/`, read-only)**: `chords/` (ldrolez free-midi-chords), `drums-groove/` (Magenta Groove, GM-mapped), `piano-maestro/` (MAESTRO v3, CC BY-NC-SA), `songs-lakh-clean/` (Lakh `clean_midi`); `_user/` is writable for gated packs.
 - **Scaffolded Preset & Library Tree (`/home/yi` only)**:
   - `~/Audio/nam/`: Neural Amp Modeler (`.nam`) profiles.
