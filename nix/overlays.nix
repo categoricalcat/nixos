@@ -2,29 +2,27 @@
   (_final: prev: {
     # Timing-sensitive like the e2e tests nixpkgs already skips: under parallel CI
     # load the daemon gives up with "took too long to redact" and the build fails.
+    # an_untouched_session_is_left_alone_until_it_is_updated flakes the same way, and
+    # a failed listener's teardown double-closes an fd, so Rust's io-safety check
+    # aborts the test binary (SIGABRT, "IO Safety violation") before the plain
+    # failure is even reported.
     atuin = prev.atuin.overrideAttrs (old: {
-      checkFlags = old.checkFlags ++ [ "--skip=a_huge_message_reads_back" ];
+      checkFlags = old.checkFlags ++ [
+        "--skip=a_huge_message_reads_back"
+        "--skip=an_untouched_session_is_left_alone_until_it_is_updated"
+      ];
     });
 
-    # NixOS/nixpkgs#575192: aggregateModules fails when external kernel modules
-    # (such as hid-fanatecff, zenpower, acpi_call) lack .ko.cer files.
-    # Only concatenate .ko.cer into modules.cer if the file actually exists.
-    aggregateModules =
-      modules:
-      (prev.aggregateModules modules).overrideAttrs (old: {
-        postBuild =
-          builtins.replaceStrings
-            [ "xargs -d'\\n' cat >> modules.cer" ]
-            [ "while IFS= read -r f; do if [ -f \"$f\" ]; then cat \"$f\"; fi; done >> modules.cer" ]
-            old.postBuild;
-      });
-
     # High Tide's hardcoded Discord Application ID was deleted upstream.
-    # Upstream PR #353 migrated to a newly registered application ID.
+    # Upstream PR #353 (released in v1.7.0) migrated to a newly registered
+    # application ID; nixpkgs still ships 1.5.0. The guard keeps the lock bump
+    # to >=1.7.0 from failing the build; drop this entry once nixpkgs has it.
     high-tide = prev.high-tide.overrideAttrs (old: {
       postPatch = (old.postPatch or "") + ''
-        substituteInPlace src/lib/discord_rpc.py \
-          --replace-fail "1379096506065223680" "1570037786474455050"
+        if grep -q 1379096506065223680 src/lib/discord_rpc.py; then
+          substituteInPlace src/lib/discord_rpc.py \
+            --replace-fail "1379096506065223680" "1570037786474455050"
+        fi
       '';
     });
 
