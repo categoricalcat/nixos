@@ -22,7 +22,8 @@ in
   environment.systemPackages = [
     # DAWs & Audio Editors
     pkgs.reaper
-    # pkgs.reaper-reapack-extension
+    # Loaded via the UserPlugins symlink in modules/audio/home.nix (ReaLearn/Helgobox delivery)
+    pkgs.reaper-reapack-extension
     # pkgs.ardour
     # pkgs.bitwig-studio
     pkgs.tenacity
@@ -79,6 +80,10 @@ in
     pkgs.padthv1
     pkgs.setbfree
     pkgs.x42-gmsynth
+    pkgs.yoshimi
+    pkgs.bespokesynth
+    pkgs.adlplug
+    pkgs.opnplug
 
     # MIDI compose / sequence
     pkgs.lmms
@@ -87,6 +92,10 @@ in
     pkgs.qmidiarp
     pkgs.helio-workstation
     pkgs.midivisualizer
+    pkgs.tuxguitar
+
+    # Live looping
+    pkgs.sooperlooper
 
     # Drums
     audioPkgs.mt-power-drum-kit
@@ -108,8 +117,9 @@ in
     pkgs.pavucontrol
     pkgs.alsa-scarlett-gui
 
-    # MIDI CLI (aconnect/amidi/aplaymidi): port verification + Launchkey bootloader
-    # firmware flash fallback, see docs/src/audio/midi-controllers.md
+    # MIDI tools: aconnect/amidi/aplaymidi (port verification, Launchkey bootloader
+    # firmware flash fallback — docs/src/audio/midi-controllers.md) + show-midi GUI monitor
     pkgs.alsa-utils
+    pkgs.show-midi
   ];
 }

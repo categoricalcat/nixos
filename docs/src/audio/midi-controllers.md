@@ -18,6 +18,13 @@ xx:1    Launchkey MK4 25  Launchkey MK4 25 DAW In    ← DAW-mode control surfac
 
 Verify with `aplaymidi -l` / `aconnect -l`; `amidi -l` shows the raw pairs as `hw:X,0,0` (MIDI) and `hw:X,0,1` (DAW). Both also appear as MIDI nodes in `qpwgraph`. `alsa-utils` (aconnect/amidi/aplaymidi) ships via `modules/audio/plugins.nix`.
 
+### Quick test rig (no DAW)
+
+- Events: `aseqdump -p <port>` or **ShowMIDI** — GUI monitor with per-port streams, shows notes/CC/SysEx from keys, pads, knobs and the DAW surface.
+- Sound: connect the `MIDI In` port to any standalone synth in `qpwgraph` — yoshimi, bespokesynth, surge-xt, vital; or GM playback with `fluidsynth -g 2 -m alsa_seq /run/current-system/sw/share/soundfonts/FluidR3_GM.sf2`.
+- Pads → drums: hydrogen (MIDI learn per pad) or geonkick.
+- Loops: sooperlooper — MIDI-learnable record/overdub/multiply controls.
+
 ### REAPER
 
 Playing: Preferences → MIDI Devices → enable `Launchkey MK4 25 MIDI In` as input.
@@ -29,6 +36,17 @@ Control surface (Novation's official procedure):
 1. On the keyboard, press **DAW** (InControl) to enable DAW mode.
 
 HUI mapping on the 25: pads = Mute/Solo and Arm/Select (Function toggles), encoders = volume/pan in Mixer mode or Sends A–E in Sends mode (Encoder Bank switches), transport = Play/Record/Stop. Shift + encoder previews the parameter on the keyboard screen without changing it.
+
+### ReaLearn (via ReaPack)
+
+ReaLearn maps the Launchkey to anything in REAPER — tracks, FX parameters, custom targets — beyond what HUI covers. ReaPack itself ships via Nix: `modules/audio/home.nix` symlinks its `.so` into `~/.config/REAPER/UserPlugins`.
+
+1. Extensions → ReaPack → **Import repositories**: `https://github.com/helgoboss/reaper-packages/raw/master/index.xml`
+1. Extensions → ReaPack → Browse packages → search `helgobox` → install **Helgobox: ReaLearn & Playtime** → restart REAPER.
+1. Insert the `Helgobox - ReaLearn & Playtime` FX on a track, add a controller, import a Launchkey preset (preset cloud) or map controls manually.
+1. Keep ReaPack's own self-update disabled — the extension is Nix-managed and a ReaPack update would clobber the symlink.
+
+If the FX doesn't appear, check REAPER's plugin scan log for missing `libx11`/`libstdc++`/`libudev` (all present on `yitaishi`).
 
 ### Firmware (Components)
 

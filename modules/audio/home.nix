@@ -53,7 +53,13 @@ in
     "Music/midi-library/_user"
   ];
 
-  home.file = lib.mapAttrs' (
+  home.file = {
+    # REAPER scans only its resource dir for extensions; link the Nix-built
+    # ReaPack .so (keep ReaPack self-update off so it never replaces the link)
+    ".config/REAPER/UserPlugins/reaper_reapack-x86_64.so".source =
+      "${pkgs.reaper-reapack-extension}/UserPlugins/reaper_reapack-x86_64.so";
+  }
+  // lib.mapAttrs' (
     name: entry: lib.nameValuePair "Music/midi-library/${name}" { source = unpack name entry; }
   ) libraries;
 }
