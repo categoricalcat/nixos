@@ -29,6 +29,7 @@
           ./nix/devshell.nix
           ./nix/deploy.nix
           ./nix/ci.nix
+          ./nix/checks.nix
         ];
 
         flake = {

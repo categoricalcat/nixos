@@ -62,6 +62,7 @@ failed=0
   --check-cache-status \
   --show-trace \
   --workers 2 \
+  --max-memory-size 4096 \
   --gc-roots-dir "$work/gcroots" >"$jobs" || failed=1
 jq -r 'select(.error) | "::error::evaluation of \(.attr) failed\n\(.error)"' "$jobs"
 
@@ -99,13 +100,16 @@ if [ "${#built[@]}" -gt 0 ]; then
   attic push --ignore-upstream-cache-filter "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "${built[@]}" || failed=1
 fi
 
-# Keep one GC root per deploy host so attic-closure-keeper retains undeployed closures across weekly GC.
+# Keep one GC root per nixos-* job so attic-closure-keeper retains undeployed
+# closures across weekly GC. The host list comes from jobs.jsonl itself — no
+# extra flake evaluation. Note this is a superset of the deployable hosts: it
+# includes non-deployable yichuang, whose toplevel CI builds anyway.
 case "$ref_name" in
 develop | bot/auto-maintenance)
   echo "::group::GC roots for $ref_name"
   root_dir="/var/lib/nix-builder/gcroots/${ref_name//\//-}"
   mkdir -p "$root_dir"
-  nix eval --json .#deploy.nodes --apply builtins.attrNames | jq -r '.[]' | while read -r host; do
+  jq -r 'select(.attr | startswith("nixos-")) | .attr[6:]' "$jobs" | while read -r host; do
     job="nixos-$host"
     toplevel="$(jq -r --arg attr "$job" 'select(.attr == $attr) | .outputs.out // empty' "$jobs")"
     if [[ ${verdict[$job]:-} =~ ^(built|cached)$ ]] && nix build --log-format raw-with-logs --out-link "$root_dir/$host" "$toplevel"; then

@@ -441,6 +441,9 @@ in
   hosts = rec {
     yifuwuqi = rec {
       hostName = "yifuwuqi";
+      # deploy-rs target; nix/deploy.nix derives its node list from this flag.
+      # yichuang is absent from the registry entirely, so WSL stays out of deploy-rs.
+      deploy = true;
 
       dns = {
         port = 53;
@@ -715,6 +718,7 @@ in
 
     yixiaoqing = rec {
       hostName = "yixiaoqing";
+      deploy = true;
 
       network = rec {
         vpn = tailscale;
@@ -751,6 +755,7 @@ in
 
     yitaishi = rec {
       hostName = "yitaishi";
+      deploy = true;
 
       network = rec {
         vpn = tailscale;
@@ -795,6 +800,7 @@ in
 
     yirukou = rec {
       hostName = "yirukou";
+      deploy = true;
 
       dns = {
         threads = 6; # unbound num-threads on this host

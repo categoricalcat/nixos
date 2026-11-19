@@ -68,11 +68,10 @@ in
     magicRollback = true;
     autoRollback = true;
     confirmTimeout = 30;
-    nodes = lib.genAttrs [
-      "yifuwuqi"
-      "yirukou"
-      "yitaishi"
-      "yixiaoqing"
-    ] mkNode;
+    # Derived from the registry's per-host deploy flag; pinned by
+    # deploy-registry in nix/checks.nix.
+    nodes = lib.genAttrs (lib.attrNames (
+      lib.filterAttrs (_: host: host.deploy) addresses.hosts
+    )) mkNode;
   };
 }

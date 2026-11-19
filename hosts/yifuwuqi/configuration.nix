@@ -75,4 +75,15 @@ in
     algorithm = "zstd";
   };
 
+  # Measured contention fixes (docs/src/hardware/new-compute-host-research.md):
+  # CI and build bursts starved interactive and media load, so they yield CPU
+  # and disk weight under contention, and per-build parallelism is capped to 4
+  # threads on this 8C/16T box so single derivations cannot saturate all cores.
+  nix.settings.cores = 4;
+
+  systemd.services.nix-daemon.serviceConfig = {
+    CPUWeight = 50;
+    IOWeight = 50;
+  };
+
 }

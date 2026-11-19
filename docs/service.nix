@@ -7,36 +7,9 @@
 }:
 
 let
-  buildDocs = pkgs.writeShellScript "build-gang-docs" ''
-    set -euo pipefail
-    export PATH="${
-      pkgs.lib.makeBinPath [
-        pkgs.coreutils
-        pkgs.gnused
-        pkgs.findutils
-        pkgs.mdbook
-        pkgs.mdbook-mermaid
-        pkgs.rsync
-      ]
-    }:$PATH"
-
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "$tmp"' EXIT
-    cp -r /var/lib/gang-docs/src/. "$tmp/"
-    chmod -R u+w "$tmp"
-    rm -rf "$tmp/book" "$tmp/.git"
-    echo -e "\n# Architecture Plans & RFCs\n\n- [Architecture Plans]()" >> "$tmp/src/SUMMARY.md"
-    for p in "$tmp"/src/plans/*.md; do
-      [ -f "$p" ] || continue
-      case "$(basename "$p")" in .*|*~|*.tmp|*.bak|'#*'|_*) continue ;; esac
-      t=$(sed -n 's/^# //p' "$p" | head -n1 | tr -d '\r' | sed 's/\[/\\[/g; s/\]/\\]/g' | xargs)
-      echo "  - [''${t:-$(basename "$p" .md)}](plans/$(basename "$p"))" >> "$tmp/src/SUMMARY.md"
-    done
-    mdbook-mermaid install "$tmp"
-    mdbook build "$tmp" -d "$tmp/book" >/dev/null && \
-      mkdir -p /var/lib/gang-docs/book && \
-      rsync -r --delete --no-owner --no-group "$tmp/book/" /var/lib/gang-docs/book/
-  '';
+  # Shared with the CI docs check (nix/checks.nix): the service builds from
+  # the live bind mount, the check from the flake source — same script.
+  buildDocs = lib.getExe (import ./builder.nix { inherit pkgs; });
 
   commonHardening = {
     User = "docs";
@@ -93,7 +66,7 @@ in
           wantedBy = [ "multi-user.target" ];
           after = [ "network.target" ];
           unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
-          preStart = "${buildDocs}";
+          preStart = "${buildDocs} /var/lib/gang-docs/src /var/lib/gang-docs/book";
           serviceConfig = commonHardening // {
             ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/gang-docs/book --port ${toString addresses.services.docs.port} --addr 127.0.0.1 --no-listing --no-server-id --hide-dotfiles";
             CapabilityBoundingSet = "";
@@ -112,7 +85,7 @@ in
           wants = [ "docs.service" ];
           unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
           serviceConfig = commonHardening // {
-            ExecStart = "${pkgs.watchexec}/bin/watchexec -n -w /var/lib/gang-docs/src --debounce 1500ms --restart -- ${buildDocs}";
+            ExecStart = "${pkgs.watchexec}/bin/watchexec -n -w /var/lib/gang-docs/src --debounce 1500ms --restart -- ${buildDocs} /var/lib/gang-docs/src /var/lib/gang-docs/book";
             Restart = "always";
           };
         };

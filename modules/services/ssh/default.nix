@@ -54,6 +54,10 @@ in
 
     services.openssh = {
       enable = true;
+      # Hosts open SSH explicitly per interface (yirukou br0/tailscale0,
+      # yifuwuqi eno1/tailscale0/cloudflared) or bind tailscale0 (trusted).
+      # Leaving openFirewall=true leaks TCP 24212 onto WAN, VLAN 42, and containers.
+      openFirewall = false;
       ports = [ addresses.ssh.listenPort ];
 
       hostKeys = [

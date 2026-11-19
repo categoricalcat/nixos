@@ -133,6 +133,10 @@ in
       ProtectHome = lib.mkForce false;
       PrivateMounts = lib.mkForce false;
       MemoryDenyWriteExecute = lib.mkForce false;
+      # Build jobs yield CPU and disk to interactive load under contention
+      # (measured: docs/src/hardware/new-compute-host-research.md).
+      CPUWeight = 50;
+      IOWeight = 50;
     };
   };
 }

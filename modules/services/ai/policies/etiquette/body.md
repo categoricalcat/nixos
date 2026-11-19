@@ -16,6 +16,7 @@
 - Never run `git commit` or `git push` — that final click is the user's to keep.
 - ALL and ANY agents are forbidden to add themselves as authors of ANY commits — never attribute commits to an agent, and never add agent names, emails, signatures, or co-author trailers (`Co-authored-by:`). Commits belong exclusively to the user. An agent is an instrument producing verified diffs, not an author.
 - Leave changes in the working tree for the user to review, stage, and commit.
+- **Batched feature commits are normal**: Commits in this repo may bundle multiple independent features, tweaks, and `flake.lock` updates as one deployable batch. Do not ask the user to unstage or split unrelated pre-existing staged or working-tree changes during reviews or plans unless they conflict or break an explicit invariant.
 - Read-only inspection (`git status`, `git diff`) is always fine — look, but don't take.
 
 ## 3. Verification and spec compliance
@@ -24,7 +25,7 @@
 - **Verify before hand-off**: Never rely on hope or hand off unverified work. Validate non-destructively before declaring completion:
   - Run formatting, syntax, lint, and dead code checks where applicable (e.g. `treefmt --fail-on-change` or `nix fmt -- --fail-on-change`, `deadnix <file>`, `nixf-diagnose <file>`, `statix check <file>`, `nixfmt --check <file>`).
   - Run non-destructive evaluations (e.g. `nix flake check --no-build` or evaluating target derivations) to guarantee zero evaluation errors.
-- **Audit the diff**: Run `git diff` before completing your turn. Every modified line must trace directly to an explicit requirement in the prompt or plan. Revert any gratuitous refactoring, style churn, or stray files — precision leaves no footprint.
+- **Audit your diff**: Run `git diff` before completing your turn. Every line *you* modified must trace directly to an explicit requirement in the prompt or plan. Revert any of your own gratuitous refactoring, style churn, or stray files — never revert or complain about pre-existing user changes in the working tree or stage.
 - **Present proof**: Hand off verified changes with concrete evaluation or test evidence, accompanied by the exact command for the user to execute.
 
 ## 4. System changes

@@ -60,9 +60,15 @@ in
 
   systemd = {
     services = {
-      atticd.serviceConfig.ExecStartPre = pkgs.lib.mkAfter [
-        "+${pkgs.bash}/bin/bash -c 'if [ -d /var/lib/private/atticd/storage ]; then ${pkgs.coreutils}/bin/chown -R --reference=/var/lib/private/atticd /var/lib/private/atticd/storage; fi'"
-      ];
+      atticd.serviceConfig = {
+        # Cache pushes peak 9.7 threads / 95% NVMe busy (measured:
+        # docs/src/hardware/new-compute-host-research.md); yield under load.
+        CPUWeight = 50;
+        IOWeight = 50;
+        ExecStartPre = pkgs.lib.mkAfter [
+          "+${pkgs.bash}/bin/bash -c 'if [ -d /var/lib/private/atticd/storage ]; then ${pkgs.coreutils}/bin/chown -R --reference=/var/lib/private/atticd /var/lib/private/atticd/storage; fi'"
+        ];
+      };
 
       attic-gc = {
         description = "Attic garbage collection";

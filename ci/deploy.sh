@@ -8,9 +8,29 @@ DIM=$'\033[2m'
 RESET=$'\033[0m'
 
 RUNNER_HOST="yifuwuqi"
-KNOWN_HOSTS=(yixiaoqing yitaishi yirukou "$RUNNER_HOST")
-declare -A KNOWN_HOST_MAP
-for h in "${KNOWN_HOSTS[@]}"; do KNOWN_HOST_MAP[$h]=1; done
+KNOWN_HOSTS=()
+declare -A KNOWN_HOST_MAP=()
+
+# Host names derive from the flake: nix/deploy.nix derives deploy.nodes from
+# the registry (modules/addresses.nix), and this script carries no host list
+# of its own. An unevaluable flake fails here with a clear error — every
+# action needs evaluation anyway, so fail fast rather than offering a stale
+# static fallback.
+ensure_known_hosts() {
+  if [ "${#KNOWN_HOSTS[@]}" -eq 0 ]; then
+    local json h has_runner=0
+    json=$(nix eval --json .#deploy.nodes --apply builtins.attrNames) || {
+      echo "::error::cannot enumerate deployable hosts (flake evaluation failed)" >&2
+      exit 1
+    }
+    while IFS= read -r h; do
+      [ "$h" = "$RUNNER_HOST" ] && has_runner=1 || KNOWN_HOSTS+=("$h")
+    done < <(printf '%s' "$json" | jq -r '.[]')
+    [ "$has_runner" -eq 1 ] && KNOWN_HOSTS+=("$RUNNER_HOST")
+  fi
+  local h
+  for h in "${KNOWN_HOSTS[@]}"; do KNOWN_HOST_MAP[$h]=1; done
+}
 
 # Attic binds loopback on yifuwuqi (local ingress fronts it); deploys run there.
 ATTIC_INTERNAL_URL="${ATTIC_INTERNAL_URL:-http://127.0.0.1:24203}"
@@ -36,6 +56,7 @@ if [ "${#hosts[@]}" -eq 0 ]; then
   if ! [ -t 0 ] || ! command -v fzf >/dev/null 2>&1; then
     usage
   fi
+  ensure_known_hosts
   selected=$(printf '%s\n' "${KNOWN_HOSTS[@]}" | fzf -m --prompt="Select host(s) to deploy (TAB to select multiple, Enter to confirm): ")
   [ "$selected" != "" ] || {
     echo "No hosts selected. Aborting." >&2
@@ -44,15 +65,21 @@ if [ "${#hosts[@]}" -eq 0 ]; then
   readarray -t hosts <<<"$selected"
 fi
 
+ensure_known_hosts
+
+expanded=()
+for h in "${hosts[@]}"; do
+  if [ "$h" = "all" ]; then
+    expanded=("${KNOWN_HOSTS[@]}")
+    break
+  fi
+  expanded+=("$h")
+done
+
 targets=()
 has_runner=0
 declare -A seen=()
-for h in "${hosts[@]}"; do
-  if [ "$h" = "all" ]; then
-    targets=("${KNOWN_HOSTS[@]}")
-    has_runner=0
-    break
-  fi
+for h in "${expanded[@]}"; do
   [ "${KNOWN_HOST_MAP[$h]:-}" != "" ] || {
     echo "::error::Unknown host '$h'. Valid hosts: ${KNOWN_HOSTS[*]}" >&2
     exit 1
@@ -71,8 +98,17 @@ elif [ -f /var/lib/nix-builder/.ssh/id_ed25519 ]; then
 fi
 
 # Root ssh lane shared by the closure diff reads and the derivation push.
-# The port mirrors ssh.listenPort in modules/addresses.nix.
-SSH_ROOT_OPTS=(-p 24212 -o StrictHostKeyChecking=accept-new)
+# All deployable hosts share one SSH port (contract deploy-ssh-port in
+# nix/checks.nix); derived lazily from modules/addresses.nix instead of
+# hardcoding 24212.
+SSH_ROOT_OPTS=()
+ensure_ssh_root_opts() {
+  if [ "${#SSH_ROOT_OPTS[@]}" -eq 0 ]; then
+    local ssh_port
+    ssh_port=$(nix eval --file modules/addresses.nix "hosts.$RUNNER_HOST.ssh.listenPort")
+    SSH_ROOT_OPTS=(-p "$ssh_port" -o StrictHostKeyChecking=accept-new)
+  fi
+}
 
 eval_toplevel() {
   nix eval --raw ".#nixosConfigurations.$1.config.system.build.toplevel"
@@ -107,6 +143,7 @@ dry_activate() {
 diff_closure() {
   local target="$1" target_ip new_system current_system diff_out
   echo "::group::Diff package closures for $target"
+  ensure_ssh_root_opts
   target_ip=$(eval_host_ip "$target")
   new_system=$(eval_toplevel "$target")
 
@@ -139,6 +176,7 @@ push_derivers() {
   local target="$1" target_ip new_system
   [ "$target" = "$RUNNER_HOST" ] && return 0
   echo "::group::Push derivation closure to $target"
+  ensure_ssh_root_opts
   target_ip=$(eval_host_ip "$target")
   new_system=$(eval_toplevel "$target")
   # NIX_SSHOPTS is one string; join the shared arrays. No trailing space —

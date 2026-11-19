@@ -90,6 +90,7 @@
           query = "~/the.files/query.sh";
           nix-dr = "nh os build .";
           gen-commit = "~/the.files/git-commit-msg.sh";
+          gaa = "git add .";
           usb-ssh = "~/the.files/usb-ssh.sh";
           zyi = "mosh yifuwuqi -- zellij attach -c main";
           pps = "podman ps";
