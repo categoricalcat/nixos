@@ -69,6 +69,7 @@
               modules = [
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
+                inputs.chaotic.nixosModules.default
                 inputs.musnix.nixosModules.musnix
                 home-manager.nixosModules.home-manager
                 inputs.lanzaboote.nixosModules.lanzaboote
@@ -137,6 +138,10 @@
 
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
+
+    # Community mesa-git (Mesa main) + binary cache; used by yitaishi's
+    # default mesa-git driver set.
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
 
     flake-parts = {
       url = "github:hercules-ci/flake-parts";

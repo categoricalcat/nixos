@@ -50,7 +50,20 @@ in
       };
     };
 
-    steam.gamescopeSession.enable = true;
+    # VRR + HDR on the Steam gamescope session (240Hz VRR + HDR panels).
+    steam.gamescopeSession = {
+      enable = true;
+      args = [
+        "--adaptive-sync"
+        "--hdr-enabled"
+      ];
+      env = {
+        DXVK_HDR = "1";
+        ENABLE_GAMESCOPE_WSI = "1";
+      };
+    };
+
+    gamescope.enableWsi = true;
 
     coolercontrol.enable = true;
   };
