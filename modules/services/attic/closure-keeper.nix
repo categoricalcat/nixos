@@ -27,11 +27,9 @@ in
   systemd.services.attic-closure-keeper = {
     description = "Attic cache closure keeper (re-push current system closures)";
     after = [
-      "network-online.target"
       "atticd.service"
     ]
     ++ lib.optional config.programs.nh.clean.enable "nh-clean.service";
-    wants = [ "network-online.target" ];
     requires = [ "atticd.service" ];
 
     path = [
@@ -43,6 +41,8 @@ in
       Type = "oneshot";
       User = "nix-builder";
       Group = "nogroup";
+      CPUWeight = 50;
+      IOWeight = 50;
       StateDirectory = "attic-closure-keeper";
       LoadCredential = "attic-push-token:${config.sops.secrets."tokens/attic-push-token".path}";
     };
@@ -62,16 +62,24 @@ in
       attic login ${attic.cacheName} ${atticEndpoint} "$ATTIC_TOKEN"
 
       shopt -s nullglob
-      heads=(/nix/store/*-nixos-system-*)
+      # Push only active system closures: this host's current system plus the
+      # per-host CI GC roots written by ci/build.sh. Globbing /nix/store/
+      # directly matches hundreds of .drv files, old generations, and VM tests.
+      declare -A heads=()
+      for p in /run/current-system /var/lib/nix-builder/gcroots/*/*; do
+        resolved=$(readlink -f "$p" 2>/dev/null || true)
+        if [ -e "$resolved" ] && [[ $resolved != *.drv ]]; then
+          heads[$resolved]=1
+        fi
+      done
       if [ ''${#heads[@]} -eq 0 ]; then
-        echo "No nixos-system heads found in /nix/store"
+        echo "No active system closures found"
         exit 0
       fi
 
       # Push one head at a time: get-missing-paths sends the whole closure as
       # one JSON body, and atticd (axum) caps buffered bodies at 2 MiB.
-      # .drv heads alone carry ~23k build-time paths, so a combined push 413s.
-      for head in "''${heads[@]}"; do
+      for head in "''${!heads[@]}"; do
         attic push ${attic.cacheName}:${attic.cacheName} --ignore-upstream-cache-filter -j 10 "$head"
       done
     '';
@@ -81,9 +89,8 @@ in
     description = "Periodic Attic closure keeper run";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "1m";
-      OnUnitActiveSec = "15m";
-      Persistent = true;
+      OnBootSec = "10m";
+      OnUnitActiveSec = "6h";
     };
   };
 }

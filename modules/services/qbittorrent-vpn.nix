@@ -79,6 +79,13 @@ in
     '';
   };
 
+  # Rootful podman maps PUID straight to a host UID (owner of /config and
+  # downloads), so give it its own account; NixOS allocates the number.
+  users.users.qbittorrent = {
+    isSystemUser = true;
+    group = "media";
+  };
+
   virtualisation.oci-containers.containers = {
     gluetun = {
       image = "docker.io/qmcgaw/gluetun:latest";
@@ -115,13 +122,15 @@ in
       dependsOn = [ "gluetun" ];
       extraOptions = [
         "--network=container:gluetun"
+        # SIGTERM saves resume data, then waits up to Session\ShutdownTimeout
+        # (preStart) for libtorrent teardown; podman's 10s default SIGKILLs it.
+        "--stop-timeout=30"
       ];
       environment = {
-        PUID = "999";
         UMASK = "002";
       };
       environmentFiles = [
-        "/run/qbittorrent-pgid.env"
+        "/run/qbittorrent-ids.env"
       ];
       volumes = [
         "/var/lib/container-volumes/qbittorrent:/config"
@@ -144,7 +153,7 @@ in
   systemd = {
     # Make sure the container volumes root directory exists
     tmpfiles.rules = [
-      "d /var/lib/container-volumes/qbittorrent 0755 999 media - -"
+      "d /var/lib/container-volumes/qbittorrent 0755 qbittorrent media - -"
     ];
 
     services = {
@@ -169,8 +178,11 @@ in
             gid = "media";
           in
           ''
-            # Resolve media group GID at runtime for the container
-            echo "PGID=$(${pkgs.coreutils}/bin/stat -c %g /persist/media)" > /run/qbittorrent-pgid.env
+            # Resolve the container's host IDs at runtime
+            {
+              echo "PUID=$(${pkgs.coreutils}/bin/id -u qbittorrent)"
+              echo "PGID=$(${pkgs.coreutils}/bin/stat -c %g /persist/media)"
+            } > /run/qbittorrent-ids.env
 
             mkdir -p /var/lib/container-volumes/qbittorrent/qBittorrent
 
@@ -186,14 +198,18 @@ in
             ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelistEnabled'  true
             ${pkgs.crudini}/bin/crudini --set ${conf} Preferences 'WebUI\AuthSubnetWhitelist'         "127.0.0.1"
 
-            # Fetch and inject ngosang's trackerslist
-            trackers=$(${pkgs.curl}/bin/curl -s https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt | ${pkgs.gawk}/bin/awk NF | ${pkgs.gawk}/bin/awk 'NR>1 {printf "\\n"} {printf "%s", $0}')
+            # Bound libtorrent teardown (default -1: unlimited). Its `stopped`
+            # announces to every tracker below otherwise outlast --stop-timeout.
+            ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\ShutdownTimeout' 5
+
+            # Fetch and inject ngosang's trackerslist (bounded so transient GitHub failures never stall boot)
+            trackers=$(${lib.getExe pkgs.curl} -fsS --connect-timeout 5 --max-time 10 https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt | ${pkgs.gawk}/bin/awk NF | ${pkgs.gawk}/bin/awk 'NR>1 {printf "\\n"} {printf "%s", $0}' || true)
             if [ -n "$trackers" ]; then
               ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\AdditionalTrackersEnabled' true
               ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\AdditionalTrackers' "$trackers"
             fi
 
-            chown -R 999:${gid} /var/lib/container-volumes/qbittorrent
+            chown -R qbittorrent:${gid} /var/lib/container-volumes/qbittorrent
           '';
       };
 

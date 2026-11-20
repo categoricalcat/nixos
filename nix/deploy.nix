@@ -18,12 +18,13 @@ let
   mkNode =
     name:
     let
-      cfg = self.nixosConfigurations.${name};
-      toplevel = cfg.config.system.build.toplevel;
-      # Register the deployed generation so nh/nixos-rebuild agree with
-      # /run/current-system. switch: after activation (matching what is now
-      # running). boot: entry staged but not activated, mirroring
-      # nixos-rebuild boot. dry/test register nothing.
+      toplevel = self.nixosConfigurations.${name}.config.system.build.toplevel;
+      # Register the deployed generation before switch-to-configuration
+      # (matching nixos-rebuild): both systemd-boot-builder and lanzaboote
+      # enumerate `/nix/var/nix/profiles/system-*-link` during activation to
+      # write boot entries and select the default generation. Registering after
+      # leaves the bootloader one generation behind on every deploy. dry/test
+      # register nothing.
       registerSystem = "nix-env --profile /nix/var/nix/profiles/system --set ${toplevel}";
     in
     {
@@ -42,8 +43,8 @@ let
             // {
               dryActivate = "$PROFILE/bin/switch-to-configuration dry-activate";
               boot = ''
-                $PROFILE/bin/switch-to-configuration boot
                 ${registerSystem}
+                $PROFILE/bin/switch-to-configuration boot
               '';
               test = "$PROFILE/bin/switch-to-configuration test";
             }
@@ -53,12 +54,8 @@ let
               # work around https://github.com/NixOS/nixpkgs/issues/73404
               cd /tmp
 
-              $PROFILE/bin/switch-to-configuration switch
-
               ${registerSystem}
-
-              # https://github.com/serokell/deploy-rs/issues/31
-              ${lib.optionalString cfg.config.boot.loader.systemd-boot.enable "sed -i '/^default /d' ${cfg.config.boot.loader.efi.efiSysMountPoint}/loader/loader.conf"}
+              $PROFILE/bin/switch-to-configuration switch
             '';
       };
     };

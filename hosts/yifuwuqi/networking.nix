@@ -29,8 +29,12 @@
 
   systemd.network = {
     enable = true;
-    wait-online.enable = true;
-
+    wait-online = {
+      enable = true;
+      # r8169 1Gbps->100Mbps PHY downshift + IPv6 DAD took 14.9s on cold boot;
+      # 25s clears that window cleanly while staying well below the 120s default.
+      timeout = 25;
+    };
   };
 
   # Subnet routing forwards tunnel traffic through these NICs, and tailscaled

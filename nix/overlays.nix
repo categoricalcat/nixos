@@ -13,6 +13,31 @@
       ];
     });
 
+    # Upstream dms-shell commit aa3223d (iconfolders/install.go) imported
+    # github.com/klauspost/compress/zstd from an existing go.mod dependency
+    # without running scripts/update-vendor-hash.sh, changing the go mod vendor
+    # output hash. inputs.dms builds dms-shell via pkgs.buildGoModule.override
+    # rather than pkgs.dms-shell, so intercept that call here; guarded by pname
+    # and the stale hash so other Go builds and upstream fixes pass through.
+    # Drop once inputs.dms updates vendorHash in flake.nix.
+    buildGoModule = prev.lib.makeOverridable (
+      overrideArgs:
+      let
+        goMod = prev.buildGoModule.override overrideArgs;
+      in
+      drvArgs:
+      goMod (
+        if
+          builtins.isAttrs drvArgs
+          && (drvArgs.pname or null) == "dms-shell"
+          && (drvArgs.vendorHash or null) == "sha256-OoSfED3U1nsey6M/fX9q93g9+ROWktG+aqhHXPhUdCI="
+        then
+          drvArgs // { vendorHash = "sha256-xbuXniDsdGZU41t34ar5tJvzK2LNgABwQJx5UIGSNkg="; }
+        else
+          drvArgs
+      )
+    ) { };
+
     # High Tide's hardcoded Discord Application ID was deleted upstream.
     # Upstream PR #353 (released in v1.7.0) migrated to a newly registered
     # application ID; nixpkgs still ships 1.5.0. The guard keeps the lock bump

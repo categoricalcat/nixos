@@ -7,7 +7,7 @@
 }:
 
 let
-  inherit (addresses.gatewayFailover) primary pingTargets;
+  inherit (addresses.gatewayFailover) primary fallback pingTargets;
   inherit (allAddresses.monitoring) nodeTextfileDir;
 
   # Owns the primary default route: present only while the primary uplink is
@@ -27,6 +27,7 @@ let
     ];
     text = ''
       IFACE=${lib.escapeShellArg primary.interface}
+      FALLBACK_IFACE=${lib.escapeShellArg fallback.interface}
       METRIC=${toString primary.metric}
       TARGETS=(${lib.escapeShellArgs pingTargets})
       PROM=${lib.escapeShellArg "${nodeTextfileDir}/gateway_failover.prom"}
@@ -35,9 +36,29 @@ let
       RISE=2
       FALL=4
 
+      iface_ipv4() {
+        { ip -4 -o addr show dev "$1" scope global 2>/dev/null || true; } |
+          awk '!n { split($4, a, "/"); print a[1]; n=1 }'
+      }
+
+      # Tear down off-LAN IPv4 TCP sockets pinned to the departing uplink's
+      # address so long-lived clients (e.g. Tor) reconnect on the active route
+      # instead of stalling after conntrack -F drops their return-path state.
+      reset_stale_sockets() {
+        local old_src="$1"
+        [ -n "$old_src" ] || return 0
+        ss -4tK state connected src "$old_src" \
+          not dst 127.0.0.0/8 \
+          not dst 10.0.0.0/8 \
+          not dst 172.16.0.0/12 \
+          not dst 192.168.0.0/16 \
+          not dst 100.64.0.0/10 \
+          >/dev/null 2>&1 || true
+      }
+
       # 0: a target answered. 1: none did. 2: no address or gateway to probe through.
       probe() {
-        SRC=$(ip -4 -o addr show dev "$IFACE" scope global 2>/dev/null | awk '{ split($4, a, "/"); print a[1]; exit }')
+        SRC=$(iface_ipv4 "$IFACE")
         GW=${
           if primary.gateway != null then
             lib.escapeShellArg primary.gateway
@@ -81,6 +102,8 @@ let
       # What the exporter last saw. It goes stale whenever the route changed
       # while this was not running, a reboot included.
       published=$(awk '/^gateway_failover_primary_active/ { print $NF }' "$PROM" 2>/dev/null || true)
+      last_primary_src=$(iface_ipv4 "$IFACE")
+      last_fallback_src=$(iface_ipv4 "$FALLBACK_IFACE")
       ok=0
       bad=0
 
@@ -91,6 +114,9 @@ let
 
         status=0
         probe || status=$?
+        [ -n "''${SRC:-}" ] && last_primary_src="$SRC"
+        fb_src=$(iface_ipv4 "$FALLBACK_IFACE")
+        [ -n "$fb_src" ] && last_fallback_src="$fb_src"
         case $status in
           0) ok=$((ok + 1)) bad=0 ;;
           1) ok=0 bad=$((bad + 1)) ;;
@@ -103,7 +129,12 @@ let
         fi
 
         if [ "$up" = 1 ]; then
-          ip route replace default via "$GW" dev "$IFACE" src "$SRC" metric "$METRIC"
+          if ! ip route replace default via "$GW" dev "$IFACE" src "$SRC" metric "$METRIC" 2>/dev/null; then
+            up=0
+            ok=0
+            status=2
+            ip route del default dev "$IFACE" metric "$METRIC" 2>/dev/null || true
+          fi
         else
           ip route del default dev "$IFACE" metric "$METRIC" 2>/dev/null || true
         fi
@@ -111,6 +142,11 @@ let
         if [ "$up" != "$published" ]; then
           # Tracked flows still carry the other uplink's source address.
           conntrack -F >/dev/null 2>&1 || true
+          if [ "$up" = 1 ]; then
+            reset_stale_sockets "$last_fallback_src"
+          else
+            reset_stale_sockets "$last_primary_src"
+          fi
           publish || echo "cannot write $PROM" >&2
           published=$up
           case $up$status in

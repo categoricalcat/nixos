@@ -23,7 +23,10 @@ in
         UseDNS = true;
         UseRoutes = false;
       };
-      linkConfig.RequiredForOnline = "routable";
+      # Do not block network-online.target on WAN DHCP: LAN infrastructure
+      # only needs br0 up, and wan-monitor converges the default route once
+      # the modem hands out a lease.
+      linkConfig.RequiredForOnline = "no";
     };
 
     "11-${fallback.interface}" = {

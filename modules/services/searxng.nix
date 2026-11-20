@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   allAddresses,
   config,
@@ -24,7 +25,23 @@ in
 
   services.searx = {
     enable = true;
-    package = pkgs.searxng;
+    # Patch three upstream Tor/curl_cffi bugs:
+    # 1. duckduckgo sets Content-Type explicitly on POST; curl_cffi then emits
+    #    Content-Type before Content-Length, triggering DuckDuckGo HTTP 202
+    #    CAPTCHA on every request (removing it lets curl_cffi emit standard
+    #    Content-Length -> Content-Type order).
+    # 2. duckduckgo_extra.fetch_vqd hardcodes timeout=2, failing >50% over Tor.
+    # 3. bing_news passes empty HTTP 200 bodies to lxml, failing with parsing error.
+    package = pkgs.searxng.overridePythonAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        substituteInPlace searx/engines/duckduckgo.py \
+          --replace-fail '    params["headers"]["Content-Type"] = "application/x-www-form-urlencoded"' ""
+        substituteInPlace searx/engines/duckduckgo_extra.py \
+          --replace-fail $'        headers=params["headers"],\n        timeout=2,' '        headers=params["headers"],'
+        substituteInPlace searx/engines/bing_news.py \
+          --replace-fail '    dom = resp.html()' $'    if not resp.text.strip():\n        return results\n\n    dom = resp.html()'
+      '';
+    });
     environmentFile = secretEnv;
 
     settings = {
@@ -67,6 +84,20 @@ in
           "html"
           "json"
         ];
+        # Behind Tor, a timeout or CAPTCHA/403/429 belongs to one exit circuit,
+        # not the host IP. Disable transient fail bans so the next request can
+        # immediately use a fresh pool circuit, and keep exhausted-retry
+        # suspension windows short (upstream defaults: Captcha 3600s, CF 15d).
+        ban_time_on_fail = 0;
+        max_ban_time_on_fail = 0;
+        suspended_times = {
+          SearxEngineAccessDenied = 30;
+          SearxEngineCaptcha = 60;
+          SearxEngineTooManyRequests = 30;
+          cf_SearxEngineCaptcha = 60;
+          cf_SearxEngineAccessDenied = 60;
+          recaptcha_SearxEngineCaptcha = 60;
+        };
       };
 
       ui = {
@@ -88,46 +119,78 @@ in
         # to start otherwise. systemd marks `tor.service` active the moment
         # the daemon launches, NOT when bootstrap (consensus + circuit
         # build) completes, so SearXNG would race Tor on cold boot and
-        # crash with "Invalid network configuration". Instead we order
-        # `searx.service` after `wait-for-tor.service` (below), which polls
-        # until SOCKS actually proxies HTTPS.
+        # crash with "Invalid network configuration". Leaving it off lets
+        # SearXNG boot without blocking multi-user.target while Tor finishes
+        # bootstrapping.
         #
-        # `proxies` is the httpx pattern map -- the awkward attribute name
-        # `all://` must be quoted because of `:` and `//`. Value is a list
-        # so httpx round-robins between proxies if more are added later.
+        # `proxies` is the curl_cffi pattern map -- the awkward attribute name
+        # `all://` must be quoted because of `:` and `//`. Four distinct dummy
+        # credentials trigger Tor's default `IsolateSOCKSAuth`, giving SearXNG's
+        # round-robin cycle four independent exit circuits per engine.
         proxies = {
-          "all://" = [ "socks5h://127.0.0.1:9050" ];
+          "all://" = map (n: "socks5h://pool${toString n}:x@127.0.0.1:9050") (lib.range 1 4);
         };
-        # Bumped from 5/15 so slower survivors (Bing, Qwant, Mojeek) get a
-        # chance to respond when faster engines (Brave) hit a 429 burst.
-        # Tor adds ~1-3s, so the timeouts are slightly elevated.
-        request_timeout = 8.0;
-        max_request_timeout = 25.0;
+        # 10s covers normal Tor RTT (0.5-5s) while failing stalled circuits fast
+        # enough for firecrawl-mcp's single retry to finish inside its timeout.
+        request_timeout = 10.0;
+        max_request_timeout = 15.0;
+        retries = 1;
         pool_connections = 100;
         pool_maxsize = 15;
         enable_http2 = true;
+        # Dedicated named network per engine (referenced by string below)
+        # decouples brave.news from brave's SuspendedStatus, rotates across all
+        # 4 Tor circuits on 403/429 (plus 202 for DuckDuckGo's CAPTCHA challenge)
+        # within one search, and avoids SearXNG's settings_loader.update_dict
+        # TypeError when overriding brave.news's upstream string `network: brave`
+        # with a dict.
+        networks =
+          lib.genAttrs
+            [
+              "brave-tor"
+              "brave.news-tor"
+              "duckduckgo-tor"
+              "duckduckgo news-tor"
+            ]
+            (name: {
+              retries = 3;
+              retry_on_http_error = [
+                403
+                429
+              ]
+              ++ lib.optional (lib.hasPrefix "duckduckgo" name) 202;
+            });
       };
 
-      # Engine pool: now routed through Tor, so engines that were blocked /
-      # rate-limited from this IP (DDG, Startpage) are re-enabled.  Google
-      # stays disabled — it still hands out CAPTCHAs to Tor exit nodes.
-      # Mojeek remains as a privacy-first fallback with its own crawl index.
-      # Mullvad Leta is intentionally NOT enabled: its upstream engine
-      # requires SearXNG to run behind a Mullvad VPN connection, which we do
-      # not.
+      # Engine pool: routed through Tor, using upstream defaults (Brave,
+      # DuckDuckGo, Bing News, etc.) with dead/blocked entries pruned. Google
+      # stays disabled — it hands out CAPTCHAs to Tor exit nodes. Mojeek and
+      # Startpage stay inactive per upstream (CPU-heavy PoW CAPTCHAs). Reuters
+      # (HTTP 401) and Wikidata (HTTP 403 SPARQL + hardcoded 3s timeout) fail
+      # over Tor. Radio Browser performs unproxied clearnet DNS during init()
+      # and fails offline registration. Ahmia and Torch require
+      # `using_tor_proxy = true` and fail registration without it. Mullvad Leta
+      # requires a Mullvad VPN.
       engines = [
+        {
+          name = "brave";
+          network = "brave-tor";
+        }
+        {
+          name = "brave.news";
+          network = "brave.news-tor";
+        }
         {
           name = "duckduckgo";
           engine = "duckduckgo";
           shortcut = "ddg";
           categories = "general";
           disabled = false;
+          network = "duckduckgo-tor";
         }
         {
-          name = "mojeek";
-          disabled = false;
-          shortcut = "mjk";
-          categories = "general";
+          name = "duckduckgo news";
+          network = "duckduckgo news-tor";
         }
         {
           name = "google scholar";
@@ -142,6 +205,26 @@ in
           shortcut = "ar";
           categories = "science";
           disabled = false;
+        }
+        {
+          name = "reuters";
+          disabled = true;
+        }
+        {
+          name = "radio browser";
+          disabled = true;
+        }
+        {
+          name = "wikidata";
+          disabled = true;
+        }
+        {
+          name = "ahmia";
+          inactive = true;
+        }
+        {
+          name = "torch";
+          inactive = true;
         }
         {
           name = "google";
@@ -206,64 +289,27 @@ in
       '';
     };
 
-    # Block dependent services until Tor's SOCKS port actually proxies
-    # outbound traffic (i.e., bootstrap is done and a circuit is built).
-    # systemd alone considers `tor.service` active the moment the daemon
-    # launches, which is too early -- a TCP connect to 9050 succeeds long
-    # before Tor can route a request, so SearXNG's own startup probe
-    # (when `using_tor_proxy = true` is set) crashes with "Invalid network
-    # configuration". The full HTTPS-through-SOCKS check below covers both
-    # reachability AND bootstrap.
-    wait-for-tor = {
-      description = "Wait for Tor SOCKS to be usable";
-      after = [
-        "tor.service"
-        "network-online.target"
-      ];
-      wants = [
-        "tor.service"
-        "network-online.target"
-      ];
-      before = [ "searx.service" ];
-      wantedBy = [ "searx.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        TimeoutStartSec = "180s";
-        ExecStart = pkgs.writeShellScript "wait-for-tor" ''
-          set -eu
-          attempts=25
-          for i in $(seq 1 $attempts); do
-            if ${pkgs.curl}/bin/curl --silent --fail --max-time 15 \
-                --socks5-hostname 127.0.0.1:9050 \
-                https://check.torproject.org/api/ip > /dev/null 2>&1; then
-              echo "Tor SOCKS ready after $i attempt(s)"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Tor SOCKS not ready after $attempts attempts" >&2
-          exit 1
-        '';
-      };
-    };
-
-    # Wait for live network + a bootstrapped Tor before contacting upstream
-    # search engines. Ordering against searx-secret-init is handled by that
-    # unit's `before`/`wantedBy` above. `tor.service` is pulled in
-    # transitively via `wait-for-tor.service`, so it's not listed directly
-    # here. SyslogLevel=err ensures SearXNG's own errors are clearly
-    # distinguished in the journal.
+    # Ordering against searx-secret-init is handled by that unit's
+    # `before`/`wantedBy` above. `using_tor_proxy` is off, so SearXNG starts
+    # cleanly as soon as network-online, tor, and local valkey are up without
+    # waiting on an external Tor circuit probe (Type=simple adds ~0s to boot).
+    # SyslogLevel=err ensures SearXNG's own errors are clearly distinguished in
+    # the journal.
     searx = {
       wants = [
         "network-online.target"
-        "wait-for-tor.service"
+        "tor.service"
         "redis.service"
       ];
       after = [
         "network-online.target"
-        "wait-for-tor.service"
+        "tor.service"
         "redis.service"
+      ];
+      # Upstream NixOS searx.nix sets restartTriggers only on uwsgi, not the
+      # non-uwsgi unit; trigger a restart whenever settings.yml changes.
+      restartTriggers = [
+        (builtins.toJSON config.services.searx.settings)
       ];
       serviceConfig.SyslogLevel = "err";
     };

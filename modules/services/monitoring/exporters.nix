@@ -3,6 +3,7 @@
   allAddresses,
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -87,17 +88,18 @@ in
     ''
   );
 
-  systemd.services = lib.mkMerge [
-    (lib.mkIf (!isCentral) (
-      lib.mapAttrs' (
-        name: _:
-        lib.nameValuePair "prometheus-${name}-exporter" {
-          serviceConfig.FreeBind = true;
-        }
-      ) enabledExporters
-    ))
-    (lib.mkIf (enabledHere "smokeping" exporterMetadata.smokeping) {
-      prometheus-smokeping-exporter = monitoringLib.mkWantsAfter [ "network-online.target" ];
-    })
-  ];
+  # pro-bing drops a target forever when its first sendmsg returns ENETUNREACH.
+  # network-online is LAN-only on the scrape hosts, so fail the start until an
+  # IPv4 default route exists and let Restart= try again. `+` runs the check
+  # outside RestrictAddressFamilies (ip uses netlink).
+  systemd.services = lib.mkIf (enabledHere "smokeping" exporterMetadata.smokeping) {
+    prometheus-smokeping-exporter = monitoringLib.mkWantsAfter [ "network-online.target" ] // {
+      serviceConfig = {
+        RestartSec = "5s";
+        ExecStartPre = "+${pkgs.writeShellScript "smokeping-require-default-route" ''
+          ${lib.getExe' pkgs.iproute2 "ip"} -4 route show default | ${lib.getExe' pkgs.gnugrep "grep"} -q '^default '
+        ''}";
+      };
+    };
+  };
 }

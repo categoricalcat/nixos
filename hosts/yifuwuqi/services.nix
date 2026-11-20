@@ -113,6 +113,15 @@
     tor = {
       enable = true;
       client.enable = true;
+      settings = {
+        # Cap circuit build timeout so adaptive CBT cannot drift back to 60s
+        # after transient WAN/guard hiccups, rotate circuits every 3m instead of
+        # 10m, and fail stalled SOCKS streams faster than Tor's 120s default.
+        LearnCircuitBuildTimeout = false;
+        CircuitBuildTimeout = 10;
+        MaxCircuitDirtiness = 180;
+        SocksTimeout = 30;
+      };
     };
 
     fwupd.enable = true;

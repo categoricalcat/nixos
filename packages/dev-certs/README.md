@@ -1,10 +1,10 @@
 # Dev Certificates
 
 `module.nix` (`yifuwuqi`, `yitaishi`, `yixiaoqing`) trusts one name-constrained
-dev CA host-wide (`SSL_CERT_DIR` + `/etc/ssl/certs/4ce7bcbb.0` for OpenSSL/Go,
-`NODE_EXTRA_CA_CERTS` for Node, Chrome policy where Chromium is enabled) and
-shares the leaf key (`0640 root:devcert`) with `yi` and `workd`. Missing files
-are skipped until `/persist/keys/dev/` exists.
+dev CA host-wide (`SSL_CERT_FILE` + `SSL_CERT_DIR` + `/etc/ssl/certs/4ce7bcbb.0`
+for OpenSSL/curl/Go, `NODE_EXTRA_CA_CERTS` for Node, Chrome policy where
+Chromium is enabled) and shares the leaf key (`0640 root:devcert`) with `yi` and
+`workd`. Missing files are skipped until `/persist/keys/dev/` exists.
 
 The CA carries critical `nameConstraints` (`[domain ...]` plus `localhost`,
 `yifuwuqi.lan`, `127.0.0.0/8`, `::1/128`) and discards its private key

@@ -27,12 +27,7 @@ in
   systemd.services.attic-watch-store = {
     description = "Push new /nix/store paths to Attic";
     wantedBy = [ "multi-user.target" ];
-    after = [
-      "atticd.service"
-      "network-online.target"
-      "atticd.service"
-    ];
-    wants = [ "network-online.target" ];
+    after = [ "atticd.service" ];
     requires = [ "atticd.service" ];
 
     path = [ atticClient ];

@@ -111,7 +111,7 @@ ensure_ssh_root_opts() {
 }
 
 eval_toplevel() {
-  nix eval --raw ".#nixosConfigurations.$1.config.system.build.toplevel"
+  nix eval --raw ".#nixosConfigurations.$1.config.system.build.toplevel" "${@:2}"
 }
 
 eval_host_ip() {
@@ -173,19 +173,18 @@ diff_closure() {
 # lookup misses nixpkgs patch metadata and vulnix flags patched builds (seen on
 # yirukou, 2026-11-10). Push the derivation closure so scans see patches.
 push_derivers() {
-  local target="$1" target_ip new_system
-  [ "$target" = "$RUNNER_HOST" ] && return 0
+  local target="$1" drv="$2" target_ip
+  [ "$target" = "$HOSTNAME" ] && return 0
   echo "::group::Push derivation closure to $target"
   ensure_ssh_root_opts
   target_ip=$(eval_host_ip "$target")
-  new_system=$(eval_toplevel "$target")
   # NIX_SSHOPTS is one string; join the shared arrays. No trailing space —
   # ssh would see an empty argument.
   local nix_ssh_opts="${SSH_ROOT_OPTS[*]}"
   if [ "${#SSH_KEY_ARGS[@]}" -gt 0 ]; then
     nix_ssh_opts+=" ${SSH_KEY_ARGS[*]}"
   fi
-  if nix-store -qR "$(nix-store -qd "$new_system")" | grep '\.drv$' |
+  if nix-store -qR "$drv" | grep '\.drv$' |
     xargs -r env NIX_SSHOPTS="$nix_ssh_opts" nix copy --to "ssh-ng://root@$target_ip" --no-check-sigs; then
     printf '%s✔ Derivation closure pushed%s for %s\n' "$GREEN" "$RESET" "$target"
   else
@@ -197,7 +196,7 @@ push_derivers() {
 # switch and boot differ only in data (deploy flag, wording, summary fields);
 # one body serves both.
 deploy_action() {
-  local target="$1" new_system label heading act field ok note
+  local target="$1" toplevel_info new_system new_drv label heading act field ok note
   local -a flags=()
   case "$action" in
   boot)
@@ -220,11 +219,13 @@ deploy_action() {
   esac
 
   echo "::group::Deploy $label $target"
-  new_system=$(eval_toplevel "$target")
+  toplevel_info=$(eval_toplevel "$target" --apply 'p: "${p.outPath}\n${p.drvPath}"')
+  new_system="${toplevel_info%%$'\n'*}"
+  new_drv="${toplevel_info#*$'\n'}"
   deploy --skip-checks ".#$target" "${flags[@]}" -- --print-build-logs
   printf '%s✔ %s%s for %s%s (%s)\n' "$GREEN" "$ok" "$RESET" "$target" "$note" "$new_system"
   echo "::endgroup::"
-  push_derivers "$target"
+  push_derivers "$target" "$new_drv"
 
   if [ "${GITHUB_STEP_SUMMARY:-}" != "" ]; then
     {

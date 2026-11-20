@@ -527,6 +527,9 @@ in
           inherit (network.lan.ipv4) gateway;
           metric = 100;
         };
+        fallback = {
+          inherit (network.secondary) interface;
+        };
         pingTargets = failoverPingTargets;
       };
 
@@ -906,6 +909,9 @@ in
           # Read from the DHCP lease.
           gateway = null;
           metric = network.wan.primary.routeMetric;
+        };
+        fallback = {
+          inherit (network.wan.fallback) interface;
         };
         pingTargets = failoverPingTargets;
       };

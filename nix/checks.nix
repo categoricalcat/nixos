@@ -2,9 +2,9 @@
 #
 # Contracts are pure-evaluation security invariants over the declared
 # configuration (`self.nixosConfigurations`): they assert current policy,
-# never aspiration (docs/src/plans/general-plan.md, Decisions). Failures throw
-# `contract <name> failed for <host>: <why>` at evaluation time, so
-# `nix flake check --no-build` and CI fail early without building.
+# never aspiration. Failures throw `contract <name> failed for <host>: <why>`
+# at evaluation time, so `nix flake check --no-build` and CI fail early
+# without building.
 {
   self,
   lib,

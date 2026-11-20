@@ -98,11 +98,7 @@ in
         in
         {
           enable = true;
-          package =
-            if config.host.desktopEnvironment != null then
-              pkgs.callPackage ../../packages/zellij-desktop.nix { }
-            else
-              pkgs.zellij;
+          package = pkgs.zellij;
           settings = {
             on_force_close = "quit";
             # Stylix writes themes/stylix.kdl under the "default" block name.

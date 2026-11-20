@@ -26,6 +26,7 @@ buildGoModule {
     description = "Virtual FIDO2 security key using TPM and Fingerprint";
     homepage = "https://github.com/mc256/tpm-fido2-thinkpad-linux";
     license = licenses.mit;
+    mainProgram = "tpm-fido";
     platforms = platforms.linux;
   };
 }

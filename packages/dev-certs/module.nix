@@ -32,6 +32,10 @@ in
       };
     };
     sessionVariables = {
+      # Setting SSL_CERT_DIR alone switches libcurl/OpenSSL to CApath-only mode,
+      # dropping system roots because /etc/ssl/certs only hashes 4ce7bcbb.0;
+      # pair it with SSL_CERT_FILE so both system and dev CAs verify.
+      SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
       SSL_CERT_DIR = "/etc/ssl/certs";
       NODE_EXTRA_CA_CERTS = ca;
     };

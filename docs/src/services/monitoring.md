@@ -61,7 +61,7 @@ Exporters are declaratively registered in `modules/addresses.nix` under `allAddr
 | **Unbound**        | `9167`       | `yirukou`             | `15s`             | Unix socket `/run/unbound/unbound.ctl`                  |
 | **Redis / Valkey** | `9121`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/redis/redis.sock`                     |
 
-Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface with `FreeBind = true`.
+Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface (early binding relies on `net.ipv{4,6}.ip_nonlocal_bind = 1` in `modules/networking/sysctl-base.nix`).
 
 ### Workload resource metrics
 

@@ -41,10 +41,10 @@ ______________________________________________________________________
 ### 2.2 SearXNG ("yi search") (`modules/services/searxng.nix`)
 
 - **Web UI**: Bound to loopback behind the local ingress and proxied to `https://search.aset.love`.
-- **Tor Proxy Routing**: All outbound search queries are forced through the local Tor SOCKS5 proxy (`socks5h://127.0.0.1:9050`) to conceal client IP addresses from upstream search providers.
-- **Engines Enabled**: DuckDuckGo (`ddg`), Mojeek (`mjk`), Google Scholar (`gs`), and arXiv (`ar`). Google web search is intentionally disabled to avoid Tor CAPTCHA blocking.
+- **Tor Proxy Routing**: Outbound search queries round-robin across 4 dummy-credential SOCKS5 endpoints (`socks5h://pool{1..4}:x@127.0.0.1:9050`), using Tor's default `IsolateSOCKSAuth` for 4 independent exit circuits. `services.tor` caps `CircuitBuildTimeout` at `10s`, `MaxCircuitDirtiness` at `180s`, and `SocksTimeout` at `30s`. `brave`, `brave.news`, `duckduckgo`, and `duckduckgo news` each use a dedicated network with 3 retries on HTTP `403`/`429` (plus `202` for DuckDuckGo CAPTCHA challenges) to rotate across all 4 exit circuits, and `ban_time_on_fail = 0` prevents a single stalled exit from suspending an engine across fresh circuits.
+- **Engines Enabled**: Upstream defaults (Brave, DuckDuckGo, Bing News, Wikinews, etc.) plus Google Scholar (`gs`) and arXiv (`ar`), with `duckduckgo` (omitting redundant explicit `Content-Type` header so `curl_cffi` keeps standard `Content-Length` -> `Content-Type` order and avoids HTTP `202` CAPTCHAs), `duckduckgo_extra` (removing hardcoded 2s `fetch_vqd` timeout), and `bing_news` (guarding empty HTTP 200 bodies) patched in Nix. Google web/news/CSE, Reuters (HTTP 401), Radio Browser (unproxied DNS during `init()`), and Wikidata (HTTP 403) are disabled; Mojeek, Startpage, Ahmia, and Torch stay inactive.
 - **Ephemeral Secret Generation**: `searx-secret-init.service` automatically generates a cryptographically random 32-byte hex secret key on boot into `/run/searx-secret/env` mode `0440`.
-- **Startup Coordination**: `wait-for-tor.service` probes `https://check.torproject.org/api/ip` over Tor before allowing SearXNG to launch, preventing startup race conditions.
+- **Startup Coordination**: `using_tor_proxy` is intentionally left unset so `searx.service` (`Type=simple`) starts after `network-online.target`, `tor.service`, and `redis.service` without blocking `multi-user.target` on an external Tor circuit probe.
 
 ### 2.3 Valkey Datastore (`modules/services/valkey.nix`)
 

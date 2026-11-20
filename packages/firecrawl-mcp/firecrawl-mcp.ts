@@ -51,6 +51,16 @@ type RpcResponse =
   | { id: JsonRpcId; jsonrpc: "2.0"; result: unknown };
 
 // Shapes read from the SearXNG JSON response. Cast after response.json().
+interface SearxOutcome {
+  results: SearxResult[];
+  unresponsiveEngines: [string, string][];
+}
+
+interface SearxResponse {
+  results?: SearxResult[];
+  unresponsive_engines?: unknown;
+}
+
 interface SearxResult {
   content?: unknown;
   publishedDate?: unknown;
@@ -64,6 +74,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 // Single source for the time_range schema enum and the search() whitelist.
 const TIME_RANGES = new Set(["day", "month", "week", "year"]);
 
+// Transient upstream/Tor failures worth retrying once against the next circuit
+// in SearXNG's SOCKS5 proxy cycle.
+const TRANSIENT_ENGINE_ERROR =
+  /timeout|too many requests|access denied|suspended|captcha/i;
+
 // Non-markdown formats: single source for the scrape schema enum and the
 // content-presence check in scrape().
 const SCRAPE_FORMATS = ["html", "rawHtml", "links", "summary"] as const;
@@ -75,8 +90,11 @@ const TOOLS = [
   {
     description:
       "Search the web. Best for finding current information without a known " +
-      'page. categories ["news"] = news only, ["science"] = scholarly; ' +
-      "time_range = recency; language = locale, e.g. pt-BR.",
+      'page. categories ["news"] = news only (time_range is ignored on ' +
+      "news-only queries; results include publishedDate); for dated recency " +
+      'use default or ["general"] with time_range; ["science"] = scholarly; ' +
+      "engines overrides categories (omit categories when passing engines); " +
+      "language = locale, e.g. pt-BR.",
     inputSchema: {
       additionalProperties: false,
       properties: {
@@ -100,8 +118,10 @@ const TOOLS = [
         },
         engines: {
           description:
-            "Engine names, not shortcuts: duckduckgo, mojeek, google " +
-            "scholar, arxiv, bing news; unknown names are dropped.",
+            "Engine names, not shortcuts: brave, duckduckgo, brave.news, " +
+            "duckduckgo news, bing news, wikinews, google scholar, arxiv; " +
+            "overrides categories (omit categories when set); unknown names " +
+            "are dropped.",
           items: { type: "string" },
           type: "array",
         },
@@ -255,6 +275,28 @@ const clampInt = (value: number, min: number, max: number) => {
   return String(Math.min(max, Math.max(min, truncated)));
 };
 
+async function querySearx(
+  searchParameters: URLSearchParams,
+): Promise<SearxOutcome> {
+  const response = await fetch(`${SEARXNG}/search?${searchParameters}`, {
+    // SearXNG caps engine waits at max_request_timeout (15s); 20s per attempt
+    // bounds a hung fetch while leaving headroom for a single retry.
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`searxng HTTP ${response.status}`);
+  const json = (await response.json()) as SearxResponse;
+  const results = Array.isArray(json.results) ? json.results : [];
+  const unresponsiveEngines = Array.isArray(json.unresponsive_engines)
+    ? json.unresponsive_engines.filter(
+        (entry): entry is [string, string] =>
+          Array.isArray(entry) &&
+          isNonEmptyString(entry[0]) &&
+          isNonEmptyString(entry[1]),
+      )
+    : [];
+  return { results, unresponsiveEngines };
+}
+
 async function search(arguments_: Record<string, unknown>) {
   const query = arguments_["query"];
   if (typeof query !== "string" || query === "") {
@@ -268,32 +310,66 @@ async function search(arguments_: Record<string, unknown>) {
   const safesearch = arguments_["safesearch"];
   const time_range = arguments_["time_range"];
   const timeout_limit = arguments_["timeout_limit"];
+  const engineList = Array.isArray(engines)
+    ? engines.filter((entry) => isNonEmptyString(entry))
+    : [];
+  const categoryList = Array.isArray(categories)
+    ? categories.filter((entry) => isNonEmptyString(entry))
+    : [];
+  const hasEngines = engineList.length > 0;
+  const isNewsOnly =
+    !hasEngines && categoryList.length === 1 && categoryList[0] === "news";
   const searchParameters = new URLSearchParams({ format: "json", q: query });
   // llama.cpp grammars enforce types/enums but not minimum/maximum or array
   // length; clamp here so malformed values don't waste a searxng 400.
-  if (Array.isArray(categories) && categories.length > 0)
-    searchParameters.set("categories", categories.join(","));
-  if (Array.isArray(engines) && engines.length > 0)
-    searchParameters.set("engines", engines.join(","));
+  // SearXNG unions `engines` and `categories` instead of intersecting them;
+  // omit `categories` whenever explicit `engines` are supplied.
+  if (hasEngines) searchParameters.set("engines", engineList.join(","));
+  else if (categoryList.length > 0)
+    searchParameters.set("categories", categoryList.join(","));
   if (isNonEmptyString(language)) searchParameters.set("language", language);
   if (typeof pageno === "number")
     searchParameters.set("pageno", clampInt(pageno, 1, Infinity));
   if (typeof safesearch === "number")
     searchParameters.set("safesearch", clampInt(safesearch, 0, 2));
-  if (typeof time_range === "string" && TIME_RANGES.has(time_range))
+  // News engines (brave.news, duckduckgo news, wikinews) lack time_range
+  // support and are silently dropped by SearXNG when time_range is set;
+  // omit time_range on news-only queries so all news engines run and return
+  // publishedDate for filtering.
+  if (
+    !isNewsOnly &&
+    typeof time_range === "string" &&
+    TIME_RANGES.has(time_range)
+  )
     searchParameters.set("time_range", time_range);
   if (typeof timeout_limit === "number")
     searchParameters.set("timeout_limit", String(Math.max(0, timeout_limit)));
-  const response = await fetch(`${SEARXNG}/search?${searchParameters}`, {
-    // Tor-routed engines add seconds per request; without a bound a hung
-    // fetch hangs the tool call forever (searxng caps engine waits at 25s).
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) throw new Error(`searxng HTTP ${response.status}`);
-  const json = (await response.json()) as { results?: SearxResult[] };
-  const results = Array.isArray(json.results) ? json.results : [];
+
+  let outcome = await querySearx(searchParameters);
+  if (
+    outcome.results.length === 0 &&
+    outcome.unresponsiveEngines.length > 0 &&
+    outcome.unresponsiveEngines.every(([, reason]) =>
+      TRANSIENT_ENGINE_ERROR.test(reason),
+    )
+  ) {
+    // SearXNG round-robins its Tor SOCKS5 proxy pool per request, so a single
+    // retry lands on fresh exit circuits when every engine hits a transient error.
+    outcome = await querySearx(searchParameters);
+  }
+  if (outcome.results.length === 0 && outcome.unresponsiveEngines.length > 0) {
+    // SearXNG still returns HTTP 200 with results: [] when every queried engine
+    // timed out, hit CAPTCHA, or errored. Surface unresponsive_engines instead
+    // of handing the agent a silent empty list.
+    const formatted = outcome.unresponsiveEngines.map(
+      ([engine, reason]) => `${engine}: ${reason}`,
+    );
+    throw new Error(
+      `search: no results (unresponsive engines: ${formatted.join("; ")})`,
+    );
+  }
   return textResult(
-    JSON.stringify(results.map((result) => compactResult(result))),
+    JSON.stringify(outcome.results.map((result) => compactResult(result))),
   );
 }
 
@@ -310,7 +386,7 @@ const handlers: Record<string, (parameters: unknown) => unknown> = {
     return {
       capabilities: { tools: {} },
       protocolVersion: requested,
-      serverInfo: { name: "firecrawl", version: "1.1.2" },
+      serverInfo: { name: "firecrawl", version: "1.1.5" },
     };
   },
 

@@ -42,11 +42,16 @@ in
 {
   name = "gateway-failover";
 
-  defaults.networking = {
-    useNetworkd = true;
-    useDHCP = false;
-    firewall.enable = false;
-  };
+  defaults =
+    { pkgs, ... }:
+    {
+      networking = {
+        useNetworkd = true;
+        useDHCP = false;
+        firewall.enable = false;
+      };
+      environment.systemPackages = [ pkgs.python3 ];
+    };
 
   # Each edge runs a host's own uplink units on virtual NICs of the same
   # names: the primary on vlan 1, the fallback on vlan 2.
@@ -190,11 +195,42 @@ in
             edge.sleep(duration=dt.timedelta(seconds=6))
             edge.fail(default_via(primary))
 
-    with subtest("heal returns egress to the primary"):
+    with subtest("heal returns egress to the primary and resets stale fallback TCP sockets"):
+        isp2.succeed(
+            "python3 -c 'import socket, time; "
+            "s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); "
+            "s.bind((\"${destination}\", 19999)); s.listen(8); "
+            "conns = [s.accept()[0] for _ in range(2)]; time.sleep(60)' "
+            "</dev/null >/dev/null 2>&1 & echo $! >/tmp/tcp-sink.pid"
+        )
+        isp2.wait_until_succeeds("ss -4tlnH sport = :19999 | grep -q 19999", timeout=few_ticks)
+
+        fallback_ips = {}
+        for edge, _, fallback in edges:
+            fb_ip = edge.succeed(
+                f"ip -4 -o addr show dev {fallback} scope global | awk '{{ split($4, a, \"/\"); print a[1]; exit }}'"
+            ).strip()
+            fallback_ips[edge.name] = fb_ip
+            edge.succeed(
+                "python3 -c 'import socket, time; "
+                "c = socket.create_connection((\"${destination}\", 19999), timeout=5); "
+                "time.sleep(60)' </dev/null >/dev/null 2>&1 & echo $! >/tmp/tcp-client.pid"
+            )
+            edge.wait_until_succeeds(
+                f"ss -4tnH state established src {fb_ip} dst ${destination} dport = :19999 | grep -q 19999",
+                timeout=few_ticks,
+            )
+
         isp1.succeed("ip link set wan0 up")
         for edge, primary, _ in edges:
             leaves_through(edge, primary)
             publishes(edge, primary, 1)
+            edge.wait_until_fails(
+                f"ss -4tnH state established src {fallback_ips[edge.name]} dst ${destination} dport = :19999 | grep -q 19999",
+                timeout=few_ticks,
+            )
+            edge.succeed("kill $(cat /tmp/tcp-client.pid) 2>/dev/null || true")
+        isp2.succeed("kill $(cat /tmp/tcp-sink.pid) 2>/dev/null || true")
 
     with subtest("a deleted primary default is back within a tick, with no transition"):
         for edge, primary, _ in edges:

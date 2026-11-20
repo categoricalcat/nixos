@@ -5,6 +5,10 @@ _:
     ../../../modules/networking/sysctl-base.nix
   ];
 
+  # Load nf_conntrack before systemd-sysctl so net.netfilter.nf_conntrack_*
+  # tunings apply at cold boot instead of being ignored before nftables runs.
+  boot.kernelModules = [ "nf_conntrack" ];
+
   boot.kernel.sysctl = {
     # IPv4 and IPv6 routing is owned by yirukou.
     # Enable forwarding on all interfaces, including future router ports.
@@ -33,9 +37,6 @@ _:
 
     # Reserve conntrack capacity for NAT, forwarding, and tunnel flows.
     "net.netfilter.nf_conntrack_max" = 262144;
-
-    # Keep automatic conntrack helpers disabled; nftables should opt in.
-    "net.netfilter.nf_conntrack_helper" = 0;
 
     # Retire generic conntrack entries quickly on a gateway.
     "net.netfilter.nf_conntrack_generic_timeout" = 120;

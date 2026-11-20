@@ -3,6 +3,7 @@
   allAddresses,
   config,
   lib,
+  pkgs,
   ...
 }:
 
@@ -56,6 +57,40 @@ in
     isSystemUser = true;
     group = "nginx";
   };
+
+  systemd.services =
+    lib.genAttrs'
+      [
+        allAddresses.baseDomain
+        allAddresses.legacyDomain
+      ]
+      (
+        cert:
+        lib.nameValuePair "acme-${cert}" {
+          # Upstream security.acme unconditionally pulls acme-order-renew-<cert>
+          # via Wants= on every boot, stalling boot for ~80s in serialized lego
+          # retries if WAN DHCP is not ready yet. mkForce drops the boot-time
+          # Wants= while ExecStartPost still triggers initial issuance on a fresh
+          # host. Existing certs, including SAN changes, renew via the daily
+          # acme-renew-<cert>.timer or `systemctl start acme-order-renew-<cert>`.
+          wants = lib.mkForce [ "acme-setup.service" ];
+          serviceConfig.ExecStartPost = lib.mkAfter [
+            "+${
+              lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "acme-bootstrap-${cert}";
+                  runtimeInputs = [ pkgs.systemd ];
+                  text = ''
+                    if [ ! -e ${lib.escapeShellArg "/var/lib/acme/${cert}/acme-success"} ]; then
+                      systemctl start --no-block ${lib.escapeShellArg "acme-order-renew-${cert}.service"}
+                    fi
+                  '';
+                }
+              )
+            }"
+          ];
+        }
+      );
 
   services.nginx = {
     enable = true;
