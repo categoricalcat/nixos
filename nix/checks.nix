@@ -233,10 +233,12 @@ let
     ) (lib.filter (h: h != addresses.monitoring.centralHost) addresses.monitoring.scrapeHosts);
 
   # --- container-identity -----------------------------------------------------
-  # uid-gid plan, decisions 1-2: every declared container either runs as a
-  # numeric identity (user uid:gid or PUID/PGID) pinned in 330-399 on a
-  # declared account and group, unique per container, or records why its
-  # host-root processes are allowed (rootReason).
+  # Container identity policy: one principal per ID. Every declared container
+  # either runs as a numeric identity (user uid:gid or PUID/PGID) pinned in
+  # 330-399 on a declared account and group, unique per container, or records
+  # why its host-root processes are allowed (rootReason). New container
+  # accounts continue from 348; the block sits below the dynamic allocator
+  # (400-999) and cannot collide with it.
   containerIdentity =
     let
       numOrNull =

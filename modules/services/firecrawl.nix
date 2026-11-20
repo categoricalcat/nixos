@@ -10,8 +10,9 @@ let
   firecrawlPort = allAddresses.hosts.${config.networking.hostName}.services.firecrawl.port;
   searxngPort = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
 
-  # One account per container (uid-gid plan, decision 2): each number is shared
-  # by the account and its own group, so podman renders `user` at eval time.
+  # One account per container: each number is shared by the account and its
+  # own group, so podman renders `user` at eval time (policy: container
+  # accounts pin 330-399, one principal per ID; see nix/checks.nix).
   containerAccounts = {
     firecrawl-postgres = 334;
     firecrawl-rabbitmq = 335;

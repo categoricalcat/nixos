@@ -22,6 +22,10 @@ in
         none = {
           gid = 1002;
         };
+        # One group per service principal; dynamic ids stay in the account
+        # database. After the switch, chgrp -R nix-builder /var/lib/nix-builder.
+        nix-builder = { };
+        ai = { };
       }
       (lib.mkIf config.host.workd {
         workd = {
@@ -73,7 +77,7 @@ in
 
         nix-builder = {
           isSystemUser = true;
-          group = "nogroup";
+          group = "nix-builder";
           description = "Nix remote builder";
           home = "/var/lib/nix-builder";
           createHome = true;
@@ -85,7 +89,7 @@ in
         # whitelisted reads in modules/services/ssh/scripts/ai-gate.sh.
         ai = {
           isSystemUser = true;
-          group = "nogroup";
+          group = "ai";
           description = "Read-only AI agent";
           shell = "/bin/sh";
           openssh.authorizedKeys.keys = keys.access.ai.${hostName};
@@ -125,7 +129,6 @@ in
   environment = {
     systemPackages = [
       (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
-      (pkgs.writeShellScriptBin "nix-fix-uids" (builtins.readFile ./scripts/nix-fix-uids.sh))
       (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
       # Read-only mesh access lane (used by the opencode systemd unit, which
       # runs as yi but does not see home-manager's ~/.nix-profile/bin).

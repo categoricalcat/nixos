@@ -99,7 +99,8 @@ in
     gluetun = {
       image = "docker.io/qmcgaw/gluetun:latest";
       # VPN namespace owner: NET_ADMIN and /dev/net/tun require root
-      # (uid-gid plan decision; the container-identity contract accepts it).
+      # (the container-identity contract in nix/checks.nix accepts a recorded
+      # reason as compliance).
       rootReason = "needs NET_ADMIN and /dev/net/tun to create and manage the VPN namespace";
       extraOptions = [
         "--cap-add=NET_ADMIN"

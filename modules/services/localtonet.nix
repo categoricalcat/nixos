@@ -4,14 +4,17 @@
 }:
 
 {
+  # Pinned so the container `user` renders at eval time (unpinned accounts
+  # render "null:null" and the container silently runs as root).
+  users.groups.localtonet.gid = 346;
   users.users.localtonet = {
     isSystemUser = true;
+    uid = 346;
     group = "localtonet";
     description = "Localtonet service user";
     home = "/var/lib/localtonet";
     createHome = true;
   };
-  users.groups.localtonet = { };
 
   sops.templates."localtonet.env".content = ''
     LOCALTONET_AUTH_TOKEN=${config.sops.placeholder."tokens/localtonet-authtoken"}

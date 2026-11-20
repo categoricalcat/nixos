@@ -24,6 +24,9 @@ Bare hostnames resolve via the generated ssh config
 - `yitaishi`, `yixiaoqing` — Tailscale address (VPN only; they expose ssh
   nowhere else)
 
+`yichuang` is outside the registry: no gate, no key, never
+identity-inventoried (uid/gid audit); inventory it by hand when it joins.
+
 ## Gate allowlist
 
 The gate is `modules/services/ssh/scripts/ai-gate.sh`, wired via

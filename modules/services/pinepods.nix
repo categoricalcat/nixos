@@ -10,8 +10,9 @@ let
   inherit (addrs.services.pinepods) domain port;
 in
 {
-  # One account per container (uid-gid plan, decision 2); pinepods itself
-  # keeps the shared media group for the downloads volume.
+  # One account per container (policy: 330-399 pins, one principal per ID; see
+  # nix/checks.nix); pinepods itself keeps the shared media group for the
+  # downloads volume.
   users = {
     groups = {
       pinepods-db.gid = 338;

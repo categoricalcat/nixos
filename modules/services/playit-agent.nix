@@ -1,10 +1,16 @@
-{ config, ... }:
+{
+  config,
+  ...
+}:
 
 {
 
-  users.groups.playit = { };
+  # Pinned so the container `user` renders at eval time (unpinned accounts
+  # render "null:null" and the container silently runs as root).
+  users.groups.playit.gid = 347;
   users.users.playit = {
     isSystemUser = true;
+    uid = 347;
     group = "playit";
   };
 

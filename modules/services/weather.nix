@@ -8,7 +8,7 @@ let
   port = allAddresses.hosts.${config.networking.hostName}.services.weather.port;
 in
 {
-  # Stateless static server (uid-gid plan, decision 2: one account, its own group)
+  # Stateless static server: one account with its own group (330-399 pin; see nix/checks.nix)
   users.groups.weather.gid = 345;
   users.users.weather = {
     isSystemUser = true;

@@ -90,8 +90,8 @@
       fsType = "ntfs3";
       options = [
         "rw"
-        "uid=1000"
-        "gid=1000"
+        "uid=${toString config.users.users.yi.uid}"
+        "gid=${toString config.users.groups.yi.gid}"
         "dmask=007"
         "fmask=007"
         "exec"

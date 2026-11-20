@@ -11,8 +11,8 @@ let
   lanHost = addrs.network.lan.ipv4.host;
 in
 {
-  # One account per container (uid-gid plan, decision 2); both keep the
-  # shared media group for the downloads volume.
+  # One account per container (policy: 330-399 pins, one principal per ID; see
+  # nix/checks.nix); both keep the shared media group for the downloads volume.
   users.users.soularr = {
     isSystemUser = true;
     uid = 340;

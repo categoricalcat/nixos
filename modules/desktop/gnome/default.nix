@@ -37,12 +37,12 @@ in
         appConfig."gnome-shell" = {
           isAllowed = true;
           isSystem = true;
-          users = [ "1000" ];
+          users = [ (toString config.users.users.yi.uid) ];
         };
         appConfig."org.gnome.Weather" = {
           isAllowed = true;
           isSystem = true;
-          users = [ "1000" ];
+          users = [ (toString config.users.users.yi.uid) ];
         };
       };
 
