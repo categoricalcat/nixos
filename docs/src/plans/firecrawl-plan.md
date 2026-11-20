@@ -1,162 +1,154 @@
-# Native Firecrawl Packaging & Lossless SearXNG Integration
+# Firecrawl Container Fixes & Lossless SearXNG Search
 
-## Status: DRAFT — not started; claims audited against upstream `v2.11.0`, the locked nixpkgs/SearXNG/pg_cron sources, and live `yifuwuqi` state on 2026-11-20
+## Status: DRAFT — not started; claims audited against the running `yifuwuqi` containers, upstream `v2.11.0`, and the locked SearXNG source on 2026-11-20
 
 ## Objective
 
-1. Consolidate every Firecrawl artifact (API/workers, Playwright renderer, NuQ PostgreSQL schema, MCP stdio bridge, NixOS service module, and NixOS VM integration test) under `packages/firecrawl/`, retiring `modules/services/firecrawl.nix` and `packages/firecrawl-mcp/`.
-1. Replace the 5 floating-tag Podman OCI containers with deterministic, source-built Nix derivations running as hardened `127.0.0.1` systemd services. Reuse the existing host PostgreSQL cluster and host-local Valkey through a dedicated database/role and logical DB — no second instance of either — and add loopback RabbitMQ, which has no host equivalent. That lets SearXNG (`modules/services/searxng.nix`) bind `127.0.0.1`, still serving `search.aset.love` through the local ingress as the regular service it is, and closes the container-bridge firewall exposure.
-1. Keep search private and lossless where it is consumed:
-   - **Firecrawl**: remove the silent clearnet `ddgSearch` fallback, so a configured SearXNG endpoint is the only search egress and its failures surface as errors. OpenCode is the only consumer and searches through `firecrawl-mcp`, so Firecrawl's own `/v1/search` and `/v2/search` keep upstream's request and response shapes.
-   - **`firecrawl-mcp`**: give agents every SearXNG search parameter (time range, categories, engines, language, paging, safe search, timeout) through `firecrawl_search`, validated against an explicit domain; return SearXNG's JSON envelope without field projection, expose only locally supported `scrape` options plus `map`, keep all tool schemas flat for `llama.cpp`, and check the stated invariants with TypeScript, example tests, and seeded property tests.
+1. Keep Firecrawl as five unmodified upstream containers with their own PostgreSQL, Redis, and RabbitMQ: no source build and no patch to upstream code or SQL.
+1. Fix what configuration alone can fix in `modules/services/firecrawl.nix`: publish the API on loopback only, let the Playwright container recover from a failed boot, stop four idle queue workers, and drop dead environment variables.
+1. Keep `firecrawl-mcp`, OpenCode's only route to search, a 1:1 bridge to SearXNG and make it lossless: every SearXNG search parameter in with SearXNG's own meaning (time range, categories, engines, language, paging, safe search, timeout), SearXNG's whole JSON answer out, plus the `scrape` options this deployment supports and `map`. SearXNG itself is unchanged and keeps serving `search.aset.love`.
 
 ## Current state
 
-- **Floating OCI stack & network exposure (`modules/services/firecrawl.nix`)**:
-  - Runs 5 Podman containers (`ghcr.io/firecrawl/{firecrawl,playwright-service,nuq-postgres}:latest`, `docker.io/library/redis:alpine`, `docker.io/library/rabbitmq:4-management`), two of them private PostgreSQL and Redis instances beside the host's own cluster (`modules/services/postgresql.nix`) and Valkey (`modules/services/valkey.nix`).
-  - Publishes `"24002:3002"` on `0.0.0.0` instead of `127.0.0.1` (`modules/services/firecrawl.nix:191`), contradicting [AI & Local Inference](../services/ai-rocm.md) and `users/programs/opencode.nix:12`.
-  - `playwright-service:latest` crash-loops at cold boot when `corepack` fetches `pnpm` over the network (`modules/services/firecrawl.nix:103`); readiness probes `GET /` (`line 114`) instead of upstream's `GET /v0/health/readiness`.
-  - Sets dead upstream variables (`POSTGRES_URL`, `SEARCH_PROVIDER`, `SEARXNG_BASE_URL`), leaves `USE_DB_AUTHENTICATION=false` and `NUQ_BACKEND=pg` implicit, and globally pins `SEARXNG_CATEGORIES="science,general"`. Upstream's compose knobs are no better guide: `POSTGRES_HOST` only steers the harness's container bootstrap and is ignored once `NUQ_DATABASE_URL` and `NUQ_RABBITMQ_URL` are set, and no `v2.11.0` code reads `NUM_WORKERS_PER_QUEUE`, `CRAWL_CONCURRENT_REQUESTS`, or `BROWSER_POOL_SIZE`.
-  - Starts the default 5 NuQ workers and 10 Playwright pages. Only the API's own listener honours `HOST`: the queue, extract, NuQ, prefetch, and reconciler workers and the Playwright service call `app.listen(port)` and bind every interface unless patched.
-  - Uses inline `pkgs.writeShellScript` (`line 31`) and raw `"${pkg}/bin/..."` paths with 5x duplicated systemd network dependency blocks.
-- **SearXNG loopback & Tor bypass (`modules/services/searxng.nix`, `hosts/yifuwuqi/networking/firewall.nix`)**:
-  - `modules/services/searxng.nix:65` binds `0.0.0.0` (contradicting [Hosted Web Services Directory](../services/hosted-services.md)) and `hosts/yifuwuqi/networking/firewall.nix:89` opens port `24888` to application container subnets solely so containerized Firecrawl can reach SearXNG via `host.containers.internal`.
-  - Upstream Firecrawl `apps/api/src/search/v2/index.ts` and `apps/api/src/search/index.ts` fall through to unproxied clearnet `ddgSearch` whenever `searxng_search` returns empty results or swallows an error.
-- **Lossy MCP bridge & verification gaps (`packages/firecrawl-mcp/`)**:
-  - `compactResult` (`packages/firecrawl-mcp/firecrawl-mcp.ts:213-223`) strips everything except `url`, `title`, `content`, and `publishedDate` — dropping `img_src`/`thumbnail` (`images`), `iframe_src`/`length` (`videos`), `authors`/`doi`/`journal` (`science`), and `engine`/`category`/`score`.
-  - Top-level SearXNG fields (`answers` from the Calculator/Unit-converter/Hash plugins, `infoboxes`, `suggestions`, `corrections`) are discarded, and `unresponsive_engines` is dropped whenever `results.length > 0`. Those plugins run by upstream default, not by configuration: SearXNG removed the `enabled_plugins` setting that `modules/services/searxng.nix:255-259` still sets, so the live instance keeps `oa_doi_rewrite` off and `tracker_url_remover` on, the opposite of what that list declares.
-  - `language` is forwarded unvalidated (`en_US`, `zh-Hant`, and `english` fail SearXNG's `^[a-z]{2,3}(-[a-zA-Z]{2})?$` + `'auto'` check with HTTP 400); `timeout_limit = 0` passes `0` to SearXNG (immediately timing out all engines); `clampInt(pageno, 1, Infinity)` formats large numbers as `"1e+..."`, failing SearXNG's `.isdigit()` check with HTTP 400.
-  - `packages/firecrawl-mcp/default.nix` omits `finalAttrs:`, `meta.license`, and runtime/property tests beyond `tsc --noEmit`.
-- **Audited upstream constraints (`firecrawl/firecrawl` tag `v2.11.0`, locked nixpkgs/SearXNG/pg_cron)**:
-  - Firecrawl uses `pnpm@10`/lockfile v9. Nixpkgs' Playwright module is `1.64.1`, while upstream pins `1.58.1`; browser revisions and the Node module must come from the same nixpkgs Playwright package. In `1.64.1`, `chromium.launch({ headless: true })` — the service's only launch — resolves to the `chromium-headless-shell` executable, which nixpkgs' `browsers-chromium` set omits.
-  - `apps/api/native` git-ignores `Cargo.lock` and depends on two unpinned git crates (`nodesig` at `HEAD`, `calamine` at branch `fc-prod`), so upstream's own image build is not reproducible. Its `index.js` loader and `index.d.ts` typings, which the runtime and `tsc` import, are likewise git-ignored outputs of `napi build`; a bare `cargo build` yields neither.
-  - SearXNG unions explicit `engines` and `categories`; they are not XOR. Its parser bounds `pageno`, `safesearch`, language, and `time_range`, but accepts any float for `timeout_limit` — `0`, negatives, and `nan` included — and only caps it silently at `outgoing.max_request_timeout` (`15.0`, `modules/services/searxng.nix:136`).
-  - The existing PostgreSQL module derives databases/owners from `modules/addresses.nix`. NuQ extensions must be created as `postgres`, while NuQ objects and cron jobs must be owned by `firecrawl`. `pg_cron`'s default libpq mode would reconnect as `firecrawl` and fail the default `pg_hba` (password on loopback TCP, peer mismatch on the socket), so it needs background-worker mode. Those workers report `backend_type = 'pg_cron'`, which NuQ's `nuq_maintenance_watchdog` filters out by matching only `'client backend'`.
-  - Every Firecrawl Redis client is `ioredis` constructed from a URL, so one `?db=N` logical DB namespaces them all, and BullMQ only warns when `maxmemory-policy` is not `noeviction`. The host-local Valkey on `yifuwuqi` runs `allkeys-lru` under a 512 MB cap, serves SearXNG on DB 1, and has no writer of TTL-less keys: DB 0 holds about 29k stale entries in Unbound's cachedb key shape, none touched in the last 60 days (300-key sample).
-  - RabbitMQ has no host equivalent and cannot be dropped: without `NUQ_RABBITMQ_URL` the harness tries to start a container and the extract worker throws at startup. `services.rabbitmq` also enables socket-activated `epmd` on `[::]:4369` and an Erlang distribution listener on every interface.
+- **Why Firecrawl is containerized**:
+  - Upstream's schema assumes it owns the database server. `apps/nuq-postgres/nuq.sql` issues 15 `ALTER SYSTEM` settings and reloads the configuration, and the image runs it as superuser on database `postgres` with `cron.database_name = 'postgres'`. On the host cluster (`modules/services/postgresql.nix`) those settings would also govern Forgejo, Attic, and Grafana unless the SQL were edited.
+  - Five worker listeners and the Playwright service call `app.listen(port)` with no host, so on the host network they would bind every interface unless patched.
+- **Measured cost** (about an hour after boot, idle; RAM plus swap charged to each container cgroup):
+  - `firecrawl` 2177 MiB, `firecrawl-rabbitmq` 139 MiB, `firecrawl-postgres` 120 MiB, `firecrawl-redis` 9 MiB. The duplicated PostgreSQL and Redis hold 129 MiB between them, 6% of what the Firecrawl container holds.
+  - Inside `firecrawl`, eleven Node processes run; each of the five NuQ workers holds about 242 MiB.
+- **Container configuration (`modules/services/firecrawl.nix`)**:
+  - `ports` (`:191`) publishes `0.0.0.0:24002`. Podman forwards published ports by DNAT, and the host firewall accepts every DNAT'd connection (`ct status dnat accept` in nixpkgs' `firewall-nftables.nix`), so the per-interface allowlists in `hosts/yifuwuqi/networking/firewall.nix` do not cover it. The API takes requests without a key (`USE_DB_AUTHENTICATION` is unset). [AI & Local Inference](../services/ai-rocm.md) and `users/programs/opencode.nix:12` both describe it as localhost-only.
+  - `podman-firecrawl-playwright.service` is down, so scrapes run without a browser: a `waitFor` scrape comes back with `The engine used does not support the following features: waitFor`. The image prepares `pnpm` for root at build time but runs as another user and starts through `pnpm start`, so Corepack downloads `pnpm` from `registry.npmjs.org` on every start. At the 17:17 boot on 2026-11-20 host name resolution kept failing for another 43 s after `network-online.target` was reached; the unit failed with `EAI_AGAIN` five times in its first six seconds and hit its start limit. Earlier boots that day started it on the first attempt. Only `podman-firecrawl` has the no-start-limit, 30-second backoff (`:110-111`); the Playwright unit keeps systemd's defaults (100 ms restart delay, five starts per 10 s), so it stays down until someone restarts it.
+  - Five NuQ workers run, the `NUQ_WORKER_COUNT` default, but nothing OpenCode calls reaches them: `/v2/scrape` runs its job inside the API process (`skipNuq`) and `/v2/map` fetches sitemaps in-process. They serve only the crawl and batch endpoints.
+  - `POSTGRES_URL`, `SEARCH_PROVIDER`, and `SEARXNG_BASE_URL` (`:197`, `:203`, `:204`) are dead: no line of the running image's code names them.
+- **Search paths**:
+  - Firecrawl's own search (`apps/api/src/search/index.ts`, `search/v2/index.ts`) asks SearXNG first and falls through to unproxied `ddgSearch` when the answer is empty or the request fails. Its adapter forwards only the query, language, and page, with engines and categories pinned by environment. No OpenCode tool calls it.
+  - OpenCode searches through `firecrawl-mcp`, which queries SearXNG's JSON API directly on `localhost:24888`.
+  - SearXNG binds `0.0.0.0` (`modules/services/searxng.nix:65`) and `hosts/yifuwuqi/networking/firewall.nix:89` admits application-container subnets to its port, so the Firecrawl container can reach it. [Hosted Web Services Directory](../services/hosted-services.md) §2.2 wrongly says it is bound to loopback.
+- **Lossy MCP bridge (`packages/firecrawl-mcp/`)**:
+  - `compactResult` (`firecrawl-mcp.ts:213-223`) keeps only `url`, `title`, `content`, and `publishedDate`, dropping `img_src`/`thumbnail` (`images`), `iframe_src`/`length` (`videos`), `authors`/`doi`/`journal` (`science`), and `engine`/`category`/`score`.
+  - Top-level `answers`, `infoboxes`, `suggestions`, and `corrections` are discarded, and `unresponsive_engines` is dropped whenever any result exists. Live, `md5 hello` returns a `hash_plugin` answer the tool never shows, and a query with 34 results also reported `wikipedia: too many requests`.
+  - Parameters are rewritten or forwarded unchecked: `categories` is omitted whenever `engines` is set, and `time_range` is removed from news-only queries; `language` is not validated (`en_US`, `zh-Hant`, and `english` get HTTP 400); `timeout_limit = 0` reaches SearXNG as `0`, giving every engine no time; `clampInt(pageno, 1, Infinity)` renders large numbers as `1e+21`, which SearXNG rejects with HTTP 400.
+  - Names are narrower than SearXNG's or unchecked: the `categories` enum offers nine of the 33 categories the instance accepts, so `repos`, `packages`, or `q&a` cannot be requested; an unknown `engines` name is not caught, although SearXNG then drops it and runs a default `general` search instead (live, `engines=bogus` returned 31 `brave` and `duckduckgo` results).
+  - `scrape` offers `summary`, which fails here with `UNKNOWN_ERROR` because no LLM is configured, and exposes only `formats` and `onlyMainContent`. `/v2/map` works here without fire-engine (a live call returned five `nixos.org` links) but has no tool.
+  - The package's only gate is `tsc --noEmit`, and `default.nix` declares no `meta.license`.
+- **SearXNG's request contract (locked source)**:
+  - Its documented Search API (`docs/dev/search_api.rst`) has eight parameters: `q`, `categories`, `language`, `pageno`, `time_range`, `format`, `safesearch`, and `theme`. The search-query parser (`searx/webadapter.py`) also reads `engines` and `timeout_limit`.
+  - The parser unions explicit `engines` with `categories`; they are not exclusive (live, `engines=arxiv` with `categories=it` returned both sets). It bounds `pageno`, `safesearch`, `language`, and `time_range`, but accepts any float for `timeout_limit` (`0`, negatives, and `nan` included), which the search then caps silently at `outgoing.max_request_timeout` (`15.0`, `modules/services/searxng.nix:136`).
+  - `GET /config` lists what the instance knows: 33 category names, of which the ten UI tabs are a subset, and 261 engines. The parser drops any other category or engine name silently.
+  - Request parameters also feed cookie-style preference overrides (`disabled_engines`/`enabled_engines`, `disabled_plugins`/`enabled_plugins`, UI settings), which the documented API does not include.
 
 ## Decisions
 
-1. **Single package root (`packages/firecrawl/`)**:
-   - Co-locate all Firecrawl derivations, patches, MCP TypeScript sources/tests, `module.nix`, and `test.nix` inside `packages/firecrawl/` (following the `packages/dev-certs/{default,module}.nix` and `packages/gateway-failover/{default,test}.nix` layout).
-   - Instantiate the package with `pkgs.callPackage` at each consumer, as every other local package does (`packages/dev-certs/module.nix:42`): `flake.nix` `perSystem.packages` exposes `firecrawl` plus `firecrawl-playwright` and `firecrawl-mcp` from its `passthru`, while `module.nix` and `users/programs/opencode.nix` call it directly. An entry in `nix/overlays.nix` would reach neither `perSystem`'s `pkgs` nor the VM test's nodes, which apply no overlays; the identical expression already evaluates to one derivation everywhere.
-1. **Native Nix derivations (`v2.11.0` pinned)**:
-   - Share a single `fetchFromGitHub` (`firecrawl/firecrawl`, tag `v2.11.0`) across `api.nix`, `playwright.nix`, and `nuq-schema.nix`.
-   - Build `libhtml-to-markdown.so` with `buildGoModule` (`-buildmode=c-shared`). Build the `@mendable/firecrawl-rs` N-API module inside the pnpm workspace with `rustPlatform.cargoSetupHook` and the workspace's own `napi build`, against a vendored `packages/firecrawl/Cargo.lock` (`rustPlatform.importCargoLock`, with `outputHashes` for its git crates), and smoke-load the result. Build the Node workspaces with `nodejs_22`, `pnpm_10`, `fetchPnpmDeps` (`fetcherVersion = 5`), and `pnpmConfigHook`.
-   - Replace upstream Playwright `1.58.1`'s `playwright`/`playwright-core` modules with the matching `pkgs.playwright-test` modules, and point `PLAYWRIGHT_BROWSERS_PATH` at a headless-shell-only set from `pkgs.playwright-driver.selectBrowsers` (Chromium, Firefox, WebKit, and ffmpeg off). Set `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`.
-   - Patch the five worker health/metrics listeners to pass the API's existing `config.HOST`, and Playwright's `api.ts` to pass `process.env.HOST ?? "127.0.0.1"`, to `app.listen`. The Go library is loaded only under `USE_GO_MARKDOWN_PARSER=true`; the module sets it so the packaged artifact is not dead.
-1. **Shared host infrastructure & non-colliding loopback ports**:
-   - Add `firecrawl` to `allAddresses.hosts.yifuwuqi.services.postgresql.databases`, letting the existing PostgreSQL module create the database and peer-auth role on the shared cluster. Install `pg_cron`, set `cron.database_name = "firecrawl"`, `cron.use_background_workers = true`, `cron.max_running_jobs = 8`, and `max_worker_processes = 16`; create extensions as `postgres`, grant `firecrawl` usage on schema `cron`, then `SET ROLE firecrawl` before applying patched NuQ DDL so tables and cron jobs have the runtime owner.
-   - Strip `ALTER SYSTEM` and `pg_reload_conf()` from `nuq.sql` so the shared cluster's WAL/checkpoint settings remain untouched; widen the watchdog's filter to `backend_type IN ('client backend', 'pg_cron')` so it still cancels stuck reindexes; keep named `cron.schedule` calls idempotent.
-   - Reuse the host-local Valkey (`services.redis.servers.""`) over its unix socket rather than adding an instance. Register logical DBs in `allAddresses.hosts.yifuwuqi.services.valkey.databases` (`searxng = 1`, `firecrawl = 2`; DB 0 is Unbound's on `yirukou` and stays unused here), mirroring `postgresql.databases`, and make the eviction policy a per-host registry value beside `maxMemory`: `allkeys-lru` on `yirukou`, whose Unbound can store TTL-less keys, and `noeviction` on `yifuwuqi`, as BullMQ requires. Add loopback-only RabbitMQ at `127.0.0.1:5672`.
-   - Allocate Playwright (`24003`), queue worker (`24020`), extract worker (`24021`), and two NuQ workers starting at `24022` (derived prefetch/reconciler ports `24024`/`24025`) in `modules/addresses.nix`.
-   - Set only effective controls: `NUQ_WORKER_COUNT=2` and Playwright `MAX_CONCURRENT_PAGES=5`. Set `ENV=local`, `USE_DB_AUTHENTICATION=false`, `NUQ_BACKEND=pg`, and all dependency URLs explicitly for reproducibility, not as concurrency controls.
-1. **SearXNG contract in `firecrawl-mcp`, privacy invariant in Firecrawl**:
-   - Keep pure parameter types, normalizers, query encoding, envelope guards, and transient-failure classification in `packages/firecrawl/searxng-contract.ts`, imported by `firecrawl-mcp.ts` and its test, so the server file holds only RPC and I/O.
-   - Supported input domain: non-empty `q`; user-facing SearXNG categories (`general`, `images`, `videos`, `news`, `map`, `music`, `it`, `science`, `files`, `social media`); trimmed, non-empty, comma-free engine names, because SearXNG splits `engines` on `,` and strips each name; normalized language matching `^[a-z]{2,3}(-[a-zA-Z]{2})?$` or `auto`; safe base-10 integer `pageno >= 1`; integer `safesearch` in `0..2`; `time_range` in `day|week|month|year`; and finite `timeout_limit` in `(0, 15]`, rejecting what SearXNG would run with no budget or cap silently. The ceiling mirrors `outgoing.max_request_timeout`. That is every parameter SearXNG's search-query parser reads, except its `category_<name>` alias form and the `engine_data-*` paging tokens that its JSON output never emits.
-   - Preserve SearXNG semantics: `engines` and `categories` are both encoded and unioned, explicit `time_range` is never silently removed for news, and values are rejected rather than clamped.
+1. **Containers stay and upstream stays unmodified**:
+   - Sharing the host PostgreSQL means editing `nuq.sql`, which Objective 1 rules out, and running on the host network would leave the wildcard listeners to the firewall alone unless they were patched. The private PostgreSQL and Redis cost 129 MiB together, less than one idle NuQ worker.
+   - Images keep floating on `:latest` under the repo's podman auto-update policy (`modules/virtualisation/podman.nix`). The running `firecrawl` image was built on 2026-11-20 and already differs from `v2.11.0` (its processes start through `dist/src/main.js`), so every upstream fact here is a snapshot and the rollout re-checks the ones this plan depends on.
+   - SearXNG keeps its all-interfaces bind and container firewall rule, and Firecrawl's own search keeps its DuckDuckGo fallback; no OpenCode tool reaches that path.
+1. **Configuration-only fixes**:
+   - Publish the API on `127.0.0.1:24002`, the form `modules/services/pinepods.nix` already uses.
+   - Give `podman-firecrawl-playwright` the restart policy `podman-firecrawl` has (`StartLimitIntervalSec = 0`, `RestartSec = "30s"`), defined once for both units. Evaluated against the current configuration, the unit then renders `StartLimitIntervalSec=0`, `Restart=on-failure`, and `RestartSec=30s`: a failed start is retried every 30 s without limit, and at the 17:17 boot the third attempt, about a minute after the first, would have run after the host was resolving names again. The download itself stays, because skipping it means overriding the container command, which would tie the module to the image's internal entry point under a floating tag.
+   - Set `NUQ_WORKER_COUNT = 1`. One worker keeps the crawl and batch endpoints working, one job at a time, and stopping four frees about 970 MiB of RAM and swap.
+   - Remove the three dead variables.
+   - Leave the readiness probe on `GET /` (upstream's `/v0/health/readiness` handler in `v2.11.0` is the same unconditional `200`, and both paths answer `200` live) and `MAX_CONCURRENT_PAGES` at `10` (a ceiling on concurrent browser pages that costs nothing while idle).
+1. **1:1 SearXNG contract in `firecrawl-mcp`**:
+   - Each `firecrawl_search` parameter maps to exactly one SearXNG request parameter and keeps SearXNG's meaning; the table below is the whole mapping. The tool accepts what this instance accepts and rejects what the instance would refuse, drop silently, cap silently, or run with no time budget.
+   - `format` is always `json`, and `theme` only shapes HTML. With those two, the mapping covers all eight parameters of SearXNG's documented Search API, plus `engines` and `timeout_limit`, which the parser reads although that page omits them. The `category_<name>` alias, the `engine_data-*` paging tokens that JSON output never emits, and the cookie-style preference overrides are outside that API and stay out of the tool.
+   - Category and engine names come from the instance: the server reads `GET /config` and keeps the first successful answer for the life of the process. `tools/list` advertises the category names as the `categories` enum when it has them and leaves the items unconstrained otherwise.
+   - Preserve SearXNG semantics: `engines` and `categories` are both encoded and unioned, explicit `time_range` is never silently removed for news, and values are rejected rather than clamped. The one normalization is the locale separator (`pt_BR` becomes `pt-BR`).
+   - Keep pure parameter types, normalizers, query encoding, envelope guards, and transient-failure classification in `packages/firecrawl-mcp/searxng-contract.ts`, imported by `firecrawl-mcp.ts` and its test, so the server file holds only RPC and I/O.
    - MCP search returns SearXNG's response body verbatim after validating a parsed copy. It retries once only when the first envelope has no payload and every `unresponsive_engines` reason is transient; plugin-only answers/infoboxes count as payload, and partial failures are returned as they are.
    - Keep `firecrawl-mcp` schemas flat (`search`, `scrape`, `map`): every property is a scalar or an array of scalars, with no `oneOf`/`anyOf`/`allOf`/`not`/`$ref`. A recursive structural test establishes that property for the shipped schemas; only a live llama.cpp registration smoke test may claim grammar-compiler compatibility.
-   - Firecrawl keeps upstream's search request and response shapes. Its only search patch removes the `ddgSearch` fallback: with `SEARXNG_ENDPOINT` set, an empty SearXNG answer is returned as empty and an adapter failure reaches the caller as an error. The module sets neither `SEARXNG_ENGINES` nor `SEARXNG_CATEGORIES`, so that path follows SearXNG's own defaults instead of today's global pin.
 1. **Cutover and rollback**:
-   - Treat NuQ/Redis/RabbitMQ state as transient: stop submissions and drain active jobs before deployment rather than migrating queue state.
-   - Let the NixOS switch stop removed Podman units before native units claim their ports. Loading `pg_cron` restarts the shared `postgresql.service` once, briefly interrupting Forgejo, Attic, and Grafana.
-   - Roll back by switching to the previous generation. Keep the legacy PostgreSQL/RabbitMQ state under `/var/lib/container-volumes/firecrawl`, the `firecrawl_*` Podman networks, and the cached images through native acceptance; remove them only after the live smoke tests pass.
+   - The switch restarts the `firecrawl` and `firecrawl-playwright` containers and leaves PostgreSQL, Redis, and RabbitMQ running. A scrape in flight at that moment fails; nothing needs draining or migrating.
+   - Roll back by switching to the previous generation.
+
+`firecrawl_search` parameter mapping (Decision 3):
+
+| Tool parameter  | SearXNG parameter | Accepted                                                                       | SearXNG on anything else                                                         |
+| --------------- | ----------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `query`         | `q`               | non-empty string, passed through unchanged                                     | HTTP 400 on an empty query                                                       |
+| `categories`    | `categories`      | category names the instance lists (33 today)                                   | drops the name silently                                                          |
+| `engines`       | `engines`         | engine names the instance lists (261 today)                                    | drops the name silently; with none left it searches the default category         |
+| `language`      | `language`        | `auto`, or a code matching `^[a-z]{2,3}(-[a-zA-Z]{2})?$`                       | HTTP 400                                                                         |
+| `pageno`        | `pageno`          | safe integer from `1`, sent as plain digits                                    | HTTP 400                                                                         |
+| `time_range`    | `time_range`      | `day`, `week`, `month`, `year`                                                 | HTTP 400                                                                         |
+| `safesearch`    | `safesearch`      | `0`, `1`, `2`                                                                  | HTTP 400                                                                         |
+| `timeout_limit` | `timeout_limit`   | finite number in `(0, 15]`; the ceiling mirrors `outgoing.max_request_timeout` | accepts any float: `0` times every engine out, more than `15` is capped silently |
 
 ```mermaid
 flowchart LR
-  subgraph clients [Agent Clients]
-    opencode["Opencode Agents (research, build, plan)"]
+  subgraph hostServices [Host services]
+    opencode["OpenCode agents (research, build, plan)"]
     mcp["firecrawl-mcp (stdio JSON-RPC)"]
-  end
-
-  subgraph firecrawlHost [Native Loopback Services]
-    api["firecrawl.service (127.0.0.1:24002)"]
-    pw["firecrawl-playwright.service (127.0.0.1:24003)"]
-    searx["searx.service (127.0.0.1:24888)"]
-    pg["postgresql.service (/run/postgresql + pg_cron)"]
-    valkey["redis.service (shared unix socket, DB 2)"]
-    rmq["rabbitmq.service (127.0.0.1:5672)"]
-  end
-
-  subgraph egress [Outbound Egress]
+    searx["searx.service (0.0.0.0:24888, firewall-scoped)"]
     tor["tor.service (127.0.0.1:9050, 4 circuits)"]
-    wan[Target Web Pages]
   end
+
+  subgraph containers [Podman containers]
+    api["firecrawl (published on 127.0.0.1:24002)"]
+    pw["firecrawl-playwright"]
+    pg["firecrawl-postgres"]
+    redis["firecrawl-redis"]
+    rmq["firecrawl-rabbitmq"]
+  end
+
+  wan[Target web pages]
 
   opencode --> mcp
-  mcp -->|"Lossless /search envelope"| searx
+  mcp -->|"search: 1:1 parameters, verbatim envelope"| searx
   mcp -->|"POST /v2/scrape, /v2/map"| api
-  api -->|"Search (no DDG fallback)"| searx
-  api -->|"POST /scrape"| pw
-  api -->|"Peer auth Unix socket"| pg
-  api --> valkey
+  api -.->|"own search path, unused by OpenCode"| searx
+  api --> pw
+  api --> pg
+  api --> redis
   api --> rmq
   searx -->|"SOCKS5h"| tor
-  api -->|"fetch, PDF, document engines"| wan
+  api --> wan
   pw --> wan
 ```
 
 ## Phases
 
-### Phase 1 — Native Derivations & Upstream Patches in `packages/firecrawl/`
+### Phase 1 — Container fixes in `modules/services/firecrawl.nix`
 
-- Create `packages/firecrawl/default.nix` pinning `firecrawl/firecrawl` (`v2.11.0`) once and exposing `firecrawl` (`api.nix`) with `passthru = { inherit playwright nuqSchema mcp; }`:
-  - `packages/firecrawl/api.nix`: builds `libhtml-to-markdown.so` with a fixed Go vendor hash and builds `apps/api` with `pnpm_10`, `pnpmConfigHook`, `fetchPnpmDeps` `fetcherVersion = 5`, `strictDeps = true`, and `finalAttrs:`. Build the N-API module in that workspace with `rustPlatform.cargoSetupHook` and `napi build` against the vendored `packages/firecrawl/Cargo.lock`, generated once with `cargo generate-lockfile` from the pinned `Cargo.toml`. Install the complete production `node_modules`, compiled `dist`, native modules, and Go library; wrap `firecrawl-harness` with `--chdir $out/lib/firecrawl-api`, `--start-docker`, and `nodejs_22` plus `bash` on `PATH`, because the harness spawns `sh -c "node dist/…"`.
-  - Add build-time smoke checks that load `@mendable/firecrawl-rs` and `libhtml-to-markdown.so` from `$out` and `require` the compiled API entrypoint, whose `require.main` guard keeps the server from starting, so missing runtime modules surface without contacting external services.
-  - `packages/firecrawl/patches/no-ddg-fallback.patch`: when `SEARXNG_ENDPOINT` is set, make `search/index.ts` and `search/v2/index.ts` return the SearXNG result as is, empty included, and let request failures from the two `searxng.ts` adapters propagate to the caller instead of reaching `ddgSearch`. Add an upstream Vitest case asserting `ddgSearch` is never called for empty and failing SearXNG answers.
-  - `packages/firecrawl/patches/loopback-listeners.patch`: pass `config.HOST` to the `app.listen` calls in `queue-worker.ts`, `extract-worker.ts`, `nuq-worker-runner.ts`, `nuq-prefetch-worker.ts`, and `nuq-reconciler-worker.ts`.
-  - `packages/firecrawl/playwright.nix`: build `apps/playwright-service-ts` with nixpkgs' matching Playwright Node modules and the headless-shell-only browser set; patch `api.ts` to bind `process.env.HOST ?? "127.0.0.1"` and smoke-test `/health` against that browser.
-  - `packages/firecrawl/nuq-schema.nix`: extract `apps/nuq-postgres/nuq.sql`, remove cluster-wide tuning/reload statements, grant `firecrawl` usage on schema `cron`, insert `SET ROLE firecrawl` after extension creation, and widen the watchdog's `backend_type` filter. Fail the build when an expected statement is missing, so upstream SQL drift cannot reach the shared cluster unreviewed.
+- Publish `"127.0.0.1:${toString firecrawlPort}:3002"`.
+- Define the no-start-limit backoff once and apply it to `podman-firecrawl` and `podman-firecrawl-playwright`, keeping its explanatory comment with the shared definition. Both generated units must render `StartLimitIntervalSec=0` and `RestartSec=30s`.
+- Set `NUQ_WORKER_COUNT = "1"` on the `firecrawl` container, with a comment naming why one worker suffices.
+- Delete `POSTGRES_URL`, `SEARCH_PROVIDER`, and `SEARXNG_BASE_URL`.
 
-### Phase 2 — Lossless `firecrawl-mcp` & Property/Example Suite
+### Phase 2 — 1:1 Lossless `firecrawl-mcp` & Property/Example Suite
 
-- Relocate `packages/firecrawl-mcp/` into `packages/firecrawl/mcp.nix`, `packages/firecrawl/firecrawl-mcp.ts`, `packages/firecrawl/package.json`, and `packages/firecrawl/tsconfig.json` (which also type-checks the contract and the new `firecrawl-mcp.test.ts`), and remove `packages/firecrawl-mcp/`.
-- Keep the derivation minimal (`finalAttrs:`, `strictDeps`, `lib.fileset.toSource`, fixed type tarballs, build/check/install hooks, and complete `meta`, including license/main program); include sources and tests without copying local `node_modules`.
-- Upgrade `packages/firecrawl/firecrawl-mcp.ts`:
-  - Move the pure contract into `packages/firecrawl/searxng-contract.ts` and remove `compactResult`; minimally validate the envelope shape on a parsed copy, apply the retry policy above, and return the response body verbatim.
-  - Reject malformed values rather than clamping: `pt_BR` canonicalizes to `pt-BR`; pageno must be a safe integer `>= 1`; safesearch must be integer `0|1|2`; timeout must be finite in `(0, 15]`; engine names must be comma-free; categories and engines may coexist; explicit time range is always forwarded.
-  - Expand `scrape` only with formats supported by this deployment (`markdown`, `html`, `rawHtml`, `links`, `images`) plus `onlyMainContent`, `waitFor`, `includeTags`, `excludeTags`, and `timeout`. Do not expose `summary`, `audio`, `video`, or `redactPII` without their missing AI/avgrab/fire-privacy services.
+- Add `packages/firecrawl-mcp/searxng-contract.ts` and `packages/firecrawl-mcp/firecrawl-mcp.test.ts`. `tsconfig.json` includes both and allows `.ts` import specifiers; in `default.nix` the fileset gains both, the contract is installed beside the entry file, and `meta` gains a license and a current description.
+- Upgrade `packages/firecrawl-mcp/firecrawl-mcp.ts`:
+  - Move the pure contract into `searxng-contract.ts` and remove `compactResult`; minimally validate the envelope shape on a parsed copy, apply the retry policy above, and return the response body verbatim.
+  - Read the instance's category and engine names from `GET /config`, validate against them, and fill the `categories` enum from them in `tools/list`.
+  - Reject malformed values rather than clamping: `pt_BR` canonicalizes to `pt-BR`; pageno must be a safe integer `>= 1`; safesearch must be integer `0|1|2`; timeout must be finite in `(0, 15]`; category and engine names must be ones the instance lists; categories and engines may coexist; explicit time range is always forwarded.
+  - Expand `scrape` only with formats this deployment serves (`markdown`, `html`, `rawHtml`, `links`, `images`) plus `onlyMainContent`, `waitFor`, `includeTags`, `excludeTags`, and `timeout`. Remove `summary`, and do not expose `audio`, `video`, or `redactPII`: their AI, avgrab, and fire-privacy services are absent.
   - Add `map` (`url`, `search`, `includeSubdomains`, `limit` → `POST /v2/map`) with runtime bounds matching Firecrawl. Keep all schemas flat.
   - Guard stdio startup with `import.meta.main`, so pure encoders and RPC handlers can be imported by the `node:test` suite. Comparing `import.meta.url` with `pathToFileURL(process.argv[1])` is false whenever the entry is reached through a symlink.
-- Enable `doCheck = true` in `packages/firecrawl/mcp.nix` running `node --test firecrawl-mcp.test.ts`:
-  - Seeded properties, from a dependency-free PRNG with a fixed seed and case count that prints the failing case: accepted pagenos encode as `/^[1-9]\d*$/` without exponent notation; normalization is idempotent; URLSearchParams round-trips the canonical domain; categories and engines are both present when supplied; out-of-domain values always throw. Generators cover the boundaries (`0`, `1`, `2^53 - 1`, `2^53`, `1e21`, `NaN`, `±Infinity`, non-integers, `timeout_limit` at `0` and `15`), malformed locales, and empty, whitespace-only, and comma-bearing names.
-  - Deterministic examples: the shipped schemas are flat per the definition above; mock HTTP covers plugin-only answers/infoboxes, valid zero results, transient retry versus non-transient failure, partial `unresponsive_engines`, malformed JSON/HTTP errors, and `scrape`/`map` bounds.
+- Enable `doCheck = true` in `packages/firecrawl-mcp/default.nix` running `node --test firecrawl-mcp.test.ts`:
+  - Seeded properties, from a dependency-free PRNG with a fixed seed and case count that prints the failing case: accepted pagenos encode as `/^[1-9]\d*$/` without exponent notation; normalization is idempotent; URLSearchParams round-trips the canonical domain; categories and engines are both present when supplied; out-of-domain values always throw. Generators cover the boundaries (`0`, `1`, `2^53 - 1`, `2^53`, `1e21`, `NaN`, `±Infinity`, non-integers, `timeout_limit` at `0` and `15`), malformed locales, and empty, whitespace-only, and unlisted names against a fixture instance listing.
+  - Deterministic examples: the shipped schemas are flat per the definition above; mock HTTP covers the `/config` listing and its absence at `tools/list`, plugin-only answers/infoboxes, valid zero results, transient retry versus non-transient failure, partial `unresponsive_engines`, malformed JSON/HTTP errors, and `scrape`/`map` bounds.
   - Label this evidence precisely as type-checked, example-tested, and seeded property-tested; it is not formal verification and the schema test is not an actual llama.cpp compile.
 
-### Phase 3 — Native Service Module, SearXNG Loopback & Repo Wiring
+### Phase 3 — OpenCode Wiring, Documentation & Retirement
 
-- Create `packages/firecrawl/module.nix` and delete `modules/services/firecrawl.nix`:
-  - Extend PostgreSQL with `ps.pg_cron`, `shared_preload_libraries = [ "pg_cron" ]`, the bounded background-worker settings above, and enough worker slots for NuQ's concurrent 15-second jobs. Run `firecrawl-db-init.service` as `postgres`, with `ON_ERROR_STOP`, after `postgresql-setup.service` has created the database and role; the patched schema creates extensions and grants cron-schema usage before switching to role `firecrawl`.
-  - Point all three Redis URLs at the shared Valkey socket and the registered logical DB (`unix://…?db=N`, the form SearXNG already uses), joining group `redis` through `SupplementaryGroups`. Configure RabbitMQ at `127.0.0.1:5672`; its Erlang distribution listener and the socket-activated `epmd` bind every interface, so pair `IPAddressDeny = "any"` with `IPAddressAllow = "localhost"` on `rabbitmq.service`, `epmd.socket`, and `epmd.service`, since systemd applies socket-unit and service-unit lists separately.
-  - Configure `firecrawl-playwright.service` with `HOST=127.0.0.1`, `PORT=24003`, `MAX_CONCURRENT_PAGES=5`, `BLOCK_MEDIA=true`, and a `/health` readiness gate.
-  - Configure `firecrawl.service` with `HOST=127.0.0.1`, `PORT=24002`, exact internal worker ports, `ENV=local`, `USE_DB_AUTHENTICATION=false`, `NUQ_BACKEND=pg`, `NUQ_WORKER_COUNT=2`, `USE_GO_MARKDOWN_PARSER=true`, the Redis URLs above, both NuQ PostgreSQL URLs (peer auth over `/run/postgresql`), RabbitMQ/Playwright/SearXNG URLs, and a `/v0/health/readiness` gate.
-  - Use explicit `User=firecrawl` plus `DynamicUser=true` so PostgreSQL peer auth resolves to the database role. Apply `systemdHardening` to both Node services minus `MemoryDenyWriteExecute`; retain outbound `AF_INET`/`AF_INET6` for SearXNG and target-page access.
-  - Order the API after and require database initialization, `redis.service`, `rabbitmq.service`, and `firecrawl-playwright.service`. Gate the two Node services' readiness in `ExecStartPost` with `curl --fail --retry … --retry-all-errors`, which retries refused connections and error statuses without a poller script; the other dependencies are `Type=notify` or oneshot units.
-  - Drop obsolete container UIDs (`334..337`, `343`), `init-firecrawl-network.service`, and `/var/lib/container-volumes/firecrawl` tmpfiles rules.
-- Update `modules/addresses.nix` with the `firecrawl` PostgreSQL database, the Valkey logical-DB registry and per-host eviction policy, and the exact ports; update `modules/services/valkey.nix` (policy from the registry), `flake.nix`, `nix/devshell.nix`, `hosts/yifuwuqi/services.nix`, and `users/programs/opencode.nix` (take `mcp` from the package through `lib.getExe`; add `firecrawl_map` by deriving the tool and permission sets from one name list, which the top-level `permission` block reuses instead of repeating the names).
-- Tighten `modules/services/searxng.nix`: `bind_address = "127.0.0.1"`, the Valkey DB from the registry, and the dead `enabled_plugins` list replaced by the `plugins` mapping it meant to express (`oa_doi_rewrite` active, `tracker_url_remover` inactive). Remove `searxng.port` from the container host-API rule in `hosts/yifuwuqi/networking/firewall.nix`.
-
-### Phase 4 — NixOS VM Integration Test, Documentation & Retirement
-
-- Author `packages/firecrawl/test.nix` and wire `perSystem.checks.firecrawl` in `flake.nix`:
-  - Boot the native stack on the repo's own PostgreSQL and Valkey modules, a deterministic target-page server, and a mock SearXNG server in an offline QEMU VM. Enable `TEST_SUITE_SELF_HOSTED` and `ALLOW_LOCAL_WEBHOOKS` only in the VM so Firecrawl and Playwright may reach the fixture.
-  - Verify extensions, NuQ object ownership, registered cron jobs, API/Playwright readiness, Firecrawl's keys confined to its Valkey logical DB, loopback-only listeners for API, every worker, Playwright, and AMQP, and the IP filter on RabbitMQ's Erlang sockets.
-  - Exercise Firecrawl's patched search path against the mock: a valid empty answer returns empty and a failing one surfaces an error, with no `ddgSearch` egress. The mock exercises adapter control flow; it says nothing about real Tor circuit rotation.
-  - Drive `firecrawl-mcp` over stdio through `search`, `scrape`, and `map`; assert scrape/map against the local fixture and search against the mock.
-- Update documentation (`docs/src/services/hosted-services.md`, `docs/src/services/ai-rocm.md`, `docs/src/hosts/yifuwuqi.md`, `docs/src/services/podman-operations.md`, `docs/src/services/monitoring.md`, `docs/src/networking/sysctl-firewall.md`, and comment in `modules/services/pinepods.nix`).
-- Run full verification (`treefmt --fail-on-change`, `eslint`, targeted upstream Vitest, MCP `node:test`, `nixpkgs-hammer`, `nix flake check --no-build`, all three package builds, `nixosConfigurations.yifuwuqi` build, and `checks.x86_64-linux.firecrawl`) and audit `git diff`. Retire `docs/src/plans/firecrawl-plan.md` only after live acceptance and legacy cleanup, in the change set that completes the plan.
+- `users/programs/opencode.nix`: add `firecrawl_map` by deriving the tool and permission sets from one name list, which the top-level `permission` block reuses instead of repeating the names; update the comments that list the tools and parameters.
+- Update documentation:
+  - [Hosted Web Services Directory](../services/hosted-services.md): §2.2 states SearXNG's real bind and firewall scope; §2.4 records the loopback publish and the single NuQ worker.
+  - [AI & Local Inference](../services/ai-rocm.md) §5.3: the three tools, the 1:1 parameter mapping with `timeout_limit` and the instance's own category list, and the verbatim envelope.
+  - [Podman Operations](../services/podman-operations.md): the restart-loop guard covers both units.
+- Run full verification (`nix fmt -- --fail-on-change`, `eslint`, `nixpkgs-hammer`, `nix flake check --no-build`, the `firecrawl-mcp` build with its `node:test` suite, and the `nixosConfigurations.yifuwuqi` build) and audit `git diff`. Retire `docs/src/plans/firecrawl-plan.md` only after live acceptance, in the change set that completes the plan.
 
 ## Rollout order
 
-- [ ] **1.1** Build `packages/firecrawl/{default,api,playwright,nuq-schema}.nix`, the vendored `Cargo.lock`, and `patches/{loopback-listeners,no-ddg-fallback}.patch`; resolve source, Go vendor, Cargo git, and pnpm SRI hashes; run native-module and Playwright smoke checks (AI).
-- [ ] **2.1** Migrate `firecrawl-mcp` into `packages/firecrawl/` with `searxng-contract.ts`, implement lossless SearXNG search plus locally supported `scrape`/`map`, and pass TypeScript, examples, and seeded properties (AI).
-- [ ] **3.1** Replace `modules/services/firecrawl.nix` with `packages/firecrawl/module.nix`, add the database, Valkey logical DB and eviction policy, and ports, bind every HTTP listener and SearXNG to loopback, prune the firewall rule, and wire flake/devshell/OpenCode consumers (AI).
-- [ ] **4.1** Add `packages/firecrawl/test.nix`, update docs, run `treefmt --fail-on-change`, `eslint`, `nixpkgs-hammer`, `nix flake check --no-build`, package/host builds, and `checks.x86_64-linux.firecrawl` (AI).
-- [ ] **4.2** Stop submissions, drain active jobs, deploy `yifuwuqi`, and verify native units, loopback sockets, `search.aset.love` still serving, a real Tor-backed search, scrape/map, and llama.cpp tool registration (User).
-- [ ] **4.3** After acceptance, remove the legacy stack's Podman images, the `firecrawl_*` networks, and `/var/lib/container-volumes/firecrawl` (User).
-- [ ] **4.4** Retire `docs/src/plans/firecrawl-plan.md` in the completing change set and audit `git diff` (AI).
+- [ ] **0.1** Restart the failed Playwright unit now, as root: `systemctl reset-failed podman-firecrawl-playwright.service`, then `systemctl start podman-firecrawl-playwright.service`. The lasting fix lands with 1.1 (User).
+- [ ] **1.1** Apply the four container fixes in `modules/services/firecrawl.nix`, build `nixosConfigurations.yifuwuqi`, and confirm the restart policy in both generated units (AI).
+- [ ] **2.1** Upgrade `packages/firecrawl-mcp/` with `searxng-contract.ts`, the 1:1 lossless search, the supported `scrape` options, `map`, and the test suite; pass TypeScript, examples, and seeded properties (AI).
+- [ ] **3.1** Add `firecrawl_map` to `users/programs/opencode.nix`, update docs, and run `nix fmt -- --fail-on-change`, `eslint`, `nixpkgs-hammer`, `nix flake check --no-build`, and the package and host builds (AI).
+- [ ] **3.2** Deploy `yifuwuqi` and verify: `podman ps` shows `127.0.0.1:24002->3002/tcp` and another LAN host gets no answer on port `24002`; `podman top firecrawl` lists one `nuq-worker`; `podman-firecrawl-playwright.service` is active with `StartLimitIntervalUSec=0` and `RestartUSec=30s`, and a `waitFor` scrape no longer carries the unsupported-feature warning; `search.aset.love` still serves; OpenCode runs a search that sets every parameter, a search in a non-tab category such as `repos`, a scrape, and a map; llama.cpp registers the three tool schemas (User).
+- [ ] **3.3** Retire `docs/src/plans/firecrawl-plan.md` in the completing change set and audit `git diff` (AI).
 
 ## Open questions
 
-None — native packaging, shared PostgreSQL/Valkey, the Firecrawl search scope, the supported SearXNG domain, transient-state cutover, and the rollback boundary are decided.
+- Outside this plan: `modules/services/searxng.nix:255-265` sets `enabled_plugins`, a settings key the locked SearXNG source no longer reads, so the choices it records (`oa_doi_rewrite` on, `tracker_url_remover` off) are not in effect: `/config` reports `oa_doi_rewrite` disabled and `tracker_url_remover` enabled. Fixing it changes live `search.aset.love` behaviour and needs its own decision.
