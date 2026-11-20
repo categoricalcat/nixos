@@ -41,7 +41,7 @@
     packages = lib.optionals config.serverMode.developer (
       with pkgs;
       [
-        nodejs_24
+        nodejs_26
       ]
     );
   };
