@@ -14,3 +14,33 @@ groups:
           severity: warning
         annotations:
           summary: "{{ $labels.name }} is restarting repeatedly on {{ $labels.instance }}"
+  - name: security-identity
+    rules:
+      - alert: SecurityDuplicateIds
+        expr: node_security_duplicate_ids > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Duplicate {{ $labels.kind }} in the account database on {{ $labels.instance }}"
+      - alert: SecurityContainerSharedId
+        expr: node_security_container_shared_id > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.container }} on {{ $labels.instance }} runs as {{ $labels.name }} ({{ $labels.kind }}), not its declared identity"
+      - alert: SecurityContainerRoot
+        expr: node_security_container_root > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.container }} on {{ $labels.instance }} runs host-root processes without a recorded reason"
+      - alert: SecurityUnownedFiles
+        expr: node_security_unowned_files > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }} has {{ $value }} files owned by an ID with no account or group"

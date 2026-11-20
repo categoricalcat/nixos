@@ -90,7 +90,36 @@
           query = "~/the.files/query.sh";
           nix-dr = "nh os build .";
           gen-commit = "~/the.files/git-commit-msg.sh";
+          # General git aliases complementing scmpuff's numbered-file shortcuts
+          # (scmpuff already defines gs, ga, gd, gl, gco, grs).
+          g = "git";
           gaa = "git add .";
+          gap = "git add -p";
+          gb = "git branch";
+          gba = "git branch -a";
+          gbd = "git branch -d";
+          gbD = "git branch -D";
+          gc = "git commit -v";
+          gca = "git commit -v -a";
+          gcam = "git commit -a -m";
+          gcm = "git commit -m";
+          gcb = "git checkout -b";
+          gdc = "git diff --cached";
+          gf = "git fetch";
+          gfa = "git fetch --all --prune";
+          gm = "git merge";
+          gpl = "git pull";
+          gps = "git push";
+          gpsf = "git push --force-with-lease";
+          grb = "git rebase";
+          grba = "git rebase --abort";
+          grbc = "git rebase --continue";
+          grbi = "git rebase -i";
+          gst = "git stash";
+          gstl = "git stash list";
+          gstp = "git stash pop";
+          gsw = "git switch";
+          gswc = "git switch -c";
           usb-ssh = "~/the.files/usb-ssh.sh";
           zyi = "mosh yifuwuqi -- zellij attach -c main";
           pps = "podman ps";

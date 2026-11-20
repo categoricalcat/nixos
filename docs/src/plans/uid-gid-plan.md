@@ -1,6 +1,6 @@
 # UID/GID Isolation and Ownership
 
-## Status: DRAFT — inventory taken 2026-11-20 (`yifuwuqi` live; `yirukou`, `yitaishi`, `yixiaoqing` via `ai-ssh`); Phase 0 in flight (qBittorrent stopgap in the working tree, not deployed)
+## Status: DRAFT — inventory taken 2026-11-20 (`yifuwuqi` live; `yirukou`, `yitaishi`, `yixiaoqing` via `ai-ssh`); Phase 0 complete; Phase 1 deployed on `yifuwuqi` and `yirukou` 2026-11-20 and live-verified; Phases 3–5 landed 2026-11-20 in one change set — window run on `yifuwuqi` (renumber, rebuild, reboot) and verified live: both container-identity gauges at zero, all units healthy; Phase 2 (orphans, literals) still open
 
 ## Objective
 
@@ -29,30 +29,30 @@ Not owned here:
 
 Podman runs rootful without user namespaces (`modules/virtualisation/podman.nix`), so an in-image ID is the host ID. Live processes, mapped to containers through their cgroup and `/run/<name>/ctr-id`:
 
-| Host uid:gid | Resolves to        | Containers                                                                                          |
-| ------------ | ------------------ | --------------------------------------------------------------------------------------------------- |
-| 999:999      | `avahi`:`avahi`    | `firecrawl-postgres`, `firecrawl-rabbitmq`, `pinepods-db`                                           |
-| 999:1000     | `avahi`:`yi`       | `firecrawl-redis`, `pinepods-valkey`                                                                |
-| 999:952      | `avahi`:`media`    | `qbittorrent`                                                                                       |
-| 1000:1000    | `yi`:`yi`          | `firecrawl-playwright` (image `User=node`; headless Chrome)                                         |
-| 65534:65534  | `nobody`:`nogroup` | `flaresolverr` (Nix-built image)                                                                    |
-| 100:101      | no account         | `pinepods` nginx worker                                                                             |
-| 0:0          | `root`             | `cloudflared`, `firecrawl`, `gluetun`, `pinepods`, `slskd`, `soularr`, `torrent-indexer`, `weather` |
+| Host uid:gid | Resolves to           | Containers                                                                                          |
+| ------------ | --------------------- | --------------------------------------------------------------------------------------------------- |
+| 999:999      | `avahi`:`avahi`       | `firecrawl-postgres`, `firecrawl-rabbitmq`, `pinepods-db`                                           |
+| 999:1000     | `avahi`:`yi`          | `firecrawl-redis`, `pinepods-valkey`                                                                |
+| 968:952      | `qbittorrent`:`media` | `qbittorrent` (Phase 0; ids from `/run/qbittorrent-ids.env`, so rendered config declares none)      |
+| 1000:1000    | `yi`:`yi`             | `firecrawl-playwright` (image `User=node`; headless Chrome)                                         |
+| 65534:65534  | `nobody`:`nogroup`    | `flaresolverr` (Nix-built image)                                                                    |
+| 100:101      | no account            | `pinepods` nginx worker                                                                             |
+| 0:0          | `root`                | `cloudflared`, `firecrawl`, `gluetun`, `pinepods`, `slskd`, `soularr`, `torrent-indexer`, `weather` |
 
-- Files written as 999: `pinepods-db`'s `PGDATA` under `/var/lib/container-volumes/pinepods/pgdata`, the qBittorrent config volume (17 entries), and 1545 entries in `/persist/media`.
+- Files written as 999: `pinepods-db`'s `PGDATA` under `/var/lib/container-volumes/pinepods/pgdata` and the qBittorrent config volume (17 entries). The 1545 `/persist/media` entries were re-owned to `qbittorrent` (968) on 2026-11-20.
 - `cloudflared.nix` builds `user` from an unpinned account, so it renders `-u ':'` (nixpkgs `oci-containers.nix`) and the container runs as root. The image default is `65532:65532`, so the line escalates it. `localtonet.nix` and `playit-agent.nix` (not imported) repeat the pattern.
 - `slskd.nix` gives `soularr` `PUID = "0"` and `PGID = "952"`, a literal copy of `media`'s dynamically allocated GID.
-- Working tree, not deployed: `qbittorrent` becomes a dynamic system account in group `media`, and `preStart` writes its `PUID`/`PGID` to `/run/qbittorrent-ids.env`.
+- Phase 0, deployed in `2cdb542`: `qbittorrent` is a dynamic system account (uid 968) in group `media`, and `preStart` writes its `PUID`/`PGID` to `/run/qbittorrent-ids.env`.
 - No other host runs declared containers.
 
 ### Orphaned and reusable IDs on `yifuwuqi`
 
-| Path                                      | Owner                             | Notes                                                                                                                                       |
-| ----------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/srv/webdav` (0775; nginx test files)    | uid 968, group `nginx`            | 968 is unrecorded, so the next new system account receives it: the pending `qbittorrent` account will be 968. `webdav.nix` is not imported. |
-| `/srv/nfs/share` (0775; `latest.tar.zst`) | uid 1007 (no account), gid 967    | gid 967 is now `searx`, so the `searx` group can write here. NFS was removed 2026-03-21 (`a8ba048`).                                        |
-| `/srv/nextcloud` (0750)                   | 975:972, retired `nextcloud`      | Recorded in the maps, so not reusable. The module is not imported.                                                                          |
-| `/persist/media/podcasts` and one child   | uid 949, retired `audiobookshelf` | Recorded, not reusable. `pinepods` writes here as root.                                                                                     |
+| Path                                      | Owner                                | Notes                                                                                                                                                                                                                 |
+| ----------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/srv/webdav` (0775; nginx test files)    | `root`:`nginx` (re-owned 2026-11-20) | The predicted collision materialized: the deployed `qbittorrent` account took 968 and owned the orphaned directory; `chown root /srv/webdav` done and verified (`0:60 root:nginx 775`). `webdav.nix` is not imported. |
+| `/srv/nfs/share` (0775; `latest.tar.zst`) | uid 1007 (no account), gid 967       | gid 967 is now `searx`, so the `searx` group can write here. NFS was removed 2026-03-21 (`a8ba048`).                                                                                                                  |
+| `/srv/nextcloud` (0750)                   | 975:972, retired `nextcloud`         | Recorded in the maps, so not reusable. The module is not imported.                                                                                                                                                    |
+| `/persist/media/podcasts` and one child   | uid 949, retired `audiobookshelf`    | Recorded, not reusable. `pinepods` writes here as root.                                                                                                                                                               |
 
 ### Literals and shared groups
 
@@ -88,27 +88,40 @@ Podman runs rootful without user namespaces (`modules/virtualisation/podman.nix`
 | 338 | `pinepods-db`                         | `pinepods-db`                          |
 | 339 | `pinepods-valkey`                     | `pinepods-valkey`                      |
 | 340 | `soularr` (primary group `media`)     | `soularr`                              |
+| 341 | `slskd` (primary group `media`)       | `slskd`                                |
+| 342 | `torrent-indexer`                     | `torrent-indexer`                      |
+| 343 | `firecrawl`                           | `firecrawl`                            |
+| 344 | `pinepods` (primary group `media`)    | `pinepods`                             |
+| 345 | `weather`                             | `weather`                              |
 
-Phase 5 continues from 341.
+All assigned through 345; new container accounts continue from 346.
 
 ## Phases
 
 ### Phase 0 — Finish the qBittorrent stopgap
 
-1. Before or after deploying, as root: `chown root /srv/webdav`, so the new account does not keep the orphaned directory.
-1. Deploy `yifuwuqi`, then as root (`su -`): `find /persist/media -xdev -uid 999 -exec chown -h qbittorrent {} +`. The unit's `preStart` re-owns the config volume.
-1. Verify: `id -u qbittorrent` prints 968, `ps -o uid,gid,comm -C qbittorrent-nox` shows `968 952`, and `find /persist/media -xdev -uid 999` prints nothing.
+Deployed in `2cdb542` and verified live 2026-11-20; all steps done:
+
+1. Done, verified 2026-11-20: `chown root /srv/webdav` (`stat` → `0:60 root:nginx 775`), so the account does not keep the orphaned directory.
+1. Done: media re-own — `find /persist/media -xdev -uid 999 -exec chown -h qbittorrent {} +` moved 1545 entries; `find /persist/media -xdev -uid 999` now prints nothing. The unit's `preStart` re-owns the config volume.
+1. Done, verified: `id -u qbittorrent` → 968; `ps -o uid,gid,comm -C qbittorrent-nox` → `968 952 qbittorrent-nox`.
 
 ### Phase 1 — Live audit
 
-Extend `modules/services/monitoring/security-monitor/scripts/system-audit.sh` (root, every 15 minutes) with:
+Implemented 2026-11-20, deployed on `yifuwuqi` the same day and live-verified (`yirukou` deploy pending). The first three gauges extend the fast audit `modules/services/monitoring/security-monitor/scripts/system-audit.sh` (root, every 15 minutes); `node_security_unowned_files` lands in the daily `cve-scan.sh` instead — the root-filesystem sweep measured ~7 minutes wall there (I/O-bound, ~50 s CPU), too heavy for a 15-minute cadence:
 
 - `node_security_duplicate_ids{kind}`: IDs that appear twice in `/etc/passwd` or `/etc/group`.
-- `node_security_container_shared_id{container,kind,name}`: a non-root container process whose host UID or GID resolves to an account or group other than that container's declared identity (its `user`, or `PUID`/`PGID` in `environment`). Nix renders the declared identities from `virtualisation.oci-containers.containers`.
+- `node_security_container_shared_id{container,kind,name}`: a non-root container process whose host UID or GID resolves to an account or group other than that container's declared identity (its `user`, or `PUID`/`PGID` in `environment`). Nix renders the declared identities from `virtualisation.oci-containers.containers`; processes map to containers via `/machine.slice/libpod-<ctr-id>.scope` and `/run/<name>/ctr-id`.
 - `node_security_container_root{container}`: a container process running as host root without a recorded reason.
 - `node_security_unowned_files`: entries without an account or group, from `find / -xdev \( -path /nix -o -path /var/lib/containers \) -prune -o \( -nouser -o -nogroup \) -print`. All of `yifuwuqi`'s data, including `/persist` and `/srv`, lives on the root filesystem; image layers carry in-image IDs.
 
-Add a panel to `modules/services/monitoring/dashboards/security.nix` and alert rules (non-zero for one hour) beside `modules/services/monitoring/rules/workloads.yml`. The root gauge stays dashboard-only until Phase 4 records the reasons. Expected first run on `yifuwuqi`: shared IDs for the 999, 1000 and 65534 rows (qBittorrent stays listed until Phase 4, because its IDs come from a runtime file), eight root containers, and non-zero unowned files from the orphan table.
+The sweep was parallelized the same day (pre-redeploy in the working tree): depth-2 subtrees are walked by concurrent `find` workers, with a shallow serial pass covering depth-1/2 entries and workers starting at `-mindepth 1` — set-identical to the serial walk, verified by total-visited comparison. Workers run line-buffered (`stdbuf -oL`): `find`'s block-buffered writes exceed `PIPE_BUF` and tear when racing into the shared output pipe, nondeterministically undercounting. Rootless-podman storage stays in the sweep by decision, so its subordinate-ID files count as unowned from the host and `SecurityUnownedFiles` cannot read zero while rootless containers hold volumes.
+
+Panels in `modules/services/monitoring/dashboards/security.nix`; alert rules (non-zero for one hour) in `modules/services/monitoring/rules/workloads.yml`, group `security-identity` — the `SecurityContainerRoot` rule landed 2026-11-20 with the Phase 4 reasons (`gluetun`, `qbittorrent`), so the gauge now alerts and reads zero once the window deploys.
+
+Measured first run on `yifuwuqi` (2026-11-20, user-run, so a lower bound): duplicate IDs 0/0 — verified clean; shared-ID rows for the 999, 968, 1000 and 65534 rows (`qbittorrent` is the 968 row and stays listed until Phase 4, because its IDs come from a runtime file); ten root containers, two more than the manual inventory — `qbittorrent`'s image s6 init and `pinepods-valkey`'s `tini` entrypoint run as root; 2932 unowned files — `/var/lib/omada` (2586) and `/opt/netdata` (203) retired-service state, rootless-podman overlay dirs under `/home/yi/.local/share/containers`, and the orphan table. Phase 2's sweep is bigger than the orphan table suggested.
+
+Deployed baseline (first live timer run 13:05, 2026-11-20): duplicate IDs 0/0, the same 16 shared-ID series and ten root containers as the user-run, all 28 series scraped by Prometheus with the `security-identity` rules loaded. `SecurityContainerSharedId` sits at pending and fires by design until Phase 3 gives the 999/1000/65534-row containers their own accounts and Phase 4 pins `qbittorrent`. `yirukou`, manually fired at 13:25 the same day: duplicate IDs 0/0 and no container series (it runs no containers).
 
 ### Phase 2 — Orphans, literals and shared groups
 
@@ -118,34 +131,36 @@ Add a panel to `modules/services/monitoring/dashboards/security.nix` and alert r
 
 ### Phase 3 — Dedicated accounts for non-root containers
 
-Declare accounts 333–339 from the ID table as `isSystemUser` with a same-numbered group, and set each container's `user` from them. The accounts are new, so activation creates them at the pinned numbers. Check each image before deploying:
+Declare accounts 333–339 from the ID table as `isSystemUser` with a same-numbered group, and set each container's `user` from them. The accounts are new, so activation creates them at the pinned numbers. Configuration implemented 2026-11-20; per-image findings resolved in the same change set:
 
-| Container                            | Check                                                                                                                                                                                                  |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pinepods-db`                        | Stop it, `chown -R pinepods-db:pinepods-db /var/lib/container-volumes/pinepods/pgdata`, start it. The official postgres image documents arbitrary `--user` support when `PGDATA` is owned by that UID. |
-| `firecrawl-postgres`                 | `initdb` succeeds as the account. There is no host volume.                                                                                                                                             |
-| `firecrawl-redis`, `pinepods-valkey` | `/data` is writable by the account (tmpfs mount) or snapshots are disabled. There is no host volume.                                                                                                   |
-| `firecrawl-rabbitmq`                 | `/var/lib/rabbitmq` and its `.erlang.cookie` are writable by the account; the module already notes cookie-ownership failures.                                                                          |
-| `firecrawl-playwright`               | Chrome gets a writable `HOME`.                                                                                                                                                                         |
-| `flaresolverr`                       | Nothing to migrate (`HOME=/tmp`, no state).                                                                                                                                                            |
+| Container                            | Resolution                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pinepods-db`                        | `user = "338:338"`; tmpfiles own `pgdata 0700` to the account. The window chowns the existing volume contents (999-owned) before start. The official postgres image documents arbitrary `--user` support when `PGDATA` is owned by that UID.                                                                                                                                                                                   |
+| `firecrawl-postgres`                 | `user = "334:334"`; new account-owned volume at `/var/lib/container-volumes/firecrawl/pgdata:/var/lib/pgdata` with `PGDATA=/var/lib/pgdata/data`, outside the image VOLUME (docker-library/postgres#1363 overlay bind-mount failure) — required because initdb as the account needs an empty writable dir, and it also fixes data loss on every podman auto-update recreation. Fresh DB on first boot; the app re-initializes. |
+| `firecrawl-redis`, `pinepods-valkey` | `user = "336:336"` / `"339:339"`; no host volume, image `/data` stays in-image-owned, so snapshots are off (`cmd ... --save ""` — both are caches).                                                                                                                                                                                                                                                                            |
+| `firecrawl-rabbitmq`                 | `user = "335:335"`; new account-owned volume at `/var/lib/container-volumes/firecrawl/rabbitmq:/var/lib/rabbitmq` (HOME and mnesia must be writable by the account; fresh broker state on first boot).                                                                                                                                                                                                                         |
+| `firecrawl-playwright`               | `user = "337:337"`; `HOME=/tmp` — the image HOME is owned by the in-image node user.                                                                                                                                                                                                                                                                                                                                           |
+| `flaresolverr`                       | `user = "333:333"` overrides the image-baked `nobody:nogroup`. Nothing to migrate (`HOME=/tmp`, no state).                                                                                                                                                                                                                                                                                                                     |
 
-Verify: the shared-ID gauge only lists `qbittorrent`; the firecrawl readiness gates (`ExecStartPost` probes) and the Pinepods UI work.
+Verify at the window: the shared-ID gauge only lists `qbittorrent` (until its renumber applies); the firecrawl readiness gates (`ExecStartPost` probes) and the Pinepods UI work.
 
 ### Phase 4 — Renumber existing accounts and land the contract
 
-Configuration:
+Configuration implemented 2026-11-20:
 
-- `users.groups.media.gid = 330` and `users.users.qbittorrent.uid = 331`. qBittorrent's `PUID`/`PGID` move into `environment`, read from the account database; `/run/qbittorrent-ids.env` and its `preStart` lines go.
-- `cloudflared` pinned to 332; its `user` then renders `332:332`.
-- New `soularr` account (340, primary group `media`), read into `PUID`/`PGID`; its volume is owned `soularr:media`.
-- A root-reason option on the container submodule in `modules/virtualisation/podman.nix`, set on `gluetun` and, until Phase 5, on the other root containers. The root alert turns on.
-- Contract `container-identity` in `nix/checks.nix`, per host: each container has numeric `user` fields, numeric `PUID`/`PGID`, or a root reason; each UID and GID is pinned in 330–399 on a declared account or group; no two containers share a UID.
+- `users.groups.media.gid = 330` and `users.users.qbittorrent.uid = 331`. qBittorrent's `PUID`/`PGID` moved into `environment`, read from the account database; `/run/qbittorrent-ids.env` and its `preStart` lines are gone.
+- `cloudflared` pinned to 332 (uid and group); its `user` now renders `332:332`.
+- **Correction:** `soularr`'s `PUID`/`PGID` were dead config — upstream `run.sh` is a plain bash loop that never reads them (no s6/su), so the container always ran as root. Identity now comes from podman: `user = "340:330"` with the account in group `media`. Its log file moved to `/data/soularr.log` (absolute), since the image CWD `/app` is not writable by the account.
+- **Invariant found at the window:** sops templates bind-mounted into unprivileged containers must be owned by their account (`sops.templates."slskd.yml".owner = "slskd"`, same for `soularr.ini`; sops default `root:root 0400` crashed slskd's config load and made soularr read an empty config). `environmentFiles` and `preStart`-copied templates stay root-owned — rootful podman and preStart run as root.
+- A `rootReason` option on the container submodule in `modules/virtualisation/podman.nix`, set on `gluetun` (NET_ADMIN and `/dev/net/tun`) and `qbittorrent` (linuxserver s6 init drops to PUID/PGID) only — no interim reasons, because Phase 5 landed in the same change set. The fast audit skips root processes for containers with a recorded reason, and the `SecurityContainerRoot` alert (root gauge non-zero for one hour) is on.
+- Contract `container-identity` in `nix/checks.nix`, per host: each container has numeric `user` fields, numeric `PUID`/`PGID`, or a root reason; each declared uid and gid is pinned in 330–399 on an account or group; no two containers share a UID.
 
-NixOS does not renumber existing accounts, so the window on `yifuwuqi` runs as root:
+NixOS does not renumber existing accounts, so the window on `yifuwuqi` runs as root. Live ids (verified 2026-11-20): `cloudflared` 984:979, `qbittorrent` 968:952, `media` 952.
 
 ```bash
-systemctl stop podman-qbittorrent podman-soularr podman-slskd podman-pinepods podman-cloudflared \
-  radarr sonarr lidarr readarr bazarr jellyfin
+systemctl stop podman-qbittorrent podman-soularr podman-slskd podman-torrent-indexer podman-pinepods \
+  podman-pinepods-db podman-pinepods-valkey podman-firecrawl podman-cloudflared podman-flaresolverr \
+  podman-weather radarr sonarr lidarr readarr bazarr jellyfin
 groupmod -g 330 media
 usermod -u 331 qbittorrent
 groupmod -g 332 cloudflared
@@ -153,30 +168,43 @@ usermod -u 332 cloudflared
 find / -xdev \( -path /nix -o -path /var/lib/containers \) -prune -o -gid 952 -exec chgrp -h media {} +
 find / -xdev \( -path /nix -o -path /var/lib/containers \) -prune -o -uid 968 -exec chown -h qbittorrent {} +
 find / -xdev \( -path /nix -o -path /var/lib/containers \) -prune -o \( -uid 984 -o -gid 979 \) -print
+# re-own anything the last find prints (the cloudflared container has no volumes; expect nothing)
+chown -R pinepods-db:pinepods-db /var/lib/container-volumes/pinepods/pgdata
+chown -R slskd:media /var/lib/container-volumes/slskd
+chown -R soularr:media /var/lib/container-volumes/soularr
 ```
 
-The last `find` should print nothing, since the `cloudflared` container has no volumes; re-own anything it lists. Then deploy and `systemctl start` the same units; units the switch already started are unaffected.
+The arr services stop because running processes keep the old `media` gid and would mint 952-owned files. `gluetun` keeps running (nothing shares its id); its consumers restart with it. Then deploy (`nixos-rebuild switch` — activation creates accounts 333–345 and the tmpfiles volume dirs) and `systemctl start` the stopped units; units the switch already started are unaffected.
 
-Verify: activation prints no `not applying` warning; `id qbittorrent` shows 331 and group 330; the shared-ID, duplicate-ID and unowned-file gauges read zero; `nix flake check --no-build` passes with the new contract.
+Verify: activation prints no `not applying` warning; `id qbittorrent` shows 331 and group 330; the shared-ID, root and duplicate-ID gauges read zero (root counts only unreasoned containers: `gluetun` and `qbittorrent` are suppressed); `nix flake check --no-build` passes with the contract.
 
 ### Phase 5 — De-root the remaining containers
 
-One container per deploy (`slskd`, `torrent-indexer`, `firecrawl`, `pinepods`, `weather`): give it an account from 341 when the image runs unprivileged, otherwise replace its interim root reason with the real cause. `gluetun` keeps root. Then retire this plan.
+Configuration implemented 2026-11-20 in the same change set as Phases 3–4 (image checks done up front; the window verifies all at once):
+
+- `slskd` (341, group `media`): upstream documents Docker's `--user` as the supported host-identity mechanism (preferred over its root-then-chown `PUID`/`PGID` fallback) — `user = "341:330"`.
+- `torrent-indexer` (342): the published image runs `/app/torrent-indexer` (the repo Dockerfile's `/root` placement is stale), so `user = "342:342"` works; stateless.
+- `firecrawl` (343): stdout logging, `/tmp` scratch, no `/app` writes found in the image env — `user = "343:343"`; verify via the unit's readiness gate plus a test scrape at the window.
+- `pinepods` (344, group `media`): `PUID`/`PGID` are honored — the startup script remaps its in-image user, `chown`s its volumes and ends with `exec su-exec PUID:PGID horust`, so every process runs as 344:330 with no lingering root. It self-heals `/persist/media/podcasts` (one-time recursive chown to 344:330, marked by `.perms-migrated`).
+- `weather` (345): stateless Node server — `user = "345:345"`.
+- `gluetun` keeps root (recorded reason); `qbittorrent`'s s6 init keeps root (recorded reason) while the app runs as 331:330.
+
+Then retire this plan once Phase 2's items also close.
 
 ## Rollout order
 
-- [ ] **0.1** Re-own `/srv/webdav`, deploy `yifuwuqi`, re-own the 999 media files (User).
-- [ ] **0.2** Verify the stopgap (AI).
-- [ ] **1.1** Implement the audit gauges, panel and alerts; run fmt, lint and eval (AI).
-- [ ] **1.2** Deploy every host (User); record the baseline from the textfile (AI).
+- [x] **0.1** Re-own `/srv/webdav` (User; done and verified 2026-11-20, `root:nginx 775`).
+- [x] **0.2** Verify the stopgap (AI; done 2026-11-20).
+- [x] **1.1** Implement the audit gauges, panel and alerts; run fmt, lint and eval (AI; done 2026-11-20, example-run verified).
+- [x] **1.2** Deploy every host (User); record the baseline from the textfile (AI; done 2026-11-20, `yifuwuqi` and `yirukou`).
 - [ ] **2.1** Answer Open questions 2–4 (User).
 - [ ] **2.2** Orphan cleanup (User); literal and group changes (AI); deploy (User).
-- [ ] **3.1** Dedicated accounts and per-image checks (AI); deploy `yifuwuqi` (User); verify (AI).
-- [ ] **4.1** Prepare the pinned configuration and the contract (AI).
-- [ ] **4.2** Maintenance window: stop, renumber, sweep, deploy, start (User).
-- [ ] **4.3** Verify: no activation warnings, audit at zero, contract passes (AI).
-- [ ] **5.1** De-root containers, one per deploy (AI, User).
-- [ ] **5.2** Retire this plan in the completing change set (AI).
+- [x] **3.1** Dedicated accounts and per-image checks (AI; config done 2026-11-20); deploy `yifuwuqi` (User; done 2026-11-20); verify (AI; done — all units healthy, gauges zero).
+- [x] **4.1** Prepare the pinned configuration and the contract (AI; done 2026-11-20, with the soularr correction).
+- [x] **4.2** Maintenance window: stop, renumber, sweep, deploy, start (User; run 2026-11-20, followed by a reboot).
+- [x] **4.3** Verify: no activation warnings, audit at zero, contract passes (AI; done 2026-11-20 — root and shared-ID gauges emit no series, `nix flake check --no-build` passes, live IDs 331/330/332).
+- [x] **5.1** De-root containers (AI, User; done 2026-11-20 — all five verified live; reasons recorded on `gluetun` and `qbittorrent` only).
+- [ ] **5.2** Retire this plan in the completing change set (AI; blocked on Phase 2 items: open questions 2–4, orphan cleanup, literal and group changes).
 
 Phase 1 lands first so every later step is measured. `/srv/webdav` must be re-owned before 4.2: renumbering `qbittorrent` releases 968 to the allocator again. Phases 3 and 4 touch the same host and can share one window; the contract lands with Phase 4 because it only passes then.
 

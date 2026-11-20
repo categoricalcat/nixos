@@ -10,6 +10,32 @@ let
   inherit (addrs.services.pinepods) domain port;
 in
 {
+  # One account per container (uid-gid plan, decision 2); pinepods itself
+  # keeps the shared media group for the downloads volume.
+  users = {
+    groups = {
+      pinepods-db.gid = 338;
+      pinepods-valkey.gid = 339;
+    };
+    users = {
+      pinepods-db = {
+        isSystemUser = true;
+        uid = 338;
+        group = "pinepods-db";
+      };
+      pinepods-valkey = {
+        isSystemUser = true;
+        uid = 339;
+        group = "pinepods-valkey";
+      };
+      pinepods = {
+        isSystemUser = true;
+        uid = 344;
+        group = "media";
+      };
+    };
+  };
+
   systemd.services = {
     init-pinepods-network = {
       description = "Create Pinepods container network";
@@ -41,6 +67,7 @@ in
   virtualisation.oci-containers.containers = {
     pinepods-db = {
       image = "docker.io/library/postgres:18";
+      user = "${toString config.users.users.pinepods-db.uid}:${toString config.users.groups.pinepods-db.gid}";
       extraOptions = [ "--network=pinepods_internal" ];
       environment = {
         POSTGRES_DB = "pinepods_database";
@@ -54,6 +81,14 @@ in
 
     pinepods-valkey = {
       image = "docker.io/valkey/valkey:8-alpine";
+      user = "${toString config.users.users.pinepods-valkey.uid}:${toString config.users.groups.pinepods-valkey.gid}";
+      # Cache with no host volume; the image's /data stays owned by the
+      # in-image valkey user, so persistence is off entirely.
+      cmd = [
+        "valkey-server"
+        "--save"
+        ""
+      ];
       extraOptions = [ "--network=pinepods_internal" ];
     };
 
@@ -79,6 +114,10 @@ in
         VALKEY_PORT = "6379";
         DEBUG_MODE = "false";
         TZ = config.time.timeZone;
+        # The startup script remaps its in-image user to these and execs
+        # horust via su-exec, so every process runs as this identity.
+        PUID = toString config.users.users.pinepods.uid;
+        PGID = toString config.users.groups.media.gid;
       };
       volumes = [
         "/persist/media/podcasts:/opt/pinepods/downloads"
@@ -93,8 +132,9 @@ in
 
   systemd.tmpfiles.rules = [
     "d /var/lib/container-volumes/pinepods 0755 root root - -"
-    "d /var/lib/container-volumes/pinepods/pgdata 0755 root root - -"
-    "d /var/lib/container-volumes/pinepods/backups 0755 root root - -"
+    # initdb as the container account needs the data dir owned by it
+    "d /var/lib/container-volumes/pinepods/pgdata 0700 pinepods-db pinepods-db - -"
+    "d /var/lib/container-volumes/pinepods/backups 0775 pinepods media - -"
     "d /persist/media/podcasts 2775 root media - -"
   ];
 }

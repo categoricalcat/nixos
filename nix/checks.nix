@@ -232,6 +232,91 @@ let
       contractIssues "exporter-source-scope" h issues
     ) (lib.filter (h: h != addresses.monitoring.centralHost) addresses.monitoring.scrapeHosts);
 
+  # --- container-identity -----------------------------------------------------
+  # uid-gid plan, decisions 1-2: every declared container either runs as a
+  # numeric identity (user uid:gid or PUID/PGID) pinned in 330-399 on a
+  # declared account and group, unique per container, or records why its
+  # host-root processes are allowed (rootReason).
+  containerIdentity =
+    let
+      numOrNull =
+        s: if builtins.isString s && builtins.match "[0-9]+" s != null then lib.toInt s else null;
+    in
+    lib.map (
+      host:
+      let
+        cfg = self.nixosConfigurations.${host}.config;
+        containers = cfg.virtualisation.oci-containers.containers;
+        pinnedUids = lib.pipe cfg.users.users [
+          (lib.filterAttrs (_: u: u.uid != null && u.uid >= 330 && u.uid <= 399))
+          (lib.mapAttrsToList (_: u: u.uid))
+        ];
+        pinnedGids = lib.pipe cfg.users.groups [
+          (lib.filterAttrs (_: g: g.gid != null && g.gid >= 330 && g.gid <= 399))
+          (lib.mapAttrsToList (_: g: g.gid))
+        ];
+        identity =
+          c:
+          let
+            parts = if c.user == null then [ ] else lib.splitString ":" c.user;
+          in
+          {
+            uid =
+              if parts != [ ] then numOrNull (builtins.head parts) else numOrNull (c.environment.PUID or null);
+            gid =
+              if lib.length parts > 1 then
+                numOrNull (lib.elemAt parts 1)
+              else
+                numOrNull (c.environment.PGID or null);
+          };
+        perContainerIssues =
+          name: c:
+          let
+            id = identity c;
+            hasId = id.uid != null && id.gid != null;
+          in
+          lib.optional (
+            !hasId && (c.rootReason or null) == null
+          ) "${name}: no numeric user/PUID/PGID and no rootReason"
+          ++ lib.optionals hasId (
+            lib.optional (
+              !lib.elem id.uid pinnedUids
+            ) "${name}: uid ${toString id.uid} is not a pinned account uid in 330-399"
+            ++ lib.optional (
+              !lib.elem id.gid pinnedGids
+            ) "${name}: gid ${toString id.gid} is not a pinned group gid in 330-399"
+          );
+        uidOwners = lib.concatMap (
+          name:
+          let
+            id = identity containers.${name};
+          in
+          lib.optional (id.uid != null) {
+            inherit name;
+            value = id.uid;
+          }
+        ) (lib.attrNames containers);
+        duplicateUids =
+          let
+            counts = lib.foldl' (
+              acc: o: acc // { ${toString o.value} = (acc.${toString o.value} or 0) + 1; }
+            ) { } uidOwners;
+          in
+          lib.filterAttrs (_: n: n > 1) counts;
+        dupIssues =
+          if duplicateUids == { } then
+            [ ]
+          else
+            [
+              "uids used by more than one container: ${toString (lib.attrValues duplicateUids)}"
+            ];
+      in
+      contractIssues "container-identity" host (
+        lib.concatMap (name: perContainerIssues name containers.${name}) (lib.attrNames containers)
+        ++ dupIssues
+      )
+    ) (lib.attrNames self.nixosConfigurations);
+
   # --- deploy registry derivation (A4) ---------------------------------------
   deployNodes = lib.attrNames self.deploy.nodes;
   registryDeployable = lib.attrNames (lib.filterAttrs (_: host: host.deploy) addresses.hosts);
@@ -256,6 +341,7 @@ let
     fleetBaseline
     ++ sshdHardening
     ++ exporterSourceScope
+    ++ containerIdentity
     ++ deployRegistry
     ++ [
       gateCoverage

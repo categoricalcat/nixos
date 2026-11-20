@@ -64,6 +64,14 @@ in
     };
   };
 
+  # Mesa main (chaotic-nyx, binary-cached) as the default driver set: the
+  # llama.cpp Vulkan backend runs on its RADV ICD (gfx1035). The module's
+  # fallbackSpecialisation keeps a stable-mesa boot entry for recovery from
+  # upstream regressions.
+  chaotic.mesa-git.enable = true;
+
+  system.nixos.tags = [ "mesa-git" ];
+
   security.tpm2 = {
     enable = true;
   };

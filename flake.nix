@@ -84,6 +84,7 @@
               modules = [
                 sops-nix.nixosModules.sops
                 stylix.nixosModules.stylix
+                inputs.chaotic.nixosModules.default
                 home-manager.nixosModules.home-manager
                 ./hosts/yifuwuqi/configuration.nix
               ];

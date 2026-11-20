@@ -9,9 +9,10 @@ let
   network = addresses.containers.cloudflared.network;
 in
 {
-  users.groups.cloudflared = { };
+  users.groups.cloudflared.gid = 332;
   users.users.cloudflared = {
     isSystemUser = true;
+    uid = 332;
     group = "cloudflared";
   };
 

@@ -2,12 +2,23 @@
   pkgs,
   allAddresses,
   config,
+  lib,
   ...
 }:
 
 let
   firecrawlPort = allAddresses.hosts.${config.networking.hostName}.services.firecrawl.port;
   searxngPort = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
+
+  # One account per container (uid-gid plan, decision 2): each number is shared
+  # by the account and its own group, so podman renders `user` at eval time.
+  containerAccounts = {
+    firecrawl-postgres = 334;
+    firecrawl-rabbitmq = 335;
+    firecrawl-redis = 336;
+    firecrawl-playwright = 337;
+    firecrawl = 343;
+  };
 
   # Retry a probe command until it succeeds (~120s cap). A podman unit is
   # "started" when the container exists, not when the service listens;
@@ -27,6 +38,21 @@ let
 in
 
 {
+  users.groups = lib.mapAttrs (_: gid: { inherit gid; }) containerAccounts;
+  users.users = lib.mapAttrs (name: uid: {
+    isSystemUser = true;
+    inherit uid;
+    group = name;
+  }) containerAccounts;
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/container-volumes/firecrawl 0755 root root - -"
+    # initdb as the container account needs an empty, account-owned data dir
+    "d /var/lib/container-volumes/firecrawl/pgdata 0700 firecrawl-postgres firecrawl-postgres - -"
+    # The broker's HOME and mnesia dir must be writable by its account
+    "d /var/lib/container-volumes/firecrawl/rabbitmq 0700 firecrawl-rabbitmq firecrawl-rabbitmq - -"
+  ];
+
   systemd.services = {
     init-firecrawl-network = {
       description = "Create Firecrawl container network";
@@ -57,9 +83,10 @@ in
       after = [ "init-firecrawl-network.service" ];
       # Same race, slower boot: ECONNREFUSED here crashed nuq workers and
       # failed a nixos activation (deploy run 310). Probe the AMQP port, NOT
-      # rabbitmq-diagnostics: podman exec runs as root, and a root Erlang VM
-      # creates a root-owned .erlang.cookie before the entrypoint writes it —
-      # the broker (user rabbitmq) then crashes with eacces (deploy 2026-11-10).
+      # rabbitmq-diagnostics: the diagnostics VM is a whole extra Erlang
+      # runtime, and exec'ing it as root used to create a root-owned
+      # .erlang.cookie before the entrypoint wrote it — the broker then
+      # crashed with eacces (deploy 2026-11-10, fixed by the container account).
       serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "${pkgs.podman}/bin/podman exec firecrawl-rabbitmq bash -c 'exec 3<>/dev/tcp/127.0.0.1/5672'";
     };
     "podman-firecrawl-playwright" = {
@@ -90,11 +117,26 @@ in
   virtualisation.oci-containers.containers = {
     firecrawl-redis = {
       image = "docker.io/library/redis:alpine";
+      user = "${toString config.users.users.firecrawl-redis.uid}:${toString config.users.groups.firecrawl-redis.gid}";
+      # Rate-limit/cache store with no host volume; the image's /data stays
+      # owned by the in-image redis user, so persistence is off entirely.
+      cmd = [
+        "redis-server"
+        "--save"
+        ""
+      ];
       extraOptions = [ "--network=firecrawl_internal" ];
     };
 
     firecrawl-postgres = {
       image = "ghcr.io/firecrawl/nuq-postgres:latest";
+      user = "${toString config.users.users.firecrawl-postgres.uid}:${toString config.users.groups.firecrawl-postgres.gid}";
+      # PGDATA outside the image VOLUME (overlay bind-mount failure,
+      # docker-library/postgres#1363) and owned by the running account:
+      # initdb as non-root needs an empty writable data dir. The volume also
+      # survives podman auto-update recreations, which the container layer
+      # never did.
+      volumes = [ "/var/lib/container-volumes/firecrawl/pgdata:/var/lib/pgdata" ];
       extraOptions = [
         "--network=firecrawl_internal"
         # Podman-level health for auto-update and inspection; the systemd
@@ -103,6 +145,7 @@ in
         "--health-start-period=10s"
       ];
       environment = {
+        PGDATA = "/var/lib/pgdata/data";
         POSTGRES_USER = "postgres";
         POSTGRES_PASSWORD = "postgres";
         POSTGRES_DB = "postgres";
@@ -111,15 +154,19 @@ in
 
     firecrawl-rabbitmq = {
       image = "docker.io/library/rabbitmq:4-management";
-      # No podman --health-cmd: podman runs healthchecks as root, and a root
-      # rabbitmq-diagnostics VM poisons .erlang.cookie (root-owned, 400) during
-      # boot — the broker then dies with eacces. Readiness is gated by the
-      # unit's ExecStartPost port probe instead.
+      user = "${toString config.users.users.firecrawl-rabbitmq.uid}:${toString config.users.groups.firecrawl-rabbitmq.gid}";
+      # HOME and mnesia state on an account-owned host volume (tmpfiles
+      # above); without it the writable-layer dirs stay owned by the in-image
+      # rabbitmq user and the broker cannot write its cookie.
+      volumes = [ "/var/lib/container-volumes/firecrawl/rabbitmq:/var/lib/rabbitmq" ];
+      # No podman --health-cmd: the unit's ExecStartPost port probe gates
+      # readiness without a second Erlang VM.
       extraOptions = [ "--network=firecrawl_internal" ];
     };
 
     firecrawl-playwright = {
       image = "ghcr.io/firecrawl/playwright-service:latest";
+      user = "${toString config.users.users.firecrawl-playwright.uid}:${toString config.users.groups.firecrawl-playwright.gid}";
       extraOptions = [
         "--network=firecrawl_internal"
         "--network=firecrawl_net"
@@ -127,11 +174,15 @@ in
       environment = {
         PORT = "3000";
         MAX_CONCURRENT_PAGES = "10";
+        # The image HOME (/home/node) is owned by the in-image node user;
+        # the declared account needs a writable HOME for Chromium's profile.
+        HOME = "/tmp";
       };
     };
 
     firecrawl = {
       image = "ghcr.io/firecrawl/firecrawl:latest";
+      user = "${toString config.users.users.firecrawl.uid}:${toString config.users.groups.firecrawl.gid}";
       extraOptions = [
         "--network=firecrawl_internal"
         "--network=firecrawl_net"

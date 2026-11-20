@@ -218,5 +218,60 @@ dashLib.mkDashboard {
       gridPos = dashLib.mkGridPos 12 30 12 8;
       legendFormat = "{{host}} {{jail}}";
     })
+
+    # --- Identity & Ownership Row ---
+    (dashLib.mkStat {
+      title = "Duplicate IDs";
+      expr = "sum(node_security_duplicate_ids) by (host)";
+      gridPos = dashLib.mkGridPos 0 38 4 4;
+      legendFormat = "{{host}}";
+      thresholds = dashLib.alertThresholds;
+    })
+    (dashLib.mkStat {
+      title = "Shared Container IDs";
+      expr = "sum(node_security_container_shared_id) by (host)";
+      gridPos = dashLib.mkGridPos 4 38 4 4;
+      legendFormat = "{{host}}";
+      thresholds = dashLib.alertThresholds;
+    })
+    (dashLib.mkStat {
+      title = "Root Containers";
+      expr = "sum(node_security_container_root) by (host)";
+      gridPos = dashLib.mkGridPos 8 38 4 4;
+      legendFormat = "{{host}}";
+      thresholds = dashLib.alertThresholds;
+    })
+    (dashLib.mkStat {
+      title = "Unowned Files";
+      expr = "sum(node_security_unowned_files) by (host)";
+      gridPos = dashLib.mkGridPos 12 38 4 4;
+      legendFormat = "{{host}}";
+      thresholds = dashLib.alertThresholds;
+    })
+    (dashLib.mkTable {
+      title = "Shared Container IDs (detail)";
+      expr = "node_security_container_shared_id";
+      gridPos = dashLib.mkGridPos 16 38 8 4;
+      transformations = [
+        {
+          id = "organize";
+          options = {
+            excludeByName = {
+              Time = true;
+              Value = true;
+              "__name__" = true;
+              job = true;
+              instance = true;
+            };
+            renameByName = {
+              container = "Container";
+              kind = "Kind";
+              name = "Account/Group";
+              host = "Host";
+            };
+          };
+        }
+      ];
+    })
   ];
 }

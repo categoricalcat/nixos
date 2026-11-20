@@ -46,7 +46,17 @@ in
     PROWLARR__AUTH__APIKEY=${config.sops.placeholder."arr/prowlarr_api_key"}
   '';
 
-  users.groups.media = { };
+  users = {
+    groups = {
+      media.gid = 330;
+      torrent-indexer.gid = 342;
+    };
+    users.torrent-indexer = {
+      isSystemUser = true;
+      uid = 342;
+      group = "torrent-indexer";
+    };
+  };
 
   systemd.tmpfiles.rules = [
     "d /persist/media 2775 root media - -"
@@ -155,6 +165,7 @@ in
     # goes through the VPN and FlareSolverr is reachable on 127.0.0.1.
     dependsOn = [ "gluetun" ];
     extraOptions = [ "--network=container:gluetun" ];
+    user = "${toString config.users.users.torrent-indexer.uid}:${toString config.users.groups.torrent-indexer.gid}";
     environment = {
       # 8080 is taken by qBittorrent inside the shared namespace; the host
       # publishes this port through gluetun.

@@ -11,6 +11,19 @@ let
   lanHost = addrs.network.lan.ipv4.host;
 in
 {
+  # One account per container (uid-gid plan, decision 2); both keep the
+  # shared media group for the downloads volume.
+  users.users.soularr = {
+    isSystemUser = true;
+    uid = 340;
+    group = "media";
+  };
+  users.users.slskd = {
+    isSystemUser = true;
+    uid = 341;
+    group = "media";
+  };
+
   sops.secrets = {
     "services/slskd/username" = { };
     "services/slskd/password" = { };
@@ -19,6 +32,9 @@ in
   };
 
   sops.templates = {
+    # Owned by the container accounts: the files are bind-mounted into
+    # containers that no longer run as root (sops default is root 0400).
+    "slskd.yml".owner = "slskd";
     "slskd.yml".content = ''
       soulseek:
         username: ${config.sops.placeholder."services/slskd/username"}
@@ -39,6 +55,7 @@ in
               role: readwrite
     '';
 
+    "soularr.ini".owner = "soularr";
     # download_dir is the path as seen by Lidarr on the host; the Slskd
     # download_dir below is the container path for the same directory.
     "soularr.ini".content = ''
@@ -87,15 +104,16 @@ in
       [Logging]
       level = INFO
       log_to_file = True
-      log_file = soularr.log
+      # Absolute path: the image's CWD (/app) is not writable by the account
+      log_file = /data/soularr.log
       max_bytes = 1048576
       backup_count = 3
     '';
   };
 
   systemd.tmpfiles.rules = [
-    "d /var/lib/container-volumes/slskd 0755 root root - -"
-    "d /var/lib/container-volumes/soularr 0755 root root - -"
+    "d /var/lib/container-volumes/slskd 0775 slskd media - -"
+    "d /var/lib/container-volumes/soularr 0775 soularr media - -"
     "d /persist/media/downloads/soulseek 2775 root media - -"
     "Z /persist/media/downloads/soulseek 2775 root media - -"
   ];
@@ -103,6 +121,9 @@ in
   virtualisation.oci-containers.containers = {
     slskd = {
       image = "docker.io/slskd/slskd:latest";
+      # Upstream documents Docker's --user as the supported way to run as a
+      # host identity (preferred over its PUID/PGID fallback, which stays root).
+      user = "${toString config.users.users.slskd.uid}:${toString config.users.groups.media.gid}";
       # Share gluetun's network namespace: outbound Soulseek traffic goes
       # through the VPN. The Web UI port is published via gluetun.
       dependsOn = [ "gluetun" ];
@@ -119,6 +140,9 @@ in
     };
     soularr = {
       image = "ghcr.io/mrusse/soularr:latest";
+      # The image's run.sh is a plain bash loop that ignores PUID/PGID (no
+      # s6/su), so the identity must come from podman itself.
+      user = "${toString config.users.users.soularr.uid}:${toString config.users.groups.media.gid}";
       dependsOn = [ "slskd" ];
       extraOptions = [
         "--network=container:gluetun"
@@ -128,9 +152,6 @@ in
       environment = {
         SCRIPT_INTERVAL = "300";
         TZ = "America/Sao_Paulo";
-        # Files land in /persist/media which is root:media (gid 952).
-        PUID = "0";
-        PGID = "952";
       };
       volumes = [
         "/var/lib/container-volumes/soularr:/data"

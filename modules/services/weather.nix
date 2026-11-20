@@ -8,8 +8,17 @@ let
   port = allAddresses.hosts.${config.networking.hostName}.services.weather.port;
 in
 {
+  # Stateless static server (uid-gid plan, decision 2: one account, its own group)
+  users.groups.weather.gid = 345;
+  users.users.weather = {
+    isSystemUser = true;
+    uid = 345;
+    group = "weather";
+  };
+
   virtualisation.oci-containers.containers.weather = {
     image = "ghcr.io/mwood77/ws4kp-international:latest";
+    user = "${toString config.users.users.weather.uid}:${toString config.users.groups.weather.gid}";
     ports = [ "127.0.0.1:${toString port}:8080" ];
     environment.WS4KP_PORT = "8080";
   };

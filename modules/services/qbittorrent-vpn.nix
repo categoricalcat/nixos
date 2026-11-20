@@ -79,16 +79,28 @@ in
     '';
   };
 
-  # Rootful podman maps PUID straight to a host UID (owner of /config and
-  # downloads), so give it its own account; NixOS allocates the number.
-  users.users.qbittorrent = {
-    isSystemUser = true;
-    group = "media";
+  users = {
+    # Rootful podman maps PUID straight to a host UID (owner of /config and
+    # downloads); the pinned number renders into the unit at evaluation time.
+    users.qbittorrent = {
+      isSystemUser = true;
+      uid = 331;
+      group = "media";
+    };
+    groups.flaresolverr.gid = 333;
+    users.flaresolverr = {
+      isSystemUser = true;
+      uid = 333;
+      group = "flaresolverr";
+    };
   };
 
   virtualisation.oci-containers.containers = {
     gluetun = {
       image = "docker.io/qmcgaw/gluetun:latest";
+      # VPN namespace owner: NET_ADMIN and /dev/net/tun require root
+      # (uid-gid plan decision; the container-identity contract accepts it).
+      rootReason = "needs NET_ADMIN and /dev/net/tun to create and manage the VPN namespace";
       extraOptions = [
         "--cap-add=NET_ADMIN"
         "--device=/dev/net/tun:/dev/net/tun"
@@ -120,6 +132,9 @@ in
     qbittorrent = {
       image = "lscr.io/linuxserver/qbittorrent:latest";
       dependsOn = [ "gluetun" ];
+      # The s6 init must run as root to drop to PUID/PGID; the app itself
+      # runs as the pinned account below.
+      rootReason = "linuxserver s6-overlay init runs as root and drops to PUID/PGID";
       extraOptions = [
         "--network=container:gluetun"
         # SIGTERM saves resume data, then waits up to Session\ShutdownTimeout
@@ -128,10 +143,9 @@ in
       ];
       environment = {
         UMASK = "002";
+        PUID = toString config.users.users.qbittorrent.uid;
+        PGID = toString config.users.groups.media.gid;
       };
-      environmentFiles = [
-        "/run/qbittorrent-ids.env"
-      ];
       volumes = [
         "/var/lib/container-volumes/qbittorrent:/config"
         "/persist/media:/persist/media"
@@ -144,6 +158,8 @@ in
       extraOptions = [
         "--network=container:gluetun"
       ];
+      # Overrides the image-baked nobody:nogroup with the declared account
+      user = "${toString config.users.users.flaresolverr.uid}:${toString config.users.groups.flaresolverr.gid}";
       environment = {
         PORT = toString addrs.services.flaresolverr.internalPort;
       };
@@ -178,12 +194,6 @@ in
             gid = "media";
           in
           ''
-            # Resolve the container's host IDs at runtime
-            {
-              echo "PUID=$(${pkgs.coreutils}/bin/id -u qbittorrent)"
-              echo "PGID=$(${pkgs.coreutils}/bin/stat -c %g /persist/media)"
-            } > /run/qbittorrent-ids.env
-
             mkdir -p /var/lib/container-volumes/qbittorrent/qBittorrent
 
             # Seed template on first run

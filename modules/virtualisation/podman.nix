@@ -24,13 +24,20 @@ in
           lib.types.submodule (
             { config, ... }:
             {
-              labels = lib.mkIf (!isLocalImage config) {
-                "io.containers.autoupdate" = lib.mkDefault "registry";
+              options.rootReason = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Why this container may run host-root processes";
               };
-              # `--rm` makes Podman store the container as volatile, which
-              # cAdvisor 0.56.2 cannot resolve. The unit already removes the
-              # container in preStart and postStop.
-              autoRemoveOnStop = lib.mkDefault false;
+              config = {
+                labels = lib.mkIf (!isLocalImage config) {
+                  "io.containers.autoupdate" = lib.mkDefault "registry";
+                };
+                # `--rm` makes Podman store the container as volatile, which
+                # cAdvisor 0.56.2 cannot resolve. The unit already removes the
+                # container in preStart and postStop.
+                autoRemoveOnStop = lib.mkDefault false;
+              };
             }
           )
         );
