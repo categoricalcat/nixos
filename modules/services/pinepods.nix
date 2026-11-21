@@ -67,7 +67,10 @@ in
 
   virtualisation.oci-containers.containers = {
     pinepods-db = {
-      image = "docker.io/library/postgres:18";
+      # alpine variant of the same official major: drops the debian trixie
+      # base that carried ~150 C+H (Trivy 2026-11). The existing PGDATA was
+      # initdb'd under glibc — one-time dump/restore, not in-place reuse.
+      image = "docker.io/library/postgres:18-alpine";
       user = "${toString config.users.users.pinepods-db.uid}:${toString config.users.groups.pinepods-db.gid}";
       extraOptions = [ "--network=pinepods_internal" ];
       environment = {
@@ -94,6 +97,9 @@ in
     };
 
     pinepods = {
+      # Trivy 2026-11: 89 C+H, all fixable; :latest == newest release 0.9.2 —
+      # the upstream image simply pre-dates the fixes. Accepted; auto-update
+      # tracks fixes.
       image = "docker.io/madeofpendletonwool/pinepods:latest";
       ports = [ "127.0.0.1:${toString port}:8040" ];
       extraOptions = [

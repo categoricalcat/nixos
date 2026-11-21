@@ -1,16 +1,37 @@
 # Minimal server-specific settings for home server
 # Focuses on preventing sleep/suspend and essential server optimizations
 
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  systemdHardening,
+  ...
+}:
 
 {
   # Disable sleep, hibernation, suspend, and other power management features
   # Essential for a server that should run 24/7
-  systemd.targets = {
-    sleep.enable = false;
-    suspend.enable = false;
-    hibernate.enable = false;
-    hybrid-sleep.enable = false;
+  systemd = {
+    targets = {
+      sleep.enable = false;
+      suspend.enable = false;
+      hibernate.enable = false;
+      hybrid-sleep.enable = false;
+      # Headless servers do not need the audio sound target either
+      sound.enable = false;
+    };
+
+    # /dev stays real (disk nodes, SG_IO ioctls) and capabilities stay unset:
+    # some SMART transports need CAP_SYS_RAWIO. No network beyond the journal
+    # socket, so the inet families of the shared set are dropped.
+    services.smartd.serviceConfig =
+      removeAttrs systemdHardening [
+        "PrivateDevices"
+        "CapabilityBoundingSet"
+      ]
+      // {
+        RestrictAddressFamilies = [ "AF_UNIX" ];
+      };
   };
 
   # Power management settings
@@ -62,9 +83,8 @@
   # Disable GUI-related power management if present
   services.upower.enable = lib.mkForce false;
 
-  # Headless servers do not need audio hardware, daemons, or sound targets
+  # Headless servers do not need audio hardware or daemons
   xdg.sounds.enable = false;
-  systemd.targets.sound.enable = false;
   services.pipewire.enable = lib.mkForce false;
   services.pulseaudio.enable = lib.mkForce false;
   hardware.alsa.enable = lib.mkForce false;

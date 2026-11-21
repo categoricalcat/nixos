@@ -675,10 +675,6 @@ in
           domain = "files.${baseDomain}";
           port = 24086;
         };
-        weather = {
-          domain = "weather.${baseDomain}";
-          port = 24084;
-        };
       };
 
       nixBuild = {

@@ -56,7 +56,6 @@ let
     slskd = { };
     sonarr = { };
     torrent-indexer = { };
-    weather = { };
   };
 
   extraFor = spec: ''

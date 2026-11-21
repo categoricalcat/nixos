@@ -160,6 +160,8 @@ in
   };
 
   virtualisation.oci-containers.containers.torrent-indexer = {
+    # Trivy 2026-11: 39 C+H (all fixable); :latest == newest release 0.15.3 —
+    # the upstream image pre-dates the fixes. Accepted; auto-update tracks fixes.
     image = "docker.io/felipemarinho97/torrent-indexer:latest";
     # Share gluetun's network namespace (like FlareSolverr): outbound traffic
     # goes through the VPN and FlareSolverr is reachable on 127.0.0.1.

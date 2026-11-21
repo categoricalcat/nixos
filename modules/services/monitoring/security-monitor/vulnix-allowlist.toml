@@ -5,7 +5,9 @@ ada.cve = "CVE-2024-9410" # Ada.cx Sentry config, not ada URL parser
 avahi.cve = [
   "CVE-2021-26720",
   "CVE-2025-59529",
-] # Debian script; commit 4e2e1ea0908d omitted in nixpkgs
+] # 26720: Debian-only if-up.d script, not in nixpkgs; 59529: real but unfixed upstream
+# (PR 808 candidate only) — CLIENTS_MAX 50 never enforced in 0.8, local DoS via the
+# simple-protocol unix socket; accepted as low-value local exposure
 binutils.cve = [
   "CVE-2025-69649",
   "CVE-2025-69650",
@@ -34,9 +36,15 @@ git.cve = [
   "CVE-2022-38663",
 ] # Jenkins Git Plugin
 grafana.cve = "CVE-2023-34111" # taosdata/grafanaplugin CI workflow
+kitty.cve = [
+  "CVE-2024-23749",
+  "CVE-2024-25003",
+  "CVE-2024-25004",
+] # 9bis KiTTY (Windows PuTTY fork), not the kitty terminal emulator
 "lapack-3".cve = "CVE-2021-4048" # Backed by OpenBLAS >= 0.3.19
 libsndfile.cve = "CVE-2025-52194" # IRCAM parse overflow, no upstream fix (libsndfile#1082)
 mercurial.cve = "CVE-2022-43410" # Jenkins Mercurial Plugin
+mesa.cve = "CVE-2026-40393" # Fixed in 26.0.1 (WebGPU alloca); shipped 26.3.1 / 26.11-dev, git-hash versions mis-sort as affected
 orc.cve = "CVE-2025-47436" # Apache ORC, not GStreamer orc
 rsync.cve = "CVE-2026-119741" # DoS needs public daemon module; no rsyncd deployed
 shellcheck.cve = "CVE-2021-28794" # VS Code extension

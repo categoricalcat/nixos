@@ -15,6 +15,30 @@ let
 
   isLocalImage =
     c: c.imageFile != null || c.imageStream != null || lib.hasPrefix "localhost/" c.image;
+
+  # Unit-level sandboxing safe for rootful podman: the process tree (podman,
+  # conmon, crun, netavark) still needs capabilities, namespaces, setuid file
+  # modes during layer extraction, host /proc/sys writes for bridge setup,
+  # and real /dev (fuse-overlayfs, /dev/net/tun), so the strict
+  # `systemdHardening` set from modules/common.nix cannot apply here.
+  # No ProtectHostname: observed 2026-11-21 (systemd 262, podman 6.1.4) that
+  # it makes every container create fail in crun with "sethostname:
+  # Operation not permitted" — the runtime cannot set the container hostname.
+  podmanUnitHardening = {
+    PrivateTmp = true;
+    ProtectHome = true;
+    ProtectClock = true;
+    ProtectKernelLogs = true;
+    RestrictRealtime = true;
+    LockPersonality = true;
+    RestrictAddressFamilies = [
+      "AF_UNIX"
+      "AF_INET"
+      "AF_INET6"
+      "AF_NETLINK"
+      "AF_PACKET"
+    ];
+  };
 in
 {
   imports = [
@@ -137,7 +161,12 @@ in
         inherit (slots.containerPrune) timerConfig;
       };
     };
-    services.podman-prune.after = [ "podman-auto-update.service" ];
+    services = lib.mkMerge [
+      { podman-prune.after = [ "podman-auto-update.service" ]; }
+      (lib.concatMapAttrs (name: _: {
+        "podman-${name}".serviceConfig = podmanUnitHardening;
+      }) config.virtualisation.oci-containers.containers)
+    ];
   };
 
   environment.systemPackages = with pkgs; [

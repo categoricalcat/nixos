@@ -128,6 +128,10 @@ in
     ];
   };
 
+  # Trivy 2026-11: firecrawl 190 / nuq-postgres 218 / playwright 178 C+H;
+  # :latest == release 2.11.810 and the fixable CVEs are app deps (undici,
+  # pnpm) shipped by upstream. Accepted; auto-update + daily CVE rescan
+  # track fixes.
   virtualisation.oci-containers.containers = {
     firecrawl-redis = {
       image = "docker.io/library/redis:alpine";

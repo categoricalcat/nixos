@@ -1,6 +1,7 @@
 {
   allAddresses,
   config,
+  systemdHardening,
   ...
 }:
 
@@ -56,5 +57,25 @@ in
     };
   };
 
-  systemd.services.cadvisor = monitoringLib.mkWantsAfter [ "podman.socket" ];
+  systemd.services.cadvisor = monitoringLib.mkWantsAfter [ "podman.socket" ] // {
+    serviceConfig =
+      # cAdvisor must see every PID (ProtectProc off) and may enter container
+      # namespaces (RestrictNamespaces off); capabilities stay unset for
+      # reading delegated cgroup subtrees. /home stays visible read-only so
+      # filesystem accounting keeps covering it; netlink feeds network stats.
+      removeAttrs systemdHardening [
+        "ProtectProc"
+        "RestrictNamespaces"
+        "CapabilityBoundingSet"
+      ]
+      // {
+        ProtectHome = "read-only";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+          "AF_NETLINK"
+        ];
+      };
+  };
 }

@@ -118,6 +118,9 @@ in
     "Z /persist/media/downloads/soulseek 2775 root media - -"
   ];
 
+  # Trivy 2026-11: soularr 858 / slskd 2 C+H; :latest == newest releases
+  # (1.2.3 / 0.26.2), fixable findings are base deps upstream hasn't rebuilt.
+  # Accepted; daily auto-update + CVE rescan track upstream fixes.
   virtualisation.oci-containers.containers = {
     slskd = {
       image = "docker.io/slskd/slskd:latest";

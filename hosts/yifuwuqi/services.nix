@@ -48,7 +48,6 @@
     ../../modules/services/qbittorrent-vpn.nix
     ../../modules/services/slskd.nix
     ../../modules/services/homepage.nix
-    ../../modules/services/weather.nix
     ../../modules/services/ai/sillytavern.nix
   ];
 
