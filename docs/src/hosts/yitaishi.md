@@ -67,7 +67,7 @@ Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM
 - **Musnix Integration**: Real-time audio kernel privileges, thread priority tuning, `rtcqs` system diagnostic tool.
 - **PipeWire Studio Tuning**:
   - Sample Rate: **96,000 Hz** bit-perfect audio processing.
-  - Quantum Buffer: **384 samples** (~4.0 ms latency at 96kHz).
+  - Quantum Buffer: **256 samples** (~2.67 ms latency at 96kHz).
   - Realtime Kit (`rtkit`) priority boosting (from `modules/desktop.nix`).
 
 ### 4.2 Production Tools & Plugin Ecosystem

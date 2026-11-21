@@ -37,7 +37,7 @@ buildNpmPackage {
         ./package-lock.json
       ];
     };
-    hash = "sha256-4k0XEjUMv/eYwz3Zke8l55sMvr12kFH9IsGE/Vhikgs=";
+    hash = "sha256-DTWHl8ju4DA4eByWxQIo38qqAl+9/WnnZQMd/3zrnms=";
   };
 
   # No build script; node_modules is produced by npmConfigHook.
@@ -61,7 +61,7 @@ buildNpmPackage {
   '';
 
   meta = {
-    description = "Repo-wide ESLint for JavaScript and TypeScript (perfectionist, unicorn, typescript-eslint)";
+    description = "Repo-wide ESLint for JavaScript and TypeScript (perfectionist, stylistic, unicorn, typescript-eslint)";
     platforms = lib.platforms.linux;
     mainProgram = "eslint";
   };

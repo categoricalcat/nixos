@@ -48,10 +48,10 @@ in
         "context.properties" = {
           "default.clock.rate" = 96000;
           "default.clock.allowed-rates" = rates;
-          # 384 @ 96k = 4.0 ms; pipewire would round non-power-of-two quanta down.
-          "default.clock.quantum" = 384;
-          "default.clock.min-quantum" = 384;
-          "default.clock.max-quantum" = 384;
+          # 256 @ 96k ≈ 2.67 ms; keep non-power-of-two quanta unrounded if tuned.
+          "default.clock.quantum" = 256;
+          "default.clock.min-quantum" = 256;
+          "default.clock.max-quantum" = 256;
           "clock.power-of-two-quantum" = false;
         };
       };

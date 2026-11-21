@@ -36,6 +36,18 @@ let
       echo "timed out waiting for ${name} to become ready" >&2
       exit 1
     '';
+
+  # No start limit, 30s backoff: a start-limit-hit turns a transient crash
+  # loop into a permanent outage needing manual intervention (2026-11-09).
+  # Both units crash-loop on transient network fetches at boot (the
+  # Playwright image's corepack pnpm download races host DNS — EAI_AGAIN
+  # five times in six seconds at the 2026-11-20 17:17 boot kept it down
+  # until manual restart); a failed start retried every 30s without limit
+  # self-heals once the host resolves names again.
+  restartBackoff = {
+    unitConfig.StartLimitIntervalSec = 0;
+    serviceConfig.RestartSec = "30s";
+  };
 in
 
 {
@@ -90,29 +102,30 @@ in
       # crashed with eacces (deploy 2026-11-10, fixed by the container account).
       serviceConfig.ExecStartPost = waitFor "firecrawl-rabbitmq" "${pkgs.podman}/bin/podman exec firecrawl-rabbitmq bash -c 'exec 3<>/dev/tcp/127.0.0.1/5672'";
     };
-    "podman-firecrawl-playwright" = {
-      requires = [ "init-firecrawl-network.service" ];
-      after = [ "init-firecrawl-network.service" ];
-    };
-    "podman-firecrawl" = {
-      requires = [ "init-firecrawl-network.service" ];
-      after = [
-        "init-firecrawl-network.service"
-        "podman-firecrawl-playwright.service"
-      ];
-      # Playwright crash-loops on transient network fetches at boot (corepack
-      # pnpm download); the app survives its absence (per-scrape errors), so
-      # order after it but never let it block startup (Wants, not Requires).
-      wants = [ "podman-firecrawl-playwright.service" ];
-      # No start limit: start-limit-hit turned transient crash loops into
-      # permanent outages needing manual intervention (2026-11-09). Slow
-      # backoff alone is enough; the readiness gates above keep boots clean.
-      unitConfig.StartLimitIntervalSec = 0;
-      serviceConfig.RestartSec = "30s";
-      # Gate "ready" on the API answering (GET / returns 200), same rationale
-      # as the postgres/rabbitmq gates: After= now means "usable by clients".
-      serviceConfig.ExecStartPost = waitFor "firecrawl" "${pkgs.curl}/bin/curl -sf -o /dev/null http://localhost:${toString firecrawlPort}/";
-    };
+    "podman-firecrawl-playwright" = lib.mkMerge [
+      {
+        requires = [ "init-firecrawl-network.service" ];
+        after = [ "init-firecrawl-network.service" ];
+      }
+      restartBackoff
+    ];
+    "podman-firecrawl" = lib.mkMerge [
+      {
+        requires = [ "init-firecrawl-network.service" ];
+        after = [
+          "init-firecrawl-network.service"
+          "podman-firecrawl-playwright.service"
+        ];
+        # Playwright crash-loops on transient network fetches at boot (corepack
+        # pnpm download); the app survives its absence (per-scrape errors), so
+        # order after it but never let it block startup (Wants, not Requires).
+        wants = [ "podman-firecrawl-playwright.service" ];
+        # Gate "ready" on the API answering (GET / returns 200), same rationale
+        # as the postgres/rabbitmq gates: After= now means "usable by clients".
+        serviceConfig.ExecStartPost = waitFor "firecrawl" "${pkgs.curl}/bin/curl -sf -o /dev/null http://localhost:${toString firecrawlPort}/";
+      }
+      restartBackoff
+    ];
   };
 
   virtualisation.oci-containers.containers = {
@@ -188,20 +201,25 @@ in
         "--network=firecrawl_internal"
         "--network=firecrawl_net"
       ];
-      ports = [ "${toString firecrawlPort}:3002" ];
+      # Loopback publish: podman's DNAT'd published ports bypass the
+      # per-interface firewall allowlists (the host firewall accepts every
+      # DNAT'd connection), so the API must not publish on 0.0.0.0.
+      ports = [ "127.0.0.1:${toString firecrawlPort}:3002" ];
       environment = {
         HOST = "0.0.0.0";
         PORT = "3002";
         REDIS_URL = "redis://firecrawl-redis:6379";
         REDIS_RATE_LIMIT_URL = "redis://firecrawl-redis:6379";
-        POSTGRES_URL = "postgresql://postgres:postgres@firecrawl-postgres:5432/postgres";
         NUQ_DATABASE_URL = "postgresql://postgres:postgres@firecrawl-postgres:5432/postgres";
         PLAYWRIGHT_MICROSERVICE_URL = "http://firecrawl-playwright:3000/scrape";
         NUQ_RABBITMQ_URL = "amqp://firecrawl-rabbitmq:5672";
+        # /v2/scrape and /v2/map run inside the API process (skipNuq); the
+        # NuQ workers serve only the crawl and batch endpoints, which
+        # nothing here hammers. One worker keeps those alive one job at a
+        # time and frees ~970 MiB RAM against the default five.
+        NUQ_WORKER_COUNT = "1";
 
         # SearXNG Search Integration (host.containers.internal resolves to the host in Podman)
-        SEARCH_PROVIDER = "searxng";
-        SEARXNG_BASE_URL = "http://host.containers.internal:${toString searxngPort}";
         SEARXNG_ENDPOINT = "http://host.containers.internal:${toString searxngPort}";
         SEARXNG_CATEGORIES = "science,general";
       };

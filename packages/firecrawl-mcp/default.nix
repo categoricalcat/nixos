@@ -56,13 +56,13 @@ let
 in
 stdenv.mkDerivation {
   pname = "firecrawl-mcp";
-  version = "1.1.5";
+  version = "1.2.1";
 
   # Only the build inputs, so editing default.nix never changes the store hash.
   src = lib.fileset.toSource {
     root = ./.;
     fileset = lib.fileset.unions [
-      ./firecrawl-mcp.ts
+      (lib.fileset.fileFilter (file: file.hasExt "ts") ./.)
       ./package.json
       ./tsconfig.json
     ];
@@ -72,8 +72,11 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [
     makeWrapper
+    nodejs
     typescript
   ];
+
+  doCheck = true;
 
   buildPhase = ''
     runHook preBuild
@@ -86,10 +89,18 @@ stdenv.mkDerivation {
     runHook postBuild
   '';
 
+  checkPhase = ''
+    runHook preCheck
+    node --test *.test.ts
+    runHook postCheck
+  '';
+
+  # Runtime modules only; the *.test.ts files and test-support.ts stay out.
   installPhase = ''
     runHook preInstall
-    install -Dm644 firecrawl-mcp.ts $out/lib/firecrawl-mcp/firecrawl-mcp.ts
-    install -Dm644 package.json $out/lib/firecrawl-mcp/package.json
+    install -Dm644 -t $out/lib/firecrawl-mcp \
+      firecrawl-api.ts firecrawl-mcp.ts guards.ts map.ts scrape.ts search.ts \
+      searxng-contract.ts package.json
     makeWrapper ${lib.getExe nodejs} $out/bin/firecrawl-mcp \
       --add-flags "$out/lib/firecrawl-mcp/firecrawl-mcp.ts"
     runHook postInstall
@@ -100,7 +111,8 @@ stdenv.mkDerivation {
   };
 
   meta = {
-    description = "Zero-dependency MCP stdio server: SearXNG search (1:1 params) + self-hosted Firecrawl scrape";
+    description = "Zero-dependency MCP stdio server: 1:1 lossless SearXNG search, self-hosted Firecrawl scrape and map";
+    license = lib.licenses.gpl3Only;
     platforms = lib.platforms.linux;
     mainProgram = "firecrawl-mcp";
   };

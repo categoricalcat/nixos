@@ -40,7 +40,7 @@ ______________________________________________________________________
 
 ### 2.2 SearXNG ("yi search") (`modules/services/searxng.nix`)
 
-- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://search.aset.love`.
+- **Web UI**: Binds all interfaces (`0.0.0.0:24888`, not loopback — the Firecrawl container reaches it via `host.containers.internal`) and is proxied to `https://search.aset.love` through the local ingress. The firewall scopes the exposure: `eno1` admits only declared ports plus the `yirukou` gateway (which reaches the local ingress and Loki, not SearXNG directly), `tailscale0` only SSH and DNS, and an explicit input rule admits the application-container subnets to the SearXNG port.
 - **Tor Proxy Routing**: Outbound search queries round-robin across 4 dummy-credential SOCKS5 endpoints (`socks5h://pool{1..4}:x@127.0.0.1:9050`), using Tor's default `IsolateSOCKSAuth` for 4 independent exit circuits. `services.tor` caps `CircuitBuildTimeout` at `10s`, `MaxCircuitDirtiness` at `180s`, and `SocksTimeout` at `30s`. `brave`, `brave.news`, `duckduckgo`, and `duckduckgo news` each use a dedicated network with 3 retries on HTTP `403`/`429` (plus `202` for DuckDuckGo CAPTCHA challenges) to rotate across all 4 exit circuits, and `ban_time_on_fail = 0` prevents a single stalled exit from suspending an engine across fresh circuits.
 - **Engines Enabled**: Upstream defaults (Brave, DuckDuckGo, Bing News, Wikinews, etc.) plus Google Scholar (`gs`) and arXiv (`ar`), with `duckduckgo` (omitting redundant explicit `Content-Type` header so `curl_cffi` keeps standard `Content-Length` -> `Content-Type` order and avoids HTTP `202` CAPTCHAs), `duckduckgo_extra` (removing hardcoded 2s `fetch_vqd` timeout), and `bing_news` (guarding empty HTTP 200 bodies) patched in Nix. Google web/news/CSE, Reuters (HTTP 401), Radio Browser (unproxied DNS during `init()`), and Wikidata (HTTP 403) are disabled; Mojeek, Startpage, Ahmia, and Torch stay inactive.
 - **Ephemeral Secret Generation**: `searx-secret-init.service` automatically generates a cryptographically random 32-byte hex secret key on boot into `/run/searx-secret/env` mode `0440`.
@@ -64,7 +64,7 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
   1. `firecrawl-postgres`: Relational data store (`nuq-postgres`).
   1. `firecrawl-rabbitmq`: Message broker for scraping job queues.
   1. `firecrawl-playwright`: Headless browser automation service (`MAX_CONCURRENT_PAGES = 10`).
-  1. `firecrawl`: Core API daemon, integrated directly with local SearXNG as its search provider.
+  1. `firecrawl`: Core API daemon, integrated directly with local SearXNG as its search provider. Published on `127.0.0.1:24002` only — podman forwards published ports by DNAT and the host firewall accepts every DNAT'd connection, so the per-interface allowlists never cover a published port and the publish address itself carries the loopback restriction. Runs a single NuQ worker (`NUQ_WORKER_COUNT = 1`): `/v2/scrape` and `/v2/map` run inside the API process, the workers serve only the crawl and batch endpoints, and one worker keeps those alive one job at a time while freeing ~970 MiB against the default five.
 
 ### 2.5 SillyTavern Companion UI (`modules/services/ai/sillytavern.nix`)
 

@@ -159,6 +159,7 @@ async function playLine(item) {
   setStatus("STREAMING VO...", "loading");
   const audioUrl = `/api/audio?flow=${encodeURIComponent(item.flow_id)}&card=${encodeURIComponent(item.card_id)}`;
   audioElement.src = audioUrl;
+
   try {
     await audioElement.play();
   } catch (error) {
@@ -181,6 +182,7 @@ function renderDialogueTable(items) {
     tr.className = "dialogue-row";
     tr.dataset.cardId = item.card_id;
     tr.dataset.flowId = item.flow_id;
+
     if (item.card_id === state.activeCardId) {
       tr.classList.add("active");
     }
@@ -194,6 +196,7 @@ function renderDialogueTable(items) {
     const hasVo = Boolean(item.has_vo ?? item.has_bank);
     const isProtagonist = speakerLower === "herschel";
     let voBadge = `<span class="td-check-badge badge-vo" title="Recorded voiceover available">VO</span>`;
+
     if (!hasVo) {
       voBadge = isProtagonist
         ? `<span class="td-check-badge badge-text-only" title="Silent protagonist player choice">PLAYER CHOICE</span>`
@@ -258,6 +261,7 @@ function renderSpeakerOptions() {
   if (!state.speakersData) return;
   const currentValue = speakerSelect.value;
   speakerSelect.innerHTML = `<option value="">All Speakers (${state.speakersData.length})</option>`;
+
   for (const spk of state.speakersData) {
     const count = state.voOnly ? spk.voiced_count || 0 : spk.count;
     if (count === 0 && state.voOnly) continue;
@@ -266,6 +270,7 @@ function renderSpeakerOptions() {
     opt.textContent = `${spk.name} (${count.toLocaleString()})`;
     speakerSelect.append(opt);
   }
+
   speakerSelect.value = currentValue;
 }
 
@@ -283,6 +288,7 @@ function setupEventListeners() {
       loadDialogueLines();
     });
   }
+
   // Search input with debounce
   let searchTimeout = null;
   searchInput.addEventListener("input", (event_) => {
@@ -361,11 +367,13 @@ function setupEventListeners() {
         navigateDelta(1);
         break;
       }
+
       case "ArrowUp": {
         event_.preventDefault();
         navigateDelta(-1);
         break;
       }
+
       case "Space": {
         event_.preventDefault();
         if (audioElement.paused) audioElement.play();

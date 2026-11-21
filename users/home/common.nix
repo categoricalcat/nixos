@@ -12,6 +12,7 @@ in
   imports = [
     ./shell.nix
     ./ai-policies.nix
+    ./mcp.nix
     ../programs/git.nix
     ../programs/ssh
     ../programs/vscode-theme.nix

@@ -9,11 +9,10 @@ let
   ai = import ../../modules/services/ai/models.nix { inherit lib; };
   inherit (import ../../modules/addresses.nix) hosts;
   hostName = if osConfig == null then null else osConfig.networking.hostName;
-  # Firecrawl's API listens on yifuwuqi's localhost only, so the MCP and the
-  # research agent exist there alone; other hosts use the built-in default
-  # agent and reach Firecrawl by ssh.
+  # Firecrawl's API listens on yifuwuqi's localhost only, so the MCP (declared
+  # in users/home/mcp.nix via programs.mcp) and the research agent exist there
+  # alone; other hosts use the built-in default agent and reach Firecrawl by ssh.
   onYifuwuqi = hostName == "yifuwuqi";
-  firecrawl-mcp = pkgs.callPackage ../../packages/firecrawl-mcp { };
 
   # yifuwuqi's router listens on loopback only, so only yifuwuqi can reach it.
   llamaProviders = lib.filterAttrs (host: _: host != "yifuwuqi" || hostName == "yifuwuqi") {
@@ -27,21 +26,25 @@ let
     };
   };
   # Shared by every agent that gets the firecrawl tools: explicit enable (MCP
-  # tools default on, this documents intent) plus non-interactive allow.
-  firecrawlTools = {
-    firecrawl_search = true;
-    firecrawl_scrape = true;
-  };
-  firecrawlPermission = {
-    firecrawl_search = "allow";
-    firecrawl_scrape = "allow";
-  };
+  # tools default on, this documents intent) plus non-interactive allow. One
+  # name list derives both sets; the top-level permission block reuses the
+  # permission set instead of repeating the names.
+  firecrawlToolNames = [
+    "firecrawl_map"
+    "firecrawl_scrape"
+    "firecrawl_search"
+  ];
+  firecrawlTools = lib.genAttrs firecrawlToolNames (_: true);
+  firecrawlPermission = lib.genAttrs firecrawlToolNames (_: "allow");
 in
 {
   config = lib.mkIf config.serverMode.developer {
     programs.opencode = {
       enable = true;
       package = pkgs.opencode;
+      # Pulls the shared firecrawl MCP server from programs.mcp (users/home/mcp.nix)
+      # on yifuwuqi without duplicating its store path or endpoint URLs.
+      enableMcpIntegration = true;
 
       settings = {
         model = "deepseek/deepseek-v4-flash";
@@ -62,7 +65,7 @@ in
             permission = firecrawlPermission;
           };
           research = lib.mkIf onYifuwuqi {
-            description = "Current web research through local SearXNG search and Firecrawl scrape";
+            description = "Current web research through local SearXNG search and Firecrawl scrape/map";
             mode = "primary";
             # Served by the Vulkan llama-server router (ROCm on the Ryzen 680M
             # APU corrupts prompts beyond ~4k tokens; Vulkan does not).
@@ -72,9 +75,9 @@ in
             # Gate via tools only. Do not set permission."*" = "deny" here:
             # OpenCode last-match can let that blanket deny win over
             # firecrawl_* allows when rules are merged.
-            # Search + scrape, both verified e2e (2026-11-17, via
+            # Search + scrape verified e2e (2026-11-17, via
             # packages/firecrawl-mcp; search against SearXNG, scrape against
-            # the self-hosted instance).
+            # the self-hosted instance); map added 2026-11-20, same MCP.
             tools = firecrawlTools // {
               "*" = false;
             };
@@ -96,31 +99,22 @@ in
           }
         ) llamaProviders;
 
-        # Own zero-dependency MCP server (packages/firecrawl-mcp):
-        # natively named tools search/scrape -> OpenCode registers the canonical
-        # firecrawl_search / firecrawl_scrape, with small whitelisted schemas.
-        # search queries the local SearXNG JSON API 1:1 (categories, engines,
-        # language, time_range, pageno, safesearch) — Firecrawl's searxng
-        # adapter drops tbs and pins categories via env, so it cannot serve
-        # those; scrape stays on the Firecrawl API.
-        # Registered only on yifuwuqi: the Firecrawl API is localhost-only
-        # there; remote hosts reach it by ssh.
-        mcp.firecrawl = lib.mkIf onYifuwuqi {
-          type = "local";
-          command = [ "${firecrawl-mcp}/bin/firecrawl-mcp" ];
-          environment = {
-            FIRECRAWL_API_URL = "http://localhost:${toString hosts.yifuwuqi.services.firecrawl.port}";
-            SEARXNG_URL = "http://localhost:${toString hosts.yifuwuqi.services.searxng.port}";
-          };
-        };
+        # Own zero-dependency MCP server (packages/firecrawl-mcp), declared once
+        # in users/home/mcp.nix (programs.mcp.servers.firecrawl) and pulled in
+        # via enableMcpIntegration on yifuwuqi: natively named tools
+        # search/scrape/map -> OpenCode registers the canonical
+        # firecrawl_search / firecrawl_scrape / firecrawl_map, with small flat
+        # schemas. search queries the local SearXNG JSON API 1:1 and lossless
+        # (categories, engines, language, time_range, pageno, safesearch,
+        # timeout_limit; category names come from the instance's own GET /config
+        # listing) and returns SearXNG's whole JSON answer verbatim; scrape and
+        # map stay on the Firecrawl API.
 
         permission = {
           webfetch = "allow";
           websearch = "allow";
           question = "allow";
           task = "ask";
-          firecrawl_search = "allow";
-          firecrawl_scrape = "allow";
 
           # Raw remote-access binaries are denied outright; the only sanctioned
           # lane is `ai-ssh <host> <command>` (read-only gate, server-enforced).
@@ -142,7 +136,8 @@ in
             "nix switch*" = "deny";
             "ai-ssh*" = "allow";
           };
-        };
+        }
+        // firecrawlPermission;
       };
     };
   };

@@ -106,10 +106,12 @@ the root path need not return `200`.
 
 ## Restart-loop guard
 
-`podman-firecrawl.service` has no systemd start limit
-(`StartLimitIntervalSec = 0`): a start-limit-hit once turned a transient
-crash loop into a permanent outage needing manual intervention (2026-11-09).
-Instead it backs off 30 s between automatic restarts, and the `ExecStartPost`
+`podman-firecrawl.service` and `podman-firecrawl-playwright.service` have
+no systemd start limit (`StartLimitIntervalSec = 0`): a start-limit-hit once
+turned a transient crash loop into a permanent outage needing manual
+intervention (2026-11-09; the Playwright unit stayed down after its image's
+corepack pnpm download raced host DNS at the 2026-11-20 boot). Instead both
+units back off 30 s between automatic restarts, and the `ExecStartPost`
 readiness gates keep dependent ordering clean, so slow starts self-heal.
 Diagnose repeated restarts with
 `journalctl -u podman-firecrawl.service --since today --no-pager`.

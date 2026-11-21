@@ -1,37 +1,26 @@
-#!/usr/bin/env node
-// Minimal MCP stdio server: `search` hits the local SearXNG JSON API with a
-// 1:1 param mapping (Firecrawl's searxng adapter drops tbs and pins
-// categories via the SEARXNG_CATEGORIES env, so per-request category/date
-// filters are impossible through Firecrawl), `scrape` hits the self-hosted
-// Firecrawl API.
+// Entry module for the firecrawl-mcp wrapper (node <this file>) and an
+// importable module for the node:test suite: newline-delimited JSON-RPC
+// over stdio, dispatching MCP tool calls to one module per tool — search.ts
+// (local SearXNG), scrape.ts and map.ts (self-hosted Firecrawl API).
 //
 // Replaces the npx firecrawl-mcp package + rename shim: upstream advertises
 // tools as firecrawl_search/firecrawl_scrape, which OpenCode then doubles to
 // firecrawl_firecrawl_* (small models emit the canonical names and their
 // calls fail validation), and its deeply-nested schemas break llama.cpp's
-// grammar compiler. Here the tools are natively named search/scrape, so
-// OpenCode registers exactly firecrawl_search/firecrawl_scrape, with small
-// whitelisted schemas that compile.
+// grammar compiler. Here the tools are natively named search/scrape/map, so
+// OpenCode registers exactly firecrawl_search/firecrawl_scrape/
+// firecrawl_map, with small flat schemas that compile.
 //
-// Strictest TypeScript, type-checked at build (tsc --noEmit). Zero npm
-// dependencies: plain node (>= 22 native type stripping, global fetch),
-// newline-delimited JSON-RPC over stdio.
+// Strictest TypeScript, type-checked at build (tsc --noEmit) and tested at
+// check (node --test, examples + seeded properties). Zero npm dependencies:
+// plain node (>= 24 native type stripping, global fetch).
 
 import * as readline from "node:readline";
 
-const API = (
-  process.env["FIRECRAWL_API_URL"] || "http://localhost:24002"
-).replace(/\/$/, "");
-const SEARXNG = (process.env["SEARXNG_URL"] || "").replace(/\/$/, "");
-
-// Shapes read from the Firecrawl API response. Cast after response.json(); a
-// null body still throws on property access inside callApi, which callers
-// catch.
-interface ApiResponse {
-  data?: unknown;
-  error?: unknown;
-  success?: unknown;
-}
+import { isNonEmptyString, isRecord } from "./guards.ts";
+import { map, mapDefinition } from "./map.ts";
+import { scrape, scrapeDefinition } from "./scrape.ts";
+import { instanceListing, search, searchDefinition } from "./search.ts";
 
 type JsonRpcId = number | string;
 
@@ -50,327 +39,50 @@ type RpcResponse =
   | { error: RpcError; id: JsonRpcId; jsonrpc: "2.0" }
   | { id: JsonRpcId; jsonrpc: "2.0"; result: unknown };
 
-// Shapes read from the SearXNG JSON response. Cast after response.json().
-interface SearxOutcome {
-  results: SearxResult[];
-  unresponsiveEngines: [string, string][];
-}
-
-interface SearxResponse {
-  results?: SearxResult[];
-  unresponsive_engines?: unknown;
-}
-
-interface SearxResult {
-  content?: unknown;
-  publishedDate?: unknown;
-  title?: unknown;
-  url?: unknown;
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-// Single source for the time_range schema enum and the search() whitelist.
-const TIME_RANGES = new Set(["day", "month", "week", "year"]);
-
-// Transient upstream/Tor failures worth retrying once against the next circuit
-// in SearXNG's SOCKS5 proxy cycle.
-const TRANSIENT_ENGINE_ERROR =
-  /timeout|too many requests|access denied|suspended|captcha/i;
-
-// Non-markdown formats: single source for the scrape schema enum and the
-// content-presence check in scrape().
-const SCRAPE_FORMATS = ["html", "rawHtml", "links", "summary"] as const;
-
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value !== "";
-
-const TOOLS = [
-  {
-    description:
-      "Search the web. Best for finding current information without a known " +
-      'page. categories ["news"] = news only (time_range is ignored on ' +
-      "news-only queries; results include publishedDate); for dated recency " +
-      'use default or ["general"] with time_range; ["science"] = scholarly; ' +
-      "engines overrides categories (omit categories when passing engines); " +
-      "language = locale, e.g. pt-BR.",
-    inputSchema: {
-      additionalProperties: false,
-      properties: {
-        categories: {
-          description: "Result categories to search.",
-          items: {
-            enum: [
-              "general",
-              "news",
-              "science",
-              "images",
-              "videos",
-              "it",
-              "music",
-              "files",
-              "social media",
-            ],
-            type: "string",
-          },
-          type: "array",
-        },
-        engines: {
-          description:
-            "Engine names, not shortcuts: brave, duckduckgo, brave.news, " +
-            "duckduckgo news, bing news, wikinews, google scholar, arxiv; " +
-            "overrides categories (omit categories when set); unknown names " +
-            "are dropped.",
-          items: { type: "string" },
-          type: "array",
-        },
-        language: {
-          description:
-            "BCP-47 locale, e.g. en, pt-BR, de; 'auto' for any language.",
-          type: "string",
-        },
-        pageno: {
-          description: "1-indexed result page.",
-          minimum: 1,
-          type: "number",
-        },
-        query: { minLength: 1, type: "string" },
-        safesearch: {
-          description: "0 off, 1 moderate, 2 strict.",
-          maximum: 2,
-          minimum: 0,
-          type: "number",
-        },
-        time_range: {
-          description: "Restrict to results from this period.",
-          enum: [...TIME_RANGES],
-          type: "string",
-        },
-        timeout_limit: {
-          description: "Max seconds engines may take.",
-          type: "number",
-        },
-      },
-      required: ["query"],
-      type: "object",
-    },
-    name: "search",
-  },
-  {
-    description: "Scrape a single URL and return its content as markdown.",
-    inputSchema: {
-      additionalProperties: false,
-      properties: {
-        formats: {
-          items: {
-            enum: ["markdown", ...SCRAPE_FORMATS],
-            type: "string",
-          },
-          type: "array",
-        },
-        onlyMainContent: { type: "boolean" },
-        url: { format: "uri", type: "string" },
-      },
-      required: ["url"],
-      type: "object",
-    },
-    name: "scrape",
-  },
-];
-
 interface ToolCall {
   // "arguments" mirrors the JSON-RPC tools/call field name.
   arguments: Record<string, unknown>;
   name: string;
 }
 
-async function callApi(path: string, body: unknown): Promise<ApiResponse> {
-  const response = await fetch(`${API}${path}`, {
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-    // Slow Playwright scrapes justify 120s; without a bound a hung request
-    // hangs the tool call forever.
-    signal: AbortSignal.timeout(120_000),
-  });
-  let json: ApiResponse;
-  try {
-    json = (await response.json()) as ApiResponse;
-  } catch {
-    // An empty/invalid body parses as {}; property access stays safe below.
-    json = {};
-  }
-  if (!response.ok || json.success === false) {
-    const error = json.error;
-    throw new Error(
-      isNonEmptyString(error) ? error : `firecrawl HTTP ${response.status}`,
-    );
-  }
-  return json;
-}
+// Own keys only: a plain index also resolves Object.prototype members
+// ("constructor", "toString", "__proto__") as tools or methods.
+const ownEntry = <T>(table: Record<string, T>, key: string): T | undefined =>
+  Object.hasOwn(table, key) ? table[key] : undefined;
 
-// Only fields the agent needs; SearXNG also returns score/engine/category.
-function compactResult(result: SearxResult) {
-  return {
-    ...(typeof result.content === "string" && { content: result.content }),
-    ...(typeof result.publishedDate === "string" && {
-      publishedDate: result.publishedDate,
-    }),
-    ...(typeof result.title === "string" && { title: result.title }),
-    ...(typeof result.url === "string" && { url: result.url }),
-  };
-}
+// One registry serves tools/list and tools/call; only the search definition
+// depends on the instance (its categories enum). Accepted argument names are
+// static, so tools/call validates them without triggering a /config fetch.
+const tools = {
+  map: {
+    accepted: Object.keys(mapDefinition.inputSchema.properties),
+    call: map,
+    definition: () => mapDefinition,
+  },
+  scrape: {
+    accepted: Object.keys(scrapeDefinition.inputSchema.properties),
+    call: scrape,
+    definition: () => scrapeDefinition,
+  },
+  search: {
+    accepted: Object.keys(searchDefinition(null).inputSchema.properties),
+    call: search,
+    definition: async () => searchDefinition(await instanceListing()),
+  },
+};
 
 function parseToolCall(parameters: unknown): null | ToolCall {
   if (!isRecord(parameters)) return null;
   const name = parameters["name"];
   if (typeof name !== "string") return null;
   const rawArguments = parameters["arguments"];
-  return { arguments: isRecord(rawArguments) ? rawArguments : {}, name };
-}
+  if (rawArguments === undefined) return { arguments: {}, name };
 
-async function scrape(arguments_: Record<string, unknown>) {
-  const url = arguments_["url"];
-  if (typeof url !== "string")
-    throw new TypeError("scrape: url must be a string");
-  const formats = arguments_["formats"];
-  const onlyMainContent = arguments_["onlyMainContent"];
-  const json = await callApi("/v2/scrape", {
-    url,
-    ...(Array.isArray(formats) && { formats }),
-    ...(typeof onlyMainContent === "boolean" && { onlyMainContent }),
-  });
-  const data = json.data;
-  if (!isRecord(data)) throw new Error(`scrape: ${url} returned no data`);
-  const markdown = data["markdown"];
-  if (isNonEmptyString(markdown)) {
-    // The engine warns on degraded renders (e.g. stealthProxy fallback);
-    // partial content must not silently pass as complete.
-    const warning = data["warning"];
-    return textResult(
-      isNonEmptyString(warning)
-        ? `${markdown}\n\n[firecrawl warning] ${warning}`
-        : markdown,
-    );
+  if (!isRecord(rawArguments)) {
+    throw new TypeError("tools/call: arguments must be an object");
   }
-  if (SCRAPE_FORMATS.some((format) => Object.hasOwn(data, format)))
-    return textResult(JSON.stringify(data));
-  // Firecrawl answers 200/success:true with empty markdown when an engine
-  // fails to render; the reason hides in warning/metadata.error. Surface it
-  // instead of handing the agent an empty result.
-  const metadata = data["metadata"];
-  const reasons = [
-    data["warning"],
-    isRecord(metadata) ? metadata["error"] : undefined,
-  ].filter((reason) => isNonEmptyString(reason));
-  throw new Error(
-    `scrape: ${url} returned no content` +
-      (reasons.length > 0 ? ` (${reasons.join("; ")})` : ""),
-  );
-}
 
-const clampInt = (value: number, min: number, max: number) => {
-  const truncated = Math.trunc(value);
-  return String(Math.min(max, Math.max(min, truncated)));
-};
-
-async function querySearx(
-  searchParameters: URLSearchParams,
-): Promise<SearxOutcome> {
-  const response = await fetch(`${SEARXNG}/search?${searchParameters}`, {
-    // SearXNG caps engine waits at max_request_timeout (15s); 20s per attempt
-    // bounds a hung fetch while leaving headroom for a single retry.
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) throw new Error(`searxng HTTP ${response.status}`);
-  const json = (await response.json()) as SearxResponse;
-  const results = Array.isArray(json.results) ? json.results : [];
-  const unresponsiveEngines = Array.isArray(json.unresponsive_engines)
-    ? json.unresponsive_engines.filter(
-        (entry): entry is [string, string] =>
-          Array.isArray(entry) &&
-          isNonEmptyString(entry[0]) &&
-          isNonEmptyString(entry[1]),
-      )
-    : [];
-  return { results, unresponsiveEngines };
-}
-
-async function search(arguments_: Record<string, unknown>) {
-  const query = arguments_["query"];
-  if (typeof query !== "string" || query === "") {
-    throw new Error("search: query must be a non-empty string");
-  }
-  if (SEARXNG === "") throw new Error("search: SEARXNG_URL is not configured");
-  const categories = arguments_["categories"];
-  const engines = arguments_["engines"];
-  const language = arguments_["language"];
-  const pageno = arguments_["pageno"];
-  const safesearch = arguments_["safesearch"];
-  const time_range = arguments_["time_range"];
-  const timeout_limit = arguments_["timeout_limit"];
-  const engineList = Array.isArray(engines)
-    ? engines.filter((entry) => isNonEmptyString(entry))
-    : [];
-  const categoryList = Array.isArray(categories)
-    ? categories.filter((entry) => isNonEmptyString(entry))
-    : [];
-  const hasEngines = engineList.length > 0;
-  const isNewsOnly =
-    !hasEngines && categoryList.length === 1 && categoryList[0] === "news";
-  const searchParameters = new URLSearchParams({ format: "json", q: query });
-  // llama.cpp grammars enforce types/enums but not minimum/maximum or array
-  // length; clamp here so malformed values don't waste a searxng 400.
-  // SearXNG unions `engines` and `categories` instead of intersecting them;
-  // omit `categories` whenever explicit `engines` are supplied.
-  if (hasEngines) searchParameters.set("engines", engineList.join(","));
-  else if (categoryList.length > 0)
-    searchParameters.set("categories", categoryList.join(","));
-  if (isNonEmptyString(language)) searchParameters.set("language", language);
-  if (typeof pageno === "number")
-    searchParameters.set("pageno", clampInt(pageno, 1, Infinity));
-  if (typeof safesearch === "number")
-    searchParameters.set("safesearch", clampInt(safesearch, 0, 2));
-  // News engines (brave.news, duckduckgo news, wikinews) lack time_range
-  // support and are silently dropped by SearXNG when time_range is set;
-  // omit time_range on news-only queries so all news engines run and return
-  // publishedDate for filtering.
-  if (
-    !isNewsOnly &&
-    typeof time_range === "string" &&
-    TIME_RANGES.has(time_range)
-  )
-    searchParameters.set("time_range", time_range);
-  if (typeof timeout_limit === "number")
-    searchParameters.set("timeout_limit", String(Math.max(0, timeout_limit)));
-
-  let outcome = await querySearx(searchParameters);
-  if (
-    outcome.results.length === 0 &&
-    outcome.unresponsiveEngines.length > 0 &&
-    outcome.unresponsiveEngines.every(([, reason]) =>
-      TRANSIENT_ENGINE_ERROR.test(reason),
-    )
-  ) {
-    // SearXNG round-robins its Tor SOCKS5 proxy pool per request, so a single
-    // retry lands on fresh exit circuits when every engine hits a transient error.
-    outcome = await querySearx(searchParameters);
-  }
-  if (outcome.results.length === 0 && outcome.unresponsiveEngines.length > 0) {
-    // SearXNG still returns HTTP 200 with results: [] when every queried engine
-    // timed out, hit CAPTCHA, or errored. Surface unresponsive_engines instead
-    // of handing the agent a silent empty list.
-    const formatted = outcome.unresponsiveEngines.map(
-      ([engine, reason]) => `${engine}: ${reason}`,
-    );
-    throw new Error(
-      `search: no results (unresponsive engines: ${formatted.join("; ")})`,
-    );
-  }
-  return textResult(
-    JSON.stringify(outcome.results.map((result) => compactResult(result))),
-  );
+  return { arguments: rawArguments, name };
 }
 
 function textResult(text: string) {
@@ -386,7 +98,7 @@ const handlers: Record<string, (parameters: unknown) => unknown> = {
     return {
       capabilities: { tools: {} },
       protocolVersion: requested,
-      serverInfo: { name: "firecrawl", version: "1.1.5" },
+      serverInfo: { name: "firecrawl", version: "1.2.0" },
     };
   },
 
@@ -396,9 +108,22 @@ const handlers: Record<string, (parameters: unknown) => unknown> = {
     try {
       const call = parseToolCall(parameters);
       if (call === null) throw new Error("tools/call: missing tool name");
-      if (call.name === "search") return await search(call.arguments);
-      if (call.name === "scrape") return await scrape(call.arguments);
-      throw new Error(`unknown tool: ${call.name}`);
+      const tool = ownEntry(tools, call.name);
+      if (tool === undefined) throw new Error(`unknown tool: ${call.name}`);
+      // The schema is the whole argument contract: a name it does not list
+      // (a typo like timeRange) is rejected instead of silently ignored.
+      const unlisted = Object.keys(call.arguments).filter(
+        (key) => !tool.accepted.includes(key),
+      );
+
+      if (unlisted.length > 0) {
+        throw new Error(
+          `${call.name}: unknown arguments: ${unlisted.join(", ")} ` +
+            `(accepted: ${tool.accepted.join(", ")})`,
+        );
+      }
+
+      return textResult(await tool.call(call.arguments));
     } catch (error) {
       return {
         ...textResult(error instanceof Error ? error.message : String(error)),
@@ -407,21 +132,58 @@ const handlers: Record<string, (parameters: unknown) => unknown> = {
     }
   },
 
-  "tools/list": () => ({ tools: TOOLS }),
+  "tools/list": async () => ({
+    tools: await Promise.all(
+      Object.entries(tools).map(async ([name, tool]) => ({
+        ...(await tool.definition()),
+        name,
+      })),
+    ),
+  }),
 };
 
-async function respond(
+export async function handleLine(line: string): Promise<null | string> {
+  if (line.trim() === "") return null;
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(line);
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed)) return null;
+  const id = parsed["id"];
+  if (typeof id !== "string" && typeof id !== "number") return null;
+  const method = parsed["method"];
+  const request: RpcRequest = {
+    id,
+    ...(typeof method === "string" && { method }),
+    ...(Object.hasOwn(parsed, "params") && { params: parsed["params"] }),
+  };
+  return JSON.stringify(await respond(request, id));
+}
+
+export async function respond(
   message: RpcRequest,
   id: JsonRpcId,
 ): Promise<RpcResponse> {
-  const handler = handlers[message.method ?? ""];
+  const handler =
+    typeof message.method === "string"
+      ? ownEntry(handlers, message.method)
+      : undefined;
+
   if (handler === undefined) {
     return {
-      error: { code: -32_601, message: `method not found: ${message.method}` },
+      error: {
+        code: -32_601,
+        message: `method not found: ${String(message.method)}`,
+      },
       id,
       jsonrpc: "2.0",
     };
   }
+
   try {
     return { id, jsonrpc: "2.0", result: await handler(message.params) };
   } catch (error) {
@@ -436,18 +198,15 @@ async function respond(
   }
 }
 
-readline
-  .createInterface({ input: process.stdin })
-  .on("line", async (line: string) => {
-    if (line.trim() === "") return;
-    let message: RpcRequest;
-    try {
-      message = JSON.parse(line) as RpcRequest;
-    } catch {
-      return;
-    }
-    const id = message.id;
-    if (id === undefined || id === null) return; // notification: no response
-    const response = await respond(message, id);
-    process.stdout.write(JSON.stringify(response) + "\n");
-  });
+// Only the real entry point runs the stdio loop; importing this module (the
+// node:test suite) must stay side-effect-free. import.meta.main stays true
+// through symlinked entries, unlike comparing import.meta.url with
+// pathToFileURL(process.argv[1]).
+if (import.meta.main) {
+  readline
+    .createInterface({ input: process.stdin })
+    .on("line", async (line: string) => {
+      const reply = await handleLine(line);
+      if (reply !== null) process.stdout.write(`${reply}\n`);
+    });
+}
