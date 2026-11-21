@@ -105,8 +105,9 @@ in
         # search/scrape/map -> OpenCode registers the canonical
         # firecrawl_search / firecrawl_scrape / firecrawl_map, with small flat
         # schemas. search queries the local SearXNG JSON API 1:1 and lossless
-        # (categories, engines, language, time_range, pageno, safesearch,
-        # timeout_limit; category names come from the instance's own GET /config
+        # (categories, engines, language, time_range, pageno, timeout_limit,
+        # with safesearch pinned to 0 so filtering is always off; category
+        # names come from the instance's own GET /config
         # listing) and returns SearXNG's whole JSON answer verbatim; scrape and
         # map stay on the Firecrawl API.
 

@@ -173,13 +173,7 @@ test("every integer-typed schema property is rejected at runtime when fractional
 
   assert.deepEqual(
     integral.toSorted((a, b) => a.localeCompare(b)),
-    [
-      "map.limit",
-      "scrape.timeout",
-      "scrape.waitFor",
-      "search.pageno",
-      "search.safesearch",
-    ],
+    ["map.limit", "scrape.timeout", "scrape.waitFor", "search.pageno"],
   );
 });
 

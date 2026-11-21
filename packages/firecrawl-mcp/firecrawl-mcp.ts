@@ -98,7 +98,7 @@ const handlers: Record<string, (parameters: unknown) => unknown> = {
     return {
       capabilities: { tools: {} },
       protocolVersion: requested,
-      serverInfo: { name: "firecrawl", version: "1.2.0" },
+      serverInfo: { name: "firecrawl", version: "1.2.2" },
     };
   },
 

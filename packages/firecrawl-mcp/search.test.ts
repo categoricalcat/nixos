@@ -128,8 +128,9 @@ test("search rejects what the instance would refuse, drop, or cap", async () => 
     ["pageno", 1e21],
     ["pageno", 1.5],
     ["pageno", "2"],
-    ["safesearch", 3],
-    ["safesearch", 1.5],
+    // safesearch is no longer a tool parameter; even its formerly valid
+    // values are rejected as unknown arguments.
+    ["safesearch", 1],
     ["time_range", "decade"],
     ["time_range", "month "],
     ["timeout_limit", 0],
@@ -163,7 +164,6 @@ test("search encodes every parameter 1:1 and unions categories with engines", as
     language: "pt_BR",
     pageno: 2,
     query: "nixos flake",
-    safesearch: 1,
     time_range: "month",
     timeout_limit: 7.5,
   });
@@ -174,7 +174,8 @@ test("search encodes every parameter 1:1 and unions categories with engines", as
   assert.equal(parameters.get("engines"), "arxiv,brave");
   assert.equal(parameters.get("language"), "pt-BR");
   assert.equal(parameters.get("pageno"), "2");
-  assert.equal(parameters.get("safesearch"), "1");
+  // Pinned per request, not left to the instance default.
+  assert.equal(parameters.get("safesearch"), "0");
   assert.equal(parameters.get("time_range"), "month");
   assert.equal(parameters.get("timeout_limit"), "7.5");
 });

@@ -7,11 +7,12 @@
 // searx/webutils.py): its documented Search API has eight parameters (q,
 // categories, language, pageno, time_range, format, safesearch, theme) and
 // the query parser additionally reads `engines` and `timeout_limit`.
-// `format` is pinned to json (this is a JSON client) and `theme` only
-// shapes HTML, so the tool exposes the other eight. Each tool parameter
-// maps to exactly one SearXNG parameter and keeps SearXNG's meaning; the
-// tool accepts what the instance accepts and rejects what the instance
-// would refuse, drop silently, cap silently, or run with no time budget.
+// `format` is pinned to json (this is a JSON client), `theme` only shapes
+// HTML, and `safesearch` is pinned to 0 (this deployment never filters),
+// so the tool exposes the other seven. Each tool parameter maps to exactly
+// one SearXNG parameter and keeps SearXNG's meaning; the tool accepts what
+// the instance accepts and rejects what the instance would refuse, drop
+// silently, cap silently, or run with no time budget.
 
 import { isNonEmptyString, isRecord } from "./guards.ts";
 
@@ -31,21 +32,6 @@ export function encodePageno(value: unknown): string {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1) {
     throw new TypeError(
       `search: pageno must be a safe integer >= 1, got: ${String(value)}`,
-    );
-  }
-
-  return String(value);
-}
-
-export function encodeSafesearch(value: unknown): string {
-  if (
-    typeof value !== "number" ||
-    !Number.isSafeInteger(value) ||
-    value < 0 ||
-    value > 2
-  ) {
-    throw new TypeError(
-      `search: safesearch must be 0, 1, or 2, got: ${String(value)}`,
     );
   }
 
@@ -101,7 +87,13 @@ export function encodeSearchQuery(
     throw new Error("search: query must be a non-empty string");
   }
 
-  const parameters = new URLSearchParams({ format: "json", q: query });
+  // safesearch is pinned to 0 — always off — so the instance's own default
+  // or a later settings change can never turn filtering on.
+  const parameters = new URLSearchParams({
+    format: "json",
+    q: query,
+    safesearch: "0",
+  });
   encodeNames("categories", arguments_["categories"], listing, parameters);
   encodeNames("engines", arguments_["engines"], listing, parameters);
 
@@ -110,7 +102,6 @@ export function encodeSearchQuery(
   const scalarEncoders: [string, (value: unknown) => string][] = [
     ["language", normalizeLanguage],
     ["pageno", encodePageno],
-    ["safesearch", encodeSafesearch],
     ["time_range", encodeTimeRange],
     ["timeout_limit", encodeTimeoutLimit],
   ];

@@ -4,7 +4,6 @@ import { isDeepStrictEqual } from "node:util";
 
 import {
   encodePageno,
-  encodeSafesearch,
   encodeSearchQuery,
   encodeTimeoutLimit,
   normalizeLanguage,
@@ -36,21 +35,6 @@ test("timeout_limit accepts 15 and rejects 0, 16, NaN, and infinities", () => {
       () => encodeTimeoutLimit(value),
       /timeout_limit/,
       `timeout_limit ${value}`,
-    );
-  }
-});
-
-test("safesearch accepts exactly 0, 1, 2", () => {
-  assert.deepEqual(
-    [0, 1, 2].map((value) => encodeSafesearch(value)),
-    ["0", "1", "2"],
-  );
-
-  for (const value of [-1, 3, 1.5, NaN, Infinity]) {
-    assert.throws(
-      () => encodeSafesearch(value),
-      /safesearch/,
-      `safesearch ${value}`,
     );
   }
 });
@@ -312,7 +296,6 @@ test("property: decoding the wire query through SearXNG's parsers recovers every
       engines: randomSubset(fixtureEngines, random),
       language: randomLocale(random),
       pageno: 1 + Math.floor(random() * Number.MAX_SAFE_INTEGER),
-      safesearch: Math.floor(random() * 3),
       time_range:
         TIME_RANGES[Math.floor(random() * TIME_RANGES.length)] ?? "day",
       timeout_limit: 0.1 + random() * 14.9,
@@ -329,6 +312,7 @@ test("property: decoding the wire query through SearXNG's parsers recovers every
       ...rest,
       format: "json",
       q: query,
+      safesearch: 0,
       ...(typeof language === "string" && {
         language: language.replaceAll("_", "-"),
       }),
@@ -415,10 +399,6 @@ test("property: out-of-domain values always throw, naming the parameter", () => 
 
   for (const value of [0, -1, 2 ** 53, 1e21, NaN, Infinity, 1.5]) {
     cases.push(["pageno", value]);
-  }
-
-  for (const value of [-1, 3, 1.5, NaN, Infinity]) {
-    cases.push(["safesearch", value]);
   }
 
   for (const value of [0, -1, 15.5, 1e21, NaN, Infinity]) {

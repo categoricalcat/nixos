@@ -56,8 +56,9 @@ export const searchDefinition = (listing: null | SearxngListing) => ({
     "Search the web via the local SearXNG. Every parameter maps 1:1 " +
     "to SearXNG's Search API and keeps its meaning: categories and " +
     "engines are unioned, time_range always applies, language is " +
-    "'auto' or e.g. en / pt-BR, pageno >= 1, safesearch 0-2, " +
-    `timeout_limit caps engine seconds in (0, ${MAX_TIMEOUT_LIMIT}]. ` +
+    "'auto' or e.g. en / pt-BR, pageno >= 1, " +
+    `timeout_limit caps engine seconds in (0, ${MAX_TIMEOUT_LIMIT}], ` +
+    "and safesearch stays off (pinned to 0). " +
     "The response is " +
     "SearXNG's whole JSON answer verbatim: results plus answers, " +
     "infoboxes, suggestions, corrections, unresponsive_engines.",
@@ -95,12 +96,6 @@ export const searchDefinition = (listing: null | SearxngListing) => ({
         description: "Search query, passed through unchanged.",
         minLength: 1,
         type: "string",
-      },
-      safesearch: {
-        description: "0 off, 1 moderate, 2 strict.",
-        maximum: 2,
-        minimum: 0,
-        type: "integer",
       },
       time_range: {
         description: "Restrict results to this period; always applies.",
