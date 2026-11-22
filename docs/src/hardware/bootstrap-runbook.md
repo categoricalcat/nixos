@@ -12,21 +12,21 @@ ______________________________________________________________________
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│ 2. Run ./users/scripts/setup-sops.sh <hostname> (as root)   │
+│ 2. Run nix run .#secrets -- <hostname> (as root)            │
 │    ├── Host ED25519 SSH Key -> /persist/keys/ssh            │
 │    ├── User Mesh Key        -> ~/.ssh/id_ed25519            │
-│    ├── User Git Key         -> ~/.ssh/git_ed25519           │
+│    ├── User Git Key         -> ~/.ssh/id_git_ed25519        │
 │    └── AI Restricted Key    -> ~/.ssh/id_ai_ed25519         │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
 │ 3. Register Public Keys in secrets/keys.nix                 │
-│    └── Map host addresses & roles in modules/addresses.nix  │
+│    └── Map addresses & roles in modules/addresses/hosts.nix │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
 │ 4. Re-generate .sops.yaml, Rekey & Sync Secrets (as root)   │
-│    ./users/scripts/setup-sops.sh && sops updatekeys -y ...  │
+│    nix run .#secrets && sops updatekeys -y ...              │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
@@ -46,24 +46,26 @@ ______________________________________________________________________
 
 ### 2.1 Standard Server / Laptop Layout (Ext4)
 
+`bootstrap-disk` (from the `secrets` package, `secrets/scripts/bootstrap-disk.sh`)
+applies the standard layout: GPT with a 1 GiB ESP (`BOOT`), 32 GiB swap
+(`SWAP`), and an ext4 root (`ROOT`) carrying `boot/` and `persist/` inside it.
+It refuses any disk with a mounted filesystem in its topology — partitions and
+LUKS/LVM layers included — which covers the running-root disk. Run it as root
+from the repo checkout:
+
 ```bash
-# 1. Partition disk with GPT (ESP 1GB, Swap, Ext4 Root)
-sgdisk -Z /dev/nvme0n1
-sgdisk -n 1:0:+1G -t 1:ef00 -c 1:BOOT /dev/nvme0n1
-sgdisk -n 2:0:+32G -t 2:8200 -c 2:SWAP /dev/nvme0n1
-sgdisk -n 3:0:0 -t 3:8300 -c 3:ROOT /dev/nvme0n1
-
-# 2. Format filesystems
-mkfs.vfat -F 32 -n BOOT /dev/nvme0n1p1
-mkswap -L SWAP /dev/nvme0n1p2
-mkfs.ext4 -L ROOT /dev/nvme0n1p3
-
-# 3. Mount targets
-mount /dev/nvme0n1p3 /mnt
-mkdir -p /mnt/{boot,persist}
-mount /dev/nvme0n1p1 /mnt/boot
-swapon /dev/nvme0n1p2
+nix shell .#secrets -c bootstrap-disk /dev/nvme0n1        # mounts root at /mnt
+nix shell .#secrets -c bootstrap-disk /dev/nvme0n1 /mnt   # explicit mountpoint
 ```
+
+The live ISO does not enable flakes: add
+`--extra-experimental-features 'nix-command flakes'` after `nix`. Offline,
+`bash secrets/scripts/bootstrap-disk.sh /dev/nvme0n1` runs the same script with
+the ISO's own tools.
+
+The disaster-recovery drill (`secrets/test.nix`, flake check `dr-recovery`)
+runs this exact command on a clean VM disk, so runbook and rehearsal cannot
+drift.
 
 ### 2.2 Workstation Layout (Btrfs with Subvolumes on `yitaishi`)
 
@@ -82,7 +84,7 @@ mount /dev/nvme0n1p1 /mnt/boot
 
 ______________________________________________________________________
 
-## 3. Step 2: Key & Root Password Provisioning (`setup-sops.sh`)
+## 3. Step 2: Key & Root Password Provisioning (`setup-sops`)
 
 Run the automated key provisioning script as `root` (`su -`):
 
@@ -92,7 +94,7 @@ git clone https://github.com/categoricalcat/nixos /mnt/home/yi/the.files/nixos
 
 # Run key generator for the target host (as root)
 cd /mnt/home/yi/the.files/nixos
-./users/scripts/setup-sops.sh <hostname>
+nix run .#secrets -- <hostname>
 ```
 
 This script deterministically generates:
@@ -100,7 +102,7 @@ This script deterministically generates:
 1. `/persist/keys/ssh/ssh_host_ed25519_key` (The host's SSH and SOPS age identity, `0600 root:root`)
 1. `/root/.config/sops/age/keys.txt` (Derived host age private key for `root`)
 1. `~yi/.ssh/id_ed25519` (User inter-host mesh SSH key, passphrase-less)
-1. `~yi/.ssh/git_ed25519` (Git signing & commit key)
+1. `~yi/.ssh/id_git_ed25519` (Git signing & commit key)
 1. `~yi/.ssh/id_ai_ed25519` (Restricted `ai-ssh` read-only key)
 
 ### Client Root Password Seed (`yitaishi` / `yixiaoqing`)
@@ -139,7 +141,7 @@ and add the hostname to the `keyed` list:
 };
 ```
 
-Open `modules/addresses.nix` and add the host's networking parameters (IPs, MAC, SSH port, nixBuild specs).
+Open `modules/addresses/hosts.nix` and add the host's networking parameters (IPs, `mkSsh` listen addresses, `mkNixBuild` specs).
 
 ______________________________________________________________________
 
@@ -152,14 +154,28 @@ su -
 cd /home/yi/the.files/nixos
 
 # 1. Regenerate .sops.yaml from secrets/keys.nix
-./users/scripts/setup-sops.sh
+nix run .#secrets
 
 # 2. Rekey the encrypted secrets file for all host age recipients
 sops updatekeys -y secrets/secrets.yaml
 
 # 3. Sync the rekeyed file to /persist/keys/sops/secrets.yaml (0600 root:root)
-./users/scripts/setup-sops.sh
+nix run .#secrets
 ```
+
+**On a rebuilt machine**, `sops-install-secrets.service` has already failed at
+first boot (no identity at `/persist` yet), and it does not retry on its own:
+after the rekeyed `secrets.yaml` and any backed-up data have landed, re-render
+the secrets and restart the units that consume them:
+
+```bash
+systemctl restart sops-install-secrets.service
+systemctl restart filebrowser.service   # every unit that wants a sops secret
+```
+
+The clean-VM drill (`secrets/test.nix`) rehearses exactly this
+sequence — identity regeneration, survivor rekey, restore, re-activation — on
+synthetic keys; run it with `nix build .#checks.x86_64-linux.dr-recovery`.
 
 ______________________________________________________________________
 
@@ -228,7 +244,7 @@ ______________________________________________________________________
 
 ## 8. Source Files
 
-- `users/scripts/setup-sops.sh`
-- `secrets/keys.nix`
-- `secrets/generate-sops-yaml.nix`
-- `modules/addresses.nix`
+- `secrets/default.nix` (`secrets` package: `setup-sops`, `bootstrap-disk`, and their steps in `secrets/scripts/`)
+- `secrets/keys.nix` (`sopsYamlFor`, `sopsYaml`)
+- `modules/addresses.nix` (`modules/addresses/*.nix`)
+- `secrets/test.nix` (disaster-recovery drill)

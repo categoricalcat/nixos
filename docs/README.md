@@ -1,39 +1,20 @@
 # Documentation
 
-This directory contains the maintained documentation for this NixOS gang.
+This directory contains the maintained mdBook documentation (with Mermaid support) for this NixOS gang.
 
-The source is an mdBook with native Mermaid support.
+## Building and Refreshing Generated Fragments
 
-## Building and Serving
-
-To build the HTML book into `docs/book/`:
+Both CI (`nix/checks.nix`) and the live `docs.aset.love` service (`docs/service.nix`) build the book through the shared `docs/builder.nix` (`docs/build.sh`) wrapper:
 
 ```sh
-nix-shell docs --run docs-build
+nix build .#checks.x86_64-linux.docs --out-link docs/book
 ```
 
-To serve the book interactively on localhost:
+Registry-derived tables under `docs/src/generated/` are rendered by `docs/generate.nix` and guarded against drift by `.#checks.x86_64-linux.docs-registry-sync`. After editing the registry (`modules/addresses/*.nix`) or exporter defaults, refresh them with:
 
 ```sh
-nix-shell docs --run docs-serve
+nix build .#docs-generated --out-link /tmp/docs-frag
+install -m 0644 /tmp/docs-frag/*.md docs/src/generated/
 ```
 
-Or enter the docs environment directly:
-
-```sh
-cd docs && nix-shell
-docs-build
-docs-serve
-```
-
-Or build the derivation directly into the Nix store:
-
-```sh
-nix-build docs
-```
-
-The generated book is written to `docs/book/`.
-
-Use the Nix modules as source of truth when changing these docs. Planning
-artifacts and one-off debugging transcripts should be condensed into durable
-runbooks before they are committed here.
+Use the Nix modules as source of truth when changing these docs. Planning artifacts and one-off debugging transcripts should be condensed into durable runbooks before they are committed here.

@@ -190,9 +190,12 @@ ______________________________________________________________________
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, deferring queries to `yirukou` on `eno1` or the fallback DHCP DNS on `enp4s0`.
 - **Service Sandboxing**: Loki, Vector, opencode, SillyTavern, Seerr,
-  `llama-cpp`, `llama-cpp-idle-unload`, and Cockpit adopt `systemdHardening`
-  from `modules/common.nix`; PostgreSQL, Loki, and `llama-cpp-idle-unload` add
-  loopback `IPAddressAllow`. Documented exceptions: Loki keeps `AF_NETLINK`
+  `llama-cpp`, and `llama-cpp-idle-unload` adopt the `systemdHardening`
+  baseline from `modules/hardening.nix`, whose per-unit exception inventory
+  the `hardening-baseline` contract (`nix/checks.nix`) enforces; Cockpit is
+  exempt and carries a partial set. PostgreSQL, Loki, and
+  `llama-cpp-idle-unload` add loopback `IPAddressAllow`. Documented
+  exceptions: Loki keeps `AF_NETLINK`
   (Go interface autodetect); `llama-cpp` drops `PrivateDevices` with
   `DeviceAllow = [ "char-drm rwm" ]` for Vulkan GPU access; SillyTavern and
   Seerr drop `MemoryDenyWriteExecute` and allow `@chown` (Node.js JIT and fs

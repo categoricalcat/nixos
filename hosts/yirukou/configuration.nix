@@ -12,7 +12,6 @@ in
     ./boot.nix
     ./services.nix
     ./hardware.nix
-    ./addresses.nix
     ./networking.nix
     ../../users/users.nix
     ../../secrets/sops.nix

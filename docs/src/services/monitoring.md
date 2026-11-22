@@ -11,8 +11,9 @@ ______________________________________________________________________
 │                       yirukou (Edge Router)                 │
 │  ┌─────────────────────────┐     ┌───────────────────────┐  │
 │  │ Local Exporters         │     │ Vector Agent          │  │
-│  │ (node, nginx, adguard,  │     │ (ships journald logs) │  │
-│  │  unbound, smokeping,    │     └───────────┬───────────┘  │
+│  │ (node, systemd, process,│     │ (ships journald logs) │  │
+│  │  redis, nginx, adguard, │     └───────────┬───────────┘  │
+│  │  unbound, smokeping,    │                               │
 │  │  blackbox, smartctl)    │                               │
 │  └───────────▲─────────────┘                 │              │
 └──────────────┼───────────────────────────────┼──────────────┘
@@ -44,22 +45,20 @@ ______________________________________________________________________
 
 ## 2. Exporter Gang & Metadata Specification
 
-Exporters are declaratively registered in `modules/addresses.nix` under `allAddresses.monitoring.exporters` and dynamically instantiated on hosts via `modules/services/monitoring/exporters.nix`:
+Exporters are declaratively registered in `modules/addresses/monitoring.nix` (exported as `allAddresses.monitoring.exporters`) and dynamically instantiated on hosts via `modules/services/monitoring/exporters.nix`:
 
-| Exporter           | Default Port | Target Hosts          | Scrape Interval   | Connection / Backend                                    |
-| ------------------ | ------------ | --------------------- | ----------------- | ------------------------------------------------------- |
-| **Node**           | `9100`       | `yifuwuqi`, `yirukou` | `15s`             | Systemd and textfile collectors                         |
-| **Smokeping**      | `9374`       | `yifuwuqi`, `yirukou` | `15s` / `1s` ping | Continuous ICMP latency and loss                        |
-| **Blackbox**       | `9115`       | `yifuwuqi`, `yirukou` | `15s`             | ICMP, UDP DNS, and HTTPS `/probe` endpoints             |
-| **Systemd**        | `9558`       | `yifuwuqi`, `yirukou` | `15s`             | Monitored unit state                                    |
-| **Process**        | `9256`       | `yifuwuqi`, `yirukou` | `15s`             | CPU, memory, disk I/O, and process counts by executable |
-| **Smartctl**       | `9633`       | `yifuwuqi`, `yirukou` | `60s`             | Storage drive SMART health                              |
-| **Nginx**          | `9113`       | `yirukou`             | `15s`             | `http://127.0.0.1/nginx_status`                         |
-| **Fail2ban**       | `9191`       | `yifuwuqi`            | `15s`             | Local jail metrics                                      |
-| **Postgres**       | `9187`       | `yifuwuqi`            | `15s`             | `postgres://postgres@127.0.0.1:5432/postgres`           |
-| **AdGuard**        | `9617`       | `yirukou`             | `15s`             | Custom exporter scraping AGH API (:3333)                |
-| **Unbound**        | `9167`       | `yirukou`             | `15s`             | Unix socket `/run/unbound/unbound.ctl`                  |
-| **Redis / Valkey** | `9121`       | `yifuwuqi`, `yirukou` | `15s`             | Unix socket `/run/redis/redis.sock`                     |
+The matrix below is generated from `modules/addresses.nix` and the evaluated
+exporter config (`docs/src/generated/monitoring.md`; the `docs-registry-sync`
+check blocks drift). Scrape interval is `15s` everywhere except Smartctl
+(`60s`); Smokeping additionally pings the probe ladder at a `5s` interval.
+
+{{#include ../generated/monitoring.md}}
+
+Connection notes: Node carries the systemd and textfile collectors; Nginx
+scrapes `http://127.0.0.1/nginx_status`; Postgres connects over the local unix
+socket `/run/postgresql` as superuser `postgres`; AdGuard scrapes the AGH API
+on `:3333`; Unbound reads the control socket `/run/unbound/unbound.ctl`; Redis
+reads the unix socket `/run/redis/redis.sock`.
 
 Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface (early binding relies on `net.ipv{4,6}.ip_nonlocal_bind = 1` in `modules/networking/sysctl-base.nix`).
 
@@ -95,7 +94,7 @@ For live commands and Podman storage repair, see
 
 ### Internet Probing & Failover
 
-Probes are generated from `probePeers` (`modules/addresses.nix`). The peers form
+Probes are generated from `probePeers` (`modules/addresses/monitoring.nix`). The peers form
 a **failure-domain ladder**: each rung sits one step further out, so an outage
 localises to the first rung that stops answering. `tier` carries the rung and is
 numerically prefixed so Grafana, which sorts label values lexicographically,
@@ -219,6 +218,6 @@ ______________________________________________________________________
 
 ## 6. DNS Privacy & Query Log Retention
 
-- **RAM-Only Query Log**: The AdGuard Home query log is RAM-only (`file_enabled = false`) on both resolver hosts (`yirukou` and `yifuwuqi`), avoiding query logging to disk while continuing to feed `adguard-exporter`.
+- **RAM-Only Query Log**: The AdGuard Home query log is RAM-only (`file_enabled = false`) on `yirukou`, avoiding query logging to disk while continuing to feed `adguard-exporter`.
 - **Retention Knob**: Log retention is governed in-memory by `size_memory` (50,000 entries) rather than the disk rotation `interval`.
 - **Client IP Granularity**: `anonymize_client_ip` stays off (`false`) to preserve client IP granularity for per-client Prometheus metrics and Grafana dashboard panels (`adguard_query_client_reason_total`).

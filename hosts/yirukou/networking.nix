@@ -6,7 +6,7 @@ let
   ) addresses.dns.fallbackServers;
 in
 {
-  # Interface roles, VLANs, and DHCP ranges live in modules/addresses.nix.
+  # Interface roles, VLANs, and DHCP ranges live in modules/addresses/hosts.nix.
 
   imports = [
     ./networking/dhcp.nix
@@ -20,7 +20,6 @@ in
   ];
 
   networking = {
-    inherit (addresses) hostName;
     nameservers = addresses.dns.systemNameservers ++ lib.take 2 resolvFallbackNameservers;
 
     networkmanager.enable = false;

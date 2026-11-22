@@ -6,23 +6,10 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-cd "$REPO_ROOT"
-
-# Source modular functions
-# shellcheck source=users/scripts/sops/ensure-host-key.sh
-source "$SCRIPT_DIR/ensure-host-key.sh"
-# shellcheck source=users/scripts/sops/ensure-user-key.sh
-source "$SCRIPT_DIR/ensure-user-key.sh"
-# shellcheck source=users/scripts/sops/ensure-ci-key.sh
-source "$SCRIPT_DIR/ensure-ci-key.sh"
-# shellcheck source=users/scripts/sops/derive-age-key.sh
-source "$SCRIPT_DIR/derive-age-key.sh"
-# shellcheck source=users/scripts/sops/ssh-pub-to-age.sh
-source "$SCRIPT_DIR/ssh-pub-to-age.sh"
-# shellcheck source=users/scripts/sops/sync-secrets.sh
-source "$SCRIPT_DIR/sync-secrets.sh"
+if [ ! -f secrets/keys.nix ]; then
+  echo "Error: run from the repo root (nix run .#secrets)." >&2
+  exit 1
+fi
 
 ROTATE=false
 TARGET_HOST=""
@@ -50,7 +37,7 @@ done
 HOSTNAME=${TARGET_HOST:-${HOST:-$(hostname)}}
 
 if [ "$HOSTNAME" = "" ]; then
-  echo "Usage: $0 [hostname] [--rotate]" >&2
+  echo "Usage: setup-sops [hostname] [--rotate]" >&2
   exit 1
 fi
 
@@ -62,11 +49,11 @@ AI_KEY="$USER_HOME/.ssh/id_ai_ed25519"
 
 echo "=== setup for $HOSTNAME ==="
 
-ensure_host_key "$HOST_KEY" "$HOSTNAME"
+ensure-host-key "$HOST_KEY" "$HOSTNAME"
 
-ensure_user_key yi yi "$MESH_KEY" "yi@$HOSTNAME"
-ensure_user_key yi yi "$GIT_KEY" "yi@$HOSTNAME-git"
-ensure_user_key yi yi "$AI_KEY" "ai@$HOSTNAME"
+ensure-user-key yi yi "$MESH_KEY" "yi@$HOSTNAME"
+ensure-user-key yi yi "$GIT_KEY" "yi@$HOSTNAME-git"
+ensure-user-key yi yi "$AI_KEY" "ai@$HOSTNAME"
 
 chown yi:yi "$USER_HOME/.ssh"
 chmod 0700 "$USER_HOME/.ssh"
@@ -74,12 +61,12 @@ chmod 0700 "$USER_HOME/.ssh"
 rm -f "$USER_HOME/.config/sops/age/keys.txt"
 
 echo "-> generate sops age identity for root"
-derive_age_key "$HOST_KEY" "/root/.config/sops/age/keys.txt" "root:root"
+derive-age-key "$HOST_KEY" "/root/.config/sops/age/keys.txt" "root:root"
 
 HOST_PUB=$(cat "$HOST_KEY.pub")
 MESH_PUB=$(cat "$MESH_KEY.pub")
 AI_PUB=$(cat "$AI_KEY.pub")
-HOST_AGE=$(ssh_pub_to_age "$HOST_PUB")
+HOST_AGE=$(ssh-pub-to-age "$HOST_PUB")
 
 NEEDS_INSTRUCTIONS=false
 if ! grep -Fq "$HOST_PUB" secrets/keys.nix 2>/dev/null; then
@@ -104,7 +91,7 @@ if [ "$NEEDS_INSTRUCTIONS" = "true" ]; then
   echo "-> Add \"$HOSTNAME\" to the keyed machine list."
 fi
 
-ensure_ci_key "$HOSTNAME" "$ROTATE"
+ensure-ci-key "$HOSTNAME" "$ROTATE"
 
 echo ""
 echo "=========================================="
@@ -126,4 +113,4 @@ if [ "$CI_PUB" != "" ]; then
 fi
 echo ""
 
-sync_secrets
+sync-secrets

@@ -3,6 +3,7 @@
   lib,
   config,
   addresses,
+  systemdHardening,
   ...
 }:
 
@@ -11,27 +12,12 @@ let
   # the live bind mount, the check from the flake source — same script.
   buildDocs = lib.getExe (import ./builder.nix { inherit pkgs; });
 
-  commonHardening = {
+  commonHardening = systemdHardening // {
     User = "docs";
     Group = "docs";
-    ProtectHome = true;
-    ProtectSystem = "strict";
-    PrivateDevices = true;
-    PrivateTmp = true;
-    ProtectProc = "invisible";
-    ProtectKernelTunables = true;
-    ProtectKernelModules = true;
-    ProtectControlGroups = true;
-    RestrictNamespaces = true;
-    LockPersonality = true;
-    MemoryDenyWriteExecute = true;
     ReadWritePaths = [ "/var/lib/gang-docs" ];
     SystemCallErrorNumber = "EPERM";
-    SystemCallFilter = [
-      "@system-service"
-      "~@privileged"
-      "~@resources"
-    ];
+    SystemCallFilter = systemdHardening.SystemCallFilter ++ [ "~@resources" ];
   };
 in
 {
@@ -68,8 +54,7 @@ in
           unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
           preStart = "${buildDocs} /var/lib/gang-docs/src /var/lib/gang-docs/book";
           serviceConfig = commonHardening // {
-            ExecStart = "${pkgs.darkhttpd}/bin/darkhttpd /var/lib/gang-docs/book --port ${toString addresses.services.docs.port} --addr 127.0.0.1 --no-listing --no-server-id --hide-dotfiles";
-            CapabilityBoundingSet = "";
+            ExecStart = "${lib.getExe pkgs.darkhttpd} /var/lib/gang-docs/book --port ${toString addresses.services.docs.port} --addr 127.0.0.1 --no-listing --no-server-id --hide-dotfiles";
             RestrictAddressFamilies = [
               "AF_INET"
               "AF_INET6"
@@ -85,7 +70,7 @@ in
           wants = [ "docs.service" ];
           unitConfig.RequiresMountsFor = [ "/var/lib/gang-docs/src" ];
           serviceConfig = commonHardening // {
-            ExecStart = "${pkgs.watchexec}/bin/watchexec -n -w /var/lib/gang-docs/src --debounce 1500ms --restart -- ${buildDocs} /var/lib/gang-docs/src /var/lib/gang-docs/book";
+            ExecStart = "${lib.getExe pkgs.watchexec} -n -w /var/lib/gang-docs/src --debounce 1500ms --restart -- ${buildDocs} /var/lib/gang-docs/src /var/lib/gang-docs/book";
             Restart = "always";
           };
         };

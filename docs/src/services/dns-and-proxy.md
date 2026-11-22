@@ -54,7 +54,7 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   `24333` on `yifuwuqi` and `3333` on `yirukou`.
 - **Memory Caching**: 64 MiB in-memory cache (`cache_enabled = true`, `cache_optimistic = true`, `cache_ttl_max = 300`) with `GOMEMLIMIT = 2560MiB`.
 - **Filtering Blocklists**:
-  - `Hagezi Multi PRO++` (Comprehensive tracker & malware protection)
+  - `Hagezi Multi PRO` (Tracker & malware protection; `Hagezi Multi PRO++` stays defined but disabled)
   - `Hagezi TIF` (Threat Intelligence Feeds)
   - Custom rules: `||api.miwifi.com^`
 - **DNS Rewrites**:

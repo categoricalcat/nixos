@@ -22,7 +22,7 @@ say "update the address" or "change the public key", here is where each value li
 
 | If you need to change…           | Edit this file                                                                |
 | -------------------------------- | ----------------------------------------------------------------------------- |
-| Domains, ports, Attic cache name | `modules/addresses.nix` (under `hosts.yifuwuqi.services`)                     |
+| Domains, ports, Attic cache name | `modules/addresses/hosts.nix` (under `yifuwuqi.services`)                     |
 | Forgejo configuration            | `modules/services/forgejo.nix`                                                |
 | Forgejo Actions runner           | `modules/services/forgejo-runner.nix`                                         |
 | Attic server                     | `modules/services/attic/server.nix`                                           |
@@ -74,7 +74,7 @@ Edit the encrypted payload as `root` (`su -`, then `cd /home/yi/the.files/nixos`
 
 ```bash
 sops secrets/secrets.yaml
-./users/scripts/setup-sops.sh
+nix run .#secrets
 ```
 
 Store the generated values as:

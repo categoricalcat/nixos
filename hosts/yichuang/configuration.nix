@@ -30,10 +30,6 @@ in
 
   host.developer = true;
 
-  networking = {
-    hostName = "yichuang";
-  };
-
   nixpkgs.config = {
     cudaSupport = false;
     rocmSupport = true;

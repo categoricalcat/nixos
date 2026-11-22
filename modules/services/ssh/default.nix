@@ -8,8 +8,6 @@
 }:
 let
   keys = import ../../../secrets/keys.nix;
-  listenWildcardIPv4 = addresses.ssh.listenWildcardIPv4 or null;
-  listenWildcardIPv6 = addresses.ssh.listenWildcardIPv6 or null;
   formatListenAddr = addr: if lib.hasInfix ":" addr then "[${addr}]" else addr;
   dynamicSshConfig = import ./dynamic.nix { inherit lib allAddresses keys; };
 
@@ -67,33 +65,10 @@ in
         }
       ];
 
-      listenAddresses =
-        (map (addr: {
-          addr = formatListenAddr addr;
-          port = addresses.ssh.listenPort;
-        }) addresses.ssh.listenAddresses)
-        ++ (
-          if listenWildcardIPv4 != null then
-            [
-              {
-                addr = listenWildcardIPv4;
-                port = addresses.ssh.listenPort;
-              }
-            ]
-          else
-            [ ]
-        )
-        ++ (
-          if listenWildcardIPv6 != null then
-            [
-              {
-                addr = formatListenAddr listenWildcardIPv6;
-                port = addresses.ssh.listenPort;
-              }
-            ]
-          else
-            [ ]
-        );
+      listenAddresses = map (addr: {
+        addr = formatListenAddr addr;
+        port = addresses.ssh.listenPort;
+      }) addresses.ssh.listenAddresses;
 
       settings = {
         AllowUsers = [

@@ -13,19 +13,6 @@
       ];
     });
 
-    # High Tide's hardcoded Discord Application ID was deleted upstream.
-    # Upstream PR #353 (released in v1.7.0) migrated to a newly registered
-    # application ID; nixpkgs still ships 1.5.0. The guard keeps the lock bump
-    # to >=1.7.0 from failing the build; drop this entry once nixpkgs has it.
-    high-tide = prev.high-tide.overrideAttrs (old: {
-      postPatch = (old.postPatch or "") + ''
-        if grep -q 1379096506065223680 src/lib/discord_rpc.py; then
-          substituteInPlace src/lib/discord_rpc.py \
-            --replace-fail "1379096506065223680" "1570037786474455050"
-        fi
-      '';
-    });
-
     # Fix reaper segfault on startup (NixOS/patchelf#446, NixOS/patchelf#447):
     # patchelf corrupts non-PIE (ET_EXEC) ELF binaries when inserting/expanding RPATH
     # by creating an overlapping PT_LOAD segment where .dynamic falls within a page

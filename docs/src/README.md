@@ -34,15 +34,12 @@ flowchart TD
     yichuang -. "CI matrix target · Attic client (tailnet)" .-> yifuwuqi
 ```
 
-| Host             | Role                                             | Networks                    |
-| ---------------- | ------------------------------------------------ | --------------------------- |
-| **`yirukou`**    | Edge router, gateway, reverse proxy, primary DNS | `10.42.0.1` · `100.69.0.1`  |
-| **`yifuwuqi`**   | Core server: git, cache, monitoring, media, AI   | `10.42.0.2` · `100.69.0.6`  |
-| **`yitaishi`**   | Workstation, remote builder, pro-audio studio    | `100.69.0.4` (tailnet only) |
-| **`yixiaoqing`** | Mobile laptop, roaming dev client                | `100.69.0.3` (tailnet only) |
-| **`yichuang`**   | WSL2 development environment                     | WSL host networking         |
+Roles and per-host hardware detail live on each host's page under **Gang Hosts**; the address table below is generated from the registry (`modules/addresses.nix`) and cannot drift from it.
 
-Hardware and architecture detail lives on each host's page under **Gang Hosts**.
+{{#include generated/hosts.md}}
+
+`yichuang` (WSL2 development node) is unregistered and absent from the
+registry by design; the topology diagram above shows where it sits.
 
 ## In this book
 

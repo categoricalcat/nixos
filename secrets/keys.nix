@@ -125,17 +125,27 @@ let
       ]
   );
 
+  # Only root decrypts SOPS secrets using the per-machine host key.
+  sopsAgeRecipients = map (machine: machine.host.age) (builtins.attrValues keyed);
+
+  # SOPS creation rules: one key group holding every keyed host's age
+  # recipient. Parameterized so scripts/sync-secrets.sh (real fleet keys via
+  # sopsYaml) and test.nix (synthetic keys) render the same shape.
+  sopsYamlFor = recipients: ''
+    creation_rules:
+      - path_regex: (/persist/keys/sops|secrets)/.*\.yaml$
+        key_groups:
+          - age:
+    ${builtins.concatStringsSep "\n" (map (k: "        - ${k}") recipients)}
+  '';
+
 in
 {
   paths = {
     inherit keysFolder;
-    sopsConfigFile = "${keysFolder}/.sops.yaml";
-    sshDir = "${keysFolder}/ssh";
     sshHostKey = "${keysFolder}/ssh/ssh_host_ed25519_key";
-    sshHostPublicKey = "${keysFolder}/ssh/ssh_host_ed25519_key.pub";
     sopsDir = "${keysFolder}/sops";
     sopsDefaultFile = "${keysFolder}/sops/secrets.yaml";
-    userSshKey = homeDir: "${homeDir}/.ssh/id_ed25519";
     userGitSshKey = homeDir: "${homeDir}/.ssh/id_git_ed25519";
     gitSigningKey = homeDir: "${homeDir}/.ssh/id_git_ed25519.pub";
   };
@@ -145,8 +155,9 @@ in
     users
     ci
     access
+    sopsAgeRecipients
+    sopsYamlFor
     ;
 
-  # Only root decrypts SOPS secrets using the per-machine host key.
-  sopsAgeRecipients = map (machine: machine.host.age) (builtins.attrValues keyed);
+  sopsYaml = sopsYamlFor sopsAgeRecipients;
 }

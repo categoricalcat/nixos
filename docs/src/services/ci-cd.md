@@ -105,7 +105,7 @@ To rotate the CI deployment key (as `root` via `su -` in `/home/yi/the.files/nix
 
 ```bash
 # 1. Mint a new key on any configured host
-./users/scripts/setup-sops.sh [--rotate]
+nix run .#secrets [-- --rotate]
 
 # 2. Update keys.ci.deployPublicKey in secrets/keys.nix
 
@@ -115,7 +115,7 @@ shred -u /run/ci-deploy-key/keys/deploy_ed25519
 rm -rf /run/ci-deploy-key
 
 # 4. Sync persist secrets and deploy across gang
-./users/scripts/setup-sops.sh
+nix run .#secrets
 ```
 
 ______________________________________________________________________

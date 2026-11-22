@@ -29,7 +29,6 @@ in
     ./hardware.nix
     ./power.nix
     ./networking.nix
-    ./addresses.nix
     ../../secrets/sops.nix
     ../../users/users.nix
     ../../modules/fido2.nix

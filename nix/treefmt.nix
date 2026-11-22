@@ -7,6 +7,10 @@
       treefmt = {
         projectRootFile = "flake.nix";
         package = pkgs.treefmt;
+        # Registry-rendered fragments are machine-owned (docs/generate.nix);
+        # the docs-registry-sync check keeps them byte-identical to the
+        # renderer, so human formatters must not touch them.
+        settings.excludes = [ "docs/src/generated/*" ];
         programs = {
           deadnix = {
             enable = true;

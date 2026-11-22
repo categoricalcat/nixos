@@ -49,7 +49,7 @@ HOST_NAME=${HOST:-$(hostname)}
 as_yi nix fmt
 as_yi statix check .
 as_yi deadnix --fail .
-./users/scripts/setup-sops.sh
+nix run .#secrets
 as_yi git add .
 if "$check"; then
   as_yi nix flake check "${check_flags[@]}"

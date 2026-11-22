@@ -6,22 +6,14 @@ All services are configured in `modules/services/` and enabled selectively via `
 
 ______________________________________________________________________
 
-## 1. Services Overview Table
+## 1. Services Directory (generated)
 
-| Service          | Module File          | Internal Port | Public / Proxy Domain | Primary Backend / Database            | Description                                                                                          |
-| ---------------- | -------------------- | ------------- | --------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Homepage**     | `homepage.nix`       | `24082`       | `home.aset.love`      | Native YAML                           | Categorized dashboard with real-time health checks & widgets                                         |
-| **Docs**         | `docs/service.nix`   | `24083`       | `docs.aset.love`      | mdBook + Nginx                        | Gang documentation & architectural plans                                                             |
-| **SearXNG**      | `searxng.nix`        | `24888`       | `search.aset.love`    | Tor SOCKS5 + Valkey DB 1              | Privacy-respecting metasearch engine ("yi search")                                                   |
-| **Valkey**       | `valkey.nix`         | `24379`       | *Internal only*       | In-Memory (LRU, per-host cap)         | Redis fork; host-local L2 DNS cache for Unbound & SearXNG rate limiter                               |
-| **Cockpit**      | `cockpit.nix`        | `24091`       | `cockpit.aset.love`   | Native D-Bus / sysstat / Podman       | System management, metrics, Podman containers & file browser                                         |
-| **WebDAV**       | `webdav.nix`         | `80 / 443`    | `webdav.aset.love`    | Nginx DAV module                      | Direct WebDAV file storage at `/srv/webdav`                                                          |
-| **File Browser** | `filebrowser.nix`    | `24086`       | `files.aset.love`     | Bolt DB                               | Download-only view of `/home/yi`; login `yi`, password `passwords/filebrowser`                       |
-| **Firecrawl**    | `firecrawl.nix`      | `24002`       | *Internal API*        | 5 OCI Containers + SearXNG            | LLM web scraping & document extraction engine                                                        |
-| **SillyTavern**  | `ai/sillytavern.nix` | `24000`       | `companion.aset.love` | `llama-cpp.service` (model set in UI) | Advanced conversational frontend & AI persona manager                                                |
-| **Opencode**     | `opencode.nix`       | `24010`       | `agent.aset.love`     | Native Agent Daemon                   | Autonomous AI coding agent backend; loopback behind the local ingress, password `passwords/opencode` |
-| **Cloudflared**  | `cloudflared.nix`    | —             | *Tunnel Egress*       | OCI Container                         | SSH-only fail-safe tunnel `cloudflare.aset.love` on bridge `10.89.0.2`                               |
-| **Tor Client**   | `services.tor`       | `9050`        | *Internal SOCKS5*     | Tor Onion Router                      | Anonymous routing proxy for outbound SearXNG requests                                                |
+This directory renders every registry service entry from
+`modules/addresses.nix` (`docs/src/generated/services.md`, flake package
+`docs-generated`; the `docs-registry-sync` check blocks drift). Narrative,
+backends, and implementation detail for each service follow in section 2.
+
+{{#include ../generated/services.md}}
 
 ______________________________________________________________________
 
@@ -31,7 +23,7 @@ ______________________________________________________________________
 
 - **Web UI**: Served at `http://10.42.0.2:24082` (LAN; homepage has no loopback bind option) and proxied to `https://home.aset.love` via the local ingress.
 - **Layout Architecture**: 4-column responsive grid with 5 main service groups:
-  1. **Media**: Jellyfin, Jellyseerr, Podgrab (`cast.aset.love`, podcast catcher).
+  1. **Media**: Jellyfin, Jellyseerr, Pinepods (`cast.aset.love`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
   1. **Monitoring**: Grafana (`grafana.aset.love`), GoAccess (`goaccess.aset.love`).
   1. **Infrastructure**: Cockpit, Files, Forgejo, Opencode Agent, Attic Binary Cache.
@@ -49,7 +41,7 @@ ______________________________________________________________________
 ### 2.3 Valkey Datastore (`modules/services/valkey.nix`)
 
 - **Service**: In-memory Redis-compatible key-value store. Runs on **both** `yifuwuqi` and `yirukou`, bound to `127.0.0.1` only; every consumer is host-local and connects over the unix socket `/run/redis/redis.sock`. Nothing reaches it across the LAN.
-- **Memory Management**: `allkeys-lru` eviction, sized in `modules/addresses.nix` — 1 GB on `yirukou` (primary resolver), 512 MB on `yifuwuqi`.
+- **Memory Management**: `allkeys-lru` eviction, sized in `modules/addresses/hosts.nix` (`services.valkey.maxMemory`) — 1 GB on `yirukou` (primary resolver), 512 MB on `yifuwuqi`.
 - **Multi-Tenant Usage**:
   - **DB 0**: L2 DNS cache for Unbound on `yirukou`. Not shared between hosts — see [Unbound Architecture](../networking/unbound-integration.md) for why cachedb must not cross a link.
   - **DB 1**: Rate limiting token bucket storage for SearXNG (`yifuwuqi` only), over the same unix socket.
@@ -78,10 +70,10 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 - **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin allowlisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing. The Kernel dump page is hidden (`/etc/cockpit/kdump.override.json`): NixOS `kexec` is for fast reboot, not Fedora's `kdump.service`, and that page only shows a false "install kexec-tools" alert.
 - **Plugins**: `cockpit-podman` (Podman containers, replaces the former Portainer CE deployment; PAM login), `cockpit-files` (file browser), `cockpit-dockermanager`, `cockpit-machines` (libvirt UI), `cockpit-zfs` (ZFS UI). The last two only add the pages; libvirt and ZFS are not enabled on this host.
 
-### 2.7 WebDAV Server (`modules/services/webdav.nix`)
+### 2.7 WebDAV Server (`modules/services/webdav.nix`, dormant)
 
-- **Web UI**: `https://webdav.aset.love`.
-- **Configuration**: Built using `pkgs.nginxModules.dav`, root directory `/srv/webdav` (mode 0775, `nginx:nginx`), unlimited client max body size (`client_max_body_size 0`), support for all standard WebDAV methods (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPFIND`, `OPTIONS`, `LOCK`, `UNLOCK`).
+- **Status**: Disabled (commented out in `hosts/yifuwuqi/services.nix` and absent from the active registry directory above).
+- **Configuration**: Built using `pkgs.nginxModules.dav` (`https://webdav.aset.love`), root directory `/srv/webdav` (mode 0775, `nginx:nginx`), unlimited client max body size (`client_max_body_size 0`), support for all standard WebDAV methods (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPFIND`, `OPTIONS`, `LOCK`, `UNLOCK`).
 
 ### 2.8 File Browser (`modules/services/filebrowser.nix`)
 

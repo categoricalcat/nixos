@@ -236,13 +236,12 @@ let
   # Container identity policy: one principal per ID. Every declared container
   # either runs as a numeric identity (user uid:gid or PUID/PGID) pinned in
   # 330-399 on a declared account and group, unique per container, or records
-  # why its host-root processes are allowed (rootReason). New container
-  # accounts continue from 348; the block sits below the dynamic allocator
-  # (400-999) and cannot collide with it.
+  # why its host-root processes are allowed (rootReason; dual-process images
+  # like s6-overlay may carry both). New container accounts continue from 348;
+  # the block sits below the dynamic allocator (400-999) and cannot collide.
   containerIdentity =
     let
-      numOrNull =
-        s: if builtins.isString s && builtins.match "[0-9]+" s != null then lib.toInt s else null;
+      parseIdentity = import ../modules/virtualisation/container-identity.nix { inherit lib; };
     in
     lib.map (
       host:
@@ -257,28 +256,16 @@ let
           (lib.filterAttrs (_: g: g.gid != null && g.gid >= 330 && g.gid <= 399))
           (lib.mapAttrsToList (_: g: g.gid))
         ];
-        identity =
-          c:
-          let
-            parts = if c.user == null then [ ] else lib.splitString ":" c.user;
-          in
-          {
-            uid =
-              if parts != [ ] then numOrNull (builtins.head parts) else numOrNull (c.environment.PUID or null);
-            gid =
-              if lib.length parts > 1 then
-                numOrNull (lib.elemAt parts 1)
-              else
-                numOrNull (c.environment.PGID or null);
-          };
+        identities = lib.mapAttrs (_: parseIdentity) containers;
         perContainerIssues =
-          name: c:
+          name: id:
           let
-            id = identity c;
             hasId = id.uid != null && id.gid != null;
+            partialId = (id.uid != null) != (id.gid != null);
           in
-          lib.optional (
-            !hasId && (c.rootReason or null) == null
+          lib.optional partialId "${name}: partial numeric identity (uid=${toString id.uid}, gid=${toString id.gid})"
+          ++ lib.optional (
+            !partialId && !hasId && id.rootReason == null
           ) "${name}: no numeric user/PUID/PGID and no rootReason"
           ++ lib.optionals hasId (
             lib.optional (
@@ -288,36 +275,77 @@ let
               !lib.elem id.gid pinnedGids
             ) "${name}: gid ${toString id.gid} is not a pinned group gid in 330-399"
           );
-        uidOwners = lib.concatMap (
-          name:
-          let
-            id = identity containers.${name};
-          in
-          lib.optional (id.uid != null) {
-            inherit name;
-            value = id.uid;
-          }
-        ) (lib.attrNames containers);
-        duplicateUids =
-          let
-            counts = lib.foldl' (
-              acc: o: acc // { ${toString o.value} = (acc.${toString o.value} or 0) + 1; }
-            ) { } uidOwners;
-          in
-          lib.filterAttrs (_: n: n > 1) counts;
-        dupIssues =
-          if duplicateUids == { } then
-            [ ]
-          else
-            [
-              "uids used by more than one container: ${toString (lib.attrValues duplicateUids)}"
-            ];
+        duplicateUids = lib.filterAttrs (_: names: lib.length names > 1) (
+          lib.groupBy (name: toString identities.${name}.uid) (
+            lib.filter (name: identities.${name}.uid != null) (lib.attrNames identities)
+          )
+        );
+        dupIssues = lib.mapAttrsToList (
+          uid: names: "uid ${uid} shared by containers: ${lib.concatStringsSep ", " names}"
+        ) duplicateUids;
       in
       contractIssues "container-identity" host (
-        lib.concatMap (name: perContainerIssues name containers.${name}) (lib.attrNames containers)
-        ++ dupIssues
+        lib.concatLists (lib.mapAttrsToList perContainerIssues identities) ++ dupIssues
       )
     ) (lib.attrNames self.nixosConfigurations);
+
+  # --- hardening-baseline -----------------------------------------------------
+  # Custom long-running units (inventory in modules/hardening.nix) either
+  # satisfy every baseline key (scalars equal it, so a stricter scalar is still
+  # flagged; RestrictAddressFamilies may be a subset; SystemCallFilter may only
+  # append `~` deny groups), carry `minus` with the exact keys they drop/weaken,
+  # or are exempt with a reason.
+  # Upstream-hardened units are deliberately outside the inventory: this
+  # contract guards our attrset spreads, not upstream hardening.
+  hardeningBaseline =
+    let
+      hardening = import ../modules/hardening.nix;
+      inherit (hardening) baseline;
+      baselineKeys = lib.attrNames baseline;
+      satisfies =
+        sc: k:
+        let
+          b = baseline.${k};
+          v = sc.${k};
+        in
+        builtins.hasAttr k sc
+        && (
+          v == b
+          || (k == "RestrictAddressFamilies" && builtins.isList v && lib.all (af: lib.elem af b) v)
+          || (
+            k == "SystemCallFilter"
+            && builtins.isList v
+            && lib.take (lib.length b) v == b
+            && lib.all (lib.hasPrefix "~") (lib.drop (lib.length b) v)
+          )
+        );
+      unitIssues =
+        cfg: unit: spec:
+        if !builtins.hasAttr unit cfg.systemd.services then
+          [ "${unit}: inventoried but not defined on this host" ]
+        else if spec ? exempt then
+          [ ]
+        else
+          let
+            sc = cfg.systemd.services.${unit}.serviceConfig;
+            minus = spec.minus or [ ];
+            unknown = lib.filter (k: !builtins.hasAttr k baseline) minus;
+            stale = lib.filter (k: builtins.hasAttr k baseline && satisfies sc k) minus;
+            violated = lib.filter (k: !satisfies sc k) (lib.subtractLists minus baselineKeys);
+          in
+          lib.optional (unknown != [ ]) "${unit}: unknown minus keys ${toString unknown}"
+          ++ lib.optional (stale != [ ]) "${unit}: minus keys already satisfy baseline ${toString stale}"
+          ++ lib.optional (violated != [ ]) "${unit}: missing or weakened baseline keys ${toString violated}";
+      hostIssues =
+        host:
+        let
+          cfg = self.nixosConfigurations.${host}.config;
+        in
+        lib.concatLists (lib.mapAttrsToList (unitIssues cfg) hardening.units.${host});
+    in
+    lib.map (host: contractIssues "hardening-baseline" host (hostIssues host)) (
+      lib.attrNames hardening.units
+    );
 
   # --- deploy registry derivation (A4) ---------------------------------------
   deployNodes = lib.attrNames self.deploy.nodes;
@@ -339,11 +367,48 @@ let
     deployPorts != [ ] && lib.all (p: p == builtins.head deployPorts) deployPorts
   ) "deployable hosts must share one ssh.listenPort: ${toString deployPorts}";
 
+  # Exporter matrix for the generated monitoring fragment: which registry
+  # exporter is enabled on which scrape host, with the evaluated port
+  # (exporter ports come from module defaults, not the registry).
+  exporterMatrix =
+    let
+      names = lib.attrNames addresses.monitoring.exporters;
+      hosts = addresses.monitoring.scrapeHosts;
+    in
+    lib.genAttrs names (
+      name:
+      let
+        exporterOn = h: self.nixosConfigurations.${h}.config.services.prometheus.exporters.${name};
+        hs = lib.filter (h: (exporterOn h).enable) hosts;
+        ports = lib.unique (map (h: (exporterOn h).port) hs);
+      in
+      {
+        hosts = hs;
+        # The fragment renders one port per exporter, so diverging per-host
+        # ports fail here instead of rendering the first host's value.
+        port =
+          if ports == [ ] then
+            null
+          else if lib.length ports == 1 then
+            builtins.head ports
+          else
+            throw "exporter ${name}: ports differ across hosts (${toString ports}); docs/generate.nix renders one port per exporter";
+      }
+    );
+
+  # Registry-derived mdbook fragments (docs/src/generated/), rendered by
+  # docs/generate.nix. Committed fragments must match this derivation; the
+  # docs-registry-sync check fails on drift.
+  docsFragments = import ../docs/generate.nix {
+    inherit lib addresses exporterMatrix;
+  };
+
   contractResults =
     fleetBaseline
     ++ sshdHardening
     ++ exporterSourceScope
     ++ containerIdentity
+    ++ hardeningBaseline
     ++ deployRegistry
     ++ [
       gateCoverage
@@ -355,6 +420,14 @@ in
 {
   perSystem =
     { pkgs, ... }:
+    let
+      docsFragmentsDrv = pkgs.linkFarm "docs-registry-fragments" (
+        lib.mapAttrsToList (name: text: {
+          inherit name;
+          path = pkgs.writeText name text;
+        }) docsFragments
+      );
+    in
     {
       checks = {
         # A1: SUMMARY.md chapters (including plans) build cleanly via mdbook
@@ -383,6 +456,19 @@ in
           printf '%s\n' ${lib.escapeShellArgs contractResults}
           touch "$out"
         '';
+
+        # Registry-derived doc fragments must match the committed tree:
+        # render, then fail on any diff (fail-on-change, like treefmt).
+        docs-registry-sync = pkgs.runCommand "check-docs-registry-sync" { } ''
+          diff -r ${docsFragmentsDrv} ${../docs/src/generated}
+          touch "$out"
+        '';
+      };
+
+      packages = {
+        # Refresh with: nix build .#docs-generated --out-link /tmp/docs-frag
+        #   install -m 0644 /tmp/docs-frag/*.md docs/src/generated/
+        docs-generated = docsFragmentsDrv;
       };
     };
 }

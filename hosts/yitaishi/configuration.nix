@@ -62,7 +62,6 @@ in
     ./hardware.nix
     ./graphics.nix
     ./services.nix
-    ./addresses.nix
     ./networking.nix
     ../../users/users.nix
     ../../secrets/sops.nix

@@ -12,7 +12,6 @@ in
 {
   imports = [
     ./hardware.nix
-    ./addresses.nix
     ./boot.nix
     ./networking.nix
     ./services.nix

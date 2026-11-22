@@ -9,6 +9,15 @@ let
 in
 {
   config = {
+    # The /persist/keys permission layout, enforced at boot on every host
+    # (and by `systemd-tmpfiles --create` in the DR drill after its fresh
+    # disk is mounted). The bootstrap scripts keep mkdir/chmod copies for
+    # install-time use before a system exists (scripts/).
+    systemd.tmpfiles.rules = [
+      "d ${keys.paths.keysFolder} 0755 root root -"
+      "d ${keys.paths.sopsDir} 0700 root root -"
+    ];
+
     sops = {
       age.sshKeyPaths = [ keys.paths.sshHostKey ];
       age.generateKey = false;

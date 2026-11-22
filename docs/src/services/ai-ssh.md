@@ -53,7 +53,7 @@ path allowlist and additionally unreadable to the `ai` user.
 
 ## Provisioning a new host
 
-1. On the new mesh host, run `./users/scripts/setup-sops.sh <host>` as `root` (`su -`), which
+1. On the new mesh host, run `nix run .#secrets -- <host>` from the repo root as `root` (`su -`), which
    generates `~yi/.ssh/id_ai_ed25519` and prints the complete machine block.
 1. Paste that block into `machines` in `secrets/keys.nix`, add the hostname to
    `keyed`, and set each destination's `allow.ai` policy.

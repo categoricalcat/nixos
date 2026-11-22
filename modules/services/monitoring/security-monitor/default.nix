@@ -21,33 +21,23 @@ let
     ProtectHome = true;
   };
 
+  parseIdentity = import ../../../virtualisation/container-identity.nix { inherit lib; };
+
   # Declared container identities for the fast audit: the numeric uid/gid each
   # container is declared to run as (user split on ":", else PUID/PGID from
-  # environment), plus the recorded reason for any host-root processes.
-  # Non-numeric values (name-based user, dynamic-account renders like
-  # cloudflared's old "null:null") cannot be resolved here and count as
-  # undeclared. Numeric IDs only, no secrets.
+  # environment when user is unset), plus the recorded reason for any host-root
+  # processes. Numeric IDs only, no secrets.
   containerIdentities = pkgs.writeText "container-identities.json" (
     builtins.toJSON (
       lib.mapAttrs (
         _: c:
         let
-          toNum = s: if s != null && builtins.match "[0-9]+" s != null then lib.toInt s else null;
-          user = c.user or "";
-          userParts = lib.splitString ":" (if user == null then "" else user);
+          id = parseIdentity c;
         in
         {
-          duid =
-            let
-              u = toNum (lib.elemAt userParts 0);
-            in
-            if u != null then u else toNum (c.environment.PUID or null);
-          dgid =
-            let
-              g = toNum (if lib.length userParts > 1 then lib.elemAt userParts 1 else null);
-            in
-            if g != null then g else toNum (c.environment.PGID or null);
-          rootReason = c.rootReason or null;
+          duid = id.uid;
+          dgid = id.gid;
+          inherit (id) rootReason;
         }
       ) (config.virtualisation.oci-containers.containers or { })
     )

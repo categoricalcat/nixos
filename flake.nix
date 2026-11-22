@@ -52,64 +52,42 @@
             ];
           };
 
-          nixosConfigurations = {
-
-            yixiaoqing = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                home-manager.nixosModules.home-manager
-                sops-nix.nixosModules.sops
+          # Every host shares specialArgs, SOPS, and Home Manager; entries
+          # below carry only the meaningful per-host differences.
+          nixosConfigurations =
+            let
+              mkNixosHost =
+                name: extraModules:
+                nixpkgs.lib.nixosSystem {
+                  specialArgs = { inherit inputs global; };
+                  modules = [
+                    { networking.hostName = name; }
+                    sops-nix.nixosModules.sops
+                    home-manager.nixosModules.home-manager
+                    ./hosts/${name}/configuration.nix
+                  ]
+                  ++ extraModules;
+                };
+            in
+            {
+              yixiaoqing = mkNixosHost "yixiaoqing" [
                 stylix.nixosModules.stylix
-                # inputs.mango.nixosModules.mango
-                ./hosts/yixiaoqing/configuration.nix
               ];
-            };
-
-            yitaishi = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                sops-nix.nixosModules.sops
+              yitaishi = mkNixosHost "yitaishi" [
                 stylix.nixosModules.stylix
                 inputs.chaotic.nixosModules.default
                 inputs.musnix.nixosModules.musnix
-                home-manager.nixosModules.home-manager
                 inputs.lanzaboote.nixosModules.lanzaboote
-                # inputs.mango.nixosModules.mango
-                ./hosts/yitaishi/configuration.nix
               ];
-            };
-
-            yifuwuqi = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                sops-nix.nixosModules.sops
+              yifuwuqi = mkNixosHost "yifuwuqi" [
                 stylix.nixosModules.stylix
                 inputs.chaotic.nixosModules.default
-                home-manager.nixosModules.home-manager
-                ./hosts/yifuwuqi/configuration.nix
               ];
-            };
-
-            yirukou = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                sops-nix.nixosModules.sops
-                home-manager.nixosModules.home-manager
-                ./hosts/yirukou/configuration.nix
-              ];
-            };
-
-            yichuang = nixpkgs.lib.nixosSystem {
-              specialArgs = { inherit inputs global; };
-              modules = [
-                sops-nix.nixosModules.sops
+              yirukou = mkNixosHost "yirukou" [ ];
+              yichuang = mkNixosHost "yichuang" [
                 nixos-wsl.nixosModules.default
-                home-manager.nixosModules.home-manager
-                ./hosts/yichuang/configuration.nix
               ];
             };
-
-          };
         };
 
         perSystem =
@@ -120,6 +98,7 @@
               fluxer = pkgs.callPackage ./packages/fluxer { };
               firecrawl-mcp = pkgs.callPackage ./packages/firecrawl-mcp { };
               eslint-env = pkgs.callPackage ./nix/eslint { };
+              secrets = pkgs.callPackage ./secrets { };
               default = config.packages.zero-parades;
             };
 
@@ -128,6 +107,7 @@
                 echo "${builtins.unsafeDiscardStringContext self.homeConfigurations.yijia.activationPackage.drvPath}" > "$out"
               '';
               gateway-failover = pkgs.testers.runNixOSTest ./packages/gateway-failover/test.nix;
+              dr-recovery = pkgs.testers.runNixOSTest (import ./secrets/test.nix { sopsNix = sops-nix; });
             };
           };
 

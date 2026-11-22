@@ -1,7 +1,5 @@
 _: {
   networking = {
-    hostName = "yixiaoqing";
-
     networkmanager = {
       enable = true;
       wifi = {

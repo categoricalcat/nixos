@@ -15,8 +15,6 @@
   ];
 
   networking = {
-    inherit (addresses) hostName;
-
     networkmanager.enable = false;
     useNetworkd = true;
     useDHCP = false;

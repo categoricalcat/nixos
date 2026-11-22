@@ -46,7 +46,7 @@ Nix distributed builds authenticate over SSH using the dedicated `nix-builder` u
 
 ### 2.2 Adding a Host to the Mesh
 
-1. **Record the machine block printed by `setup-sops.sh` in
+1. **Record the machine block printed by `setup-sops` in
    `secrets/keys.nix` and add its name to `keyed`**:
    ```nix
    newhost = {
@@ -54,16 +54,16 @@ Nix distributed builds authenticate over SSH using the dedicated `nix-builder` u
        ssh = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...";
        age = "age1...";
      };
-     # yi, ai, and allow are printed by setup-sops.sh
+     # yi, ai, and allow are printed by setup-sops
    };
    ```
-1. **Configure `nixBuild` in `modules/addresses.nix`**:
+1. **Configure `nixBuild` in `modules/addresses/hosts.nix`** (`supportedFeatures`
+   and `mandatoryFeatures` are derived in `modules/distributed-builds.nix`):
    ```nix
-   nixBuild = {
+   nixBuild = mkNixBuild {
+     remoteBuilder = false;
      maxJobs = 8;
      speedFactor = 100;
-     supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
-     mandatoryFeatures = [ ];
    };
    ```
 1. **Deploy the configuration (as `root` via `su -`)**:

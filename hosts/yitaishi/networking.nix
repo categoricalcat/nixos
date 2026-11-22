@@ -22,8 +22,6 @@ _: {
   # };
 
   networking = {
-    hostName = "yitaishi";
-
     networkmanager = {
       enable = true;
     };
