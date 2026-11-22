@@ -39,11 +39,11 @@ ______________________________________________________________________
 
 ## 3. TPM2 Virtual FIDO2 Token (`modules/services/tpm-fido2.nix`)
 
-Active on `yixiaoqing` to expose a hardware-backed virtual security key through Linux `uhid`:
+Optional on `yixiaoqing` (disabled by default so Chrome defaults to QR-code passkeys). When enabled (`security.tpm-fido2.enable = true`), verify the user daemon and `/dev/uhid`:
 
 ```bash
-# Verify the tpm-fido2 daemon is active
-systemctl status tpm-fido2.service
+# Verify the tpm-fido2 user daemon is active
+systemctl --user status tpm-fido2.service
 
 # Verify virtual token device creation
 ls -l /dev/uhid

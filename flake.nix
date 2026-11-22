@@ -52,8 +52,8 @@
             ];
           };
 
-          # Every host shares specialArgs, SOPS, and Home Manager; entries
-          # below carry only the meaningful per-host differences.
+          # Every host shares specialArgs and SOPS; entries below carry only the
+          # meaningful per-host differences (including Home Manager where used).
           nixosConfigurations =
             let
               mkNixosHost =
@@ -63,7 +63,6 @@
                   modules = [
                     { networking.hostName = name; }
                     sops-nix.nixosModules.sops
-                    home-manager.nixosModules.home-manager
                     ./hosts/${name}/configuration.nix
                   ]
                   ++ extraModules;
@@ -71,20 +70,24 @@
             in
             {
               yixiaoqing = mkNixosHost "yixiaoqing" [
+                home-manager.nixosModules.home-manager
                 stylix.nixosModules.stylix
               ];
               yitaishi = mkNixosHost "yitaishi" [
+                home-manager.nixosModules.home-manager
                 stylix.nixosModules.stylix
                 inputs.chaotic.nixosModules.default
                 inputs.musnix.nixosModules.musnix
                 inputs.lanzaboote.nixosModules.lanzaboote
               ];
               yifuwuqi = mkNixosHost "yifuwuqi" [
+                home-manager.nixosModules.home-manager
                 stylix.nixosModules.stylix
                 inputs.chaotic.nixosModules.default
               ];
               yirukou = mkNixosHost "yirukou" [ ];
               yichuang = mkNixosHost "yichuang" [
+                home-manager.nixosModules.home-manager
                 nixos-wsl.nixosModules.default
               ];
             };

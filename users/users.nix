@@ -8,25 +8,29 @@
 let
   keys = import ../secrets/keys.nix;
   hostName = config.networking.hostName;
+  inherit (config.host) developer;
+  hasForgejoRunner = config.services.forgejo-runner.instances != { };
 in
 {
   users = {
     mutableUsers = true;
-    defaultUserShell = pkgs.zsh;
+    defaultUserShell = lib.mkIf config.programs.zsh.enable pkgs.zsh;
 
     groups = lib.mkMerge [
       {
         yi = {
           gid = 1000;
         };
-        none = {
-          gid = 1002;
-        };
         # One group per service principal; dynamic ids stay in the account
         # database. After the switch, chgrp -R nix-builder /var/lib/nix-builder.
         nix-builder = { };
         ai = { };
       }
+      (lib.mkIf (developer || hasForgejoRunner) {
+        none = {
+          gid = 1002;
+        };
+      })
       (lib.mkIf config.host.workd {
         workd = {
           gid = 1001;
@@ -58,11 +62,13 @@ in
           group = "yi";
           openssh.authorizedKeys.keys = keys.access.yi.${hostName};
           extraGroups = [
+            "systemd-journal"
+          ]
+          ++ lib.optionals developer [
             "render"
             "video"
             "dialout"
             "networkmanager"
-            "systemd-journal"
             "tss"
             "plugdev"
             "podman"
@@ -107,7 +113,7 @@ in
       })
     ];
 
-    extraUsers = {
+    extraUsers = lib.mkIf (developer || hasForgejoRunner) {
       none = {
         uid = 1002;
         enable = true;
@@ -122,12 +128,12 @@ in
     mtr.enable = true;
     trippy.enable = true;
     zsh = {
-      enable = true;
+      enable = lib.mkDefault true;
     };
   };
 
   environment = {
-    systemPackages = [
+    systemPackages = lib.optionals developer [
       (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
       (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
       # Read-only mesh access lane (used by the opencode systemd unit, which
@@ -139,11 +145,11 @@ in
       })
     ];
 
-    variables = {
+    variables = lib.mkIf config.programs.zsh.enable {
       ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";
     };
 
-    pathsToLink = [ "/share/zsh" ];
+    pathsToLink = lib.mkIf config.programs.zsh.enable [ "/share/zsh" ];
 
     etc."nixos".source =
       pkgs.runCommandLocal "etc-nixos" { }

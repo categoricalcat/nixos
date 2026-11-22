@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ inputs, lib, ... }:
 {
   perSystem =
     {
@@ -46,42 +46,157 @@
         pkgs.nvd # Package version diff tool for Nix store paths
         pkgs.deploy-rs # Multi-profile NixOS deployment tool
         pkgs.fzf # Command-line fuzzy finder
+        pkgs.git # Version control (needed for flakes/hooks on minimal hosts)
         pkgs.jq # Command-line JSON processor
         pkgs.dnsx # Fast and multi-purpose DNS toolkit
         pkgs.curl # Transfer data with URLs
       ];
 
+      # Single source of truth for shell, TUI, and git config across every
+      # `nix develop` host/user (minimal servers without HM, root, bwrap sandbox).
+      hmShell = inputs.home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        extraSpecialArgs = {
+          inherit inputs;
+          osConfig = { };
+        };
+        modules = [
+          inputs.sops-nix.homeManagerModules.sops
+          ../users/home/shell.nix
+          ../users/programs/git.nix
+          {
+            home = {
+              username = "devshell";
+              homeDirectory = "/nonexistent-devshell-home";
+              stateVersion = "26.05";
+            };
+            manual.manpages.enable = lib.mkForce false;
+            xdg.mime.enable = lib.mkForce false;
+            programs = {
+              home-manager.enable = lib.mkForce false;
+              zsh = {
+                # Resolve $HOME dynamically because $ZDOTDIR and devshell-gitconfig are read-only in /nix/store.
+                history.path = lib.mkForce "$HOME/.zsh_history";
+                completionInit = ''
+                  compdump="''${ZSH_COMPDUMP:-''${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-''${HOST:-host}}"
+                  mkdir -p "''${compdump:h}"
+                  autoload -U compinit && compinit -d "$compdump"
+                  unset compdump
+                '';
+                initContent = lib.mkOrder 525 ''
+                  fpath=("${devZshCompletions}/share/zsh/site-functions" "${devZshCompletions}/share/zsh/vendor-completions" $fpath)
+                '';
+              };
+            };
+            # Developer-only LSPs/nixvim live in workstation HM profiles; keep devshell lean.
+            serverMode = {
+              developer = lib.mkForce false;
+              tui = true;
+            };
+          }
+        ];
+      };
+
+      hmPackages = lib.filter (p: (lib.getName p) != "hm-session-vars.sh") hmShell.config.home.packages;
+
+      devZshCompletions = pkgs.buildEnv {
+        name = "devshell-zsh-completions";
+        paths = hmPackages ++ nixDevPkgs ++ [ pkgs.git ];
+        pathsToLink = [ "/share/zsh" ];
+        ignoreCollisions = true;
+      };
+
+      devZdotdir = pkgs.writeTextDir ".zshrc" hmShell.config.programs.zsh.initContent;
+
+      devCfgPrefix = "${hmShell.config.xdg.configHome}/";
+
+      xdgConfigEntries = lib.concatMapAttrs (
+        name: file:
+        let
+          rel = lib.removePrefix devCfgPrefix name;
+        in
+        if
+          lib.hasPrefix devCfgPrefix name
+          && !(lib.hasPrefix "systemd/" rel)
+          && !(lib.hasPrefix "environment.d/" rel)
+        then
+          { ${rel} = file.source; }
+        else
+          { }
+      ) hmShell.config.home.file;
+
+      devXdgConfig = pkgs.linkFarm "devshell-xdg-config" (
+        lib.mapAttrsToList (name: path: {
+          inherit name path;
+        }) xdgConfigEntries
+      );
+
+      devGitConfig = pkgs.writeText "devshell-gitconfig" (
+        lib.replaceStrings [ "${hmShell.config.home.homeDirectory}/" ] [ "~/" ]
+          hmShell.config.home.file.".gitconfig".text
+      );
+
+      hmVars = hmShell.config.home.sessionVariables;
+
+      mkShellEnvHook = targetHome: ''
+        export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
+        export ZDOTDIR="${devZdotdir}"
+        export EDITOR="${hmVars.EDITOR}"
+        export VISUAL="${hmVars.VISUAL}"
+        export FZF_CTRL_R_COMMAND="${hmVars.FZF_CTRL_R_COMMAND}"
+        export FZF_DEFAULT_COMMAND="${hmVars.FZF_DEFAULT_COMMAND}"
+        export FZF_DEFAULT_OPTS="${hmVars.FZF_DEFAULT_OPTS}"
+        export MCFLY_INTERFACE_VIEW="${hmVars.MCFLY_INTERFACE_VIEW}"
+        export MCFLY_KEY_SCHEME="${hmVars.MCFLY_KEY_SCHEME}"
+        export LOCALE_ARCHIVE_2_27="${hmVars.LOCALE_ARCHIVE_2_27}"
+        export TERMINFO_DIRS="''${TERMINFO_DIRS:-/run/current-system/sw/share/terminfo}:${pkgs.kitty.terminfo}/share/terminfo"
+        export XDG_CONFIG_DIRS="''${XDG_CONFIG_DIRS:+$XDG_CONFIG_DIRS:}${devXdgConfig}"
+        : "''${STARSHIP_CONFIG:=${devXdgConfig}/starship.toml}"
+        export STARSHIP_CONFIG
+        _dev_home=${targetHome}
+        _dev_xdg_cfg="$_dev_home/.config"
+        if [ "$_dev_home" = "$HOME" ] && [ -n "''${XDG_CONFIG_HOME:-}" ]; then
+          _dev_xdg_cfg="$XDG_CONFIG_HOME"
+        fi
+        [ -e "$_dev_home/.gitconfig" ] || [ -e "$_dev_xdg_cfg/git/config" ] || export GIT_CONFIG_GLOBAL="${devGitConfig}"
+        [ -d "$_dev_xdg_cfg/direnv" ] || export DIRENV_CONFIG="''${DIRENV_CONFIG:-${devXdgConfig}/direnv}"
+        [ -d "$_dev_xdg_cfg/zellij" ] || export ZELLIJ_CONFIG_DIR="''${ZELLIJ_CONFIG_DIR:-${devXdgConfig}/zellij}"
+        unset _dev_home _dev_xdg_cfg
+      '';
+
+      repoScripts =
+        map
+          (
+            name:
+            pkgs.writeShellApplication {
+              inherit name;
+              text = builtins.readFile (./scripts + "/${name}.sh");
+            }
+          )
+          [
+            "inspect"
+            "host-tree"
+            "host-size"
+            "host-diff"
+            "host-dead"
+            "dns-warm"
+            "host-why"
+            "host-audit"
+          ];
+
       defaultShell = pkgs.mkShell {
         packages =
           rustPkgs
           ++ nixDevPkgs
+          ++ hmPackages
           ++ (builtins.attrValues wrappers)
           ++ [
-            pkgs.zsh
+            pkgs.neovim
             nixosRebuildWrapper
           ]
-          ++
-            map
-              (
-                name:
-                pkgs.writeShellApplication {
-                  inherit name;
-                  text = builtins.readFile (./scripts + "/${name}.sh");
-                }
-              )
-              [
-                "inspect"
-                "host-tree"
-                "host-size"
-                "host-diff"
-                "host-dead"
-                "dns-warm"
-                "host-why"
-                "host-audit"
-              ];
+          ++ repoScripts;
         shellHook = ''
           ${config.pre-commit.installationScript}
-          export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
           # `nix develop` can start in any subdir (or outside the repo via an
           # explicit flake ref); anchor at the flake root, not cwd.
           hook_root=$PWD
@@ -91,22 +206,32 @@
           if [ -d "$hook_root/packages/firecrawl-mcp" ] && { [ ! -e "$hook_root/packages/firecrawl-mcp/node_modules" ] || [ -L "$hook_root/packages/firecrawl-mcp/node_modules" ]; }; then
             ln -sfn ${config.packages.firecrawl-mcp.nodeModules}/node_modules "$hook_root/packages/firecrawl-mcp/node_modules"
           fi
-          if [ -z "$DIRENV_IN_ENVRC" ]; then
-            exec zsh
+          if [ -z "''${DIRENV_IN_ENVRC:-}" ]; then
+            ${mkShellEnvHook ''"$HOME"''}
+            export TMUX_TMPDIR="''${TMUX_TMPDIR:-''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}}"
+            case "$-" in
+              *i*) exec zsh ;;
+            esac
+          else
+            export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
           fi
         '';
       };
 
       sandboxShell = pkgs.mkShell {
-        packages = rustPkgs ++ [
-          pkgs.bubblewrap
-          pkgs.zsh
-          pkgs.unzip
-          pkgs.git
-        ];
+        packages =
+          rustPkgs
+          ++ hmPackages
+          ++ [
+            pkgs.bubblewrap
+            pkgs.unzip
+            pkgs.git
+            pkgs.neovim
+          ];
         shellHook = ''
           echo "Entering ephemeral sandbox as 'none'..."
-          export RUST_SRC_PATH="${pkgs.rustPlatform.rustLibSrc}"
+          ${mkShellEnvHook ''"/home/none"''}
+          export TMUX_TMPDIR=/tmp
 
           exec bwrap \
             --unshare-user --uid 65534 --gid 65534 \
@@ -117,7 +242,7 @@
             --ro-bind /etc/resolv.conf /etc/resolv.conf \
             --ro-bind /etc/ssl /etc/ssl \
             --ro-bind /etc/static /etc/static \
-            --bind /home/none /home/none \
+            --tmpfs /home/none \
             --dev /dev \
             --proc /proc \
             --tmpfs /tmp \

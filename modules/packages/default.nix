@@ -4,33 +4,28 @@
   pkgs,
   ...
 }:
-let
-  wrappers = import ../../packages/wrappers.nix { inherit pkgs; };
-in
 {
-  environment.systemPackages =
-    (with pkgs; [
-      bat
-      curl
-      dig
-      fd
-      git
-      jq
-      killall
-      ncdu
-      p7zip
-      pik
-      ripgrep
-      sops
-      ssh-to-age
-      stow
-      tree
-      unzip
-      wget
-      zip
-      zsh
-    ])
-    ++ (builtins.attrValues wrappers);
+  environment.systemPackages = with pkgs; [
+    bat
+    curl
+    dig
+    fd
+    git
+    jq
+    killall
+    ncdu
+    p7zip
+    pik
+    ripgrep
+    sops
+    ssh-to-age
+    stow
+    tree
+    unzip
+    wget
+    zip
+    zsh
+  ];
 
   programs.nh = {
     enable = true;

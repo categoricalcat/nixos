@@ -196,7 +196,10 @@ in
                 "/tmp"
               ]
               ++ lib.optional cfg.cveScan.scanContainers cacheDirs.trivy;
-              TimeoutStartSec = "1800s";
+              # Refresh-heavy runs (trivy DB + NVD import) exceed 30 min wall
+              # clock; a mid-extract kill also wedges the trivy cache for the
+              # next run (2026-11-21 17:41 slot died at 1800s).
+              TimeoutStartSec = "2h";
             };
           }
         );

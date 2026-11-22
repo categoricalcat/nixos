@@ -30,7 +30,7 @@ ______________________________________________________________________
 
 - **Primary Build Host (`yifuwuqi`)**: Accepts build delegations over SSH from clients, offloads compilation to configured remote builders, and stores resulting paths in the local Nix store.
 - **High-Performance Worker (`yitaishi`)**: Remote worker configured with `speedFactor = 360` to accelerate parallel C++/Rust/Linux kernel builds.
-- **Client Nodes (`yixiaoqing`, `yirukou`, `yichuang`)**: Request closures from `yifuwuqi`, minimizing laptop battery drain and router CPU usage.
+- **Client Nodes (`yixiaoqing`, `yichuang`)**: Request closures from `yifuwuqi`, minimizing laptop battery drain (`yirukou` deploys prebuilt closures remotely via `deploy-rs` with distributed builds disabled).
 
 ______________________________________________________________________
 
@@ -110,7 +110,7 @@ ______________________________________________________________________
 
 ## 5. Developer Shell Inspection Tools (`nix/devshell.nix`)
 
-Entering `nix develop` or running with `direnv` provides custom helper utilities:
+Entering `nix develop` (both default and `.#sandbox`) launches the configured `zsh`, `starship`, TUI, and `git`/`delta` shell environment from `users/home/shell.nix` and `users/programs/git.nix`; that works even on minimal hosts without Home Manager. The same shells provide the custom helper utilities and dev/AI wrappers (`nxd-agy`, `nxd-agent`, `nxd-opencode`, `seenix`, `diff-to-commit`, `lock-to-changelog`, `nixos-rebuild`, `git`, `neovim`, linters, and the inspection scripts below):
 
 | Command             | Purpose                                                                       |
 | ------------------- | ----------------------------------------------------------------------------- |

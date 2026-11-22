@@ -26,6 +26,10 @@
         ...
       }:
       {
+        # stylix still writes programs.wayprompt, which home-manager removed.
+        # Drop the target until stylix follows suit.
+        disabledModules = [ "${inputs.stylix}/modules/wayprompt/hm.nix" ];
+
         home = {
           backupFileExtension = "bkp";
           overwriteBackup = true;
@@ -52,6 +56,12 @@
             {
               animationRate = osConfig.desktop.animationRate;
             };
+      }
+      // lib.optionalAttrs (osConfig ? host) {
+        inherit (osConfig) host;
+      }
+      // lib.optionalAttrs (osConfig ? serverMode) {
+        inherit (osConfig) serverMode;
       }
     )
   ];

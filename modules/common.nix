@@ -27,12 +27,6 @@
     ../docs/service.nix
   ];
 
-  home-manager.sharedModules = [
-    {
-      inherit (config) host serverMode;
-    }
-  ];
-
   nix.package = lib.mkForce pkgs.lixPackageSets.lix_2_96.lix;
   nixpkgs.config = {
     allowUnfree = true;

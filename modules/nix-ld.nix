@@ -7,8 +7,8 @@
 
 {
   programs.nix-ld = {
-    enable = true;
-    libraries =
+    enable = lib.mkDefault true;
+    libraries = lib.mkIf config.programs.nix-ld.enable (
       with pkgs;
       [
         stdenv.cc.cc
@@ -44,6 +44,7 @@
         fontconfig
         libxcb-util
         libxcb-cursor
-      ];
+      ]
+    );
   };
 }

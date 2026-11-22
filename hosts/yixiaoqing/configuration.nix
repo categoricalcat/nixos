@@ -103,7 +103,10 @@ in
   services.fprintd.enable = true;
   security = {
     fido2.enable = true;
-    tpm-fido2.enable = true;
+    # Disabled so Chrome defaults to QR-code (caBLE/hybrid) passkeys: tpm-fido
+    # returns CTAP2_ERR_NO_CREDENTIALS without waiting for user presence, which
+    # aborts Chrome's WebAuthn dialog before the QR flow can be used.
+    tpm-fido2.enable = false;
     polkit.enable = true;
     pam.services = {
       login.fprintAuth = lib.mkDefault true;

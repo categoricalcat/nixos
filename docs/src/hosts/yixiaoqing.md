@@ -83,8 +83,8 @@ ______________________________________________________________________
 │ 2. Physical FIDO2 (pam_u2f)  │ Hardware USB security key    │
 │                              │ verification                 │
 ├──────────────────────────────┼──────────────────────────────┤
-│ 3. TPM2-FIDO2 Virtual Token  │ Virtual FIDO2 token via      │
-│                              │ TPM2 chip + /dev/uhid        │
+│ 3. TPM2-FIDO2 Virtual Token  │ Optional (disabled by        │
+│                              │ default for Chrome QR keys)  │
 ├──────────────────────────────┼──────────────────────────────┤
 │ 4. Host ED25519 Age Key      │ Decrypts Sops secrets        │
 └──────────────────────────────┴──────────────────────────────┘
@@ -92,7 +92,7 @@ ______________________________________________________________________
 
 - **Fingerprint PAM Auth**: `services.fprintd.enable = true` provides fast biometric unlock.
 - **Hardware FIDO2**: `security.pam.u2f` configured for interactive passwordless or dual-factor prompt.
-- **TPM2 Virtual FIDO2 Token**: Configured in `modules/services/tpm-fido2.nix` to expose a hardware-backed virtual security key through Linux `uhid`.
+- **TPM2 Virtual FIDO2 Token**: Available via `modules/services/tpm-fido2.nix`, disabled by default so Chrome defaults to QR-code (caBLE/hybrid) passkeys (`tpm-fido` returns `CTAP2_ERR_NO_CREDENTIALS` without user presence, preempting Chrome's QR flow).
 - **DMS Lock-Screen U2F Unlock**: The DMS lock screen accepts the FIDO2 security key via the `dankshell-u2f` PAM service (`programs.dank-material-shell.lockscreen.securityKey.enable` on the NixOS-side DMS module).
 
 ______________________________________________________________________

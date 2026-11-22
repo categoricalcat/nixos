@@ -28,14 +28,19 @@ let
 
   mkNixBuild =
     {
+      useRemoteBuilders ? true,
       remoteBuilder,
       maxJobs,
       speedFactor,
     }:
     {
       enable = true;
-      useRemoteBuilders = true;
-      inherit remoteBuilder maxJobs speedFactor;
+      inherit
+        useRemoteBuilders
+        remoteBuilder
+        maxJobs
+        speedFactor
+        ;
       systems = [ "x86_64-linux" ];
     };
 
@@ -476,6 +481,7 @@ in
       ];
 
       nixBuild = mkNixBuild {
+        useRemoteBuilders = false;
         remoteBuilder = false;
         maxJobs = 1;
         speedFactor = 60;

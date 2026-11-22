@@ -21,5 +21,5 @@
     exec nix run github:anomalyco/opencode#opencode -- "$@"
   '';
 
-  seenix = import ./see.nix { inherit pkgs; };
+  seenix = pkgs.callPackage ./seenix { };
 }

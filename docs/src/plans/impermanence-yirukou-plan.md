@@ -162,13 +162,13 @@ flowchart TD
         subgraph HOMEYI["home/yi/ Bind Mounts"]
             SSH[".ssh/ (mesh, git, ai keys)"]
             SOPS[".config/sops/ (age identity)"]
-            HIST[".zsh_history"]
+            HIST[".bash_history"]
             REPO["the.files/ (flake git repository)"]
         end
         subgraph HOMEROOT["root/ Bind Mounts"]
             ROOTSSH[".ssh/ (known_hosts)"]
             ROOTSOPS[".config/sops/"]
-            ROOTHIST[".zsh_history"]
+            ROOTHIST[".bash_history"]
         end
     end
 
@@ -254,7 +254,7 @@ ______________________________________________________________________
            "the.files"
          ];
          files = [
-           ".zsh_history"
+           ".bash_history"
          ];
        };
        users.root = {
@@ -263,7 +263,7 @@ ______________________________________________________________________
            ".config/sops"
          ];
          files = [
-           ".zsh_history"
+           ".bash_history"
          ];
        };
      };

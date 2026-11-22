@@ -6,14 +6,15 @@ ______________________________________________________________________
 
 ## 1. System & Hardware Specifications
 
-| Component               | Specification                                                                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Role**                | Perimeter Router, Firewall, DHCP, Reverse Proxy, Primary DNS                                                                        |
-| **Architecture**        | `x86_64-linux` (Intel Multi-NIC Platform)                                                                                           |
-| **Kernel & Boot**       | Standard kernel with `modules/boot-common.nix`, systemd-boot                                                                        |
-| **Filesystems**         | Ext4 root (`685d4cb2-aba3-44d5-b9ba-20a9692ff385`), dedicated Swap partition (`29757075-8a2d-4171-af0f-1027608f9641`), VFAT `/boot` |
-| **Power Profile**       | Headless server mode, power management sleep states disabled                                                                        |
-| **Secrets Integration** | Sops-nix with host ED25519 SSH key (`/persist/keys/ssh/ssh_host_ed25519_key`)                                                       |
+| Component               | Specification                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Role**                | Perimeter Router, Firewall, DHCP, Reverse Proxy, Primary DNS                                                                         |
+| **Architecture**        | `x86_64-linux` (Intel Multi-NIC Platform)                                                                                            |
+| **Kernel & Boot**       | Standard kernel with `modules/boot-common.nix`, systemd-boot                                                                         |
+| **Filesystems**         | Ext4 root (`685d4cb2-aba3-44d5-b9ba-20a9692ff385`), dedicated Swap partition (`29757075-8a2d-4171-af0f-1027608f9641`), VFAT `/boot`  |
+| **Power Profile**       | Headless server mode, power management sleep states disabled                                                                         |
+| **System Profile**      | Minimal appliance (`bash`, no Home Manager/docs/`nix-ld`/generic firmware; dev tools on demand via `nix develop`), monitoring intact |
+| **Secrets Integration** | Sops-nix with host ED25519 SSH key (`/persist/keys/ssh/ssh_host_ed25519_key`)                                                        |
 
 ______________________________________________________________________
 

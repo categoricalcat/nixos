@@ -134,14 +134,21 @@ in
 
       [diff]
       	colorMoved = default
-      ${lib.optionalString (config.home.username == "root") ''
-        # Root reads and builds flakes in yi-owned worktrees and does not sign as yi.
-        [commit]
-        	gpgsign = false
+      ${lib.optionalString
+        (lib.elem config.home.username [
+          "root"
+          "devshell"
+        ])
+        ''
+          # Root reads and builds flakes in yi-owned worktrees; the devshell
+          # sentinel has no yi signing key. Neither signs as yi.
+          [commit]
+          	gpgsign = false
 
-        [safe]
-        	directory = *
-      ''}
+          [safe]
+          	directory = *
+        ''
+      }
     '';
     force = true;
   };

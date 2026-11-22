@@ -2,7 +2,6 @@
 # and may be overwritten by future invocations.  Please make changes
 # to /etc/nixos/configuration.nix instead.
 {
-  config,
   lib,
   modulesPath,
   ...
@@ -46,5 +45,12 @@
   ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware = {
+    # All 6 NICs use firmware-less igc and storage uses nvme/ahci, so skip
+    # redistributable wireless/audio/GPU firmware blobs while keeping Intel CPU
+    # microcode updates active.
+    enableRedistributableFirmware = false;
+    wirelessRegulatoryDatabase = false;
+    cpu.intel.updateMicrocode = true;
+  };
 }
