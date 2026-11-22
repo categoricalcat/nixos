@@ -181,6 +181,7 @@ in
         package = pkgs.direnv;
         nix-direnv.enable = true;
         nix-direnv.package = pkgs.nix-direnv;
+        config.global.hide_env_diff = true;
       };
 
       starship = {
