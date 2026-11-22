@@ -18,7 +18,6 @@
     ../../modules/nix-settings.nix
     ../../modules/server-settings.nix
     ../../modules/networking/ipv6.nix
-    ../../modules/packages/network.nix
   ];
 
   system = {

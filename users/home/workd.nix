@@ -34,6 +34,6 @@
       if pkgs.stdenv.hostPlatform.isDarwin then "/Users/workd" else "/home/workd"
     );
 
-    packages = with pkgs; [ nodejs_26 ];
+    packages = (with pkgs; [ nodejs_26 ]) ++ (import ../../nix/cli-tools.nix { inherit pkgs; });
   };
 }

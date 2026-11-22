@@ -46,6 +46,7 @@
 
         sshfs
       ])
+      ++ (import ../../nix/cli-tools.nix { inherit pkgs; })
       ++ (with pkgs.haskellPackages; [
         ghc
         cabal-install

@@ -30,6 +30,16 @@ in
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
 
+      # The unit runs as yi but only sees the system PATH, not the user
+      # profile, so the search tools the agent policies rely on are pinned here.
+      path = [
+        pkgs.fd
+        pkgs.ripgrep
+        pkgs.jq
+        pkgs.curl
+        pkgs.git
+      ];
+
       # HM activation relinks opencode.json without changing this unit, so a
       # switch never restarts the daemon and it serves stale config. Restart
       # whenever the opencode settings change.

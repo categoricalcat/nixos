@@ -30,9 +30,6 @@ let
 in
 {
   config = {
-    # fd is embedded in fzf's FZF_DEFAULT_COMMAND and useful directly.
-    home.packages = [ pkgs.fd ];
-
     programs = {
       mcfly = {
         enable = true;

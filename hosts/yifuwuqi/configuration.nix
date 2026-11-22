@@ -24,7 +24,6 @@ in
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix
     ../../modules/packages
-    ../../modules/packages/network.nix
     ../../modules/services/postgresql.nix
     ../../modules/server-settings.nix
     ../../modules/nix-access-tokens.nix

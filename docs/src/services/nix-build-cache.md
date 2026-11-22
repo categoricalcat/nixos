@@ -110,7 +110,7 @@ ______________________________________________________________________
 
 ## 5. Developer Shell Inspection Tools (`nix/devshell.nix`)
 
-Entering `nix develop` (both default and `.#sandbox`) launches the configured `zsh`, `starship`, TUI, and `git`/`delta` shell environment from `users/home/shell.nix` and `users/programs/git.nix`; that works even on minimal hosts without Home Manager. The same shells provide the custom helper utilities and dev/AI wrappers (`nxd-agy`, `nxd-agent`, `nxd-opencode`, `seenix`, `diff-to-commit`, `lock-to-changelog`, `nixos-rebuild`, `git`, `neovim`, linters, and the inspection scripts below):
+Entering `nix develop` (both default and `.#sandbox`) launches the configured `zsh`, `starship`, TUI, and `git`/`delta` shell environment from `users/home/shell.nix` and `users/programs/git.nix`; that works even on minimal hosts without Home Manager. Besides the linters and the custom helper utilities/dev-AI wrappers (`nxd-agy`, `nxd-agent`, `nxd-opencode`, `seenix`, `diff-to-commit`, `lock-to-changelog`, `nixos-rebuild`, `git`, `neovim`), the shell carries the general CLI suite from `nix/cli-tools.nix` (e.g. `bat`, `ncdu`, `tree`, `fd`, `ripgrep`, archives) that no host installs system-wide, plus the network and container admin tools (e.g. `nmap`, `tcpdump`, `iftop`, `nethogs`, `iperf3`, `traceroute`, `ethtool`, `podman-compose`, `skopeo`, `dive`, `buildah`). The inspection scripts below are also on PATH:
 
 | Command             | Purpose                                                                       |
 | ------------------- | ----------------------------------------------------------------------------- |

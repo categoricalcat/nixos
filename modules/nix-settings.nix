@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   inputs,
   ...
 }:
@@ -10,10 +11,25 @@
     ./services/attic/client.nix
   ];
 
-  environment.etc = lib.mapAttrs' (name: value: {
-    name = "nix/inputs/${name}";
-    value.source = value.outPath;
-  }) (lib.filterAttrs (name: _: name != "self") inputs);
+  environment = {
+    systemPackages = [
+      (pkgs.writeShellApplication {
+        name = "nxd";
+        text = ''
+          if [[ $# -eq 0 || "''${1-}" == -* ]]; then
+            set -- "github:categoricalcat/nixos" "$@"
+          fi
+
+          exec ${lib.escapeShellArg (lib.getExe config.nix.package)} develop "$@"
+        '';
+      })
+    ];
+
+    etc = lib.mapAttrs' (name: value: {
+      name = "nix/inputs/${name}";
+      value.source = value.outPath;
+    }) (removeAttrs inputs [ "self" ]);
+  };
 
   nix = {
     registry = lib.mapAttrs (_: flake: { inherit flake; }) inputs;

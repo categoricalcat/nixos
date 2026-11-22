@@ -168,12 +168,4 @@ in
       }) config.virtualisation.oci-containers.containers)
     ];
   };
-
-  environment.systemPackages = with pkgs; [
-    buildah
-    dive
-    podman-compose
-    podman-tui
-    skopeo
-  ];
 }

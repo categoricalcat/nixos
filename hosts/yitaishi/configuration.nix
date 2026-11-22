@@ -73,7 +73,6 @@ in
     ../../modules/gaming.nix
     ../../modules/locale.nix
     ../../modules/packages
-    ../../modules/packages/network.nix
     ../../modules/desktop.nix
     ../../modules/boot-common.nix
     ../../modules/hardware/fanatec

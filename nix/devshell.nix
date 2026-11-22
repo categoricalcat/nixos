@@ -62,7 +62,24 @@
         pkgs.systemd
       ];
 
-      nixDevPkgs = [
+      nixDevPkgs = (import ./cli-tools.nix { inherit pkgs; }) ++ [
+        # Network and container admin CLIs: privileged or interactive,
+        # needed only while working on the repo, on top of the shared
+        # CLI suite.
+        pkgs.brotli
+        pkgs.ethtool
+        pkgs.iftop
+        pkgs.iperf3
+        pkgs.nethogs
+        pkgs.nftables
+        pkgs.nmap
+        pkgs.tcpdump
+        pkgs.traceroute
+        pkgs.buildah
+        pkgs.dive
+        pkgs.podman-compose
+        pkgs.podman-tui
+        pkgs.skopeo
         pkgs.statix # Lints and suggestions for Nix
         pkgs.deadnix # Nix dead code locator
         pkgs.nixf-diagnose # Nix semantic linter and auto-fixer
@@ -83,7 +100,6 @@
         pkgs.deploy-rs # Multi-profile NixOS deployment tool
         pkgs.fzf # Command-line fuzzy finder
         pkgs.git # Version control (needed for flakes/hooks on minimal hosts)
-        pkgs.jq # Command-line JSON processor
         pkgs.dnsx # Fast and multi-purpose DNS toolkit
         pkgs.curl # Transfer data with URLs
       ];

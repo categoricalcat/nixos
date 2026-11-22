@@ -1,30 +1,18 @@
 # System packages configuration module (Universal Base)
+#
+# Only what a host genuinely needs outside a login shell: root deploys and
+# edits secrets here directly. Everything interactive lives in `nix develop`
+# and `yi`'s Home Manager profile (nix/cli-tools.nix); nftables, curl and zsh
+# arrive through their own modules.
 
 {
   pkgs,
   ...
 }:
 {
-  environment.systemPackages = with pkgs; [
-    bat
-    curl
-    dig
-    fd
-    git
-    jq
-    killall
-    ncdu
-    p7zip
-    pik
-    ripgrep
-    sops
-    ssh-to-age
-    stow
-    tree
-    unzip
-    wget
-    zip
-    zsh
+  environment.systemPackages = [
+    pkgs.git
+    pkgs.sops
   ];
 
   programs.nh = {
