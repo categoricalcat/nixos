@@ -1,124 +1,99 @@
 # Impermanence on yirukou (Edge Router & Gateway)
 
-## Status: DRAFT — not started; repository and live root/memory evidence reviewed 2026-11-08
+## Status: DRAFT (reviewed and corrected 2026-11-22) — not started
 
 ## Objective
 
 Deploy **impermanence** (root-on-tmpfs with selective persistent storage under `/persist`) to **`yirukou`** using a zero-repartitioning, in-place Ext4 strategy with full rollback safety.
 
+`yirukou` keeps its **full monitoring stack** (security monitor, node/systemd/smartctl/nginx/adguard/unbound/valkey/smokeping/blackbox/process exporters, vector) and its **CVE scan**. Only the storage layout changes.
+
 ### Scope
 
 Owns:
 
-- `yirukou`'s filesystem layout, the persistence list, key staging, the boot-staged rollout and rollback.
+- `yirukou`'s mount layout, the persistence list, key staging, the boot-staged rollout and rollback.
+- The two shared-code changes impermanence forces: the unowned-file sweep root in `security-monitor`, and the initrd ordering proof in a VM test.
 
 Not owned here:
 
-- Network policy and service configuration on `yirukou`: the retired Service Security Architecture Plan and VPN to LAN Migration Plan (completed 2026-11-09, git history); live rules in [yirukou](../hosts/yirukou.md).
-- Certificates: [mTLS Architecture Plan](mtls-architecture-plan.md).
+- Network policy and service configuration on `yirukou` (retired plans; live rules in [yirukou](../hosts/yirukou.md)).
+- Certificates: [mTLS Architecture Plan](mtls-architecture-plan.md); the DNS
+  resolver hop is [mTLS on DNS](mtls-dns-plan.md).
 
-Persists state the other plans rely on: `/var/lib/tailscale` (the VPN to LAN plan's subnet router), `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter` (the security monitor that the service-security plan uses as gates), and `/persist/keys` (sops, through which the mTLS keys arrive).
+Persists state the other plans rely on: `/var/lib/tailscale` (VPN to LAN subnet router), `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter` (security-monitor gates), and `/persist/keys` (sops, through which mTLS keys arrive).
 
 ______________________________________________________________________
 
 ## Evidence Status
 
-- **Repository-verified**: the flake has no impermanence input or module;
-  `hosts/yirukou/hardware.nix` still configures the Ext4 partition as `/`.
-  The keys, SSH, sops, and security-monitor paths below are declared
-  conventions, not proof of a tmpfs-root deployment.
-- **Live-host verified 2026-11-08**: `/dev/nvme0n1p2` is mounted as `/` with
-  Ext4; `tailscaled` is active; `MemTotal` was `7854640 kB` and
-  `Active(anon)` was `852088 kB`.
-- **Operational verification pending**: actual partition free space,
-  DynamicUser state paths on `yirukou`, cache size, key staging, and every
-  post-reboot acceptance check must be repeated in the maintenance window.
+- **Repository-verified 2026-11-22**: no impermanence input or module; `/` is Ext4 in [hardware.nix](../../hosts/yirukou/hardware.nix); `nixos-rebuild` is absent from `yirukou`'s closure (`system.disableInstallerTools = true`); `nginx` denies loopback via `restrictedProxyConfig`; sops runs as `sops-install-secrets.service`.
+- **Input-verified 2026-11-22** against `/etc/nix/inputs`: bind mounts in a `fileSystems` entry are prefixed with `/sysroot` in the initrd and gain `x-systemd.requires-mounts-for=/sysroot/<depends>`; `utils.pathsNeededForBoot` includes `/var/log` and `/var/lib/nixos`; `findmnt` accepts one target per invocation; `nix flake lock --update-input` is deprecated under Lix 2.96.
+- **Live-host verified**: observations gathered on `yifuwuqi`, not `yirukou`. `yirukou` is `/` on `nvme0n1p2` Ext4 as of 2026-11-08; `tailscaled` active.
+- **Operational verification pending**: `yirukou` partition free space, `DynamicUser` paths, cache sizes, key staging, and every post-reboot acceptance check must be repeated in the maintenance window.
 
 ______________________________________________________________________
 
 ## Current State
 
-1. **Current Root Layout**:
+1. **Root layout** (`nvme0n1p2` is the whole ext4 filesystem, not just `/`):
    - `nvme0n1p1` (1 GiB): EFI System Partition (`/boot`, VFAT, UUID `7B94-F350`).
-   - `nvme0n1p2` (~239 GiB): Traditional persistent root (`/`, Ext4, UUID `685d4cb2-aba3-44d5-b9ba-20a9692ff385`).
-   - `nvme0n1p3` (~9 GiB): Dedicated Swap (`[SWAP]`, UUID `29757075-8a2d-4171-af0f-1027608f9641`).
-   - The 2026-11-08 live mount check confirms `nvme0n1p2` is still `/`; there
-     is no `/persist` mount or `/nix` bind mount. Recheck partition sizes and
-     free space before staging.
-1. **Memory & Performance**:
-   - The 2026-11-08 observation was `7854640 kB` total RAM and `852088 kB`
-     active anonymous memory. Re-measure under normal and peak gateway load;
-     it supersedes the older 2.6 GiB anonymous-memory estimate.
-   - A 2 GiB tmpfs root is expected to consume ~50–100 MiB while `/nix/store`
-     remains on disk, provided `/var/cache/vulnix` is persisted. Treat this as
-     a sizing hypothesis to verify, not a current measurement.
-1. **Fleet Security & Privilege Model**:
-   - `sudo` is disabled fleet-wide via `security.sudo.enable = false` in `modules/common.nix`.
-   - Administrative tasks and deployments on servers are conducted strictly via key-based root SSH (`ssh root@yirukou`) or `su -` from authorized operator hosts (`secrets/keys.nix`, `hosts/yirukou/configuration.nix`).
-1. **Repository Pre-alignment**:
-   - `secrets/keys.nix` already defines `keysFolder = "/persist/keys"`.
-   - `modules/services/ssh/default.nix` asserts that `${keys.paths.sshHostKey}` (`/persist/keys/ssh/ssh_host_ed25519_key`) exists and is non-empty before starting `sshd`.
-   - `secrets/sops.nix` targets `defaultSopsFile = "/persist/keys/sops/secrets.yaml"` and uses the host SSH key as its age identity.
-   - `docs/src/services/secrets.md` documents: *"This repository assumes impermanence hosts keep private runtime identity under `/persist/keys`."*
-   - Before cutover, `/persist/keys` is a directory on the persistent root, not
-     a separate mount. The path convention becomes the intended mount layout
-     only after the staged reboot.
-1. **Security Monitor State**:
-   - `hosts/yirukou/services.nix` enables `services.security-monitor`. The
-     shared schedule is `05:30` and `17:30` with a 15-minute timer delay
-     (`modules/maintenance.nix`); live timer observations can therefore run
-     later than the calendar slot.
-   - The NVD cache size recorded on `yifuwuqi` is a planning reference, not
-     evidence of the current `yirukou` cache size; measure it before migration.
-   - Scan results, the fast audit and `gateway_failover.prom` live in `/var/lib/prometheus-node-exporter/textfile`.
-1. **DynamicUser State Directories**:
-   - AdGuardHome, kea and vector run with `DynamicUser = true` (nixpkgs modules). Their data lives in `/var/lib/private/<name>`; `/var/lib/<name>` is a symlink that systemd manages, so persisting it does not persist the data. Confirmed on `yifuwuqi` for AdGuardHome and vector.
-   - Confirm this layout on `yirukou` during Phase 2; evidence from
-     `yifuwuqi` is not sufficient for the target host.
+   - `nvme0n1p2` (~239 GiB): Ext4 root, UUID `685d4cb2-aba3-44d5-b9ba-20a9692ff385`.
+   - `nvme0n1p3` (~9 GiB): swap, UUID `29757075-8a2d-4171-af0f-1027608f9641`.
+1. **The store needs no migration.** Mounting `nvme0n1p2` at `/persist` moves the entire filesystem, so `<disk>/nix` becomes `/persist/nix`; every other absolute path (`<disk>/var/lib/tailscale`, `<disk>/etc/machine-id`) likewise reappears at the same relative location. `keys/` is the only directory whose path changes meaning, because the convention is `/persist/keys` while the disk path is `<disk>/persist/keys` (Decision 3).
+1. **Deployment lane** ([configuration.nix:25](../../hosts/yirukou/configuration.nix)): `system.disableInstallerTools = true`, so `nixos-rebuild` does not exist on the host. Deploys run from `yifuwuqi` via `deploy .#yirukou` (`nix/deploy.nix`) or `ci/deploy.sh`, both as root over key-based SSH. `sudo` is disabled fleet-wide.
+1. **Repository pre-alignment**: [keys.nix](../../secrets/keys.nix) defines `keysFolder = "/persist/keys"`; `modules/services/ssh` asserts the host key exists before `sshd` starts; [sops.nix](../../secrets/sops.nix) reads `defaultSopsFile` from the same folder and sets `useSystemdActivation = true`, producing **`sops-install-secrets.service`**.
+1. **Monitoring that must survive**:
+   - `services.security-monitor` writes `${nodeTextfileDir}` = `/var/lib/prometheus-node-exporter/textfile` ([monitoring.nix](../../modules/addresses/monitoring.nix)) and keeps the NVD database in `/var/cache/vulnix` ([security-monitor/default.nix](../../modules/services/monitoring/security-monitor/default.nix)).
+   - The CVE scan's unowned-file sweep starts at `/` and uses `-xdev` ([cve-scan.sh:231](../../modules/services/monitoring/security-monitor/scripts/cve-scan.sh)).
+   - Exporter state is otherwise `RuntimeDirectory`-only; `nginx` uses `/var/log/nginx`, `/var/cache/nginx`, `/var/lib/nginx`; `vector` is `DynamicUser` with `StateDirectory = vector`.
+1. **`DynamicUser` state**: AdGuardHome, kea and vector keep data in `/var/lib/private/<name>`; `/var/lib/<name>` is a systemd-managed symlink. Confirmed for AdGuardHome and vector on `yifuwuqi`; confirm kea on `yirukou` in Phase 2.
+1. **Generational rollback is time-boxed**: `boot.loader.systemd-boot.configurationLimit = 10` plus `nix.gc --delete-older-than 7d` ([configuration.nix:69](../../hosts/yirukou/configuration.nix)) means generation N-1 disappears about seven days after the cutover.
 
 ______________________________________________________________________
 
 ## Decisions
 
-### 1. Root on tmpfs (Ext4 underlying `/persist`), NOT Btrfs/ZFS Reformatting
+### 1. Root on tmpfs, existing Ext4 mounted at `/persist`
 
-- **Decision**: Mount `/` as a 2 GiB `tmpfs` (`mode=755,size=2G`). Mount the existing Ext4 partition (`nvme0n1p2`) at `/persist` with `neededForBoot = true`. Bind-mount `/persist/nix` to `/nix` with `neededForBoot = true` and `depends = [ "/persist" ]`.
-- **Rationale**:
-  - Requires **zero disk repartitioning or filesystem formatting**.
-  - No risk of filesystem corruption or storage migration failures during rollout.
-  - Full rollback safety: selecting the previous generation in `systemd-boot` immediately boots back into persistent Ext4 root without touching disk partitions.
-  - Zero performance overhead; tmpfs uses negligible RAM (~50–100 MiB) because the Nix store and the vulnix cache remain on disk.
+Mount `/` as a 2 GiB tmpfs and the whole existing Ext4 filesystem at `/persist`. Zero repartitioning, zero formatting, and selecting generation N-1 in `systemd-boot` boots straight back into the persistent Ext4 root.
 
-### 2. State Isolation via `impermanence` Module
+### 2. Initrd-critical binds declared as `fileSystems`, the rest by impermanence
 
-- **Decision**: Introduce `inputs.impermanence` (`github:nix-community/impermanence`) to manage bind mounts and symlinks under `/persist`.
-- **Rationale**: Clean, declarative abstraction that creates `systemd.mounts` units before `local-fs.target` and before application daemons start, eliminating race conditions with system services.
+`/nix`, `/var/log` and `/var/lib/nixos` are in `utils.pathsNeededForBoot`, so they must exist *inside the initrd*. The impermanence module generates those initrd mounts (`boot.initrd.systemd.mounts`) with `DefaultDependencies = false` and no dependency on the `/persist` mount, whereas a `fileSystems` entry with `depends = [ "/persist" ]` renders `x-systemd.requires-mounts-for=/sysroot/persist` through the fstab generator. Declaring the initrd-critical binds as `fileSystems` therefore buys explicit ordering from the mechanism the repo already relies on, and leaves `environment.persistence` for stage-2 paths only.
 
-### 3. Dual-Layout Key Staging (`/keys` and `/persist/keys`)
+`/var/log` must be an initrd bind anyway: `services.journald` is `Storage = "persistent"` with `SystemMaxUse = 800M`, so the journal lives under `/var/log/journal`.
 
-- **Decision**: Prior to rebooting into the new generation, copy `/persist/keys` to `/keys` on `nvme0n1p2` (`cp -a /persist/keys /keys` as root).
-- **Rationale**:
-  - On the traditional root, the host keys reside at `/persist/keys` on partition `nvme0n1p2`.
-  - Before cutover, `/persist/keys` is a directory on the traditional root;
-    it is not proof that an impermanence mount layout is already active.
-  - When `nvme0n1p2` is mounted at `/persist`, its root directory becomes `/persist`. An existing `/persist/keys` folder on that disk would therefore be visible at `/persist/persist/keys`.
-  - Staging `/keys` on `nvme0n1p2` ensures that when mounted at `/persist`, it resolves precisely to `/persist/keys`.
-  - Leaving `/persist/keys` intact on disk guarantees that rolling back to the previous generation continues reading `nvme0n1p2:/persist/keys` seamlessly.
+### 3. Dual-layout key staging (`/keys` copy)
 
-### 4. Staged Generation Activation (`boot` + `reboot`, never `switch`)
+Before the reboot, `cp -a /persist/keys /keys` as root. On the cutover generation `nvme0n1p2` mounts at `/persist`, so disk path `keys/` appears at `/persist/keys`; the legacy `<disk>/persist/keys` appears at `/persist/persist/keys` and is read by generation N-1 only.
 
-- **Decision**: Deploy the new generation via `nixos-rebuild boot` (or `deploy --boot`), followed by an explicit `reboot`. Never execute `nixos-rebuild switch`.
-- **Rationale**: The Linux kernel cannot live-pivot the active root mount (`/`) from a physical block device (Ext4) to `tmpfs` while running processes, systemd, and open file descriptors exist. The change must be staged in the bootloader and applied during early initrd boot.
+### 4. Staged activation (`boot` + reboot, never `switch`)
 
-### 5. Complete Service State & Systemd Timers Persistence
+The running kernel cannot pivot `/` from a block device to tmpfs. Deploy with `deploy .#yirukou --boot`, then reboot.
 
-- **Decision**: In addition to daemon state directories (`/var/lib/{acme,tailscale,unbound,redis,goaccess,chrony}`, plus `/var/lib/private` for the `DynamicUser` services AdGuardHome, kea and vector), persist `/var/lib/systemd/timers`, `/var/lib/systemd/coredump`, and the security monitor's `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter`.
-- **Rationale**:
-  - Systemd records the last execution timestamp for `Persistent=true` timers (e.g. CVE scans, log rotation) in `/var/lib/systemd/timers`. Without persisting this directory, systemd executes every persistent timer immediately upon every reboot, creating startup CPU and I/O storms.
-  - `/var/lib/systemd/coredump` preserves post-mortem debugging data across unexpected router crashes.
-  - `DynamicUser` services keep their data in `/var/lib/private/<name>` (Current State, item 6), so `/var/lib/private` is persisted with mode `0700` instead of the `/var/lib/<name>` symlinks.
-  - On the tmpfs root, the 1.2 GiB vulnix cache would take most of the 2 GiB and be re-downloaded on every boot. The textfile directory keeps the CVE results and `gateway_failover.prom` between scans and WAN transitions; without it those metrics read as missing until the next run.
-  - `/var/lib/tailscale` keeps the node key and approved `10.42.0.0/24` route that the VPN to LAN plan's subnet router depends on.
+### 5. Monitoring and the CVE scan stay on `yirukou`
+
+`/var/cache/vulnix`, `/var/lib/prometheus-node-exporter` and `/var/lib/systemd/timers` are persisted. Because the tmpfs root turns `find / -xdev` into a sweep of RAM, the sweep root becomes a module option and `yirukou` sets it to `/persist` (Decision 7).
+
+### 6. Service state persisted
+
+- `/var/lib/{acme,tailscale,unbound,redis,goaccess,chrony,private,prometheus-node-exporter}`
+- `/var/lib/systemd/{coredump,timers}`
+- `/var/cache/vulnix`
+- `/var/log` (initrd bind, Decision 2)
+- `/var/lib/nixos` (initrd bind; keeps uid/gid allocation stable for `nix-builder`, `ai`, and every `DynamicUser` peer), plus `/var/lib/logrotate.status` and `/var/lib/systemd/random-seed` as files.
+- Homes: `yi` (`.ssh` 0700, `.config/sops` 0700, `the.files`), `root` (`.ssh` 0700, `.config/sops` 0700), plus `.bash_history` for both.
+
+`/var/lib/systemd/network` is deliberately **not** persisted: systemd's default `DUIDType=vendor` derives the DHCP DUID from the persisted machine-id, leaving that directory empty (verified on `yifuwuqi`). The WAN lease check below confirms the derivation still holds after the cutover.
+
+### 7. Sweep root as a module option
+
+`find / -xdev` cannot see `/persist`, `/nix`, or any bind mount from a tmpfs root, so `node_security_unowned_files` would read near-zero and the gate would silently pass. `services.security-monitor.unownedSweepRoot` defaults to `"/"` and is `"/persist"` on `yirukou`; prune paths derive from it.
+
+### 8. Prove the layout in a VM test before touching the router
+
+`pkgs.testers.runNixOSTest` is already used in the flake (`gateway-failover`, `dr-recovery`). A two-disk test boots tmpfs root + ext4 `/persist`, reboots, and asserts every bind, the canary file and machine-id stability. This is the only way to settle Decision 2 before a remote reboot.
 
 ______________________________________________________________________
 
@@ -126,68 +101,30 @@ ______________________________________________________________________
 
 ```mermaid
 flowchart TD
-    ROOT["/ (tmpfs 2G — wiped on every boot)"]
+    ROOT["/ tmpfs 2G, wiped every boot"]
+    ROOT --> PERSIST["/persist ext4 nvme0n1p2 (neededForBoot)"]
+    ROOT --> BOOT["/boot vfat nvme0n1p1"]
+    ROOT --> NIX["/nix bind to /persist/nix"]
+    ROOT --> VLOG["/var/log bind to /persist/var/log"]
+    ROOT --> VNIXOS["/var/lib/nixos bind to /persist/var/lib/nixos"]
 
-    subgraph Volatile["Volatile RAM (/dev/shm, /tmp, /run, /etc)"]
-        VOL["Ephemeral system state & caches"]
-    end
-
-    subgraph Mounts["Core Mounts (neededForBoot)"]
-        NIX["/nix/ (Store Mount)"]
-        PERSIST["/persist/ (Ext4 mount: /dev/nvme0n1p2)"]
-        BOOT["/boot/ (VFAT: /dev/nvme0n1p1)"]
-    end
-
-    ROOT --> Volatile
-    ROOT --> Mounts
-
-    NIX -.->|"bind-mount (depends = ['/persist'])"| PNIX["/persist/nix"]
-
-    subgraph PersistedState["/persist/ Hierarchy (underlying nvme0n1p2)"]
-        KEYS["keys/ (SSH host key & SOPS payload)"]
-        MID["etc/machine-id (Persisted machine ID)"]
-        subgraph VARLIB["var/lib/ Bind Mounts"]
-            direction TB
-            ACME["acme/ (*.aset.love certs)"]
-            TS["tailscale/ (node key & wireguard state)"]
-            PRIV["private/ (DynamicUser state: AdGuardHome, kea leases, vector)"]
-            UNB["unbound/ (root.key & DNSSEC anchors)"]
-            VALKEY["redis/ (Valkey L2 DNS cache dump)"]
-            GOA["goaccess/ (web analytics DB)"]
-            SYS["systemd/ (coredump, timers)"]
-            OTHERS["chrony, nixos, prometheus-node-exporter"]
-        end
-        VARLOG["var/log/ (journald & nginx access logs)"]
-        VARCACHE["var/cache/vulnix/ (NVD database for CVE scans)"]
-        subgraph HOMEYI["home/yi/ Bind Mounts"]
-            SSH[".ssh/ (mesh, git, ai keys)"]
-            SOPS[".config/sops/ (age identity)"]
-            HIST[".bash_history"]
-            REPO["the.files/ (flake git repository)"]
-        end
-        subgraph HOMEROOT["root/ Bind Mounts"]
-            ROOTSSH[".ssh/ (known_hosts)"]
-            ROOTSOPS[".config/sops/"]
-            ROOTHIST[".bash_history"]
-        end
-    end
-
-    PERSIST --> KEYS
-    PERSIST --> MID
-    PERSIST --> VARLIB
-    PERSIST --> VARLOG
-    PERSIST --> VARCACHE
-    PERSIST --> HOMEYI
-    PERSIST --> HOMEROOT
+    PERSIST --> PKEYS["keys/ (sshd + sops identity)"]
+    PERSIST --> PLEGACY["persist/keys (generation N-1 only)"]
+    PERSIST --> PPRIV["var/lib/private 0700 (AdGuardHome, kea, vector)"]
+    PERSIST --> PVAR["var/lib/{acme,tailscale,unbound,redis,goaccess,chrony}"]
+    PERSIST --> PSYS["var/lib/systemd/{coredump,timers}"]
+    PERSIST --> PMON["var/lib/prometheus-node-exporter, var/cache/vulnix"]
+    PERSIST --> PHOME["home/yi, root"]
 ```
 
 ______________________________________________________________________
 
 ## Phases
 
-### Phase 1 — Flake & Module Updates
+### Phase 1 — Repository changes
 
-1. **Add Impermanence Input** to `flake.nix`:
+1. **`flake.nix` input** (alphabetical slot near the other `nix-community` inputs):
+
    ```nix
    impermanence = {
      url = "github:nix-community/impermanence";
@@ -195,318 +132,303 @@ ______________________________________________________________________
      inputs.home-manager.follows = "home-manager";
    };
    ```
-1. **Wire Module** in `flake.nix` under `nixosConfigurations.yirukou`:
+
+1. **`flake.nix:88`** — keep the shared `mkNixosHost` factory; do not hand-write a second `nixosSystem`:
+
    ```nix
-   yirukou = nixpkgs.lib.nixosSystem {
-     specialArgs = { inherit inputs global; };
-     modules = [
-       inputs.impermanence.nixosModules.impermanence
-       sops-nix.nixosModules.sops
-       home-manager.nixosModules.home-manager
-       ./hosts/yirukou/configuration.nix
-     ];
-   };
+   yirukou = mkNixosHost "yirukou" [ inputs.impermanence.nixosModules.impermanence ];
    ```
-1. **Create `hosts/yirukou/impermanence.nix`**:
+
+1. **New `hosts/yirukou/storage.nix`** (one file: mount layout plus persistence list), imported from `hosts/yirukou/configuration.nix`:
+
    ```nix
-   { ... }:
+   { lib, ... }:
    {
-     environment.persistence."/persist" = {
-       hideMounts = true;
-       directories = [
-         # Core Network & Ingress Services (Tier 1)
-         "/var/lib/acme"
-         "/var/lib/tailscale"
-
-         # DynamicUser services (AdGuardHome, kea, vector) keep their data
-         # here; /var/lib/<name> is a symlink that systemd manages.
-         {
-           directory = "/var/lib/private";
-           mode = "0700";
-         }
-
-         # DNS, Web Analytics & Clock Drift (Tier 2)
-         "/var/lib/unbound"
-         # yirukou runs its own valkey as Unbound's L2 cache; without this the
-         # RDB snapshot is lost on every boot and the cache starts cold.
-         "/var/lib/redis"
-         "/var/lib/goaccess"
-         "/var/lib/chrony"
-
-         # System, Observability & Core Dumps (Tier 2)
-         "/var/log"
-         "/var/lib/nixos"
-         "/var/lib/systemd/coredump"
-         "/var/lib/systemd/timers"
-
-         # Security monitor: the NVD cache would otherwise fill the tmpfs
-         # root and re-download every boot; textfile metrics span scans
-         "/var/cache/vulnix"
-         "/var/lib/prometheus-node-exporter"
-       ];
-       files = [
-         "/etc/machine-id"
-       ];
-       users.yi = {
-         directories = [
-           ".ssh"
-           ".config/sops"
-           "the.files"
-         ];
-         files = [
-           ".bash_history"
-         ];
+     fileSystems = {
+       "/" = {
+         device = "none";
+         fsType = "tmpfs";
+         options = [ "defaults" "size=2G" "mode=755" ];
        };
-       users.root = {
-         directories = [
-           ".ssh"
-           ".config/sops"
-         ];
-         files = [
-           ".bash_history"
-         ];
+
+       "/persist" = {
+         device = "/dev/disk/by-uuid/685d4cb2-aba3-44d5-b9ba-20a9692ff385";
+         fsType = "ext4";
+         neededForBoot = true;
        };
-     };
-   }
-   ```
-1. **Update `hosts/yirukou/hardware.nix`**:
-   ```nix
-   fileSystems = {
-     "/" = {
-       device = "none";
-       fsType = "tmpfs";
-       options = [
-         "defaults"
-         "size=2G"
-         "mode=755"
-       ];
-     };
-
-     "/persist" = {
-       device = "/dev/disk/by-uuid/685d4cb2-aba3-44d5-b9ba-20a9692ff385";
-       fsType = "ext4";
-       neededForBoot = true;
-     };
-
-     "/nix" = {
-       device = "/persist/nix";
+     }
+     // lib.genAttrs [ "/nix" "/var/log" "/var/lib/nixos" ] (dir: {
+       device = "/persist${dir}";
        fsType = "none";
        options = [ "bind" ];
        neededForBoot = true;
        depends = [ "/persist" ];
-     };
+     });
 
-     "/boot" = {
-       device = "/dev/disk/by-uuid/7B94-F350";
-       fsType = "vfat";
-       options = [
-         "fmask=0077"
-         "dmask=0077"
+     environment.persistence."/persist" = {
+       directories = [
+         "/var/lib/acme"
+         "/var/lib/tailscale"
+         # AdGuardHome, kea and vector keep data here; /var/lib/<name> is a
+         # systemd-managed symlink into private/.
+         { directory = "/var/lib/private"; mode = "0700"; }
+         "/var/lib/unbound"
+         "/var/lib/redis"
+         "/var/lib/goaccess"
+         "/var/lib/chrony"
+         "/var/lib/systemd/coredump"
+         "/var/lib/systemd/timers"
+         "/var/lib/prometheus-node-exporter"
+         "/var/cache/vulnix"
        ];
+       files = [
+         "/etc/machine-id"
+         "/var/lib/logrotate.status"
+         "/var/lib/systemd/random-seed"
+       ];
+       users.yi = {
+         directories = [
+           { directory = ".ssh"; mode = "0700"; }
+           { directory = ".config/sops"; mode = "0700"; }
+           "the.files"
+         ];
+         files = [ ".bash_history" ];
+       };
+       users.root = {
+         directories = [
+           { directory = ".ssh"; mode = "0700"; }
+           { directory = ".config/sops"; mode = "0700"; }
+         ];
+         files = [ ".bash_history" ];
+       };
      };
+   }
+   ```
+
+1. **`hosts/yirukou/hardware.nix`** — delete only the generated `"/"` entry (lines 28-31); the new definition lives in `storage.nix`. Leave `/boot` and `swapDevices` untouched so the generated file stays as close to `nixos-generate-config` output as possible.
+
+1. **`hosts/yirukou/services.nix`** — pin the sweep root:
+
+   ```nix
+   services.security-monitor = {
+     enable = true;
+     unownedSweepRoot = "/persist";
    };
    ```
-1. **Import in `hosts/yirukou/configuration.nix`**:
-   Add `./impermanence.nix` to `imports`.
 
-### Phase 2 — Pre-Migration Disk Staging (on `yirukou`)
+1. **`modules/services/monitoring/security-monitor/default.nix`** — add the option and thread it through:
 
-1. Connect as `root` on `yirukou`:
-   ```bash
-   ssh root@yirukou
+   ```nix
+   unownedSweepRoot = lib.mkOption {
+     type = lib.types.str;
+     default = "/";
+     description = "Filesystem root the unowned-file sweep starts at.";
+   };
    ```
-1. Copy `/persist/keys` to `/keys` on `nvme0n1p2`:
+
+   Pass it to `cve-scan.sh` as `--sweep-root`, and in the script replace the three literal `/`, `/nix` and `/var/lib/containers` references (lines 231-243) with `${SWEEP_ROOT}`, `${SWEEP_ROOT}/nix` and `${SWEEP_ROOT}/var/lib/containers`.
+
+1. **New `hosts/yirukou/storage-test.nix`**, wired in `nix/checks.nix` as `yirukou-storage = pkgs.testers.runNixOSTest ./hosts/yirukou/storage-test.nix;`. The test:
+
+   - root on tmpfs, `/persist` on a scratch ext4 disk, `imports = [ ./storage.nix ]` with `virtualisation.fileSystems` overrides for device and size;
+   - writes canaries into `/root`, `/persist`, `/var/log`, `/var/lib/private` and `/home/yi/.ssh`;
+   - reboots and asserts `/tmpfs`, `/persist` ext4, the three binds, canary survival, `0700` modes, and a stable `/etc/machine-id`.
+
+1. **Docs**: replace the filesystem/database narrative in [yirukou.md](../hosts/yirukou.md) with a link to this plan, and note the sweep-root option in [Monitoring](../services/monitoring.md).
+
+### Phase 2 — Pre-migration disk staging (on `yirukou`)
+
+1. Connect as root (`ssh root@yirukou`, port 24212).
+
+1. Copy the key tree to the post-cutover location:
+
    ```bash
    cp -a /persist/keys /keys
-   ```
-1. Verify key directory permissions and contents:
-   ```bash
    diff -r /persist/keys /keys
    ls -ld /keys /keys/ssh /keys/sops
-   ls -l /keys/ssh/ssh_host_ed25519_key /keys/sops/secrets.yaml
    ```
-1. Verify that all declared persistence directories exist on `nvme0n1p2`:
+
+1. Verify the store lives on this filesystem and is intact:
+
    ```bash
-   ls -ld /var/lib/{acme,tailscale,private,unbound,redis,goaccess,chrony,nixos,prometheus-node-exporter} /var/cache/vulnix /etc/machine-id /home/yi
+   findmnt -no FSTYPE,SOURCE /nix/store
+   test -f /persist/nix/var/nix/db/db.sqlite && echo store-db-ok
+   du -sh /nix /persist/keys /var/cache/vulnix /var/log
+   df -h /persist
    ```
-1. Confirm the `DynamicUser` layout and the cache size:
+
+1. Verify every declared persistence path exists on disk, and confirm the `DynamicUser` layout:
+
    ```bash
+   ls -ld /var/lib/{acme,tailscale,private,unbound,redis,goaccess,chrony,prometheus-node-exporter} \
+     /var/lib/systemd/{coredump,timers} /var/cache/vulnix /etc/machine-id /var/lib/logrotate.status
    ls -la /var/lib/private
-   ls -l /var/lib/AdGuardHome /var/lib/kea /var/lib/vector   # symlinks into private/
-   du -sh /var/cache/vulnix
+   ls -l /var/lib/AdGuardHome /var/lib/kea /var/lib/vector
    ```
 
-### Phase 3 — Build, Stage Boot Generation & Reboot
+1. Record the acceptance baseline before the cutover: `cat /etc/machine-id`, `systemctl list-timers --all`, `tailscale status --json | jq -r .Self.ID`, and `ls /var/lib/prometheus-node-exporter/textfile`.
 
-1. Lock flake input and evaluate closure from an authorized operator host (`yitaishi`):
+### Phase 3 — Build, stage, reboot (from `yifuwuqi`)
+
+1. Lock and evaluate:
+
    ```bash
-   nix flake lock --update-input impermanence
+   nix flake update impermanence
    nix flake check --no-build
-   nixos-rebuild dry-build --flake .#yirukou
-   ```
-1. Build and set the bootloader generation (do NOT `switch`):
-   - **Option A (via SSH on `yirukou`)**:
-     ```bash
-     ssh root@yirukou
-     cd /home/yi/the.files/nixos && git pull
-     nixos-rebuild boot --flake .#yirukou
-     ```
-   - **Option B (from operator client `yitaishi` via `deploy-rs`)**:
-     ```bash
-     # As root on yitaishi
-     deploy .#yirukou --boot
-     ```
-1. Reboot `yirukou`:
-   ```bash
-   ssh root@yirukou "reboot"
+   nix develop -c nixos-rebuild dry-build --flake .#yirukou
    ```
 
-### Phase 4 — Post-Migration Stabilization & Cleanup
+   `flake.lock` must be committed before deploying: deploy-rs and CI build from a clean tree. `nix flake lock --update-input` is deprecated under Lix 2.96.
 
-1. Perform complete system verification (see [Verification per Host](#verification-per-host)).
-1. After 7 days of stable production operation across reboots:
+1. Run the VM test: `nix build --no-link .#checks.x86_64-linux.yirukou-storage`.
+
+1. Stage the boot generation (never `switch`):
+
    ```bash
-   # Remove redundant legacy /persist directory on nvme0n1p2 (now mounted at /persist/persist)
+   deploy .#yirukou --boot        # as root on yifuwuqi
+   # or: ci/deploy.sh boot yirukou
+   ```
+
+   `ssh root@yirukou "nixos-rebuild boot"` is **not** an option: `system.disableInstallerTools = true` removes the command on that host.
+
+1. Confirm the entry before rebooting:
+
+   ```bash
+   ssh root@yirukou "ls -1t /boot/loader/entries | head -3; grep -H . /boot/loader/loader.conf"
+   ```
+
+1. Reboot: `ssh root@yirukou "systemctl reboot"`.
+
+### Phase 4 — Post-migration stabilization & cleanup
+
+1. Run the verification checklist below.
+
+1. Reboot once more and re-run the canary; a single successful boot cannot distinguish a correct bind order from a lucky one.
+
+1. After the first `nix-gc` run (about seven days) the generational rollback window closes and `/persist/persist/keys` no longer serves any bootable generation:
+
+   ```bash
    ssh root@yirukou "rm -rf /persist/persist"
    ```
+
+   Removing it earlier destroys the only identity that generation N-1 can read, since `sshd` and sops both require `/persist/keys`.
 
 ______________________________________________________________________
 
 ## Rollout Order
 
-Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md).
-This is a dedicated `yirukou` boot release: it may run after its own
-pre-migration revalidation and before a later `yirukou` feature release, but
-never in the same generation as VPN, service-security, or mTLS changes.
+Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md). This is a dedicated `yirukou` boot release: it may run after its own pre-migration revalidation and before a later `yirukou` feature release, but never in the same generation as VPN, service-security, or mTLS changes.
 
-1. **Staging**: Execute `cp -a /persist/keys /keys` as `root` on `yirukou`. Verify `diff -r /persist/keys /keys`.
-1. **Code**: Edit `flake.nix`, `hosts/yirukou/hardware.nix`, `hosts/yirukou/impermanence.nix`, `hosts/yirukou/configuration.nix`.
-1. **Build**: Run `nix flake lock --update-input impermanence` and verify closure evaluation via `nixos-rebuild dry-build --flake .#yirukou`.
-1. **Own Generation**: The impermanence generation carries no `yirukou` changes from the service-security, VPN to LAN or mTLS plans, so selecting generation $N-1$ reverts only the storage layout. Ship their `yirukou` changes before or after, never together.
-1. **Deploy**: Run `nixos-rebuild boot --flake .#yirukou` on `yirukou` (or `deploy .#yirukou --boot`, which `ci/deploy.sh boot yirukou` wraps; see [CI/CD](../services/ci-cd.md) section 5).
-1. **Reboot**: Run `reboot` on `yirukou`.
-1. **Verify**: Execute the verification checklist below.
+1. **Code**: `flake.nix`, `hosts/yirukou/storage.nix`, `hosts/yirukou/storage-test.nix`, `hosts/yirukou/hardware.nix`, `hosts/yirukou/configuration.nix`, `hosts/yirukou/services.nix`, `security-monitor/default.nix` and `cve-scan.sh`, `nix/checks.nix`.
+1. **Stage keys**: `cp -a /persist/keys /keys`; verify with `diff -r`.
+1. **Prove**: `nix flake update impermanence`, `nix flake check --no-build`, `nixos-rebuild dry-build`, `yirukou-storage` VM test. Commit `flake.lock`.
+1. **Own generation**: the impermanence generation carries no `yirukou` changes from other plans, so selecting generation N-1 reverts only the storage layout.
+1. **Boot**: `deploy .#yirukou --boot` from `yifuwuqi`.
+1. **Reboot**: `systemctl reboot` on the target.
+1. **Verify**: run the checklist, then reboot once more and repeat the canary.
 
 ### Cross-Plan Dependencies
 
-- **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md)
-  is the canonical dependency order.
-- **VPN to LAN**: the current persistent Ext4 root already retains
-  `/var/lib/tailscale`. If this plan lands, that directory must be persisted
-  so the subnet router keeps its node key and approved route after reboot.
-- **Service Security**: the current persistent root also retains the
-  security-monitor state used by its gates. After tmpfs cutover,
-  `/var/cache/vulnix`, `/var/lib/prometheus-node-exporter`, and timer state
-  become required persistence entries.
-- **mTLS**: internal mTLS can deploy before this plan while the root remains
-  persistent. `/persist/keys` staging is required only at this plan's tmpfs
-  cutover so sops can continue decrypting keys into `/run/secrets`.
-- **Release isolation**: all other `yirukou` changes ship in different
-  generations (Rollout Order step 4).
+- **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md) is the canonical dependency order.
+- **VPN to LAN**: the subnet router keeps its node key and approved route only if `/var/lib/tailscale` is persisted; confirmed by the tailscale acceptance check.
+- **Service Security**: its gates read `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter`; both are persisted, and Decision 7 keeps the sweep honest.
+- **mTLS**: the [mTLS HTTP phases](mtls-architecture-plan.md) and the
+  [DNS lane](mtls-dns-plan.md) can deploy before this plan while the root is
+  persistent. `/persist/keys` staging is required only at this cutover, so
+  sops keeps decrypting into `/run/secrets`.
+- **Release isolation**: all other `yirukou` changes ship in different generations.
 
 ______________________________________________________________________
 
 ## Rollback Strategy
 
-If `yirukou` fails to boot or experiences network issues during the impermanence migration:
+1. **Remote, before the network is up**: `systemctl reboot --boot-loader-entry=<entry>.conf`, with `<entry>` from `ls -1t /boot/loader/entries`. This is the preferred path because the console is not otherwise reachable.
+1. **Console**: at the `systemd-boot` menu (`boot.loader.timeout` is the 5 s default, so press a key early) select generation N-1.
+1. **Generation N-1** mounts `nvme0n1p2` as `/`, reads `/persist/keys`, and leaves all service data at its original path. Nothing on disk was modified except the added `/keys` copy.
+1. **Diagnose**: `journalctl -b -1 -u initrd-nixos-activation -u '*.mount' -u local-fs.target`.
+1. **If the initrd never reaches stage 2**, no shell exists (`boot.initrd.systemd.emergencyAccess` is unset). Consider enabling it for the cutover generation only and removing it after acceptance.
 
-1. **Bootloader Selection**:
-   - Access the machine console or serial/HDMI display during boot.
-   - In the `systemd-boot` menu, select generation $N-1$ (the previous traditional persistent Ext4 generation).
-1. **Filesystem Restoration**:
-   - Generation $N-1$ automatically mounts `nvme0n1p2` as `/`.
-   - `/persist/keys` remains untouched on `nvme0n1p2` and is read immediately by `sshd` and `sops`.
-   - All service directories under `/var/lib/` remain directly on `nvme0n1p2` without data loss.
-1. **Post-Rollback Inspection**:
-   - Once booted into generation $N-1$, inspect `journalctl -b -1` to diagnose why the impermanence generation failed.
+**The rollback window is bounded**: `nix.gc --delete-older-than 7d` removes generation N-1, and Phase 4 step 3 removes `/persist/persist`. After both, rollback requires reinstalling the previous configuration, not selecting a menu entry.
 
 ______________________________________________________________________
 
 ## Verification per Host
 
-Execute these checks following reboot into the impermanence generation:
+Run after the reboot into the impermanence generation. `findmnt` takes one target per call and reports a bind as the backing filesystem with an `[fsroot]` suffix, so each line is checked separately.
 
-- [ ] **Mount Hierarchy**:
+- [ ] **Mount hierarchy**:
+
   ```bash
-  findmnt -no TARGET,FSTYPE,SOURCE / /persist /nix
+  findmnt -no TARGET,FSTYPE,SOURCE /
+  findmnt -no TARGET,FSTYPE,SOURCE /persist
+  findmnt -no TARGET,FSTYPE,SOURCE /nix
+  findmnt -no TARGET,FSTYPE,SOURCE /var/log
+  findmnt -no TARGET,FSTYPE,SOURCE /var/lib/nixos
   ```
-  Expected:
-  - `/` -> `tmpfs none`
-  - `/persist` -> `ext4 /dev/nvme0n1p2`
-  - `/nix` -> `none /persist/nix` (bind mount)
-- [ ] **Memory Consumption**:
+
+  Expected: `/` -> `tmpfs tmpfs`; `/persist` -> `ext4 /dev/nvme0n1p2`; the three binds -> `ext4 /dev/nvme0n1p2[/persist/<name>]`.
+
+- [ ] **Space and RAM**:
+
   ```bash
   df -h / /persist
+  findmnt -no SOURCE /var/cache/vulnix
+  free -m
   ```
-  Expected: `/` usage ~50–100 MiB out of 2.0 GiB available; `findmnt /var/cache/vulnix` shows a bind mount from `/persist`, not tmpfs.
-- [ ] **WAN Routing & Failover**:
+
+  Expected: `/` shows 2.0 G with a small used figure; `/var/cache/vulnix` resolves under `/persist`; available memory still leaves headroom above the 2026-11-08 baseline of 852 MB anonymous.
+
+- [ ] **Boot ordering**: `systemctl --failed` and `journalctl -b -p err` show no failed `.mount` unit and no `nixos-activation` failure.
+
+- [ ] **WAN routing and failover**: `ip route show default; systemctl is-active wan-monitor`.
+
+- [ ] **Core daemons**: `systemctl is-active kea-dhcp4-server adguardhome unbound redis nginx tailscaled vector chronyd`.
+
+- [ ] **DHCP leases**: `cat /var/lib/kea/dhcp4.leases` still lists LAN and VLAN 42 clients.
+
+- [ ] **`DynamicUser` state**: `ls -la /var/lib/private; ls -l /var/lib/AdGuardHome` — `private/` holds AdGuardHome, kea and vector; the symlink is intact.
+
+- [ ] **DNS and DNSSEC**: `dig @127.0.0.1 -p 53 google.com +short; dig @127.0.0.1 -p 5335 cloudflare.com +dnssec`.
+
+- [ ] **TLS and proxy allowlist**: `stat /var/lib/acme/aset.love/fullchain.pem` (creation time unchanged), then
+
   ```bash
-  ip route show
-  systemctl is-active wan-monitor
+  curl -sk --resolve dns.aset.love:443:10.42.0.1 -o /dev/null -w '%{http_code}\n' \
+    https://dns.aset.love/dns-query
   ```
-  Expected: Default route points via active WAN (`enp7s0` or `enp6s0`), `wan-monitor` is `active`.
-- [ ] **Core Daemon Health**:
+
+  Expected `400` (valid TLS, vhost reached, allowlist passed, empty DoH body). A `403` means the request arrived without SNI and hit the deny rule; requesting `https://127.0.0.1/dns-query` cannot prove anything.
+
+- [ ] **Tailscale identity**: `tailscale status` — same node ID as the Phase 2 baseline, still advertising `10.42.0.0/24` and the exit node, no re-authentication.
+
+- [ ] **Security monitor**: `ls /var/lib/prometheus-node-exporter/textfile` shows `security_cve.prom`, `security_fast.prom` and `gateway_failover.prom`; in Prometheus `node_security_cve_last_scan_success{host="yirukou"} == 1`, `(time() - node_security_cve_last_scan_timestamp_seconds{host="yirukou"}) / 3600 < 26`, and `node_security_unowned_files{host="yirukou"}` is non-zero (a zero after the sweep-root change means the sweep ran on RAM again).
+
+- [ ] **Secrets and host key**: `systemctl is-active sops-install-secrets.service`; `cat /etc/machine-id` matches the Phase 2 baseline; `ssh -o StrictHostKeyChecking=yes root@yirukou hostname` shows the unchanged fingerprint.
+
+- [ ] **Timers**: `systemctl list-timers --all` matches the pre-migration run list; nothing fired spuriously at boot.
+
+- [ ] **Canary**:
+
   ```bash
-  systemctl is-active kea-dhcp4-server adguardhome unbound redis nginx tailscaled vector chronyd
-  ```
-  Expected: All units return `active`.
-- [ ] **DHCP Leases**:
-  ```bash
-  cat /var/lib/kea/dhcp4.leases
-  ```
-  Expected: Existing LAN and Untrusted VLAN leases retained.
-- [ ] **DynamicUser State**:
-  ```bash
-  ls -la /var/lib/private
-  ls -l /var/lib/AdGuardHome
-  ```
-  Expected: `private/` lists AdGuardHome, kea and vector; `/var/lib/AdGuardHome` is still a symlink; AdGuard Home keeps its settings.
-- [ ] **DNS Resolution & DNSSEC**:
-  ```bash
-  dig @127.0.0.1 -p 53 google.com +short
-  dig @127.0.0.1 -p 5335 cloudflare.com +dnssec
-  ```
-  Expected: Positive answers with valid DNSSEC signatures.
-- [ ] **TLS Certificates & Reverse Proxy**:
-  ```bash
-  stat /var/lib/acme/aset.love/fullchain.pem
-  curl -k https://127.0.0.1/dns-query
-  ```
-  Expected: ACME certificate valid without requesting a new certificate from Let's Encrypt.
-- [ ] **Tailscale Node Identity**:
-  ```bash
-  tailscale status
-  ```
-  Expected: Node is online, advertising `10.42.0.0/24` subnet and exit node without re-authentication (the VPN to LAN plan's Decision 1 depends on this route).
-- [ ] **Security Monitor**:
-  ```bash
-  ls /var/lib/prometheus-node-exporter/textfile
-  ```
-  Expected: `security_cve.prom`, `security_fast.prom` and `gateway_failover.prom` present. In Prometheus, `node_security_cve_last_scan_success{host="yirukou"}` is `1`, `(time() - node_security_cve_last_scan_timestamp_seconds{host="yirukou"}) / 3600` stays below 26, and `gateway_failover_primary_active{host="yirukou"}` exists.
-- [ ] **Secrets & Host Key**:
-  ```bash
-  systemctl status sops-nix.service
-  ssh -o StrictHostKeyChecking=yes root@yirukou hostname
-  ```
-  Expected: Key fingerprint unchanged, sops secrets decrypted into `/run/secrets`.
-- [ ] **Canary Persistence Test**:
-  ```bash
-  ssh root@yirukou "touch /root/volatile-canary /persist/persistent-canary && reboot"
-  ```
-  After reboot:
-  ```bash
-  ssh root@yirukou "[ ! -f /root/volatile-canary ] && [ -f /persist/persistent-canary ] && echo 'Canary Test PASSED' && rm -f /persist/persistent-canary"
+  ssh root@yirukou "touch /root/volatile-canary /persist/persistent-canary \
+    /var/log/persistent-log-canary && systemctl reboot"
+  ssh root@yirukou "[ ! -f /root/volatile-canary ] && [ -f /persist/persistent-canary ] \
+    && [ -f /var/log/persistent-log-canary ] && echo PASSED"
   ```
 
 ______________________________________________________________________
 
 ## Open Questions
 
-- **Q: Why Ext4 root-on-tmpfs instead of formatting `nvme0n1p2` to Btrfs?**
-  - **Resolved**: Btrfs formatting requires an external rescue boot environment, destroys all rollback generations in `systemd-boot`, and introduces repartitioning risk on a remote edge gateway. The in-place Ext4 tmpfs approach delivers 100% of impermanence benefits with zero formatting downtime and immediate single-keystroke bootloader rollback.
-- **Q: Does bind-mounting `/persist/nix` to `/nix` affect Nix store performance?**
-  - **Resolved**: Linux kernel bind mounts operate at the VFS layer with zero overhead compared to direct filesystem mounts.
-- **Q: Why copy `/persist/keys` to `/keys` on disk instead of symlinking?**
-  - **Resolved**: Absolute symlinks (`/keys -> /persist/keys`) would become self-referencing circular loops when `nvme0n1p2` is mounted at `/persist`. Relative symlinks depend on pathname resolution across mount points. A direct copy (`cp -a`) ensures independent, robust access for both the current generation (`/persist/keys` on disk) and the new generation (`/keys` on disk).
+- **Q: Why Ext4 root-on-tmpfs instead of reformatting to Btrfs?**
+  - **Resolved**: reformatting needs a rescue environment, destroys every rollback generation, and risks a remote edge gateway. The in-place approach keeps a one-keystroke rollback.
+- **Q: Does bind-mounting `/persist/nix` to `/nix` cost performance?**
+  - **Resolved**: bind mounts are VFS-level; no measurable overhead.
+- **Q: Why copy `/persist/keys` to `/keys` instead of a symlink?**
+  - **Resolved**: an absolute symlink becomes self-referential once the disk root is `/persist`, and a relative one crosses a mount point.
 - **Q: Keep the CVE scan on `yirukou`?**
-  - **Open**: Persisting `/var/cache/vulnix` costs ~1.2 GiB on `/persist`. The alternative is `cveScan.enable = false` on `yirukou` and scanning its closure from `yifuwuqi`, which needs a change in `modules/services/monitoring/security-monitor/`.
+  - **Resolved 2026-11-22**: keep it. `/var/cache/vulnix` (~1.2 GiB) is persisted, and the sweep root moves to `/persist` so the gate keeps measuring real disk (Decision 7).
+- **Q: Does journald split history because `/etc/machine-id` is bound in stage 2?**
+  - **Open**: the impermanence file mount runs at `local-fs.target`, after `systemd-journald` starts. Early entries may carry a transient machine-id. Phase 4 checks `journalctl --list-boots` and `cat /etc/machine-id`; if the split is real, bind machine-id from the initrd as a fifth `fileSystems` entry.
+- **Q: Should `boot.initrd.systemd.emergencyAccess` be enabled for the cutover generation?**
+  - **Open**: it is the only way back into a machine whose initrd fails before stage 2, at the cost of an unauthenticated initrd shell for one generation.

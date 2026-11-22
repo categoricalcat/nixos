@@ -1,6 +1,6 @@
 # Architecture Security Rollout
 
-## Status: ACTIVE — Service Security Phases 0–3 and 5 and VPN to LAN Phases 1–4 completed 2026-11-09; both plans retired to git history. Remaining lanes: mTLS Phases 2–4, impermanence, conditional edge.
+## Status: ACTIVE — Service Security Phases 0–3 and 5 and VPN to LAN Phases 1–4 completed 2026-11-09; both plans retired to git history. Remaining lanes: mTLS Phases 2–5, mTLS on DNS, impermanence, conditional edge.
 
 ## Objective
 
@@ -26,7 +26,10 @@ acceptance checks.
   `hosts/yirukou/hardware.nix` still configures an Ext4 root.
 - [Infrastructure mTLS](mtls-architecture-plan.md) is not implemented:
   inter-host proxying, exporter scrapes, and Vector-to-Loki use plaintext
-  HTTP, and no service CA or runtime certificate configuration exists.
+  HTTP, and no service CA or runtime certificate configuration exists. The
+  plan was revised 2026-11-22 against the deployed ingress and now ends at
+  HTTP; the resolver hop moved to [mTLS on DNS](mtls-dns-plan.md), which is
+  also not implemented.
 - `restrictedProxyConfig` allows only trusted LAN `10.42.0.0/24` and
   `fd75:c55f:6d19:1::/64`, excluding the untrusted VLAN 42 CIDRs. VPN to LAN
   Phase 2 removed its VPN CIDR and added a `yirukou` input SNAT that
@@ -152,9 +155,19 @@ the only ingress contract for later mTLS.
 
 ### Phase 4 — Authenticate Cross-Host Traffic
 
-1. Deploy mTLS Phases 2 and 3 after the local ingress works.
-1. Retire Service Security Phase 4's interim IP rules only after both internal
+1. Deploy [mTLS Phases 2 and 3](mtls-architecture-plan.md#phase-2-inter-host-application-proxy-tier-2)
+   after the local ingress works.
+1. Deploy [mTLS Phase 4](mtls-architecture-plan.md#phase-4-log-push-through-the-ingress-tier-3b),
+   then [Phase 5](mtls-architecture-plan.md#phase-5-retire-interim-ip-rules).
+1. Retire Service Security Phase 4's interim IP rules only after all internal
    mTLS phases pass their checks.
+
+### DNS Lane — Resolver Hop
+
+Deploy [mTLS on DNS](mtls-dns-plan.md) only after the HTTP phases pass. It
+reuses the same CA and host certificates, adds one nginx stream listener on
+`yirukou` and one forwarder on `yifuwuqi`, and leaves every device-facing plain
+DNS path unchanged.
 
 ### Dedicated Maintenance Lane — Impermanence
 
@@ -185,8 +198,10 @@ flowchart TD
     securityP2["Service Security P2: application authentication"]
     securityP5["Service Security P5: sandboxing"]
     securityP3["Service Security P3: local ingress"]
-    mtlsInternal["mTLS P2 and P3: internal traffic"]
-    mtlsP4["mTLS P4: retire interim rules"]
+    mtlsInternal["mTLS P2 and P3: application proxy and scrape mTLS"]
+    mtlsLogs["mTLS P4: log push"]
+    mtlsP4["mTLS P5: retire interim rules"]
+    mtlsDns["mTLS on DNS: resolver hop"]
     impermanence["Impermanence: isolated yirukou release"]
     publicOrigin["Public Cloudflare origin"]
     mtlsEdge["mTLS P1: Origin Pulls"]
@@ -202,7 +217,9 @@ flowchart TD
     securityP0 --> securityP3
     securityP1 --> securityP3
     securityP3 --> mtlsInternal
-    mtlsInternal --> mtlsP4
+    mtlsInternal --> mtlsLogs
+    mtlsLogs --> mtlsP4
+    mtlsP4 --> mtlsDns
     preflight --> impermanence
     publicOrigin --> mtlsEdge
 ```
@@ -232,9 +249,12 @@ runtime gates pass.
 - [x] Deploy and validate VPN to LAN Phases 3–4 after Service Security Phase 0
   preserves the Tailscale route (2026-11-09).
 - [x] Deploy Service Security Phase 3 (gate passed 2026-11-09).
-- [ ] Deploy [mTLS Phases 2–3](mtls-architecture-plan.md#phase-2-inter-host-upstream-proxy-mtls-tier-2-lan-inter-host)
+- [ ] Deploy [mTLS Phases 2–3](mtls-architecture-plan.md#phase-2-inter-host-application-proxy-tier-2)
   after the local ingress is healthy.
-- [ ] Retire interim rules in [mTLS Phase 4](mtls-architecture-plan.md#phase-4-retire-interim-ip-rules).
+- [ ] Deploy [mTLS Phase 4](mtls-architecture-plan.md#phase-4-log-push-through-the-ingress-tier-3b)
+  and [Phase 5](mtls-architecture-plan.md#phase-5-retire-interim-ip-rules):
+  retire interim rules after the HTTP mTLS phases pass.
+- [ ] Deploy [mTLS on DNS](mtls-dns-plan.md) after the HTTP phases pass.
 - [ ] At a separate safe point after preflight, schedule and complete the
   [impermanence maintenance release](impermanence-yirukou-plan.md#rollout-order).
 - [ ] Deploy `aset.love` as the public Cloudflare canary through
@@ -242,5 +262,7 @@ runtime gates pass.
 
 ## Open Questions
 
-No cross-plan design choice remains open. Activate the conditional edge tier
-when the `aset.love` canary is scheduled for deployment.
+No cross-plan design choice remains open for the HTTP lanes. The DNS lane
+carries one: whether a forwarder daemon is worth the extra boot dependency,
+recorded in [mTLS on DNS](mtls-dns-plan.md#open-questions). Activate the
+conditional edge tier when the `aset.love` canary is scheduled for deployment.
