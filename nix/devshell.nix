@@ -273,7 +273,6 @@
           ++ hmPackages
           ++ (builtins.attrValues wrappers)
           ++ [
-            pkgs.neovim
             nixosRebuildWrapper
             (pkgs.callPackage ../packages/dev-certs { })
           ]
@@ -281,6 +280,11 @@
           ++ userScripts
           ++ repoScripts;
         shellHook = ''
+          # Keep `pkgs.neovim` off the front of PATH: prepending plain neovim
+          # shadows Home Manager's nixvim wrapper, which then crashes loading
+          # `~/.config/nvim/init.lua` without its plugin packpath. Only append
+          # it as a fallback on minimal hosts (e.g. yirukou) without `nvim`.
+          command -v nvim >/dev/null 2>&1 || export PATH="$PATH:${pkgs.neovim}/bin"
           ${config.pre-commit.installationScript}
           # `nix develop` can start in any subdir (or outside the repo via an
           # explicit flake ref); anchor at the flake root, not cwd.
