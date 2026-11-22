@@ -336,7 +336,7 @@ let
 
 in
 {
-  config = lib.mkIf (config.serverMode.developer && hasStylix) {
+  config = lib.mkIf hasStylix {
     # opencode has no --install-extension CLI; keep a plain folder symlink
     home.file = {
       ".opencode/extensions/${extUniqueId}-${extVersion}".source =
@@ -379,7 +379,7 @@ in
           codium) echo "$HOME/.vscode-oss/extensions" ;;
           windsurf) echo "$HOME/.windsurf/extensions" ;;
           antigravity) echo "$HOME/.antigravity/extensions" ;;
-          antigravity-ide | antigravity-ide-fhs | nxd-antigravity) echo "$HOME/.antigravity-ide/extensions" ;;
+          antigravity-ide | antigravity-ide-fhs) echo "$HOME/.antigravity-ide/extensions" ;;
           antigravity-server) echo "$HOME/.antigravity-server/extensions" ;;
           antigravity-ide-server) echo "$HOME/.antigravity-ide-server/extensions" ;;
           code-server) echo "$HOME/.local/share/code-server/extensions" ;;
@@ -413,7 +413,7 @@ in
       done
 
       # generic vscode-based editors, best effort
-      for bin in cursor nxd-cursor code codium windsurf antigravity antigravity-ide antigravity-ide-fhs nxd-antigravity antigravity-server code-server openvscode-server; do
+      for bin in cursor nxd-cursor code codium windsurf antigravity antigravity-ide antigravity-ide-fhs antigravity-server code-server openvscode-server; do
         if command -v "$bin" >/dev/null 2>&1; then
           run install_vsix "$bin" "$bin" "$(ext_dir_for "$bin")"
         fi

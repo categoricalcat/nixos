@@ -10,8 +10,6 @@
   config = {
     serverMode = {
       headless = config.host.desktopEnvironment == null;
-      developer = config.host.developer;
-      tui = config.host.tui;
     };
   };
 }

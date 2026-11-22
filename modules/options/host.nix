@@ -42,18 +42,6 @@
       description = "Outputs the desktop shell bar is shown on, or \"all\" for every output.";
     };
 
-    developer = lib.mkOption {
-      type = lib.types.bool;
-      default = config.host.desktopEnvironment != null;
-      description = "Include developer tooling in the home-manager profile";
-    };
-
-    tui = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Include terminal UI and productivity tools (starship, tmux, zellij, btop, fzf, zoxide, yazi, etc.)";
-    };
-
     vr = lib.mkOption {
       type = lib.types.bool;
       default = false;

@@ -16,7 +16,6 @@ in
     ../../modules/common.nix
     ../../modules/nix-settings.nix
     ../../modules/packages
-    ../../modules/packages/dev.nix
     ../../modules/locale.nix
     ../../modules/fonts.nix
     # ../modules/desktop.nix
@@ -28,7 +27,10 @@ in
   wsl.enable = true;
   services.resolved.enable = false;
 
-  host.developer = true;
+  services.openssh = {
+    enable = true;
+    listenAddresses = [ ];
+  };
 
   nixpkgs.config = {
     cudaSupport = false;
@@ -38,11 +40,6 @@ in
   home-manager = mkHome {
     inherit inputs;
     stateVersion = global.homeVersion;
-  };
-
-  services.openssh = {
-    enable = true;
-    listenAddresses = [ ];
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";

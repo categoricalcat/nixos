@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   osConfig ? null,
   ...
 }:
@@ -38,7 +37,7 @@ let
   firecrawlPermission = lib.genAttrs firecrawlToolNames (_: "allow");
 in
 {
-  config = lib.mkIf config.serverMode.developer {
+  config = {
     programs.opencode = {
       enable = true;
       package = pkgs.opencode;

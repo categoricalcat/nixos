@@ -64,7 +64,9 @@ git switch --quiet --force-create "$bot_branch" "refs/remotes/origin/$base_branc
 echo "auto-maintenance: $bot_branch reset to $base_branch at $(git rev-parse --short HEAD)"
 
 # Resolved from the reviewed lockfile; the update below only touches the copy.
-agy="$(nix build --no-link --print-out-paths --inputs-from . "antigravity-nix#google-antigravity-cli")/bin/agy"
+# antigravity-cli ships in nixpkgs (`agy`), so flake.lock's nixpkgs pin keeps it
+# as locked as any other input. It is unfree, hence the impure env override.
+agy="$(NIXPKGS_ALLOW_UNFREE=1 nix build --impure --no-link --print-out-paths --inputs-from . "nixpkgs#antigravity-cli")/bin/agy"
 
 work="$(as_none mktemp -d)"
 trap 'as_none rm -rf "$work"' EXIT

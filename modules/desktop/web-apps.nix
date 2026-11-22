@@ -8,105 +8,91 @@
 
 let
   themeAssets = import ../theme-assets.nix { inherit pkgs; };
-  iconBase = "${themeAssets.icons.package}/share/icons/${themeAssets.icons.dark}/64x64/apps";
 
   webApps = {
     youtube = {
       name = "YouTube";
       url = "https://www.youtube.com/";
-      icon = "${iconBase}/youtube.svg";
     };
 
     youtube-music = {
       name = "YouTube Music";
       url = "https://music.youtube.com/";
-      icon = "${iconBase}/youtube-music.svg";
     };
 
     nix-search = {
       name = "Nix Search";
       url = "https://search.nixos.org/packages";
-      icon = "${iconBase}/distributor-logo-nixos.svg";
+      icon = "distributor-logo-nixos.svg";
     };
 
     deepseek = {
       name = "DeepSeek";
       url = "https://chat.deepseek.com/";
-      icon = "${iconBase}/browser.svg";
+      icon = "browser.svg";
     };
 
     gemini = {
       name = "Gemini";
       url = "https://gemini.google.com/";
-      icon = "${iconBase}/gemini.svg";
     };
 
     kimi = {
       name = "Kimi";
       url = "https://kimi.ai/";
-      icon = "${iconBase}/browser.svg";
+      icon = "browser.svg";
     };
 
     my-nixos = {
       name = "My NixOS";
       url = "https://mynixos.com/";
-      icon = "${iconBase}/distributor-logo-nixos.svg";
+      icon = "distributor-logo-nixos.svg";
     };
 
     github = {
       name = "GitHub";
       url = "https://github.com/";
-      icon = "${iconBase}/github.svg";
     };
 
     bitwarden-web = {
       name = "Bitwarden Web";
       url = "https://vault.bitwarden.com/";
-      icon = "${iconBase}/bitwarden.svg";
+      icon = "bitwarden.svg";
     };
 
     f1tv = {
       name = "F1 TV";
       url = "https://f1tv.formula1.com/";
-      icon = "${iconBase}/f1-2017.svg";
-    };
-
-    forgejo = {
-      name = "Forgejo.git";
-      url = "https://git.${allAddresses.baseDomain}/";
-      icon = "${iconBase}/git.svg";
-    };
-
-    grafana = {
-      name = "Grafana";
-      url = "https://grafana.${allAddresses.baseDomain}/";
-      icon = "${iconBase}/utilities-system-monitor.svg";
+      icon = "f1-2017.svg";
     };
 
     tiktok = {
       name = "TikTok";
       url = "https://www.tiktok.com/";
-      icon = "${iconBase}/tiktok.svg";
     };
 
     instagram = {
       name = "Instagram";
       url = "https://www.instagram.com/";
-      icon = "${iconBase}/instagram.svg";
     };
 
     mercado-livre = {
       name = "Mercado Livre";
       url = "https://www.mercadolivre.com.br/";
-      icon = "${iconBase}/shop.svg";
+      icon = "shop.svg";
     };
 
     songsterr = {
       name = "Songsterr";
       url = "https://www.songsterr.com/";
-      icon = "${iconBase}/guitar.svg";
+      icon = "guitar.svg";
     };
-  };
+  }
+  // lib.mapAttrs (id: s: {
+    inherit (s) name;
+    url = "https://${s.domain}/";
+    icon = s.desktopIcon or "${id}.svg";
+  }) (lib.filterAttrs (_: s: s ? name) allAddresses.hosts.yifuwuqi.services);
 
   chromeCustomized = pkgs.google-chrome.override {
     commandLineArgs = lib.concatStringsSep " " (
@@ -126,7 +112,7 @@ let
       name = "chrome-webapp-${id}";
       desktopName = app.name;
       exec = "${lib.getExe chromeCustomized} --profile-directory=Default --app=${app.url}";
-      icon = app.icon or "${iconBase}/google-chrome.svg"; # Fallback icon
+      icon = "${themeAssets.icons.package}/share/icons/${themeAssets.icons.dark}/64x64/apps/${app.icon or "${id}.svg"}";
       categories = [
         "Network"
         "WebBrowser"
@@ -137,7 +123,6 @@ let
   zapzapCustomized = pkgs.zapzap.override {
     dictionaries = chromiumDictionaries;
   };
-
 in
 {
   programs.chromium = {

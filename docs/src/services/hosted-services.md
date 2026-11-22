@@ -26,7 +26,7 @@ ______________________________________________________________________
   1. **Media**: Jellyfin, Jellyseerr, Pinepods (`cast.aset.love`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
   1. **Monitoring**: Grafana (`grafana.aset.love`), GoAccess (`goaccess.aset.love`).
-  1. **Infrastructure**: Cockpit, Files, Forgejo, Opencode Agent, Attic Binary Cache.
+  1. **Infrastructure**: Cockpit, Files, Forgejo, Opencode Agent, SillyTavern, Attic Binary Cache, Docs.
   1. **Network**: AdGuard Home, SearXNG.
 - **Widgets**: Real-time CPU, RAM, and root filesystem disk utilization monitors, plus an integrated search bar pointing to SearXNG.
 

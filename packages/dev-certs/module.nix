@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -39,6 +38,7 @@ in
       SSL_CERT_DIR = "/etc/ssl/certs";
       NODE_EXTRA_CA_CERTS = ca;
     };
-    systemPackages = [ (pkgs.callPackage ./default.nix { }) ];
+    # The dev-certs-setup/copy CLIs live in `nix develop`; only the trust anchor
+    # above has to be host-wide (Chrome and any Node outside the devshell).
   };
 }

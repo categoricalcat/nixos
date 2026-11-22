@@ -317,8 +317,9 @@ repo copy. Do not edit `/persist/keys/sops/secrets.yaml` directly.
 
 ## Dev Certificates
 
-Dev certificates (`/persist/keys/dev/`) are documented in
-`packages/dev-certs/README.md`.
+Dev certificates (`/persist/keys/dev/`) and the `dev-certs-setup` /
+`dev-certs-copy` helpers are documented in `packages/dev-certs/README.md`. The
+helpers are available inside `nix develop`; the CA trust anchor stays host-wide.
 
 ## Distributed Builds Key
 

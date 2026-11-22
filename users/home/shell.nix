@@ -11,7 +11,6 @@
     ../../modules/options/desktop.nix
     ../programs/fastfetch.nix
     ../programs/tui.nix
-    ../programs/neovim.nix
   ];
 
   xdg.enable = true;

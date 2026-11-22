@@ -29,7 +29,7 @@ let
       (builtins.readFile ../assets/dotfiles/starship.toml);
 in
 {
-  config = lib.mkIf config.serverMode.tui {
+  config = {
     # fd is embedded in fzf's FZF_DEFAULT_COMMAND and useful directly.
     home.packages = [ pkgs.fd ];
 

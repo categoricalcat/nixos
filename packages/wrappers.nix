@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, antigravityCli }:
 {
 
   diff-to-commit = pkgs.writeShellScriptBin "diff-to-commit" (
@@ -9,8 +9,10 @@
     builtins.readFile ../nix/scripts/lock-to-changelog.sh
   );
 
+  # nixpkgs ships the Antigravity CLI as `antigravity-cli` with an `agy` binary;
+  # the pin comes from flake.lock's nixpkgs, so the agent binary stays locked.
   nxd-agy = pkgs.writeShellScriptBin "nxd-agy" ''
-    exec nix run antigravity-nix#google-antigravity-cli -- "$@"
+    exec ${pkgs.lib.getExe antigravityCli} "$@"
   '';
 
   nxd-agent = pkgs.writeShellScriptBin "nxd-agent" ''

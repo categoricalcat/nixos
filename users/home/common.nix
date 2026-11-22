@@ -5,7 +5,6 @@
   ...
 }:
 let
-  inherit (config.serverMode) developer;
   inherit (config.host) vr;
 in
 {
@@ -14,19 +13,17 @@ in
     ./ai-policies.nix
     ./mcp.nix
     ../programs/git.nix
+    ../programs/neovim.nix
     ../programs/ssh
     ../programs/vscode-theme.nix
     ../programs/khal.nix
   ];
 
   home = {
-    packages = lib.optionals developer (
-      with pkgs;
-      [
-        npm-check-updates
-        rtk
-      ]
-    );
+    packages = with pkgs; [
+      npm-check-updates
+      rtk
+    ];
 
     file = lib.mkIf vr {
       ".config/openxr/1/active_runtime.json".text = ''

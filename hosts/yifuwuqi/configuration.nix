@@ -24,7 +24,6 @@ in
     ../../modules/networking/ipv6.nix
     ../../modules/locale.nix
     ../../modules/packages
-    ../../modules/packages/dev.nix
     ../../modules/packages/network.nix
     ../../modules/services/postgresql.nix
     ../../modules/server-settings.nix
@@ -45,10 +44,7 @@ in
     enableWorkd = true;
   };
 
-  host = {
-    developer = true;
-    workd = true;
-  };
+  host.workd = true;
 
   services.nix-access-tokens.enable = true;
 

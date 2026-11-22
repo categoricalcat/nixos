@@ -1,5 +1,5 @@
 # Shared MCP server declarations: single source of truth in `programs.mcp`.
-# Consumed natively by OpenCode (`enableMcpIntegration`), Antigravity
+# Consumed natively by OpenCode (`enableMcpIntegration`), Antigravity CLI
 # (`programs.antigravity-cli`), Claude Code (`programs.claude-code`), and
 # Cursor (`~/.cursor/mcp.json` linked directly to the generated `mcp.json`).
 {
@@ -17,7 +17,7 @@ let
   onYifuwuqi = hostName == "yifuwuqi";
 in
 {
-  config = lib.mkIf (config.serverMode.developer && onYifuwuqi) {
+  config = lib.mkIf onYifuwuqi {
     programs = {
       mcp = {
         enable = true;

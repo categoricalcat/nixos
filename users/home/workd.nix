@@ -16,15 +16,11 @@
   host = {
     desktopEnvironment = lib.mkDefault null;
     desktopShell = lib.mkDefault null;
-    developer = lib.mkDefault true;
-    tui = lib.mkDefault true;
     vr = lib.mkDefault false;
   };
 
   serverMode = {
     headless = lib.mkDefault (config.host.desktopEnvironment == null);
-    developer = lib.mkDefault true;
-    tui = lib.mkDefault true;
   };
 
   desktop = {
@@ -38,11 +34,6 @@
       if pkgs.stdenv.hostPlatform.isDarwin then "/Users/workd" else "/home/workd"
     );
 
-    packages = lib.optionals config.serverMode.developer (
-      with pkgs;
-      [
-        nodejs_26
-      ]
-    );
+    packages = with pkgs; [ nodejs_26 ];
   };
 }

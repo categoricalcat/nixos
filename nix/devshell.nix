@@ -4,6 +4,7 @@
     {
       config,
       pkgs,
+      system,
       ...
     }:
     let
@@ -24,7 +25,42 @@
         '';
       };
 
-      wrappers = import ../packages/wrappers.nix { inherit pkgs; };
+      # cursor-cli and antigravity-cli are unfree; keep allowUnfree scoped to
+      # those two packages instead of the whole perSystem, so
+      # treefmt/pre-commit/packages stay honest.
+      unfreePkgs = import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfreePredicate =
+          p:
+          builtins.elem (lib.getName p) [
+            "cursor-cli"
+            "antigravity-cli"
+          ];
+        overlays = [ ];
+      };
+
+      wrappers = import ../packages/wrappers.nix {
+        inherit pkgs;
+        antigravityCli = unfreePkgs.antigravity-cli;
+      };
+
+      # Dev/admin CLIs that used to live in modules/packages/dev.nix (system-wide
+      # on every developer host). They belong to repo work, so they load only in
+      # `nix develop` and never inflate an appliance system closure.
+      devPkgs = [
+        pkgs.bubblewrap
+        pkgs.cloudflared
+        unfreePkgs.cursor-cli
+        pkgs.gcc
+        pkgs.gh
+        pkgs.gnumake
+        unfreePkgs.k6
+        pkgs.kubectl
+        pkgs.python3
+        pkgs.rclone
+        pkgs.screen
+        pkgs.systemd
+      ];
 
       nixDevPkgs = [
         pkgs.statix # Lints and suggestions for Nix
@@ -88,11 +124,6 @@
                 '';
               };
             };
-            # Developer-only LSPs/nixvim live in workstation HM profiles; keep devshell lean.
-            serverMode = {
-              developer = lib.mkForce false;
-              tui = true;
-            };
           }
         ];
       };
@@ -150,6 +181,14 @@
         export MCFLY_KEY_SCHEME="${hmVars.MCFLY_KEY_SCHEME}"
         export LOCALE_ARCHIVE_2_27="${hmVars.LOCALE_ARCHIVE_2_27}"
         export TERMINFO_DIRS="''${TERMINFO_DIRS:-/run/current-system/sw/share/terminfo}:${pkgs.kitty.terminfo}/share/terminfo"
+        # The dev CA is trusted host-wide (packages/dev-certs/module.nix); repeat
+        # it here so `next dev` inside the devshell verifies it even when the
+        # caller's environment came from somewhere other than a login shell.
+        if [ -e /persist/keys/dev/ca.pem ]; then
+          export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+          export SSL_CERT_DIR=/etc/ssl/certs
+          export NODE_EXTRA_CA_CERTS=/persist/keys/dev/ca.pem
+        fi
         export XDG_CONFIG_DIRS="''${XDG_CONFIG_DIRS:+$XDG_CONFIG_DIRS:}${devXdgConfig}"
         : "''${STARSHIP_CONFIG:=${devXdgConfig}/starship.toml}"
         export STARSHIP_CONFIG
@@ -184,6 +223,33 @@
             "host-audit"
           ];
 
+      # Fleet maintenance helpers: both drive `nix`/`nh`/`gh`/`statix` on the
+      # repo, so they follow the rest of the dev tooling into the devshell.
+      userScripts = [
+        (pkgs.writeShellApplication {
+          name = "nix-sanity";
+          # No `pkgs.nix`: the devshell already put the host's Lix on PATH, and
+          # pinning vanilla nix here would shadow it.
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.deadnix
+            pkgs.git
+            pkgs.nh
+            pkgs.statix
+            pkgs.util-linux
+          ];
+          text = builtins.readFile ../users/scripts/nix-sanity.sh;
+        })
+        (pkgs.writeShellApplication {
+          name = "gh-backup";
+          runtimeInputs = [
+            pkgs.gh
+            pkgs.git
+          ];
+          text = builtins.readFile ../users/scripts/gh-backup-repos.sh;
+        })
+      ];
+
       defaultShell = pkgs.mkShell {
         packages =
           rustPkgs
@@ -193,7 +259,10 @@
           ++ [
             pkgs.neovim
             nixosRebuildWrapper
+            (pkgs.callPackage ../packages/dev-certs { })
           ]
+          ++ devPkgs
+          ++ userScripts
           ++ repoScripts;
         shellHook = ''
           ${config.pre-commit.installationScript}

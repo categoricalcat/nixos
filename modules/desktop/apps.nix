@@ -6,15 +6,11 @@ let
   nxd-cursor = pkgs.writeShellScriptBin "nxd-cursor" ''
     exec nix run github:jacopone/code-cursor-nix#cursor -- "$@"
   '';
-  nxd-antigravity = pkgs.writeShellScriptBin "nxd-antigravity" ''
-    exec nix run github:jacopone/antigravity-nix#google-antigravity-ide -- "$@"
-  '';
 in
 {
   environment.systemPackages = with pkgs; [
     shot
     nxd-cursor
-    nxd-antigravity
     librewolf
 
     vscode-fhs

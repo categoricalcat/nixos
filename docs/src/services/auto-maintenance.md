@@ -20,10 +20,10 @@ step away from that identity:
 1. **Unauthenticated checkout**: `actions/checkout` is pinned to a commit SHA
    with `persist-credentials: false` and no write token. The script's fetch is
    anonymous (`yi/nixos` is public).
-1. **Locked agent binary**: `antigravity-nix` is a locked flake input. The
-   script resolves `agy` from the reviewed `develop` lockfile, and the update
-   only touches the sandbox's copy, so an unreviewed `antigravity-nix` commit
-   never runs.
+1. **Locked agent binary**: `agy` comes from nixpkgs (`antigravity-cli`), which
+   `flake.lock` pins like any other input. The script resolves it from the
+   reviewed `develop` lockfile, and the update only touches the sandbox's copy,
+   so an unreviewed nixpkgs bump never runs.
 1. **Real uid switch (`drop-to-none`)**: nix-daemon decides trust from the
    caller's real uid, which a bwrap user namespace leaves as `nix-builder`.
    `modules/services/forgejo-runner.nix` therefore installs util-linux `setpriv`

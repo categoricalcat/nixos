@@ -100,22 +100,27 @@ if [ "${#built[@]}" -gt 0 ]; then
   attic push --ignore-upstream-cache-filter "$ATTIC_CACHE_NAME:$ATTIC_CACHE_NAME" "${built[@]}" || failed=1
 fi
 
-# Keep one GC root per nixos-* job so attic-closure-keeper retains undeployed
-# closures across weekly GC. The host list comes from jobs.jsonl itself — no
-# extra flake evaluation. Note this is a superset of the deployable hosts: it
-# includes non-deployable yichuang, whose toplevel CI builds anyway.
+# Keep one GC root per nixos-* toplevel and shell-* devshell so
+# attic-closure-keeper retains both across attic GC. Without a root the
+# devshell closure decays out of the cache once the retention window in
+# `services.atticd.settings.garbage-collection` expires, and every `nix
+# develop` rebuilds its reference closure locally instead of substituting.
+# The job list comes from jobs.jsonl itself — no extra flake evaluation. Note
+# the nixos roots are a superset of the deployable hosts: they include
+# non-deployable yichuang, whose toplevel CI builds anyway.
 case "$ref_name" in
 develop | bot/auto-maintenance)
   echo "::group::GC roots for $ref_name"
   root_dir="/var/lib/nix-builder/gcroots/${ref_name//\//-}"
   mkdir -p "$root_dir"
-  jq -r 'select(.attr | startswith("nixos-")) | .attr[6:]' "$jobs" | while read -r host; do
-    job="nixos-$host"
-    toplevel="$(jq -r --arg attr "$job" 'select(.attr == $attr) | .outputs.out // empty' "$jobs")"
-    if [[ ${verdict[$job]:-} =~ ^(built|cached)$ ]] && nix build --log-format raw-with-logs --out-link "$root_dir/$host" "$toplevel"; then
-      printf '%s✔ Rooted%s %s\n' "$GREEN" "$RESET" "$host"
+  jq -r 'select(.attr | test("^(nixos|shell)-")) | .attr' "$jobs" | while read -r job; do
+    out="$(jq -r --arg attr "$job" 'select(.attr == $attr) | .outputs.out // empty' "$jobs")"
+    # nixos roots stay named by host, as they were before shells were rooted.
+    name="${job#nixos-}"
+    if [[ ${verdict[$job]:-} =~ ^(built|cached)$ ]] && nix build --log-format raw-with-logs --out-link "$root_dir/$name" "$out"; then
+      printf '%s✔ Rooted%s %s\n' "$GREEN" "$RESET" "$name"
     else
-      echo "::warning::could not root the $host toplevel for $ref_name"
+      echo "::warning::could not root the $job closure for $ref_name"
     fi
   done
   echo "::endgroup::"

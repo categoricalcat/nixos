@@ -187,11 +187,17 @@ in
 
       services = {
         grafana = {
+          name = "Grafana";
+          group = "Monitoring";
+          desktopIcon = "utilities-system-monitor.svg";
           domain = "grafana.${baseDomain}";
           port = 24030;
         };
         prometheus.port = 24090;
         cockpit = {
+          name = "Cockpit";
+          group = "Infrastructure";
+          desktopIcon = "applications-system.svg";
           domain = "cockpit.${baseDomain}";
           port = 24091;
         };
@@ -204,51 +210,89 @@ in
           urls.atticd = "postgres://atticd@localhost/${pgDatabases.atticd}?host=${pgSocketDir}";
         };
         forgejo = {
+          name = "Forgejo";
+          group = "Infrastructure";
+          icon = "gitea.png";
+          desktopIcon = "git.svg";
           domain = "git.${baseDomain}";
           httpPort = 24200;
         };
         attic = {
+          name = "Attic Cache";
+          group = "Infrastructure";
+          icon = "nixos.png";
+          desktopIcon = "distributor-logo-nixos.svg";
           domain = "cache.${baseDomain}";
           port = 24203;
           cacheName = "yi";
         };
         radarr = {
+          name = "Radarr";
+          group = "Arr Stack";
+          desktopIcon = "deepin-movie.svg";
           domain = "radarr.${baseDomain}";
           port = 24878;
         };
         sonarr = {
+          name = "Sonarr";
+          group = "Arr Stack";
+          desktopIcon = "me-tv.svg";
           domain = "sonarr.${baseDomain}";
           port = 24989;
         };
         lidarr = {
+          name = "Lidarr";
+          group = "Arr Stack";
+          desktopIcon = "multimedia-audio-player.svg";
           domain = "lidarr.${baseDomain}";
           port = 24686;
         };
         readarr = {
+          name = "Readarr";
+          group = "Arr Stack";
+          desktopIcon = "accessories-ebook-reader.svg";
           domain = "readarr.${baseDomain}";
           port = 24787;
         };
         prowlarr = {
+          name = "Prowlarr";
+          group = "Arr Stack";
+          desktopIcon = "preferences-system-search.svg";
           domain = "prowlarr.${baseDomain}";
           port = 24696;
         };
         torrent-indexer = {
+          name = "Torrent Indexer";
+          group = "Arr Stack";
+          icon = "prowlarr.png";
+          desktopIcon = "preferences-system-search.svg";
           domain = "torrent-indexer.${baseDomain}";
           port = 24181;
         };
         bazarr = {
+          name = "Bazarr";
+          group = "Arr Stack";
+          desktopIcon = "gnome-subtitles.svg";
           domain = "bazarr.${baseDomain}";
           port = 24767;
         };
         jellyfin = {
+          name = "Jellyfin";
+          group = "Media";
           domain = "jellyfin.${baseDomain}";
           port = 24096;
         };
         jellyseerr = {
+          name = "Jellyseerr";
+          group = "Media";
+          desktopIcon = "multimedia-video-player.svg";
           domain = "jellyseerr.${baseDomain}";
           port = 24055;
         };
         pinepods = {
+          name = "Pinepods";
+          group = "Media";
+          desktopIcon = "podcast.svg";
           domain = "cast.${baseDomain}";
           port = 24085;
         };
@@ -259,24 +303,38 @@ in
           internalPort = 8191;
         };
         qbittorrent = {
+          name = "qBittorrent";
+          group = "Arr Stack";
           domain = "qbittorrent.${baseDomain}";
           port = 24080;
         };
         slskd = {
+          name = "Soulseek";
+          group = "Arr Stack";
+          desktopIcon = "soulseek.svg";
           domain = "slskd.${baseDomain}";
           # 24030 is taken by grafana, so this one keeps its leading 5
           port = 24530;
           listenPort = 2234;
         };
         homepage = {
+          name = "Homepage";
+          desktopIcon = "kfm_home.svg";
           domain = "home.${baseDomain}";
           port = 24082;
         };
         searxng = {
+          name = "SearXNG";
+          group = "Network";
+          desktopIcon = "preferences-system-search.svg";
           domain = "search.${baseDomain}";
           port = 24888;
         };
         opencode = {
+          name = "Opencode";
+          group = "Infrastructure";
+          icon = "terminal.png";
+          desktopIcon = "utilities-terminal.svg";
           domain = "agent.${baseDomain}";
           port = 24010;
         };
@@ -292,14 +350,25 @@ in
           maxMemory = "512mb";
         };
         sillytavern = {
+          name = "SillyTavern";
+          group = "Infrastructure";
+          desktopIcon = "internet-chat.svg";
           domain = "companion.${baseDomain}";
           port = 24000;
         };
         docs = {
+          name = "Docs";
+          group = "Infrastructure";
+          icon = "gitbook.png";
+          desktopIcon = "devdocs.svg";
           domain = "docs.${baseDomain}";
           port = 24083;
         };
         files = {
+          name = "Files";
+          group = "Infrastructure";
+          icon = "filebrowser.png";
+          desktopIcon = "system-file-manager.svg";
           domain = "files.${baseDomain}";
           port = 24086;
         };
@@ -489,6 +558,9 @@ in
 
       services = {
         adguardhome = {
+          name = "AdGuard Home";
+          group = "Network";
+          icon = "adguard-home.png";
           domain = "adguard.${baseDomain}";
           port = 3333;
           dnsPort = 53;

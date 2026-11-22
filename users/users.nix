@@ -8,8 +8,29 @@
 let
   keys = import ../secrets/keys.nix;
   hostName = config.networking.hostName;
-  inherit (config.host) developer;
   hasForgejoRunner = config.services.forgejo-runner.instances != { };
+
+  # Capability groups, granted only when the host actually declares the group.
+  # Deriving membership from declaration instead of a host flag keeps the list
+  # honest: a host without podman/docker/NM cannot inherit a dead membership,
+  # and no separate "developer" toggle has to be kept in sync by hand.
+  capabilityGroups = [
+    "render"
+    "video"
+    "dialout"
+    "networkmanager"
+    "tss"
+    "plugdev"
+    "podman"
+    "docker"
+  ];
+  grantedGroups = builtins.filter (g: config.users.groups ? ${g}) capabilityGroups;
+
+  desktopGroups = [
+    "audio"
+    "input"
+    "adbusers"
+  ];
 in
 {
   users = {
@@ -26,7 +47,7 @@ in
         nix-builder = { };
         ai = { };
       }
-      (lib.mkIf (developer || hasForgejoRunner) {
+      (lib.mkIf hasForgejoRunner {
         none = {
           gid = 1002;
         };
@@ -64,21 +85,8 @@ in
           extraGroups = [
             "systemd-journal"
           ]
-          ++ lib.optionals developer [
-            "render"
-            "video"
-            "dialout"
-            "networkmanager"
-            "tss"
-            "plugdev"
-            "podman"
-            "docker"
-          ]
-          ++ lib.optionals (config.host.desktopEnvironment != null) [
-            "audio"
-            "input"
-            "adbusers"
-          ];
+          ++ grantedGroups
+          ++ lib.optionals (config.host.desktopEnvironment != null) desktopGroups;
         };
 
         nix-builder = {
@@ -113,7 +121,7 @@ in
       })
     ];
 
-    extraUsers = lib.mkIf (developer || hasForgejoRunner) {
+    extraUsers = lib.mkIf hasForgejoRunner {
       none = {
         uid = 1002;
         enable = true;
@@ -133,17 +141,17 @@ in
   };
 
   environment = {
-    systemPackages = lib.optionals developer [
-      (pkgs.writeShellScriptBin "nix-sanity" (builtins.readFile ./scripts/nix-sanity.sh))
-      (pkgs.writeShellScriptBin "gh-backup" (builtins.readFile ./scripts/gh-backup-repos.sh))
-      # Read-only mesh access lane (used by the opencode systemd unit, which
-      # runs as yi but does not see home-manager's ~/.nix-profile/bin).
-      (pkgs.writeShellApplication {
+    systemPackages = lib.optional (config.services.opencode.enable or false) (
+      # Read-only mesh access lane: the opencode systemd unit runs as yi but
+      # does not see home-manager's ~/.nix-profile/bin, so this must be a
+      # system package rather than a devshell one. `nix-sanity` and `gh-backup`
+      # are repo tools and live in `nix develop`.
+      pkgs.writeShellApplication {
         name = "ai-ssh";
         runtimeInputs = [ pkgs.coreutils ];
         text = builtins.readFile ./scripts/ai-ssh.sh;
-      })
-    ];
+      }
+    );
 
     variables = lib.mkIf config.programs.zsh.enable {
       ZSH_COMPDUMP = "$HOME/.zcomp/zcompdump-$HOST";

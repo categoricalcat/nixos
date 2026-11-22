@@ -26,7 +26,7 @@ Configured in `hosts/yichuang/configuration.nix`:
 - `wsl.enable = true`: Integrates with the Windows host, interop with Windows binaries, and environment variable synchronization.
 - `wsl.defaultUser = "yi"`: Boots directly into the unprivileged developer shell.
 - `wsl.startMenuLaunchers = true`: Generates Windows start menu shortcuts for installed GUI and CLI applications.
-- `host.developer = true`: Equips the environment with the complete suite of Nix development tools, Rust toolchains, linters, and formatters.
+- Dev tooling is not installed system-wide on any host; enter `nix develop` in the repo for the full suite (compilers, linters, formatters, `gh`, `kubectl`, `dev-certs`).
 
 ### 2.2 Remote Access & File Sharing
 

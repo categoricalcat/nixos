@@ -210,10 +210,5 @@
       url = "github:probeldev/niri-float-sticky";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    antigravity-nix = {
-      url = "github:jacopone/antigravity-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 }

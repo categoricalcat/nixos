@@ -45,9 +45,17 @@ in
     settings = {
       listen = "127.0.0.1:${toString attic.port}";
       database.url = postgres.urls.atticd;
+      # Objects are collected only when both `created_at` and `last_accessed_at`
+      # are past the window. `attic push` skips paths already cached, so a
+      # re-push never refreshes `created_at`; only a NAR download bumps
+      # `last_accessed_at`. Devshell closures are rooted by ci/build.sh and
+      # re-pushed by attic-closure-keeper every 6h, so 3 days covers the
+      # longest observed gap between develop CI runs (2.15d) plus that
+      # restore latency. 1 day dropped pushed objects before the keeper
+      # could re-push them.
       garbage-collection = {
         interval = "0 seconds";
-        default-retention-period = "1 days";
+        default-retention-period = "3 days";
       };
       chunking = {
         nar-size-threshold = 64 * 1024;
