@@ -59,6 +59,24 @@ let
     "qbittorrent"
   ];
   gluetunConsumerUnits = map (name: "podman-${name}.service") gluetunConsumers;
+
+  # Gluetun substitutes {{PORT}}/{{VPN_INTERFACE}} (internal/portforward/
+  # service/command.go) and execs argv without a shell (internal/command/
+  # split.go does no expansion), so the JSON needs its own `sh -c`. Two parsers
+  # must both survive: gluetun's splitter ends the outer single quotes
+  # verbatim, then sh reads a double-quoted word where \" is a literal quote.
+  qbittorrentPreferences =
+    prefs:
+    let
+      # The port must land as a JSON number and the interface as a JSON string,
+      # so the caller passes "{{PORT}}" and its quotes are dropped here. The
+      # substitution must precede the escape pass; replaceStrings is a single
+      # pass, so the escaping cannot re-hit a template.
+      shellJson = lib.replaceStrings [ "\"{{PORT}}\"" "\"" ] [ "{{PORT}}" "\\\"" ] (
+        builtins.toJSON prefs
+      );
+    in
+    "/bin/sh -c 'wget -O- -nv --retry-connrefused --post-data \"json=${shellJson}\" http://127.0.0.1:8080/api/v2/app/setPreferences'";
 in
 {
   sops.secrets = {
@@ -114,7 +132,24 @@ in
         PORT_FORWARD_ONLY = "on";
         VPN_PORT_FORWARDING = "on";
         VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
-        VPN_PORT_FORWARDING_UP_COMMAND = "wget -O- --retry-connrefused --post-data 'json={\"listen_port\":'$1',\"upnp\":false,\"random_port\":false}' http://127.0.0.1:8080/api/v2/app/setPreferences";
+        # Gluetun routes every destination outside the podman bridge into the
+        # tunnel, so soularr (shared netns) cannot reach Lidarr on the host LAN
+        # address without this. It also installs a destination-wide OUTPUT
+        # accept inside the netns; the host's extraInputRules stays the
+        # port-level gate. A broad subnet would overlap the WireGuard range and
+        # break Proton NAT-PMP, hence the /32.
+        FIREWALL_OUTBOUND_SUBNETS = "${addrs.network.lan.ipv4.host}/32";
+        VPN_PORT_FORWARDING_UP_COMMAND = qbittorrentPreferences {
+          listen_port = "{{PORT}}";
+          current_network_interface = "{{VPN_INTERFACE}}";
+          random_port = false;
+          upnp = false;
+        };
+        # qBittorrent keeps a stale port across reconnects unless it is re-set.
+        VPN_PORT_FORWARDING_DOWN_COMMAND = qbittorrentPreferences {
+          listen_port = 0;
+          current_network_interface = "lo";
+        };
         HTTPPROXY = "on";
       };
       environmentFiles = [
@@ -122,7 +157,7 @@ in
       ];
       ports = [
         "127.0.0.1:${toString addrs.services.qbittorrent.port}:8080"
-        "127.0.0.1:8889:8888"
+        "127.0.0.1:${toString addrs.services.gluetun.port}:${toString addrs.services.gluetun.internalPort}"
         "127.0.0.1:${toString addrs.services.flaresolverr.port}:${toString addrs.services.flaresolverr.internalPort}"
         # Containers sharing gluetun's namespace publish through it
         "127.0.0.1:${toString addrs.services.torrent-indexer.port}:${toString addrs.services.torrent-indexer.port}"
@@ -175,6 +210,14 @@ in
 
     services = {
       "podman-gluetun".serviceConfig = {
+        # A port-forwarding give-up exits gluetun with status 0, which
+        # Restart=on-failure (oci-containers.nix) ignores; then bindsTo/partOf
+        # stop every consumer and only this unit's ExecStartPost re-queues
+        # them. Restart=always is safe here: this is a daemon with no clean
+        # exit path, and systemd's start rate limit still contains a real
+        # crash loop. Plain `Restart = "always"` would conflict with the
+        # module's plain definition, hence mkForce.
+        Restart = lib.mkForce "always";
         ExecStartPre = lib.mkBefore [
           "${pkgs.systemd}/bin/systemctl stop ${lib.concatStringsSep " " gluetunConsumerUnits}"
           "${config.virtualisation.podman.package}/bin/podman rm -f --ignore ${lib.concatStringsSep " " gluetunConsumers}"
@@ -212,6 +255,12 @@ in
             # Bound libtorrent teardown (default -1: unlimited). Its `stopped`
             # announces to every tracker below otherwise outlast --stop-timeout.
             ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\ShutdownTimeout' 5
+
+            # Default save paths, so a fresh volume never downloads into the
+            # container. Only new torrents move; categories.json is untouched.
+            ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\DefaultSavePath'   /persist/media/downloads/complete
+            ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\TempPathEnabled'   true
+            ${pkgs.crudini}/bin/crudini --set ${conf} BitTorrent 'Session\TempPath'          /persist/media/downloads/incomplete
 
             # Fetch and inject ngosang's trackerslist (bounded so transient GitHub failures never stall boot)
             trackers=$(${lib.getExe pkgs.curl} -fsS --connect-timeout 5 --max-time 10 https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all.txt | ${pkgs.gawk}/bin/awk NF | ${pkgs.gawk}/bin/awk 'NR>1 {printf "\\n"} {printf "%s", $0}' || true)

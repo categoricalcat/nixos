@@ -9,6 +9,7 @@
 | yifuwuqi | firecrawl | — | 24002 |
 | yifuwuqi | flaresolverr | flaresolverr.aset.love | 24191 |
 | yifuwuqi | forgejo | git.aset.love | 24200 |
+| yifuwuqi | gluetun | — | 8889 |
 | yifuwuqi | grafana | grafana.aset.love | 24030 |
 | yifuwuqi | homepage | home.aset.love | 24082 |
 | yifuwuqi | ingress | — | 24120 |

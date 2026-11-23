@@ -305,6 +305,13 @@ in
           # Gluetun netns listen port; host publish is `port:internalPort`.
           internalPort = 8191;
         };
+        # Gluetun's HTTP proxy. No domain and no group on purpose: it is not a
+        # web UI, so the homepage dashboard, the desktop web-app list, and the
+        # proxy-vhost list all skip it.
+        gluetun = {
+          port = 8889;
+          internalPort = 8888;
+        };
         qbittorrent = {
           name = "qBittorrent";
           group = "Arr Stack";

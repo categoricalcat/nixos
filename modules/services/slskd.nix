@@ -61,8 +61,10 @@ in
     "soularr.ini".content = ''
       [Lidarr]
       api_key = ${config.sops.placeholder."arr/lidarr_api_key"}
-      # Lidarr is a host service; the LAN IP is reachable from the gluetun
-      # network namespace (allowed by firewall extraInputRules for container subnets).
+      # Lidarr is a host service. soularr shares gluetun's netns, which only
+      # escapes the tunnel for FIREWALL_OUTBOUND_SUBNETS
+      # (modules/services/qbittorrent-vpn.nix); the host firewall rule then
+      # admits the container subnets to this port.
       host_url = http://${lanHost}:${toString services.lidarr.port}
       download_dir = /persist/media/downloads/soulseek
       disable_sync = False

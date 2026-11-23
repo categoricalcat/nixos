@@ -12,6 +12,55 @@ let
   addrs = allAddresses.hosts.${hostName};
   envFile = config.sops.templates."arr-secrets.env".path;
 
+  # Recyclarr's `custom_formats` accepts only TRaSH guide trash_ids, so a local
+  # release-title regex ships as a `custom-formats` resource provider. ptBrId is
+  # the contract between that JSON and the instance config; the score lives once
+  # as `trash_scores.default`, which recyclarr reads as DefaultScore.
+  ptBrId = "ptbr-dubbed-dual-audio";
+  # Paths here are relative to RECYCLARR_CONFIG_DIR (/var/lib/recyclarr).
+  ptBrDir = "custom-formats";
+
+  ptBrFormat = (pkgs.formats.json { }).generate "${ptBrId}.json" {
+    trash_id = ptBrId;
+    trash_scores.default = 50;
+    name = "pt-BR Dubbed / Dual Audio";
+    specifications = [
+      {
+        name = "pt-BR";
+        implementation = "ReleaseTitleSpecification";
+        negate = false;
+        required = false;
+        # Not arr-stack.md's old pattern: that one misses "Dual-Áudio",
+        # "DUALÁUDIO" and "_DUBLADO_" (accented Áudio; `_` is a word char, so
+        # \b never fires). This one matches all 9 corpus positives and rejects
+        # all 9 negatives, including "dualpixel".
+        fields.value = "(?i)(?:^|[^a-z0-9])(dublado|dual[\\W_]?(?:[aá]udio)|pt[\\W_]?br)(?:$|[^a-z0-9])";
+      }
+    ];
+  };
+
+  recyclarrSettings = (pkgs.formats.yaml { }).generate "recyclarr-settings.yml" {
+    resource_providers =
+      map
+        (service: {
+          name = "ptbr-${service}";
+          type = "custom-formats";
+          inherit service;
+          path = ptBrDir;
+        })
+        [
+          "radarr"
+          "sonarr"
+        ];
+  };
+
+  ptBrCustomFormats = [
+    {
+      trash_ids = [ ptBrId ];
+      assign_scores_to = [ { name = "All-in-One"; } ];
+    }
+  ];
+
   # radarr and sonarr get this set from nixpkgs; its lidarr, readarr and prowlarr modules set none of it
   servarrHardening =
     removeAttrs systemdHardening [
@@ -141,6 +190,7 @@ in
               type = "movie";
             };
             quality_profiles = [ { name = "All-in-One"; } ];
+            custom_formats = ptBrCustomFormats;
           };
         };
         sonarr = {
@@ -153,6 +203,7 @@ in
               type = "series";
             };
             quality_profiles = [ { name = "All-in-One"; } ];
+            custom_formats = ptBrCustomFormats;
           };
         };
       };
@@ -231,7 +282,15 @@ in
       PrivateUsers = true;
       EnvironmentFile = envFile;
     };
-    recyclarr.serviceConfig.EnvironmentFile = envFile;
+    recyclarr = {
+      # The module generates only config.yml; the pt-BR custom format needs a
+      # settings.yml and its JSON alongside it. Recyclarr's keys arrive via
+      # LoadCredential, so this unit gets no EnvironmentFile.
+      preStart = lib.mkAfter ''
+        install -Dm644 ${recyclarrSettings} /var/lib/recyclarr/settings.yml
+        install -Dm644 ${ptBrFormat} /var/lib/recyclarr/${ptBrDir}/${ptBrId}.json
+      '';
+    };
     "podman-torrent-indexer" = {
       after = [ "podman-gluetun.service" ];
       bindsTo = [ "podman-gluetun.service" ];

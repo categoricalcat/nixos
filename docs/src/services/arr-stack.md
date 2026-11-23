@@ -10,7 +10,7 @@ Before the first deployment, you must explicitly generate and populate the API k
 for app in radarr sonarr lidarr readarr prowlarr; do echo "    ${app}_api_key: $(openssl rand -hex 16)"; done
 ```
 
-Place the output under the `arr:` section in your `secrets.yaml` file. These keys will be automatically injected into the applications and Recyclarr via environment variables.
+Place the output under the `arr:` section in your `secrets.yaml` file. The applications receive these keys as `*__AUTH__APIKEY` environment variables; Recyclarr reads them through systemd credentials (`LoadCredential`), not environment variables.
 
 ## Port remap (mutable DBs)
 
@@ -21,6 +21,7 @@ Nix only moves listen/proxy ports. After switching host ports to the `24xxx` ran
 - Prowlarr Generic Torznab torrent-indexer: `http://127.0.0.1:24181/api/torznab`.
 - Prowlarr application integrations: `127.0.0.1` with Radarr `24878`, Sonarr `24989`, Lidarr `24686`, Readarr `24787`. Lidarr manual Torznab: `http://localhost:24696/<id>/`.
 - Seerr / Jellyseerr: Jellyfin server URL if it still has `:8096` (listen is now `24096`).
+- Jellyfin: the preStart only rewrites an existing `network.xml`, so a genuinely first deploy listens on the default port until one restart.
 - Unbound on `yirukou`: confirm it can reach its own Valkey at `/run/redis/redis.sock` (host-local; it no longer connects to `yifuwuqi`).
 
 ## 1. Initial Authentication
@@ -39,11 +40,10 @@ For Radarr, Sonarr, Lidarr, and Readarr, configure the root folders to point to 
 
 ## 3. qBittorrent Setup
 
-- Navigate to qBittorrent's settings.
-- Configure the default save path and incomplete download directories:
-  - Complete: `/persist/media/downloads/complete`
-  - Incomplete: `/persist/media/downloads/incomplete`
+The unit enforces the save paths and the network interface on every start, so the only manual check left is the forwarded port:
+
 - **Network Interface**: Verify qBittorrent reports the Gluetun interface and the current Proton forwarded port.
+- Paths (`/persist/media/downloads/complete`, `.../incomplete`) are written by the preStart, overriding UI edits of those two settings. Changing them means editing `modules/services/qbittorrent-vpn.nix`.
 
 ## 4. Download Client Integration
 
@@ -51,7 +51,7 @@ In each Arr app (Radarr, Sonarr, Lidarr, Readarr), add qBittorrent as a download
 
 - Host: `127.0.0.1`
 - Port: `24080`
-- Category: `music` for Lidarr (must exist in qBittorrent)
+- Category: `music` for Lidarr — the arr app creates the category in qBittorrent on save/test, so nothing has to exist beforehand.
 - Provide the WebUI credentials (localhost is auth-allowlisted, so they can be empty).
 
 ## 5. Prowlarr Configuration
@@ -79,7 +79,9 @@ Also remove any stale manual Torznab entries in Lidarr pointing at `prowlarr.ase
 
 ## 6. Recyclarr (TRaSH Guides Sync)
 
-Recyclarr is fully declarative and automatically uses the API keys configured in `secrets.yaml`. It syncs the configured TRaSH profiles on a daily schedule. You can trigger it manually via `systemctl start recyclarr.service`.
+Recyclarr is declarative: keys arrive through systemd credentials, and the nixpkgs module renders `config.yml` while the unit installs `settings.yml` plus the pt-BR custom-format JSON. It syncs on the maintenance slot `*-*-* 04:15:00` (with up to 5m jitter), so the timer fires around 04:17. Trigger it manually with `systemctl start recyclarr.service`.
+
+Scope is quality definitions (movie/series), the `All-in-One` quality profiles, and the pt-BR custom format from §8. Lidarr and Readarr are unsupported: the recyclarr config schema only admits `sonarr` and `radarr`.
 
 ## 7. Soulseek (hard-to-find music via Lidarr)
 
@@ -95,7 +97,9 @@ Setup:
 1. Add an album/artist in Lidarr (interactive search is optional — soularr picks up the wanted list automatically).
 1. Verify with `journalctl -u podman-soularr`.
 
-**Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. The firewall allows containers to reach Lidarr's API for the import step (`extraInputRules` in `hosts/yifuwuqi/networking/firewall.nix`). The arr web UIs bind loopback behind the `yifuwuqi` local ingress; Lidarr is the exception, bound to the LAN address so soularr (in the gluetun namespace) can reach it — the ingress fronts it there too.
+**Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. soularr reaches Lidarr because gluetun's `FIREWALL_OUTBOUND_SUBNETS` routes the host LAN address out of the tunnel (firewall and routing together — the `extraInputRules` rule in `hosts/yifuwuqi/networking/firewall.nix` only admits the port). The host's `extraInputRules` stays the port-level gate: `FIREWALL_OUTBOUND_SUBNETS` widens the namespace to the whole destination, so never widen the host rule to match. The arr web UIs bind loopback behind the `yifuwuqi` local ingress; Lidarr is the exception, bound to the LAN address so soularr (in the gluetun namespace) can reach it — the ingress fronts it there too.
+
+**HTTP proxy:** gluetun also runs an unauthenticated HTTP proxy, published loopback-only at `127.0.0.1:8889` (port 8888 inside the namespace). Prowlarr's indexer proxy or an arr app's own proxy settings may point at it; the LAN and tailnet addresses no longer answer, so any stored consumer must use the loopback address.
 
 ## 8. Brazilian Dubbed Content (pt-BR)
 
@@ -105,12 +109,11 @@ To automatically discover and download foreign movies and TV shows with Brazilia
 The `torrent-indexer` container scrapes Brazilian public trackers (comando_torrents, bludv, filme_torrent, etc.) and is exposed on `http://127.0.0.1:24181/api/torznab`. Add it in Prowlarr as a **Generic Torznab** indexer named `Torrent-Indexer BR` (see section 5) and sync it to Radarr and Sonarr.
 
 **2. Radarr / Sonarr Custom Formats:**
-To ensure your media applications prefer files with Brazilian voice acting:
+The pt-BR format is declarative: `modules/services/arr/default.nix` generates a local recyclarr `custom-formats` resource provider (`settings.yml` + one JSON) and both instances assign it to `All-in-One`. The score (50) lives once, as `trash_scores.default` in that JSON; recyclarr applies it to every assigning profile.
 
-- Go to **Settings** > **Custom Formats** in Radarr/Sonarr.
-- Create rules that match release titles containing regex patterns like `(?i)\b(dublado|dual(\W)?audio|pt(\W)?br)\b`.
-- Go to your **Profiles** > **Quality Profiles** and assign a positive score to this Custom Format so the system automatically upgrades or prefers these releases.
-  *(Note: You can also define these rules declaratively via `recyclarr` in `modules/services/arr/default.nix` if you wish to fully automate TRaSH guide syncs for foreign languages).*
+To change the title matching, edit the `ReleaseTitleSpecification` regex there — not in the UI, which the next sync overwrites. The shipped pattern is `(?i)(?:^|[^a-z0-9])(dublado|dual[\W_]?(?:[aá]udio)|pt[\W_]?br)(?:$|[^a-z0-9])`. It replaces an earlier `\b`-anchored form that missed `Dual-Áudio`, `DUALÁUDIO` and `_DUBLADO_` (accented `Áudio`; `_` is a word character, so `\b` never fires).
+
+Assigning a score alone does not force a preference; raise the profile's `min_format_score` if you want pt-BR releases to be required rather than merely preferred.
 
 ## 9. Podcasts (Pinepods)
 
