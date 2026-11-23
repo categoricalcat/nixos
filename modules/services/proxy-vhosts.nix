@@ -27,11 +27,11 @@ let
       websockets = false;
     };
     bazarr = { };
-    cockpit = { };
-    docs = {
-      websockets = false;
+    cockpit = {
+      longTimeouts = true;
+      noBuffering = true;
     };
-    files = {
+    docs = {
       websockets = false;
     };
     forgejo = {
@@ -77,6 +77,10 @@ let
     ${optionalString (spec.longTimeouts or false) ''
       proxy_read_timeout 1d;
       proxy_send_timeout 1d;
+    ''}
+    ${optionalString (spec.noBuffering or false) ''
+      proxy_buffering off;
+      proxy_request_buffering off;
     ''}
   '';
 

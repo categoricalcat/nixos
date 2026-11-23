@@ -22,7 +22,6 @@ in
     ];
     allowed-origins = [
       "http://localhost:${port}"
-      "https://localhost:${port}"
       "http://${addresses.hostName}.local:${port}"
       "https://${addresses.hostName}.local:${port}"
       "https://${cockpit.domain}"
@@ -30,6 +29,8 @@ in
     settings = {
       WebService = {
         AllowUnencrypted = true;
+        ProtocolHeader = "X-Forwarded-Proto";
+        ForwardedForHeader = "X-Forwarded-For";
       };
     };
   };
@@ -37,7 +38,9 @@ in
   # NixOS ships kexec for fast reboot (boot.kexec), which makes Cockpit
   # show its Fedora kdump page and the "install kexec-tools" alert.
   # That page wants kdump.service, which NixOS does not provide.
-  environment.etc."cockpit/kdump.override.json".text = builtins.toJSON {
+  # Placed under /etc/xdg/cockpit because /etc/pam/environment sets
+  # XDG_CONFIG_DIRS=/etc/xdg:... (without /etc) for cockpit-bridge sessions.
+  environment.etc."xdg/cockpit/kdump.override.json".text = builtins.toJSON {
     conditions = [
       { "path-exists" = "/var/empty/cockpit-kdump-enabled"; }
     ];

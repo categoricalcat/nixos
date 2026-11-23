@@ -1,6 +1,6 @@
 # AI Copilot Mode for Multi-Session Plan Execution
 
-## Status: DRAFT — handoff for future policy work
+## Status: DRAFT — piloted during the aset.love migration; codification not started
 
 ## Objective
 
@@ -11,7 +11,7 @@ Define and codify a reusable **Copilot Mode** in the repository's canonical AI p
 - Canonical agent instructions live in `modules/services/ai/policies/<name>/body.md` and are generated into tool-specific rule/skill files (`.gemini/`, `.cursor/`, `.claude/`, `.agents/`, `.opencode/`) by `users/home/ai-policies.nix`.
 - `modules/services/ai/policies/etiquette/body.md` (`## 1. Plans`) defines where plans live (`docs/src/plans/<topic>-plan.md`), their required sections (`Objective / Current state / Decisions / Phases / Rollout order / Open questions`), and plan retirement upon completion.
 - However, `etiquette/body.md` does not yet specify how an agent should execute a multi-session plan interactively when the user invokes `"we are running @<planfile>"`.
-- The protocol is currently piloted inline in `docs/src/plans/aset-love-migration-plan.md`.
+- The protocol was piloted inline in `docs/src/plans/aset-love-migration-plan.md`, which was retired with that migration on 2026-11-10; its last version is at `110c053^`.
 
 ## Decisions
 
@@ -28,25 +28,20 @@ Define and codify a reusable **Copilot Mode** in the repository's canonical AI p
 
 ## Phases
 
-### Phase 1 — Dogfood on Live Migration
-
-Run the protocol during the multi-session execution of `docs/src/plans/aset-love-migration-plan.md` and note any ergonomics or handoff improvements needed.
-
-### Phase 2 — Codify in Canonical AI Policies
+### Phase 1 — Codify in Canonical AI Policies
 
 Add the Copilot Mode protocol to the canonical policy sources (either as a sub-section of `## 1. Plans` in `modules/services/ai/policies/etiquette/body.md` or as a dedicated policy in `users/home/ai-policies.nix`).
 
-### Phase 3 — Verify & Retire Plan
+### Phase 2 — Verify & Retire Plan
 
 Evaluate the Nix configuration to ensure all generated agent policy files build cleanly, and delete `docs/src/plans/ai-copilot-mode-plan.md` in the completing change set.
 
 ## Rollout order
 
-- [ ] **1.1** Complete or validate the interactive copilot workflow on `docs/src/plans/aset-love-migration-plan.md` (User + AI).
-- [ ] **2.1** Decide whether Copilot Mode belongs in `modules/services/ai/policies/etiquette/body.md` (`## 1. Plans`) or as a standalone skill/rule in `users/home/ai-policies.nix` (User).
-- [ ] **2.2** Implement the policy update in `modules/services/ai/policies/` (AI).
-- [ ] **3.1** Verify evaluation (`nix flake check --no-build` / Home Manager build check) and audit `git diff` (AI).
-- [ ] **3.2** Retire `docs/src/plans/ai-copilot-mode-plan.md` in the same change set (AI).
+- [ ] **1.1** Decide whether Copilot Mode belongs in `modules/services/ai/policies/etiquette/body.md` (`## 1. Plans`) or as a standalone skill/rule in `users/home/ai-policies.nix` (User).
+- [ ] **1.2** Implement the policy update in `modules/services/ai/policies/` (AI).
+- [ ] **2.1** Verify evaluation (`nix flake check --no-build` / Home Manager build check) and audit `git diff` (AI).
+- [ ] **2.2** Retire `docs/src/plans/ai-copilot-mode-plan.md` in the same change set (AI).
 
 ## Open questions
 

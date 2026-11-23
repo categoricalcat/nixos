@@ -18,7 +18,8 @@ Owns:
 Not owned here:
 
 - Network policy and service configuration on `yirukou` (retired plans; live rules in [yirukou](../hosts/yirukou.md)).
-- Certificates: [mTLS Architecture Plan](mtls-architecture-plan.md); the DNS
+- Certificates: live architecture in [dns-and-proxy.md](../services/dns-and-proxy.md),
+  PKI runbook in [secrets.md](../services/secrets.md); the DNS
   resolver hop is [mTLS on DNS](mtls-dns-plan.md).
 
 Persists state the other plans rely on: `/var/lib/tailscale` (VPN to LAN subnet router), `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter` (security-monitor gates), and `/persist/keys` (sops, through which mTLS keys arrive).
@@ -66,7 +67,7 @@ Mount `/` as a 2 GiB tmpfs and the whole existing Ext4 filesystem at `/persist`.
 
 ### 3. Dual-layout key staging (`/keys` copy)
 
-Before the reboot, `cp -a /persist/keys /keys` as root. On the cutover generation `nvme0n1p2` mounts at `/persist`, so disk path `keys/` appears at `/persist/keys`; the legacy `<disk>/persist/keys` appears at `/persist/persist/keys` and is read by generation N-1 only.
+Before the reboot, `cp -a /persist/keys /keys` as root. On the cutover generation `nvme0n1p2` mounts at `/persist`, so disk path `keys/` appears at `/persist/keys`; the legacy `<disk>/persist/keys` appears at `/persist/persist/keys` and is read by generation N-1 only. A symlink cannot replace the copy: an absolute one becomes self-referential once the disk root is `/persist`, and a relative one crosses a mount point.
 
 ### 4. Staged activation (`boot` + reboot, never `switch`)
 
@@ -317,7 +318,7 @@ ______________________________________________________________________
 
 ## Rollout Order
 
-Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md). This is a dedicated `yirukou` boot release: it may run after its own pre-migration revalidation and before a later `yirukou` feature release, but never in the same generation as VPN, service-security, or mTLS changes.
+Fleet sequencing is defined by the [Architecture Security Rollout](architecture-rollout-plan.md). This is a dedicated `yirukou` boot release: it may run after its own pre-migration revalidation and before a later `yirukou` feature release, but never in the same generation as another lane's changes.
 
 1. **Code**: `flake.nix`, `hosts/yirukou/storage.nix`, `hosts/yirukou/storage-test.nix`, `hosts/yirukou/hardware.nix`, `hosts/yirukou/configuration.nix`, `hosts/yirukou/services.nix`, `security-monitor/default.nix` and `cve-scan.sh`, `nix/checks.nix`.
 1. **Stage keys**: `cp -a /persist/keys /keys`; verify with `diff -r`.
@@ -332,10 +333,9 @@ Fleet sequencing is defined by the [Architecture Security Rollout](architecture-
 - **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md) is the canonical dependency order.
 - **VPN to LAN**: the subnet router keeps its node key and approved route only if `/var/lib/tailscale` is persisted; confirmed by the tailscale acceptance check.
 - **Service Security**: its gates read `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter`; both are persisted, and Decision 7 keeps the sweep honest.
-- **mTLS**: the [mTLS HTTP phases](mtls-architecture-plan.md) and the
-  [DNS lane](mtls-dns-plan.md) can deploy before this plan while the root is
-  persistent. `/persist/keys` staging is required only at this cutover, so
-  sops keeps decrypting into `/run/secrets`.
+- **mTLS**: the [DNS lane](mtls-dns-plan.md) can deploy before this plan
+  while the root is persistent. `/persist/keys` staging is required only at
+  this cutover, so sops keeps decrypting into `/run/secrets`.
 - **Release isolation**: all other `yirukou` changes ship in different generations.
 
 ______________________________________________________________________
@@ -420,14 +420,6 @@ ______________________________________________________________________
 
 ## Open Questions
 
-- **Q: Why Ext4 root-on-tmpfs instead of reformatting to Btrfs?**
-  - **Resolved**: reformatting needs a rescue environment, destroys every rollback generation, and risks a remote edge gateway. The in-place approach keeps a one-keystroke rollback.
-- **Q: Does bind-mounting `/persist/nix` to `/nix` cost performance?**
-  - **Resolved**: bind mounts are VFS-level; no measurable overhead.
-- **Q: Why copy `/persist/keys` to `/keys` instead of a symlink?**
-  - **Resolved**: an absolute symlink becomes self-referential once the disk root is `/persist`, and a relative one crosses a mount point.
-- **Q: Keep the CVE scan on `yirukou`?**
-  - **Resolved 2026-11-22**: keep it. `/var/cache/vulnix` (~1.2 GiB) is persisted, and the sweep root moves to `/persist` so the gate keeps measuring real disk (Decision 7).
 - **Q: Does journald split history because `/etc/machine-id` is bound in stage 2?**
   - **Open**: the impermanence file mount runs at `local-fs.target`, after `systemd-journald` starts. Early entries may carry a transient machine-id. Phase 4 checks `journalctl --list-boots` and `cat /etc/machine-id`; if the split is real, bind machine-id from the initrd as a fifth `fileSystems` entry.
 - **Q: Should `boot.initrd.systemd.emergencyAccess` be enabled for the cutover generation?**

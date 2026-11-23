@@ -6,7 +6,6 @@
 | yifuwuqi | bazarr | bazarr.aset.love | 24767 |
 | yifuwuqi | cockpit | cockpit.aset.love | 24091 |
 | yifuwuqi | docs | docs.aset.love | 24083 |
-| yifuwuqi | files | files.aset.love | 24086 |
 | yifuwuqi | firecrawl | — | 24002 |
 | yifuwuqi | flaresolverr | flaresolverr.aset.love | 24191 |
 | yifuwuqi | forgejo | git.aset.love | 24200 |

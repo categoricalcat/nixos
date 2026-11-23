@@ -1,6 +1,6 @@
 # mTLS on DNS: the Resolver Hop
 
-## Status: DRAFT — split from the [mTLS plan](mtls-architecture-plan.md) on 2026-11-22; deploys after its Phase 5
+## Status: DRAFT — not started; nothing blocks it
 
 ## Objective
 
@@ -211,8 +211,6 @@ flowchart TD
     p4 --> p5
 ```
 
-1. Start only after [mTLS Phase 5](mtls-architecture-plan.md#phase-5-retire-interim-ip-rules)
-   passes.
 1. `yirukou` before `yifuwuqi`; never deploy this in the same generation as
    the [impermanence cutover](impermanence-yirukou-plan.md).
 1. Reverting Phase 4 restores plain `:53` forwarding with no loss of
@@ -229,8 +227,4 @@ flowchart TD
 
 ## Open Questions
 
-- **Is the forwarder worth one more boot dependency?** The alternative is
-  `resolved` speaking DoT straight to AdGuard's `:853` — two lines, no
-  daemon, encrypted and server-authenticated, but no client certificate, so
-  the hop would be a documented exception to the plan's "every inter-host
-  service uses mutual TLS" rule.
+None.

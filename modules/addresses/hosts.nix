@@ -366,14 +366,6 @@ in
           domain = "docs.${baseDomain}";
           port = 24083;
         };
-        files = {
-          name = "Files";
-          group = "Infrastructure";
-          icon = "filebrowser.png";
-          desktopIcon = "system-file-manager.svg";
-          domain = "files.${baseDomain}";
-          port = 24086;
-        };
       };
 
       nixBuild = mkNixBuild {

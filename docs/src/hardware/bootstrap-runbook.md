@@ -170,7 +170,7 @@ the secrets and restart the units that consume them:
 
 ```bash
 systemctl restart sops-install-secrets.service
-systemctl restart filebrowser.service   # every unit that wants a sops secret
+systemctl restart atticd.service        # every unit that wants a sops secret
 ```
 
 The clean-VM drill (`secrets/test.nix`) rehearses exactly this

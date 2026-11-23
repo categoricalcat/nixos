@@ -6,7 +6,7 @@
 # `survivor` plays a keyed host walking the enrollment path (host SSH key
 # migration -> age identity derivation -> sops encrypt to its own recipient,
 # the secrets package's real commands from default.nix) and holds the backups
-# (pg dump + filebrowser bolt-db tar). `rebuilt` plays the lost machine
+# (PostgreSQL dumps for forgejo and atticd). `rebuilt` plays the lost machine
 # reinstalled from scratch: fresh identity, nothing decryptable until the
 # survivor rekeys via `sops updatekeys` with the real creation-rules renderer
 # (secrets/keys.nix sopsYamlFor), then restore, re-activate, and serve the
@@ -25,8 +25,8 @@ let
   yi = allAddresses.hosts.yifuwuqi;
   lan = yi.network.lan.ipv4.host;
   gateway = allAddresses.hosts.yirukou.network.lan.ipv4.host;
-  inherit (yi.services) files ingress;
-  inherit (files) domain;
+  inherit (yi.services) attic ingress;
+  inherit (attic) domain;
 
   # The production creation-rules shape, rendered at test time with the two
   # in-test recipients. Placeholder lines are replaced in the test script;
@@ -40,7 +40,7 @@ in
   name = "dr-recovery";
 
   defaults =
-    { config, pkgs, ... }:
+    { pkgs, ... }:
     {
       _module.args.allAddresses = allAddresses;
       networking = {
@@ -62,23 +62,24 @@ in
       users.groups.yi = { };
 
       environment = {
-        # The preStart and the drill both drive the same binary.
         systemPackages = [
-          config.services.filebrowser.package
           pkgs.sops
           # Brings its own tools; installing them here too would hide a
           # missing runtimeInput.
           (pkgs.callPackage ./default.nix { })
           pkgs.curl
           pkgs.jq
+          pkgs.openssl
         ];
       };
 
       imports = [
         sopsNix.nixosModules.sops
         ./sops.nix
+        ../modules/options/server-mode.nix
+        ../modules/maintenance.nix
         ../modules/services/postgresql.nix
-        ../modules/services/filebrowser.nix
+        ../modules/services/attic/server.nix
       ];
     };
 
@@ -118,14 +119,12 @@ in
   testScript = ''
     import base64
 
-    pw = "drill-synthetic-3f9a"  # synthetic; no real secret
-    secret_path = "/run/secrets/passwords/filebrowser"
+    secret_path = "/run/secrets/tokens/attic-server-jwt-env"
     host_key = "/persist/keys/ssh/ssh_host_ed25519_key"
     sops_yaml = "/persist/keys/sops/secrets.yaml"
     repo_yaml = "/root/repo/.sops.yaml"  # stands in for the repo's rendered .sops.yaml
-    db = "/var/lib/filebrowser/database.db"
     ingress = "http://${lan}:${toString ingress.port}"
-    files_host = "Host: ${domain}"
+    attic_host = "Host: ${domain}"
     # The enrollment steps, shared by both nodes' walks.
     enroll = (
         f"ensure-host-key {host_key} yifuwuqi"
@@ -139,7 +138,8 @@ in
             m.wait_for_unit("postgresql.service")
             # No host identity at /persist: sops cannot decrypt anything yet.
             m.wait_until_succeeds("systemctl is-failed --quiet sops-install-secrets.service")
-            m.wait_until_succeeds("systemctl is-failed --quiet filebrowser.service")
+            m.wait_until_succeeds("systemctl show -p Result --value atticd.service | grep -qx resources")
+            m.fail("systemctl is-active --quiet atticd.service")
             m.fail(f"test -e {secret_path}")
 
     with subtest("survivor walks the enrollment path with the real scripts"):
@@ -150,7 +150,12 @@ in
         assert etc_pub == survivor_pub, "host key was regenerated instead of migrated"
         sr = survivor.succeed(f"ssh-pub-to-age '{survivor_pub}'").strip()
 
-        survivor.succeed(f"printf 'passwords:\\n  filebrowser: {pw}\\n' >/tmp/secrets-plain.yaml")
+        jwt_b64 = survivor.succeed("openssl genrsa -traditional 2048 | base64 -w0").strip()
+        jwt_env = f"ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64={jwt_b64}"
+        survivor.succeed(
+            "printf 'tokens:\\n  attic-server-jwt-env: |\\n    %s\\n' "
+            f"'{jwt_env}' >/tmp/secrets-plain.yaml"
+        )
         # /persist/keys/sops exists with the declarative layout from
         # secrets/sops.nix (boot tmpfiles); only the repo copy and rules
         # render inside sync-secrets cannot run here.
@@ -158,16 +163,19 @@ in
         survivor.succeed(f"rm /tmp/secrets-plain.yaml; chmod 0600 {sops_yaml}")
         survivor.succeed("systemctl restart sops-install-secrets.service")
         owner = survivor.succeed(f"stat -c '%U:%G:%a' {secret_path}").strip()
-        assert owner == "yi:yi:400", f"secret rendered as {owner}"
-        # The first-boot preStart inited the bolt db but never created the
-        # user (it failed on the missing secret), and bolt allows a single
-        # opener: seed the backup-only state while the server is not holding
-        # the database.
+        assert owner == "root:root:400", f"secret rendered as {owner}"
+        survivor.succeed("systemctl restart atticd.service")
+        survivor.wait_for_unit("atticd.service")
+        survivor.wait_for_open_port(${toString attic.port})
+
+        token = survivor.succeed(
+            "atticd-atticadm make-token --sub yi --validity '1 hour' "
+            "--pull '*' --push '*' --create-cache '*' --configure-cache '*'"
+        ).strip()
         survivor.succeed(
-            f"filebrowser --database {db} users add restore-marker another-synthetic-pw --perm.admin=false"
+            f"attic login local http://127.0.0.1:${toString attic.port} '{token}' "
+            "&& attic cache create local:yi"
         )
-        survivor.succeed("systemctl restart filebrowser.service")
-        survivor.wait_for_unit("filebrowser.service")
 
     with subtest("survivor produces the backup artifacts"):
         survivor.succeed(
@@ -177,7 +185,7 @@ in
             "runuser -u postgres -- psql -d forgejo -c \"insert into drill_recovery values ('restored-payload')\""
         )
         survivor.succeed("runuser -u postgres -- pg_dump -d forgejo -f /tmp/forgejo.sql")
-        survivor.succeed("tar -C /var/lib -czf /tmp/filebrowser.tgz filebrowser")
+        survivor.succeed("runuser -u postgres -- pg_dump -d atticd -f /tmp/atticd.sql")
 
     with subtest("rebuilt reinstalls onto the prepared disk"):
         # Safety guards rehearsed: the running-root disk (/dev/vda) and the
@@ -214,11 +222,11 @@ in
             ' && SOPS_AGE_KEY="$(cat /root/.config/sops/age/keys.txt)" sops updatekeys -y secrets/secrets.yaml'
         )
         survivor.succeed(f"install -m 0600 -o root -g root /root/repo/secrets/secrets.yaml {sops_yaml}")
-        survivor.succeed(f"cp {sops_yaml} /tmp/forgejo.sql /tmp/filebrowser.tgz /tmp/shared/")
+        survivor.succeed(f"cp {sops_yaml} /tmp/forgejo.sql /tmp/atticd.sql /tmp/shared/")
 
     with subtest("rebuilt restores identity, secrets, and data"):
         rebuilt.succeed(f"install -m 0600 -o root -g root /tmp/shared/secrets.yaml {sops_yaml}")
-        rebuilt.succeed("cp /tmp/shared/forgejo.sql /tmp/shared/filebrowser.tgz /tmp/")
+        rebuilt.succeed("cp /tmp/shared/forgejo.sql /tmp/shared/atticd.sql /tmp/")
         # Postgres moves onto the prepared disk: the tmpfiles sweep above
         # recreated the data roots there and a restart initdb's a fresh
         # cluster to restore into.
@@ -232,50 +240,35 @@ in
         row = rebuilt.succeed("runuser -u postgres -- psql -tAd forgejo -c 'select proof from drill_recovery'").strip()
         assert row == "restored-payload", f"pg restore returned {row!r}"
 
-        rebuilt.succeed("tar -C /var/lib -xzf /tmp/filebrowser.tgz")
-        owner = rebuilt.succeed(f"stat -c '%U:%G' {db}").strip()
-        assert owner == "yi:yi", f"restored db owned by {owner}"
-
-        # The restored bolt db carries the backup-only marker user; read it
-        # while the server is not holding the database.
-        users = rebuilt.succeed(f"filebrowser --database {db} users ls")
-        assert "restore-marker" in users, "filebrowser backup did not restore"
+        rebuilt.succeed("runuser -u postgres -- psql -d atticd -f /tmp/atticd.sql >/dev/null")
+        cache = rebuilt.succeed("runuser -u postgres -- psql -tAd atticd -c \"select name from cache where name = 'yi'\"").strip()
+        assert cache == "yi", f"atticd restore returned {cache!r}"
 
         rebuilt.succeed("systemctl restart sops-install-secrets.service")
         decrypted = rebuilt.succeed(f"cat {secret_path}").strip()
-        assert decrypted == pw, "rekeyed secrets do not decrypt under the rebuilt identity"
-        rebuilt.succeed("systemctl restart filebrowser.service")
-        rebuilt.wait_for_unit("filebrowser.service")
+        assert decrypted == jwt_env, "rekeyed secrets do not decrypt under the rebuilt identity"
+        rebuilt.succeed("systemctl restart atticd.service")
+        rebuilt.wait_for_unit("atticd.service")
+        rebuilt.wait_for_open_port(${toString attic.port})
 
     with subtest("restored state is served through the real local ingress"):
         survivor.wait_until_succeeds("ping -c 1 -W 1 ${lan}")
         # The gateway allowlist in proxy-vhosts.nix admits only yirukou's LAN
-        # address; the survivor holds it, so it can log into the restored
-        # bolt db with the rekeyed secret and list the restored tree.
-        # Type=simple units are active before their socket binds; the login
-        # doubles as the serving gate (retries until the restored stack
-        # answers through the ingress).
+        # address; the survivor holds it, so it can query the restored private
+        # cache with the JWT signed by the pre-rebuild key through the ingress.
         survivor.wait_until_succeeds(
-            "curl -sf -H 'Content-Type: application/json' "
-            f'-d \'{{"username":"yi","password":"{pw}"}}\' -o /tmp/login.json '
-            f"-H '{files_host}' {ingress}/api/login"
+            f"curl -sf -H 'Authorization: Bearer {token}' -H '{attic_host}' "
+            f"{ingress}/_api/v1/cache-config/yi -o /tmp/cache.json"
         )
-        # v2 filebrowser returns either {"token": ...} or the raw JWT; both
-        # shapes collapse to the token string.
-        token = survivor.succeed(
-            "jq -er .token /tmp/login.json 2>/dev/null || tr -d '\"' </tmp/login.json"
+        # An unauthenticated request must be rejected by the restored daemon.
+        unauth = survivor.succeed(
+            f"curl -s -o /dev/null -w '%{{http_code}}' -H '{attic_host}' "
+            f"{ingress}/_api/v1/cache-config/yi"
         ).strip()
-        resources = survivor.succeed(
-            f"curl -s -o /tmp/resources.out -w '%{{http_code}}' "
-            f"-H 'X-Auth: {token}' -H '{files_host}' {ingress}/api/resources/"
-        ).strip()
-        assert resources == "200", (
-            f"ingress listing answered {resources}: "
-            + survivor.execute("head -c 300 /tmp/resources.out")[1]
-        )
+        assert unauth in ("401", "403"), f"unauthenticated request answered {unauth}"
         # A non-gateway source is denied at the door, exactly as in production.
         denied = rebuilt.succeed(
-            f"curl -s -o /dev/null -w '%{{http_code}}' -H '{files_host}' {ingress}/"
+            f"curl -s -o /dev/null -w '%{{http_code}}' -H '{attic_host}' {ingress}/"
         ).strip()
         assert denied == "403", f"ingress answered {denied} to a non-gateway peer"
 

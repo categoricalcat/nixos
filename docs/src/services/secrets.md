@@ -111,7 +111,6 @@ keys:
     deploy: string
 passwords:
     nextcloud: string
-    filebrowser: string
     opencode: string
 tokens:
     attic-server-jwt-env: |
@@ -166,25 +165,24 @@ sops secrets/secrets.yaml
 Recipes (`openssl` is not on the default PATH; enter `nix shell nixpkgs#openssl`
 first):
 
-| SOPS key                                | Value format      | How to get it                                                                                               |
-| --------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| `tokens/attic-server-jwt-env`           | env file          | Generate locally; command below                                                                             |
-| `tokens/attic-push-token`               | raw token         | Generate with `atticd-atticadm` after `atticd` starts; command below                                        |
-| `tokens/forgejo-runner`                 | raw token         | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner                                  |
-| `tokens/github-runner-nixos`            | raw token         | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                                       |
-| `keys/deploy`                           | PEM string        | Generated via `nix run .#secrets` (or `-- --rotate`) on any configured host                                 |
-| `services/grafana/secret-key`           | random string     | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets                       |
-| `cloudflare_api_token`                  | env file          | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>`          |
-| `tokens/cloudflared`                    | raw token         | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token                   |
-| `tokens/playit-agent`                   | env file          | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...`   |
-| `tokens/localtonet-authtoken`           | raw token         | Localtonet dashboard auth token                                                                             |
-| `tokens/deepseek`                       | raw API key       | DeepSeek console API key                                                                                    |
-| `nix/access-tokens`                     | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below                                               |
-| `passwords/nextcloud`                   | plain password    | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one                     |
-| `passwords/filebrowser`                 | plain password    | File Browser login for user `yi` (not the unix password). At least 12 characters: `openssl rand -base64 18` |
-| `passwords/opencode`                    | plain password    | OpenCode web/API password (`OPENCODE_PASSWORD`); generate with `openssl rand -base64 24` or choose one      |
-| `services/proton/wireguard_private_key` | raw token         | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf`                  |
-| `samba/credentials/yi`                  | credentials file  | SMB account credentials: `username=...` and `password=...`                                                  |
+| SOPS key                                | Value format      | How to get it                                                                                             |
+| --------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `tokens/attic-server-jwt-env`           | env file          | Generate locally; command below                                                                           |
+| `tokens/attic-push-token`               | raw token         | Generate with `atticd-atticadm` after `atticd` starts; command below                                      |
+| `tokens/forgejo-runner`                 | raw token         | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner                                |
+| `tokens/github-runner-nixos`            | raw token         | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                                     |
+| `keys/deploy`                           | PEM string        | Generated via `nix run .#secrets` (or `-- --rotate`) on any configured host                               |
+| `services/grafana/secret-key`           | random string     | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets                     |
+| `cloudflare_api_token`                  | env file          | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>`        |
+| `tokens/cloudflared`                    | raw token         | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token                 |
+| `tokens/playit-agent`                   | env file          | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...` |
+| `tokens/localtonet-authtoken`           | raw token         | Localtonet dashboard auth token                                                                           |
+| `tokens/deepseek`                       | raw API key       | DeepSeek console API key                                                                                  |
+| `nix/access-tokens`                     | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below                                             |
+| `passwords/nextcloud`                   | plain password    | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one                   |
+| `passwords/opencode`                    | plain password    | OpenCode web/API password (`OPENCODE_PASSWORD`); generate with `openssl rand -base64 24` or choose one    |
+| `services/proton/wireguard_private_key` | raw token         | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf`                |
+| `samba/credentials/yi`                  | credentials file  | SMB account credentials: `username=...` and `password=...`                                                |
 
 Tokens generated by external UIs may expire if unused. If first deploy was long
 after generation and a runner/tunnel fails registration, generate a fresh token

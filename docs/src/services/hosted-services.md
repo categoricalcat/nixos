@@ -26,7 +26,7 @@ ______________________________________________________________________
   1. **Media**: Jellyfin, Jellyseerr, Pinepods (`cast.aset.love`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
   1. **Monitoring**: Grafana (`grafana.aset.love`), GoAccess (`goaccess.aset.love`).
-  1. **Infrastructure**: Cockpit, Files, Forgejo, Opencode Agent, SillyTavern, Attic Binary Cache, Docs.
+  1. **Infrastructure**: Cockpit (with File browser), Forgejo, Opencode Agent, SillyTavern, Attic Binary Cache, Docs.
   1. **Network**: AdGuard Home, SearXNG.
 - **Widgets**: Real-time CPU, RAM, and root filesystem disk utilization monitors, plus an integrated search bar pointing to SearXNG.
 
@@ -66,22 +66,16 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.6 Cockpit System Manager (`modules/services/cockpit.nix`)
 
-- **Web UI**: Port `24091` (`https://cockpit.aset.love`).
-- **Configuration**: Configured with `WebService.AllowUnencrypted = true` to work seamlessly behind Nginx SSL termination, with explicit origin allowlisting across LAN, VPN, and FQDN. Includes `pkgs.sysstat` for historical performance graphing. The Kernel dump page is hidden (`/etc/cockpit/kdump.override.json`): NixOS `kexec` is for fast reboot, not Fedora's `kdump.service`, and that page only shows a false "install kexec-tools" alert.
-- **Plugins**: `cockpit-podman` (Podman containers, replaces the former Portainer CE deployment; PAM login), `cockpit-files` (file browser), `cockpit-dockermanager`, `cockpit-machines` (libvirt UI), `cockpit-zfs` (ZFS UI). The last two only add the pages; libvirt and ZFS are not enabled on this host.
+- **Web UI**: Port `24091` (`https://cockpit.aset.love`), with the file manager at `https://cockpit.aset.love/files`.
+- **Configuration**: Configured with `WebService.AllowUnencrypted = true`, `ProtocolHeader = "X-Forwarded-Proto"`, and `ForwardedForHeader = "X-Forwarded-For"` to work behind Nginx TLS termination (`longTimeouts` and `proxy_buffering off` in `modules/services/proxy-vhosts.nix`), with explicit origin allowlisting across LAN, local hostname, and FQDN. Includes `pkgs.sysstat` for historical performance graphing. The Kernel dump page is hidden (`/etc/xdg/cockpit/kdump.override.json`, matching `XDG_CONFIG_DIRS=/etc/xdg:...`): NixOS `kexec` is for fast reboot, not Fedora's `kdump.service`, and that page only shows a false "install kexec-tools" alert.
+- **Plugins**: `cockpit-podman` (Podman containers, replaces the former Portainer CE deployment; PAM login), `cockpit-files` (web file manager for browsing, editing, uploading, and downloading files), `cockpit-dockermanager`, `cockpit-machines` (libvirt UI), `cockpit-zfs` (ZFS UI). The last two only add the pages; libvirt and ZFS are not enabled on this host.
 
 ### 2.7 WebDAV Server (`modules/services/webdav.nix`, dormant)
 
 - **Status**: Disabled (commented out in `hosts/yifuwuqi/services.nix` and absent from the active registry directory above).
 - **Configuration**: Built using `pkgs.nginxModules.dav` (`https://webdav.aset.love`), root directory `/srv/webdav` (mode 0775, `nginx:nginx`), unlimited client max body size (`client_max_body_size 0`), support for all standard WebDAV methods (`PUT`, `DELETE`, `MKCOL`, `COPY`, `MOVE`, `PROPFIND`, `OPTIONS`, `LOCK`, `UNLOCK`).
 
-### 2.8 File Browser (`modules/services/filebrowser.nix`)
-
-- **Web UI**: Bound to loopback `127.0.0.1:24086` behind the local ingress and proxied to `https://files.aset.love`.
-- **Login**: username `yi` with SOPS `passwords/filebrowser`. This is not the unix password.
-- **Scope**: `/home/yi`, read-only. Download is the only permission. Dotfiles are visible; `/the.files/nixos/secrets` is denied.
-
-### 2.9 Gang Documentation (`docs/service.nix`)
+### 2.8 Gang Documentation (`docs/service.nix`)
 
 - **Web UI**: Bound to loopback behind the local ingress and proxied to `https://docs.aset.love`.
 - **Real-Time Auto-Builder**: Watchexec monitors `/home/yi/the.files/nixos/docs` on `yifuwuqi` (debounced by 1500ms).
@@ -100,5 +94,4 @@ ______________________________________________________________________
 - `modules/services/ai/sillytavern.nix`
 - `modules/services/cockpit.nix`
 - `modules/services/webdav.nix`
-- `modules/services/filebrowser.nix`
 - `hosts/yifuwuqi/services.nix`
