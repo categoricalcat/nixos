@@ -266,7 +266,7 @@
         })
       ];
 
-      defaultShell = pkgs.mkShell {
+      nxdShell = pkgs.mkShell {
         packages =
           rustPkgs
           ++ nixDevPkgs
@@ -285,16 +285,6 @@
           # `~/.config/nvim/init.lua` without its plugin packpath. Only append
           # it as a fallback on minimal hosts (e.g. yirukou) without `nvim`.
           command -v nvim >/dev/null 2>&1 || export PATH="$PATH:${pkgs.neovim}/bin"
-          ${config.pre-commit.installationScript}
-          # `nix develop` can start in any subdir (or outside the repo via an
-          # explicit flake ref); anchor at the flake root, not cwd.
-          hook_root=$PWD
-          while [ "$hook_root" != / ] && [ ! -e "$hook_root/flake.nix" ]; do
-            hook_root=$(dirname "$hook_root")
-          done
-          if [ -d "$hook_root/packages/firecrawl-mcp" ] && { [ ! -e "$hook_root/packages/firecrawl-mcp/node_modules" ] || [ -L "$hook_root/packages/firecrawl-mcp/node_modules" ]; }; then
-            ln -sfn ${config.packages.firecrawl-mcp.nodeModules}/node_modules "$hook_root/packages/firecrawl-mcp/node_modules"
-          fi
           if [ -z "''${DIRENV_IN_ENVRC:-}" ]; then
             ${mkShellEnvHook ''"$HOME"''}
             export TMUX_TMPDIR="''${TMUX_TMPDIR:-''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}}"
@@ -306,6 +296,27 @@
           fi
         '';
       };
+
+      defaultShell = nxdShell.overrideAttrs (old: {
+        shellHook = ''
+          # Only install git hooks and firecrawl-mcp node_modules inside this
+          # repo's own root, never when entering `default` from outside.
+          hook_root=$PWD
+          while [ "$hook_root" != / ] && [ ! -e "$hook_root/flake.nix" ]; do
+            hook_root=$(dirname "$hook_root")
+          done
+          if [ -f "$hook_root/flake.nix" ] && [ -f "$hook_root/nix/git-hooks.nix" ] && [ -d "$hook_root/packages/firecrawl-mcp" ]; then
+            if [ "$(${lib.getExe pkgs.git} rev-parse --show-toplevel 2>/dev/null || true)" = "$hook_root" ]; then
+              ${config.pre-commit.installationScript}
+            fi
+            if [ ! -e "$hook_root/packages/firecrawl-mcp/node_modules" ] || [ -L "$hook_root/packages/firecrawl-mcp/node_modules" ]; then
+              ln -sfn ${config.packages.firecrawl-mcp.nodeModules}/node_modules "$hook_root/packages/firecrawl-mcp/node_modules"
+            fi
+          fi
+          unset hook_root
+          ${old.shellHook}
+        '';
+      });
 
       sandboxShell = pkgs.mkShell {
         packages =
@@ -344,8 +355,11 @@
       };
     in
     {
-      devShells.default = defaultShell;
-      devShells.sandbox = sandboxShell;
+      devShells = {
+        default = defaultShell;
+        nxd = nxdShell;
+        sandbox = sandboxShell;
+      };
 
       packages = wrappers;
     };

@@ -47,6 +47,9 @@ let
   sharedServices = {
     llama-cpp.port = 11436;
     valkey.port = 24379;
+    # Internal mTLS ingress: one port on both hosts, serving the application
+    # vhosts on yifuwuqi and the machine-scrape paths on both.
+    ingress.port = 24120;
   };
 
   # Off-net addresses each failover host pings to judge its primary uplink
@@ -339,9 +342,8 @@ in
           port = 24010;
         };
         # One nginx listener on the LAN address fronts every proxied backend
-        # (local ingress); yirukou proxies each domain to it and mTLS Tier 2
-        # terminates here later.
-        ingress.port = 24120;
+        # (local ingress); yirukou proxies each domain to it over mTLS.
+        inherit (sharedServices) ingress;
         firecrawl.port = 24002;
         inherit (sharedServices) llama-cpp;
         valkey = {
@@ -557,6 +559,9 @@ in
       };
 
       services = {
+        # Machine-scrape ingress: the central host scrapes every exporter here
+        # over mTLS, so no exporter port is exposed to the LAN.
+        inherit (sharedServices) ingress;
         adguardhome = {
           name = "AdGuard Home";
           group = "Network";

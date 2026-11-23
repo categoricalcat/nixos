@@ -24,12 +24,12 @@ acceptance checks.
 - [Impermanence on yirukou](impermanence-yirukou-plan.md) is not implemented:
   the flake has no impermanence input or module, and
   `hosts/yirukou/hardware.nix` still configures an Ext4 root.
-- [Infrastructure mTLS](mtls-architecture-plan.md) is not implemented:
-  inter-host proxying, exporter scrapes, and Vector-to-Loki use plaintext
-  HTTP, and no service CA or runtime certificate configuration exists. The
-  plan was revised 2026-11-22 against the deployed ingress and now ends at
-  HTTP; the resolver hop moved to [mTLS on DNS](mtls-dns-plan.md), which is
-  also not implemented.
+- [Infrastructure mTLS](mtls-architecture-plan.md) is implemented for the HTTP
+  lanes: inter-host proxying, exporter scrapes, and Vector-to-Loki all run over
+  mutual TLS from one service CA under `/persist/keys/mtls/`, deployed to
+  `yirukou` and `yifuwuqi` on 2026-11-23. Phase 1 (Cloudflare Origin Pulls)
+  stays dormant until the `aset.love` canary; the resolver hop moved to
+  [mTLS on DNS](mtls-dns-plan.md), which is still not implemented.
 - `restrictedProxyConfig` allows only trusted LAN `10.42.0.0/24` and
   `fd75:c55f:6d19:1::/64`, excluding the untrusted VLAN 42 CIDRs. VPN to LAN
   Phase 2 removed its VPN CIDR and added a `yirukou` input SNAT that
@@ -249,11 +249,11 @@ runtime gates pass.
 - [x] Deploy and validate VPN to LAN Phases 3–4 after Service Security Phase 0
   preserves the Tailscale route (2026-11-09).
 - [x] Deploy Service Security Phase 3 (gate passed 2026-11-09).
-- [ ] Deploy [mTLS Phases 2–3](mtls-architecture-plan.md#phase-2-inter-host-application-proxy-tier-2)
-  after the local ingress is healthy.
-- [ ] Deploy [mTLS Phase 4](mtls-architecture-plan.md#phase-4-log-push-through-the-ingress-tier-3b)
-  and [Phase 5](mtls-architecture-plan.md#phase-5-retire-interim-ip-rules):
-  retire interim rules after the HTTP mTLS phases pass.
+- [x] Deploy [mTLS Phases 2–3](mtls-architecture-plan.md#phase-2-inter-host-application-proxy-tier-2)
+  (2026-11-23; `yirukou` + `yifuwuqi` switched together).
+- [x] Deploy [mTLS Phase 4](mtls-architecture-plan.md#phase-4-log-push-through-the-ingress-tier-3b)
+  and [Phase 5](mtls-architecture-plan.md#phase-5-retire-interim-ip-rules)
+  (2026-11-23; interim exporter and Loki rules retired).
 - [ ] Deploy [mTLS on DNS](mtls-dns-plan.md) after the HTTP phases pass.
 - [ ] At a separate safe point after preflight, schedule and complete the
   [impermanence maintenance release](impermanence-yirukou-plan.md#rollout-order).

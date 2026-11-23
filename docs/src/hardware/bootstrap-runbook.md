@@ -244,7 +244,7 @@ ______________________________________________________________________
 
 ## 8. Source Files
 
-- `secrets/default.nix` (`secrets` package: `setup-sops`, `bootstrap-disk`, and their steps in `secrets/scripts/`)
+- `secrets/default.nix` (`secrets` package: `setup-sops`, `bootstrap-disk`, the two `mtls-pki-*` commands, and their steps in `secrets/scripts/`)
 - `secrets/keys.nix` (`sopsYamlFor`, `sopsYaml`)
 - `modules/addresses.nix` (`modules/addresses/*.nix`)
 - `secrets/test.nix` (disaster-recovery drill)

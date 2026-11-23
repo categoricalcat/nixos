@@ -12,13 +12,6 @@ let
 
   getCentralHost = allAddresses: allAddresses.hosts.${allAddresses.monitoring.centralHost};
 
-  exporterAddress =
-    allAddresses: hostName:
-    if hostName == allAddresses.monitoring.centralHost then
-      "127.0.0.1"
-    else
-      allAddresses.hosts.${hostName}.network.lan.ipv4.host;
-
   hostRelabelConfig = [
     {
       source_labels = [ "host" ];
@@ -42,14 +35,15 @@ let
     after = units;
   };
 
-  lanHttpEndpoint = host: service: "http://${host.network.lan.ipv4.host}:${toString service.port}";
+  # The machine paths ride each host's mTLS ingress; no exporter or Loki port
+  # is ever dialled directly.
+  ingressAddress = host: "${host.network.lan.ipv4.host}:${toString host.services.ingress.port}";
 in
 {
   inherit
-    exporterAddress
     getCentralHost
     hostRelabelConfig
-    lanHttpEndpoint
+    ingressAddress
     mkCentralHostAssertion
     mkWantsAfter
     resolveHosts

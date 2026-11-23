@@ -118,7 +118,9 @@ let
 
   # --- proxy-allowlist -------------------------------------------------------
   # Every proxying/file-serving vhost/location enforces restrictedProxyConfig;
-  # static `return` test and redirect locations are exempt.
+  # static `return` test and redirect locations are exempt. The mTLS machine
+  # listener is exempt as a whole: its gate is the client certificate, and its
+  # location allowlist names the scraper instead of the LAN.
   proxyAllowlist =
     let
       cfg = self.nixosConfigurations.yirukou.config;
@@ -136,19 +138,24 @@ let
         || loc.alias != null
         || loc.tryFiles != null
         || lib.hasInfix "proxy_pass" loc.extraConfig;
+      onMtlsListener =
+        vhost: builtins.any (l: l.port == addresses.hosts.yirukou.services.ingress.port) vhost.listen;
       violating = lib.concatMap (
         vname:
         let
           vhost = cfg.services.nginx.virtualHosts.${vname};
         in
-        lib.optional (vhost.root != null && allowDeny vhost.extraConfig != expected) "${vname} (vhost root)"
-        ++ lib.concatMap (
-          lname:
-          let
-            loc = vhost.locations.${lname};
-          in
-          lib.optional (served loc && allowDeny loc.extraConfig != expected) "${vname}/${lname}"
-        ) (lib.attrNames vhost.locations)
+        if onMtlsListener vhost then
+          [ ]
+        else
+          lib.optional (vhost.root != null && allowDeny vhost.extraConfig != expected) "${vname} (vhost root)"
+          ++ lib.concatMap (
+            lname:
+            let
+              loc = vhost.locations.${lname};
+            in
+            lib.optional (served loc && allowDeny loc.extraConfig != expected) "${vname}/${lname}"
+          ) (lib.attrNames vhost.locations)
       ) (lib.attrNames cfg.services.nginx.virtualHosts);
     in
     contract "proxy-allowlist" "yirukou" (violating == [ ])
@@ -193,44 +200,6 @@ let
             ];
     in
     contractIssues "edge-no-tcp" "yirukou" issues;
-
-  # --- exporter-source-scope (INTERIM) ---------------------------------------
-  # Delete together with extraInputRules at mTLS Phase 4 acceptance
-  # (docs/src/plans/mtls-architecture-plan.md).
-  exporterSourceScope =
-    let
-      centralLan = addresses.hosts.${addresses.monitoring.centralHost}.network.lan.ipv4.host;
-      saddr =
-        l:
-        let
-          m = lib.match ".*ip saddr ([^ ]+).*" l;
-        in
-        if m == null then null else builtins.head m;
-    in
-    lib.map (
-      h:
-      let
-        cfg = self.nixosConfigurations.${h}.config;
-        openExporters = lib.filter (
-          e:
-          let
-            ex = cfg.services.prometheus.exporters.${e};
-          in
-          ex.enable && ex.openFirewall
-        ) (lib.attrNames addresses.monitoring.exporters);
-        rs = lib.filter (l: lib.hasInfix "tcp dport" l && lib.hasInfix "accept" l) (
-          lines cfg.networking.firewall.extraInputRules
-        );
-        bad = lib.filter (l: saddr l != centralLan) rs;
-        issues =
-          lib.optional (
-            openExporters != [ ]
-          ) "exporters with openFirewall=true bypass source scoping: ${toString openExporters}"
-          ++ lib.optional (rs == [ ]) "no exporter accept rule in extraInputRules"
-          ++ lib.optional (bad != [ ]) "exporter accept rules not scoped to ${centralLan}: ${toString bad}";
-      in
-      contractIssues "exporter-source-scope" h issues
-    ) (lib.filter (h: h != addresses.monitoring.centralHost) addresses.monitoring.scrapeHosts);
 
   # --- container-identity -----------------------------------------------------
   # Container identity policy: one principal per ID. Every declared container
@@ -406,7 +375,6 @@ let
   contractResults =
     fleetBaseline
     ++ sshdHardening
-    ++ exporterSourceScope
     ++ containerIdentity
     ++ hardeningBaseline
     ++ deployRegistry

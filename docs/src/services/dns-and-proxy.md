@@ -109,14 +109,14 @@ ______________________________________________________________________
 │ goaccess.aset.love           │ /var/lib/goaccess + :7890 ws │
 ├──────────────────────────────┼──────────────────────────────┤
 │ docs / grafana / cockpit /   │ 10.42.0.2:24120 (yifuwuqi    │
-│ search / cache / git / agent │ local ingress, plain HTTP;   │
+│ search / cache / git / agent │ local ingress, mTLS;         │
 │ / companion / home / radarr  │ routes on Host to loopback)  │
 │ / sonarr / prowlarr / ...    │                              │
 │ image.aset.love              │ 100.69.0.4:11437 (yitaishi)  │
 └──────────────────────────────┴──────────────────────────────┘
 ```
 
-`yifuwuqi`'s local ingress (`modules/services/local-ingress.nix`) is one plain-HTTP nginx listener on the LAN address, port `24120` (`services.ingress.port`). It has one vhost per proxied domain pointing at the loopback backend (a few that cannot bind loopback — jellyfin, jellyseerr, homepage, lidarr — keep the LAN address, `upstreamLan`), and rejects unknown `Host` headers with `404`. Only `yirukou`'s LAN address may reach it (the `yifuwuqi` firewall allows the gateway only `24120` plus Loki's push port; the vhosts also `allow`/`deny`). It preserves the real client IP, scheme, and host from `yirukou`'s `X-Forwarded-*`/`X-Real-IP` headers. mTLS Tier 2 terminates on this listener later.
+`yifuwuqi`'s local ingress (`modules/services/local-ingress.nix`) is one nginx listener on the LAN address, port `24120` (`services.ingress.port`). It has one vhost per proxied domain pointing at the loopback backend (a few that cannot bind loopback — jellyfin, jellyseerr, homepage, lidarr — keep the LAN address, `upstreamLan`), and rejects unknown `Host` headers with `404`. Only `yirukou` may reach it (the `yifuwuqi` firewall allows the gateway only `24120`; the vhosts also `allow`/`deny`). It preserves the real client IP, scheme, and host from `yirukou`'s `X-Forwarded-*`/`X-Real-IP` headers.
 
 `image.aset.love` bypasses the `yifuwuqi` ingress because its backend runs on `yitaishi`; yirukou proxies directly to the backend's Tailscale-only listener.
 
@@ -130,6 +130,16 @@ ______________________________________________________________________
 
 - `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`), followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts on `yirukou` to ensure untrusted VLAN, overlay, and external networks cannot reach the proxy. Tailnet clients reach them through `yirukou`'s subnet route, SNAT'd to `10.42.0.1`. On `yifuwuqi` the local-ingress vhosts independently `allow` only `yirukou`'s LAN address (`10.42.0.1`) and `deny all`, so a direct peer that bypasses the gateway gets no backend access.
 - WebSocket proxying (`proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) enabled per-service on both hops (defaults on; disabled for attic, docs, forgejo, and searxng which do not use WebSockets).
+
+### 2.3 Inter-Host mTLS
+
+Every hop between `yirukou` and `yifuwuqi` is mutual TLS on that one ingress port, using `service-ca` and per-host leaves (`modules/services/mtls.nix`). The material — CA cert plus each host's own server and client pair — lives in `/persist/keys/mtls/` as `0640 root:mtls` in a `0750 root:mtls` directory: not in git, not in the Nix store, not a sops secret. Nix names the paths; nginx, Prometheus and Vector join the `mtls` group to read them.
+
+- `yirukou` proxies each application domain to `https://10.42.0.2:24120` with `proxy_ssl_verify on`, presenting `yirukou-client`.
+- The `yifuwuqi` vhosts require a client certificate **and** pin the subject: `if ($ssl_client_s_dn != "CN=yirukou-client") { return 403; }`. Chain validation alone would admit either host's certificate.
+- Upstreams name the peer (`proxy_ssl_name <peer>.lan`) rather than the IP: nginx matches with `X509_check_host()`, which never matches an `IP:` SAN.
+- The default vhost on each listener carries the machine paths. Prometheus and Vector cannot set `Host`, so they land there: `/<exporter>/` and, on `yifuwuqi`, `/loki/`. Those locations allow only the addresses that may connect and require a client certificate, but pin no subject — their callers are the scrape and log shippers.
+- Minting and distribution are in [secrets.md](secrets.md#internal-service-mtls-certificates); there is no per-host enrolment step.
 
 ______________________________________________________________________
 

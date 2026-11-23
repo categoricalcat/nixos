@@ -38,8 +38,8 @@ ______________________________________________________________________
 ```
 
 - **Central Host (`yifuwuqi`)**: Hosts the storage engines (Prometheus, Loki, PostgreSQL), Grafana UI, and central scrapers.
-- **Scrape Hosts (`yirukou`, `yifuwuqi`)**: Monitored endpoints exposing Prometheus exporter ports across the trusted LAN.
-- **Log Shipping**: Vector agents on each host stream systemd journal entries directly to Loki over HTTP.
+- **Scrape Hosts (`yirukou`, `yifuwuqi`)**: Monitored endpoints. Every exporter binds `127.0.0.1` and is reached only through its host's mTLS ingress at `/<name>/metrics`; no exporter port is exposed to the LAN.
+- **Log Shipping**: Vector agents on each host stream systemd journal entries to Loki through the `yifuwuqi` mTLS ingress at `/loki/`.
 
 ______________________________________________________________________
 
@@ -60,7 +60,7 @@ socket `/run/postgresql` as superuser `postgres`; AdGuard scrapes the AGH API
 on `:3333`; Unbound reads the control socket `/run/unbound/unbound.ctl`; Redis
 reads the unix socket `/run/redis/redis.sock`.
 
-Non-central hosts automatically open firewall TCP ports for all enabled exporters on the internal LAN interface (early binding relies on `net.ipv{4,6}.ip_nonlocal_bind = 1` in `modules/networking/sysctl-base.nix`).
+Non-central hosts export nothing to the LAN: every exporter binds `127.0.0.1`, and Prometheus scrapes `https://<host>:24120/<exporter>/metrics` through the mTLS ingress with its client certificate. The one exception is the AdGuard exporter on `yirukou`, whose binary binds all interfaces regardless; it stays unreachable because no firewall rule admits its port, and it is still scraped over the ingress like the rest.
 
 ### Workload resource metrics
 
@@ -181,7 +181,7 @@ ______________________________________________________________________
 - **Secrets**: `services/grafana/secret-key` managed via Sops-nix.
 - **Provisioned Data Sources**:
   - `Prometheus` (default, uid: `prometheus`, url: `http://127.0.0.1:24090`)
-  - `Loki` (uid: `loki`, url: `http://10.42.0.2:24100`)
+  - `Loki` (uid: `loki`, url: `http://127.0.0.1:24100`; Loki binds loopback and is otherwise reachable only through the mTLS ingress)
 - **Provisioned Dashboards**:
   - **Vendored JSON Dashboards**: `adguard.json` (grafana.com 23579 rev 3) and `unbound.json` (grafana.com 21006), sanitized during Nix build with `jq` to remove stale IDs and remap datasources.
   - **Nix Declarative Dashboards**: `systemd-units.json`, `services-overview.json`, `fail2ban.json`, `prometheus.json`, `loki.json`, `grafana.json`, `postgres.json`, `valkey.json`, `internet.json`, `workloads.json`.
@@ -198,7 +198,7 @@ ______________________________________________________________________
 Log shipping uses **Vector** (`services.vector`):
 
 - **Source**: `sources.journald.type = "journald"` with full systemd journal access.
-- **Sink**: `sinks.loki.type = "loki"` pointing to `http://10.42.0.2:24100`.
+- **Sink**: `sinks.loki.type = "loki"` pointing at `https://10.42.0.2:24120/loki`, with `ca_file`/`crt_file`/`key_file` from the mTLS material so the push is client-authenticated.
 - **Labels Attached**: `host = <hostName>`, `job = "systemd-journal"`.
 
 ______________________________________________________________________

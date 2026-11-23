@@ -10,9 +10,16 @@ let
   monitoringLib = import ./lib.nix;
   hostName = config.networking.hostName;
   centralHost = monitoringLib.getCentralHost allAddresses;
-  loki = centralHost.services.loki;
+  mtls = config.yi.mtls;
+
+  # Loki binds loopback, so the ingress is its only reachable front door even
+  # with mTLS off; only the scheme changes then.
+  scheme = if mtls.enable then "https" else "http";
+  endpoint = "${scheme}://${monitoringLib.ingressAddress centralHost}/loki";
 in
 {
+  imports = [ ../mtls.nix ];
+
   services.vector = {
     enable = true;
     journaldAccess = true;
@@ -38,13 +45,20 @@ in
       sinks.loki = {
         type = "loki";
         inputs = [ "enrich_journal" ];
-        endpoint = monitoringLib.lanHttpEndpoint centralHost loki;
+        inherit endpoint;
         labels = {
           host = hostName;
           job = "systemd-journal";
           unit = "{{ unit }}";
         };
         encoding.codec = "text";
+      }
+      // lib.optionalAttrs mtls.enable {
+        tls = {
+          ca_file = mtls.caFile;
+          crt_file = mtls.clientCert;
+          key_file = mtls.clientKey;
+        };
       };
     };
   };

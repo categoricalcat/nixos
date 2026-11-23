@@ -1,5 +1,4 @@
 {
-  addresses,
   allAddresses,
   config,
   lib,
@@ -11,8 +10,6 @@ let
   inherit (allAddresses) monitoring;
   monitoringLib = import ./lib.nix;
   hostName = config.networking.hostName;
-  isCentral = hostName == monitoring.centralHost;
-  listenAddress = monitoringLib.exporterAddress allAddresses hostName;
   exporterMetadata = monitoring.exporters;
 
   serviceAvailable =
@@ -53,6 +50,9 @@ let
     name: spec:
     {
       enable = true;
+      # Every exporter is reached only through the mTLS ingress on loopback, so
+      # none binds a LAN address and none needs a firewall hole.
+      listenAddress = "127.0.0.1";
       openFirewall = false;
     }
     // (spec.settings or { })
@@ -62,8 +62,7 @@ let
       runAsLocalSuperUser = true;
       dataSourceName = "postgresql:///postgres?host=${(monitoringLib.getCentralHost allAddresses).services.postgresql.socketDir}";
     }
-    // lib.optionalAttrs (name == "smokeping") { hosts = smokepingHosts; }
-    // (if name == "fail2ban" then { host = listenAddress; } else { inherit listenAddress; });
+    // lib.optionalAttrs (name == "smokeping") { hosts = smokepingHosts; };
 in
 {
   imports = [ ./adguard-exporter ];
@@ -73,20 +72,6 @@ in
 
     prometheus.exporters = lib.mapAttrs mkExporter enabledExporters;
   };
-
-  # Exporters on non-central hosts answer the central scraper only (interim
-  # source rule until mTLS Tier 3 replaces it with client certificates).
-  networking.firewall.extraInputRules = lib.mkIf (!isCentral) (
-    let
-      centralLan = (monitoringLib.getCentralHost allAddresses).network.lan.ipv4.host;
-      exporterPorts = lib.concatMapStringsSep ", " (
-        name: toString config.services.prometheus.exporters.${name}.port
-      ) (lib.attrNames enabledExporters);
-    in
-    ''
-      iifname "${addresses.network.lan.interface}" ip saddr ${centralLan} tcp dport { ${exporterPorts} } accept comment "exporters scraped by central host only"
-    ''
-  );
 
   # pro-bing drops a target forever when its first sendmsg returns ENETUNREACH.
   # network-online is LAN-only on the scrape hosts, so fail the start until an

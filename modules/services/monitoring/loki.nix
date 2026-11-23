@@ -10,7 +10,6 @@ let
   inherit (allAddresses) monitoring;
   monitoringLib = import ./lib.nix;
   centralHost = monitoringLib.getCentralHost allAddresses;
-  lokiAddress = centralHost.network.lan.ipv4.host;
   loki = centralHost.services.loki;
   dataDir = monitoring.dataDirs.loki;
   retention = "168h";
@@ -34,7 +33,7 @@ in
       analytics.reporting_enabled = false;
 
       server = {
-        http_listen_address = lokiAddress;
+        http_listen_address = "127.0.0.1";
         http_listen_port = loki.port;
         grpc_listen_address = "127.0.0.1";
         grpc_listen_port = 9096;
@@ -44,8 +43,7 @@ in
         path_prefix = dataDir;
         replication_factor = 1;
         ring = {
-          # Ring address must match the loopback gRPC bind; the LAN address
-          # is only for HTTP pushes, not intra-ring RPCs.
+          # Ring and RPC stay on loopback; the LAN only sees the mTLS ingress.
           instance_addr = "127.0.0.1";
           kvstore.store = "inmemory";
         };
@@ -92,12 +90,8 @@ in
     RestrictAddressFamilies = lib.splitString " " "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
     # Data lives outside the state directory.
     ReadWritePaths = [ dataDir ];
-    # Peers are static: local Grafana/Prometheus scrapes and ring RPCs,
-    # yirukou's Vector push, and this host's Vector via its own LAN address.
-    IPAddressAllow = [
-      "localhost"
-      "${allAddresses.hosts.yirukou.network.lan.ipv4.host}/32"
-      "${lokiAddress}/32"
-    ];
+    # Loopback only: the ingress reaches Loki in the same netns, and the
+    # central host scrapes it through the same vhost.
+    IPAddressAllow = [ "localhost" ];
   };
 }

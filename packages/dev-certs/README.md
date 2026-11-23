@@ -1,7 +1,8 @@
 # Dev Certificates
 
-The `dev-certs-setup` / `dev-certs-copy` CLIs ship in `nix develop`, not in the
-system profile. `module.nix` (`yifuwuqi`, `yitaishi`, `yixiaoqing`) trusts one
+The `dev-certs-generate` / `dev-certs-push` / `dev-certs-copy` CLIs ship in
+`nix develop`, not in the system profile. `module.nix` (`yifuwuqi`, `yitaishi`,
+`yixiaoqing`) trusts one
 name-constrained dev CA host-wide (`SSL_CERT_FILE` + `SSL_CERT_DIR` +
 `/etc/ssl/certs/4ce7bcbb.0` for OpenSSL/curl/Go, `NODE_EXTRA_CA_CERTS` for
 Node, Chrome policy where Chromium is enabled) and shares the leaf key
@@ -14,16 +15,28 @@ immediately after signing the 397-day leaf.
 
 ## Mint / Renew
 
-```bash
-# as root (su -) on yifuwuqi:
-dev-certs-setup [domain ...]
+One binary per behaviour, all sharing `lib.sh`:
 
-for h in yitaishi yixiaoqing; do
-  ssh "$h" "install -d -m 0755 -o root -g root /persist/keys/dev"
-  scp -p /persist/keys/dev/{ca.pem,cert.pem,chrome.json,key.pem} "$h:/persist/keys/dev/"
-  ssh "$h" "systemd-tmpfiles --create --prefix=/persist/keys/dev"
-done
+```bash
+# as root (su -) on yifuwuqi
+dev-certs-generate                  # mint ca.pem, cert.pem, key.pem, chrome.json
+dev-certs-push yitaishi yixiaoqing  # hand the current files to peers
 ```
+
+`dev-certs-generate` widens the CA's name constraints with any domains you pass
+(`dev-certs-generate example.test`), and overwrites the previous leaf every
+time — the CA key is discarded as soon as the leaf is signed, so renewing is
+just running it again. There is no separate rotate.
+
+`dev-certs-push` runs the sequence in [`lib.sh`](lib.sh), the same code
+`mtls-pki-generate` uses: one SSH connection per peer, the files as a tar stream,
+then the owner and group re-applied on arrival (`devcert` / `0640` for
+`key.pem`, the rest `0644 root:root`), creating the group where the declaring
+generation has not been deployed yet. The script text is `printf %q`-quoted and
+the arrival step prints a sentinel the caller checks, so a push that never ran
+fails instead of reporting success. It dials the fleet's sshd port from the
+registry (`24212`), not 22, and needs root to hold an SSH identity for the peer
+— check with `ssh -p 24212 root@yitaishi true` first.
 
 ## Project copy
 

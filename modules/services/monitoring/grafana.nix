@@ -175,7 +175,7 @@ in
             uid = "loki";
             type = "loki";
             access = "proxy";
-            url = monitoringLib.lanHttpEndpoint centralHost loki;
+            url = "http://127.0.0.1:${toString loki.port}";
           }
           {
             name = "Infinity";

@@ -34,8 +34,8 @@ install -d -m 0700 -o root -g root /persist/keys/sops
 ```
 
 Run `nix run .#secrets` before each switch (as root, from the repo root) to ensure keys, permissions,
-and `/persist/keys/sops/secrets.yaml` are in the expected state. It runs `setup-sops` from the
-`secrets` package (`secrets/default.nix`, scripts in `secrets/scripts/`).
+`/persist/keys/sops/secrets.yaml`, and this host's mTLS pair are in the expected state. It runs
+`setup-sops` from the `secrets` package (`secrets/default.nix`, scripts in `secrets/scripts/`).
 
 ## Host SSH Identity
 
@@ -317,9 +317,77 @@ repo copy. Do not edit `/persist/keys/sops/secrets.yaml` directly.
 
 ## Dev Certificates
 
-Dev certificates (`/persist/keys/dev/`) and the `dev-certs-setup` /
-`dev-certs-copy` helpers are documented in `packages/dev-certs/README.md`. The
-helpers are available inside `nix develop`; the CA trust anchor stays host-wide.
+Dev certificates (`/persist/keys/dev/`) and the `dev-certs-generate` /
+`dev-certs-push` / `dev-certs-copy` helpers are documented in
+`packages/dev-certs/README.md`. The helpers are available inside `nix develop`;
+the CA trust anchor stays host-wide.
+
+## Internal Service mTLS Certificates
+
+`/persist/keys/mtls/` holds the PKI for the `yirukou` \<-> `yifuwuqi` hops,
+consumed by `modules/services/mtls.nix`. Like `/persist/keys/passwords/root`,
+these files are **not** sops secrets and **not** in git or the Nix store: nix
+declares only the paths (`yi.mtls.*File`), and the material is placed on each
+host once. Missing files make nginx fail to start — the boot still completes,
+so it is recoverable over SSH.
+
+Each host needs five files, `0640 root:mtls` inside a `0750 root:mtls`
+directory (the tmpfiles rules in `mtls.nix` enforce both, and are a no-op when
+a file is absent):
+
+| File                      | Hosts     | Used for                               |
+| ------------------------- | --------- | -------------------------------------- |
+| `service-ca.crt`          | both      | verifying the peer's certificate       |
+| `<host>-server.{crt,key}` | that host | this host's listener                   |
+| `<host>-client.{crt,key}` | that host | outbound scrapes, log pushes, proxying |
+
+No host ever reads a *peer's* certificate, so the CA cert is the only shared
+file. A peer's key pair is staged on the CA host and pushed; it stays there in
+`0600 root:root` so the next run can compare and skip rather than re-sign.
+
+`mtls-pki` is two commands, one per behaviour, each its own binary sharing one
+library. `nix run .#secrets` chains `mtls-pki-generate`, which converges the
+mesh: it mints whatever is missing, pushes a peer's files only when they
+differ, and skips everything else — so it is safe before every switch. On the
+CA host (`monitoring.centralHost`, i.e. `yifuwuqi`) it also mints the CA when
+absent and sees to every peer; elsewhere it never mints a CA, because a second
+host minting its own would fork the trust anchor and split the mesh into halves
+that reject each other. A host with no mTLS role skips:
+
+```bash
+nix run .#secrets                       # routine: chains mtls-pki-generate
+nix shell .#secrets -c mtls-pki-rotate  # re-sign one host's pair (CA host only)
+```
+
+`mtls-pki-generate` walks the mesh in `modules/addresses.nix` — no host names
+on the command line. Each peer is compared by sha256 over the five files it
+needs (its own four plus the CA cert) in one SSH round trip; a match prints
+`-> <host> ok`, a mismatch pushes. An unreachable peer warns and continues: the
+routine lane must still converge this host before a switch, and the next run
+retries the peer. The push sequence is `packages/dev-certs/lib.sh`, shared with
+`dev-certs-push`: one SSH connection per host, the files as a tar stream, then
+`root:<group>` and the mode re-applied on arrival. The script text is
+`printf %q`-quoted before it reaches `ssh` — ssh joins its arguments and lets
+the peer's login shell re-split them, so an unquoted script would arrive as
+`bash -c set` and run nothing while exiting `0` — and the arrival step ends by
+printing a sentinel, which the caller requires. A push that never ran the
+script therefore fails loudly instead of passing for delivery. `-T` is passed
+so the fleet's `RequestTTY yes` does not print a pseudo-terminal notice on
+every call.
+
+`mtls-pki-rotate [host]` re-signs one pair (`yifuwuqi` by default on the CA
+host) and pushes it when the target is a peer. It needs `service-ca.key`, so on
+a peer it refuses rather than destroying a working pair it could not re-sign;
+`mtls-pki-generate` afterwards converges normally. The push needs root SSH
+access to the peer — verify it before a seed, as root on the CA host:
+`ssh -p 24212 root@<peer> true`.
+
+`service-ca.key` stays on the minting host and never leaves it: without it you
+cannot renew, with it you can mint any identity. Leaves last 3 years, the CA 10.
+
+The server leaves carry `DNS:<host>.lan` and `IP:10.42.0.X`. Both are needed:
+nginx verifies an upstream by DNS name only, while Prometheus and Vector (Go
+and rustls) verify the IP literal.
 
 ## Distributed Builds Key
 

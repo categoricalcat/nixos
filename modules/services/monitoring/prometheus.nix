@@ -11,21 +11,32 @@ let
   centralHost = monitoringLib.getCentralHost allAddresses;
   prometheus = centralHost.services.prometheus;
   exporterMetadata = monitoring.exporters;
+  mtls = config.yi.mtls;
 
-  mkStaticConfig = exporter: host: {
-    targets = [
-      "${monitoringLib.exporterAddress allAddresses host}:${
-        toString config.services.prometheus.exporters.${exporter}.port
-      }"
-    ];
-    labels = { inherit host; };
+  # Every exporter is reached through its host's ingress, path-prefixed by the
+  # registry name, so no exporter port is ever dialled directly.
+  exporterTarget = host: monitoringLib.ingressAddress allAddresses.hosts.${host};
+
+  # Present the scraper's client certificate and verify the peer against the
+  # internal CA. Targets are IP literals, verified through their IP SAN.
+  ingressTls = lib.optionalAttrs mtls.enable {
+    scheme = "https";
+    tls_config = {
+      ca_file = mtls.caFile;
+      cert_file = mtls.clientCert;
+      key_file = mtls.clientKey;
+    };
   };
 
   mkScrapeConfig =
     exporter: spec:
     {
       job_name = exporter;
-      static_configs = map (mkStaticConfig exporter) (monitoringLib.resolveHosts monitoring spec.hosts);
+      metrics_path = "/${exporter}/metrics";
+      static_configs = map (host: {
+        targets = [ (exporterTarget host) ];
+        labels = { inherit host; };
+      }) (monitoringLib.resolveHosts monitoring spec.hosts);
       relabel_configs = monitoringLib.hostRelabelConfig;
     }
     // lib.optionalAttrs (spec ? scrapeInterval) {
@@ -33,18 +44,28 @@ let
     }
     // lib.optionalAttrs (spec ? metricRelabelConfigs) {
       metric_relabel_configs = spec.metricRelabelConfigs;
-    };
+    }
+    // ingressTls;
 
-  mkCentralScrapeJob = jobName: target: {
-    job_name = jobName;
-    static_configs = [
-      {
-        targets = [ target ];
-        labels.host = monitoring.centralHost;
-      }
-    ];
-    relabel_configs = monitoringLib.hostRelabelConfig;
-  };
+  # Jobs whose backend lives on the central host itself and has no registry
+  # entry: they stay on loopback and stay plain HTTP.
+  mkCentralScrapeJob =
+    jobName: target: extra:
+    {
+      job_name = jobName;
+      static_configs = [
+        {
+          targets = [ target ];
+          labels.host = monitoring.centralHost;
+        }
+      ];
+      relabel_configs = monitoringLib.hostRelabelConfig;
+    }
+    // extra;
+
+  lokiJob = mkCentralScrapeJob "loki" (monitoringLib.ingressAddress centralHost) (
+    { metrics_path = "/loki/metrics"; } // ingressTls
+  );
 
   # One blackbox probe job for every (scrape host x probe), minus the host's
   # own peer entry: pinging itself measures nothing the adguard and unbound
@@ -52,7 +73,7 @@ let
   # probe's layer.
   probeScrapeConfig = {
     job_name = "probe";
-    metrics_path = "/probe";
+    metrics_path = "/blackbox/probe";
     static_configs = lib.concatMap (
       host:
       map (probe: {
@@ -67,7 +88,7 @@ let
             tier
             ;
           __param_module = probe.layer;
-          __tmp_address = "${monitoringLib.exporterAddress allAddresses host}:${toString config.services.prometheus.exporters.blackbox.port}";
+          __tmp_address = exporterTarget host;
         };
       }) (lib.filter (probe: probe.peer != host) monitoring.probes)
     ) monitoring.scrapeHosts;
@@ -85,9 +106,12 @@ let
         target_label = "__address__";
       }
     ];
-  };
+  }
+  // ingressTls;
 in
 {
+  imports = [ ../mtls.nix ];
+
   assertions = [
     (monitoringLib.mkCentralHostAssertion {
       modulePath = "modules/services/monitoring/prometheus.nix";
@@ -102,7 +126,10 @@ in
     inherit (prometheus) port;
     retentionTime = "30d";
     enableReload = true;
-    checkConfig = true;
+    # The scrape TLS blocks point at the client key under /persist/keys/mtls,
+    # which cannot exist inside the build sandbox; syntax-only keeps promtool
+    # checking the config shape without demanding the runtime files.
+    checkConfig = "syntax-only";
 
     globalConfig = {
       scrape_interval = "15s";
@@ -110,9 +137,9 @@ in
     };
 
     scrapeConfigs = [
-      (mkCentralScrapeJob "prometheus" "127.0.0.1:${toString prometheus.port}")
-      (mkCentralScrapeJob "loki" "${centralHost.network.lan.ipv4.host}:${toString centralHost.services.loki.port}")
-      (mkCentralScrapeJob "grafana" "127.0.0.1:${toString centralHost.services.grafana.port}")
+      (mkCentralScrapeJob "prometheus" "127.0.0.1:${toString prometheus.port}" { })
+      lokiJob
+      (mkCentralScrapeJob "grafana" "127.0.0.1:${toString centralHost.services.grafana.port}" { })
       probeScrapeConfig
     ]
     ++ lib.mapAttrsToList mkScrapeConfig exporterMetadata;

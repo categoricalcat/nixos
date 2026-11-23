@@ -114,3 +114,8 @@ fi
 echo ""
 
 sync-secrets
+
+# Chained without arguments: converges this host's mTLS pair and, on the CA
+# host, every peer's copy — minting what is missing and pushing only what
+# differs, so this stays safe before every switch.
+mtls-pki-generate

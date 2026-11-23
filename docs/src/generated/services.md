@@ -33,6 +33,7 @@
 | yifuwuqi | torrent-indexer | torrent-indexer.aset.love | 24181 |
 | yifuwuqi | valkey | — | 24379 |
 | yirukou | adguardhome | adguard.aset.love | 3333 |
+| yirukou | ingress | — | 24120 |
 | yirukou | valkey | — | 24379 |
 | yitaishi | llama-cpp | — | 11436 |
 | yitaishi | sd-cpp | image.aset.love | 11437 |

@@ -98,6 +98,9 @@ in
 
     rebuilt = {
       imports = [ ../modules/services/local-ingress.nix ];
+      # The ingress is mTLS in production; the drill has no service CA or sops
+      # keys, and what it verifies is recovery, so it keeps plain HTTP.
+      yi.mtls.enable = false;
       virtualisation = {
         memorySize = 2048;
         # Sparse qcow2 sized for the runbook layout (1 GiB ESP + 32 GiB swap).
@@ -275,5 +278,38 @@ in
             f"curl -s -o /dev/null -w '%{{http_code}}' -H '{files_host}' {ingress}/"
         ).strip()
         assert denied == "403", f"ingress answered {denied} to a non-gateway peer"
+
+    with subtest("generate converges an unseeded CA host instead of failing"):
+        # setup-sops chains `mtls-pki-generate` (nix run .#secrets). This node
+        # is the registry's CA host, so an unseeded run mints the CA and its
+        # own pair rather than exiting: the command is the seed, not a
+        # follower. The peer half of the mesh needs SSH to yirukou, which the
+        # drill does not have, so it warns and leaves the pair staged here.
+        rebuilt.succeed("mtls-pki-generate")
+        rebuilt.succeed("test -e /persist/keys/mtls/service-ca.crt")
+        rebuilt.succeed("test -e /persist/keys/mtls/service-ca.key")
+        rebuilt.succeed("test -e /persist/keys/mtls/yifuwuqi-server.crt")
+        rebuilt.succeed("test -e /persist/keys/mtls/yifuwuqi-client.crt")
+        # Own pair is group-readable for the mtls consumers, the CA key never.
+        rebuilt.succeed("test \"$(stat -c %a /persist/keys/mtls/service-ca.key)\" = 600")
+        rebuilt.succeed("test \"$(stat -c %a /persist/keys/mtls/yifuwuqi-server.key)\" = 640")
+        # Idempotent: a second run signs nothing new.
+        before = rebuilt.succeed("sha256sum /persist/keys/mtls/*-server.crt")
+        rebuilt.succeed("mtls-pki-generate")
+        assert rebuilt.succeed("sha256sum /persist/keys/mtls/*-server.crt") == before
+
+    with subtest("rotate re-signs this host's pair against the existing CA"):
+        # The CA key is here now, so rotate has to work: it replaces the pair
+        # and leaves the CA alone.
+        ca = rebuilt.succeed("sha256sum /persist/keys/mtls/service-ca.crt")
+        old = rebuilt.succeed("sha256sum /persist/keys/mtls/yifuwuqi-server.crt")
+        rebuilt.succeed("mtls-pki-rotate")
+        assert rebuilt.succeed("sha256sum /persist/keys/mtls/service-ca.crt") == ca
+        new = rebuilt.succeed("sha256sum /persist/keys/mtls/yifuwuqi-server.crt")
+        assert new != old, "rotate did not re-sign this host's leaf"
+
+    # The peer half of the mesh opens SSH, which the drill does not have, so
+    # the push/skip/unreachable behaviour is covered at implementation time
+    # against an ssh stub.
   '';
 }

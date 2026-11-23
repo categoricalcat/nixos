@@ -19,11 +19,17 @@ let
   # Use Cloudflare's public DNS exclusively for ACME propagation since we use Cloudflare DNS-01
   cloudflareIpv4 = lib.filter (ns: !lib.hasInfix ":" ns) addresses.dns.cloudflare;
   acmeResolvers = map (ns: "--dns.resolvers=${ns}:53") cloudflareIpv4;
-  proxyLib = import ./proxy-vhosts.nix { inherit lib; };
+  proxyLib = import ./proxy-vhosts.nix { inherit lib config; };
   yitaishi = allAddresses.hosts.yitaishi;
   sdCpp = yitaishi.services.sd-cpp;
+  # The scraper is the central host, so the address half of the machine-path
+  # gate admits only it; the client certificate is the real gate.
+  centralLan = allAddresses.hosts.${allAddresses.monitoring.centralHost}.network.lan.ipv4.host;
 in
 {
+  # `config.yi.mtls` is read while the vhosts are built, so the module that
+  # declares it must be in scope here rather than only via another import.
+  imports = [ ./mtls.nix ];
 
   sops.secrets = {
     cloudflare_api_token = { };
@@ -100,6 +106,21 @@ in
     serverTokens = false;
 
     virtualHosts = {
+      # One mTLS listener on the LAN address serves the machine-scrape paths;
+      # Prometheus cannot set Host, so it arrives on this default vhost. It is
+      # separate from the public 443 vhosts: those keep browser TLS only.
+      "_mtls-metrics" =
+        proxyLib.mkMachineVhost {
+          inherit allAddresses;
+          accessConfig = ''
+            allow ${centralLan};
+            deny all;
+          '';
+        }
+        // {
+          serverName = "_";
+        };
+
       # Local test vhost
       "yirukou.local" = {
         serverName = "yirukou.local";

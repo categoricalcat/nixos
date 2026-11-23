@@ -3,6 +3,7 @@ result*
 docs/book/
 docs/mermaid*.js
 .pre-commit-config.yaml
+.pre-commit-config.yaml.tmp-*
 .cursor/plans
 .sops.yaml
 .direnv

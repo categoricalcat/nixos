@@ -19,11 +19,10 @@ let
   );
   cloudflaredSource = addresses.containers.cloudflared.network.ipv4.host;
 
-  # The gateway reaches only the local ingress (which fronts every proxied
-  # backend) and Loki's push port.
+  # The gateway reaches only the mTLS ingress, which fronts every proxied
+  # backend and the Loki push path. No exporter or Loki port is exposed.
   gatewayPorts = map toString [
     addresses.services.ingress.port
-    addresses.services.loki.port
   ];
 in
 
@@ -72,9 +71,9 @@ in
 
       extraInputRules = ''
         # The gateway (and SNAT'd tailnet clients arriving with its address)
-        # reaches only the local ingress and Loki push. A SNAT'd source is
-        # a routing fact, not an identity; mTLS Tier 2 authenticates the hop.
-        iifname "eno1" ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport { ${lib.concatStringsSep ", " gatewayPorts} } accept comment "allow yirukou gateway to local ingress and loki push"
+        # reaches only the mTLS ingress. A SNAT'd source is a routing fact,
+        # not an identity; the client certificate authenticates the hop.
+        iifname "eno1" ip saddr ${allAddresses.hosts.yirukou.network.lan.ipv4.host} tcp dport { ${lib.concatStringsSep ", " gatewayPorts} } accept comment "allow yirukou gateway to the mTLS ingress"
 
         ip saddr ${cloudflaredSource} tcp dport ${toString addresses.ssh.listenPort} accept comment "allow cloudflared ssh fallback"
 

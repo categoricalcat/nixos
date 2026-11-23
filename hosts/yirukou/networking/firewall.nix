@@ -133,6 +133,9 @@ in
       extraInputRules = ''
         iifname @internal_ifaces ip protocol icmp accept comment "internal icmp"
         iifname @wan_ifaces ip protocol icmp icmp type echo-request limit rate 5/second accept comment "rate-limited wan ping"
+        # The central host scrapes this host's exporters through the mTLS
+        # ingress, which is not part of the LAN port set.
+        iifname "${lan.interface}" ip saddr ${yifuwuqi.lan.ipv4.host} tcp dport ${toString allAddresses.hosts.yirukou.services.ingress.port} accept comment "central host scrapes the mTLS ingress"
       '';
       extraForwardRules = ''
         iifname @internal_ifaces oifname @wan_ifaces meta nfproto ipv4 accept comment "internal ipv4 to wan"

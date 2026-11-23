@@ -1,13 +1,19 @@
-{ allAddresses, lib, ... }:
+{
+  allAddresses,
+  lib,
+  config,
+  ...
+}:
 
 let
-  proxyLib = import ./proxy-vhosts.nix { inherit lib; };
+  proxyLib = import ./proxy-vhosts.nix { inherit lib config; };
 in
 {
+  imports = [ ./mtls.nix ];
+
   # One nginx listener on the LAN address fronts every proxied backend;
-  # backends bind loopback (exceptions keep the LAN address). Plain HTTP
-  # until mTLS Tier 2 adds the server certificate and client verification
-  # here.
+  # backends bind loopback (exceptions keep the LAN address). With
+  # `yi.mtls.enable` the listener requires the peer's client certificate.
   services.nginx = {
     enable = true;
     serverTokens = false;

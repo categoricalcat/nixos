@@ -17,7 +17,7 @@
         name = "nxd";
         text = ''
           if [[ $# -eq 0 || "''${1-}" == -* ]]; then
-            set -- "github:categoricalcat/nixos" "$@"
+            set -- "github:categoricalcat/nixos/develop#nxd" "$@"
           fi
 
           exec ${lib.escapeShellArg (lib.getExe config.nix.package)} develop "$@"

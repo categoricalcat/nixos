@@ -13,7 +13,7 @@ in
 
   # The CA's own name constraints bound every verifier below (OpenSSL, Go,
   # Node, Chrome) and its key is discarded after signing. The files stay out
-  # of the public repo and Nix store; minted by dev-certs-setup (README.md in
+  # of the public repo and Nix store; minted by dev-certs-generate (README.md in
   # this directory). Missing files are skipped.
   systemd.tmpfiles.settings.dev-certs."${dir}/key.pem".z = {
     mode = "0640";
@@ -38,7 +38,8 @@ in
       SSL_CERT_DIR = "/etc/ssl/certs";
       NODE_EXTRA_CA_CERTS = ca;
     };
-    # The dev-certs-setup/copy CLIs live in `nix develop`; only the trust anchor
-    # above has to be host-wide (Chrome and any Node outside the devshell).
+    # The dev-certs-generate/push/copy CLIs live in `nix develop`; only the
+    # trust anchor above has to be host-wide (Chrome and any Node outside the
+    # devshell).
   };
 }
