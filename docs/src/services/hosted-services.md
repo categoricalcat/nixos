@@ -60,9 +60,9 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 
 ### 2.5 SillyTavern Companion UI (`modules/services/ai/sillytavern.nix`)
 
-- **Web UI**: Bound to loopback behind the local ingress and proxied to `https://companion.aset.love`.
-- **Security Context**: Dedicated non-root user `sillytavern` with strict systemd filesystem isolation (`ProtectSystem = strict`, `ProtectHome = true`, `PrivateDevices = true`, `PrivateTmp = true`).
-- **Inference Integration**: Ordered after the local `llama-cpp.service` Vulkan router; the endpoint (`http://127.0.0.1:11436/v1`) and model are selected in the SillyTavern UI.
+- **Web UI**: Bound to loopback (`listen = false`, `whitelistMode = false`) behind the local ingress and proxied to `https://companion.aset.love` with `hostWhitelist` pinned to `companion.aset.love` and `minLogLevel = 1` (`INFO`) to keep prompt/reply debug payloads out of journald/Loki.
+- **Security Context**: Dedicated non-root user `sillytavern` with strict systemd filesystem isolation (`ProtectSystem = strict`, `ProtectHome = true`, `PrivateDevices = true`, `PrivateTmp = true`, `StateDirectoryMode = "0700"`, `UMask = "0077"`, `0700` data dir, `0600` config/settings).
+- **Inference Integration**: Ordered after the local `llama-cpp.service` Vulkan router; a `pkgs.formats.yaml` `config.yaml` + an idempotent startup `settings.json` overlay derived from `models.nix` and `hosts.nix` provision all four uncensored LLM Connection Manager profiles (`yifuwuqi / deepseek-v4-pro-qwen3.5-9b-uncensored`, `yifuwuqi / gemma-4-12b-uncensored` default at `http://127.0.0.1:11436/v1`, `yitaishi / gemma-4-26b-a4b-uncensored`, and `yitaishi / qwen3.8-27b-uncensored` at `http://100.69.0.4:11436/v1`, `media_inlining = false`) and `yitaishi` `sdcpp` (`http://100.69.0.4:11437`, `chroma1-hd`).
 
 ### 2.6 Cockpit System Manager (`modules/services/cockpit.nix`)
 

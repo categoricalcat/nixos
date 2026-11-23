@@ -11,12 +11,13 @@ Apply these domain rules whenever authoring, refactoring, or reviewing Nix expre
 ## 2. Local inputs first (`/etc/nix/inputs`), authoritative fallback second
 
 - Always search and read `/etc/nix/inputs` (`nixpkgs`, `home-manager`, `stylix`, `sops-nix`, `flake-parts`, `treefmt-nix`, etc.) before searching online—it holds the exact locked source trees active on the system.
+- Read native `nixpkgs` library and builder APIs first—check `/etc/nix/inputs/nixpkgs/lib/default.nix` (plus `attrsets.nix`, `lists.nix`, `strings.nix`, `modules.nix`, `options.nix`, `generators.nix`, `cli.nix`, `fileset/`), `/etc/nix/inputs/nixpkgs/pkgs/pkgs-lib/formats.nix`, `/etc/nix/inputs/nixpkgs/pkgs/build-support/trivial-builders/default.nix`, and sibling modules in `/etc/nix/inputs/nixpkgs/nixos/modules/` before writing custom Nix helpers, aliasing/wrapping option schemas, or invoking external format/merge CLIs (`yq`, `jq`, `sed`) in `runCommand`.
 - Never guess option names, option types, module internals, or builder arguments; verify them in source.
 - When `/etc/nix/inputs` does not answer the question, consult primary upstream references: [nix.dev Best Practices](https://nix.dev/guides/best-practices), [nix.dev Module System](https://nix.dev/tutorials/module-system), [NixOS Manual — Writing Modules](https://nixos.org/manual/nixos/stable/#sec-writing-modules), [Nixpkgs Manual — Coding Conventions](https://nixos.org/manual/nixpkgs/stable/#chap-conventions), RFC 42 (`settings` / `pkgs.formats`), RFC 45 (quoted URLs), RFC 140 (`pkgs/by-name`), RFC 145 (`nixdoc`), RFC 166 (`nixfmt`), [flake.parts](https://flake.parts/module-arguments.html), and [Noogle](https://noogle.dev/).
 
 ## 3. Functional combinators and `code-quality` in Nix
 
-- **Attribute sets:** Stay in the `AttrSet` monoid with `lib.concatMapAttrs`, `lib.genAttrs`, `lib.mapAttrs'`, and `lib.mergeAttrsList`. Chaining `listToAttrs`, `concatMap`, and `mapAttrsToList` through intermediate `{ name = ...; value = ...; }` pairs is representation bouncing.
+- **Attribute sets:** Stay in the `AttrSet` monoid with native `lib` helpers (`lib.concatMapAttrs`, `lib.genAttrs`, `lib.mapAttrs'`, `lib.mapAttrsRecursive`, `lib.mergeAttrsList`, `lib.attrByPath`, `lib.findFirst`, `lib.pipe`). Chaining `listToAttrs`, `concatMap`, and `mapAttrsToList` through intermediate `{ name = ...; value = ...; }` pairs—or building intermediate wrapper attrsets only to unpack them one line later—is representation bouncing.
 - **Products and lists:** Combine independent domains (`A × B`) applicatively with `lib.cartesianProduct` instead of nested list mappings; prefer `lib.concatMap` over `concatLists (map ...)`.
 - **Nix calibration for `code-quality`:**
   - Nested attribute paths (`services.foo.settings.bar = ...`) are structural data, not control-flow nesting. Module conditionals must use lazy `lib.mkIf` and `lib.mkMerge` rather than strict `if/else` on `config`.

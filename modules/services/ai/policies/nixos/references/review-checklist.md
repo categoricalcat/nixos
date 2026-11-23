@@ -49,7 +49,9 @@ nixpkgs-hammer -f /tmp/ai/<session-id>.nix target
   - Are wrapper scripts built with `pkgs.writeShellApplication` (or standalone `.sh` files) rather than unchecked `pkgs.writeShellScriptBin` or raw heredocs?
   - In remaining inline shell blocks, are shell expansions quoted (`"$var"`) and Nix strings escaped (`lib.escapeShellArg`)?
 - **Combinators and `flake-parts`:**
-  - Do attribute-set transformations stay in the `AttrSet` monoid (`lib.concatMapAttrs`, `lib.genAttrs`, `lib.mapAttrs'`, `lib.mergeAttrsList`, `lib.cartesianProduct`) without `mapAttrsToList` -> `listToAttrs` representation bouncing or single-consumer `let` chains?
+  - Do attribute-set transformations stay in the `AttrSet` monoid (`lib.concatMapAttrs`, `lib.genAttrs`, `lib.mapAttrs'`, `lib.mapAttrsRecursive`, `lib.mergeAttrsList`, `lib.findFirst`, `lib.cartesianProduct`) without `mapAttrsToList` -> `listToAttrs` representation bouncing, single-consumer `let`/alias chains, or wrapper attrsets built just to unpack fields later?
+  - Do RFC 42 `settings`/`config` options use `pkgs.formats.<fmt>.type` + `lib.mapAttrsRecursive (_: lib.mkDefault)` instead of mirroring upstream leaf keys in large nested `lib.types.submodule` schemas or invoking external `yq`/`jq`/`sed` config mergers in `runCommand`?
+  - Are custom helpers checked against `/etc/nix/inputs/nixpkgs/lib` and `pkgs/build-support/trivial-builders` instead of reimplementing native `nixpkgs` utilities?
   - Inside `perSystem`, are local outputs referenced via `config.packages` / `self'` rather than hardcoded `self.packages.x86_64-linux`?
 
 ## Pass 3 — Nix evidence ladder

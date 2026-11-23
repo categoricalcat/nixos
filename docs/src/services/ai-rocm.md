@@ -11,8 +11,8 @@ ______________________________________________________________________
 │                     yifuwuqi (24/7 Core Server)                         │
 │  AMD Ryzen 9 6900HX · Radeon 680M APU (4 GiB VRAM + 9.65 GiB GTT)       │
 │  llama-cpp.service (Vulkan RADV · 127.0.0.1:11436 · --models-max 1)     │
-│   ├─ gemma-4-12b             (UD-Q4_K_XL · 64k ctx · thinking on)       │
-│   └─ gemma-4-12b-uncensored  (Q4_K_M     · 64k ctx · thinking on)       │
+│   ├─ deepseek-v4-pro-qwen3.5-9b-uncensored  (i1-Q6_K · 64k · think on)  │
+│   └─ gemma-4-12b-uncensored                 (Q4_K_M  · 64k · think on)  │
 └───────────────────┬───────────────────────────────┬─────────────────────┘
                     │ loopback                      │ loopback
                     ▼                               ▼
@@ -26,10 +26,10 @@ ______________________________________________________________________
 │                     yitaishi (24 GiB Workstation)                       │
 │  AMD Ryzen 7 7700X · Radeon RX 7900 XTX (24 GiB GDDR6 · gfx1100)        │
 │  llama-cpp.service (Vulkan RADV · 127.0.0.1,100.69.0.4:11436 · max 1)   │
-│   ├─ qwen3.8-27b             (UD-Q4_K_XL · 96k ctx · thinking on)       │
-│   └─ qwen3.8-27b-uncensored  (UD-Q4_K_XL · 96k ctx · thinking on)       │
+│   ├─ gemma-4-26b-a4b-uncensored  (Q4_K_M    · 96k ctx · thinking on)    │
+│   └─ qwen3.8-27b-uncensored      (UD-Q4_K_XL · 96k ctx · thinking on)   │
 │  sd-cpp.service (Vulkan RADV · 0.0.0.0:11437 · tailscale0 + localhost)  │
-│   └─ chroma1-hd              (Q8_0 · 1024x1024 · --offload-to-cpu)      │
+│   └─ chroma1-hd                  (Q8_0 · 1024x1024 · --offload-to-cpu)  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,15 +47,15 @@ ______________________________________________________________________
 
 ## 3. Central Model Registry (`modules/services/ai/models.nix`)
 
-`models.nix` declares two hardware-sized LLM models per host (one censored, one Heretic-abliterated uncensored) plus the uncensored `chroma1-hd` diffusion model on `yitaishi`:
+`models.nix` declares two hardware-sized uncensored LLM models per host (all Heretic-abliterated) plus the uncensored `chroma1-hd` diffusion model on `yitaishi`:
 
-| Model ID                 | Target Host | Port    | Context / Resolution | Quantization | Source Repository                          | Notes                      |
-| ------------------------ | ----------- | ------- | -------------------- | ------------ | ------------------------------------------ | -------------------------- |
-| `gemma-4-12b`            | `yifuwuqi`  | `11436` | `65536`              | `UD-Q4_K_XL` | `unsloth/gemma-4-12b-it-GGUF`              | Tools: Yes, Reasoning: Yes |
-| `gemma-4-12b-uncensored` | `yifuwuqi`  | `11436` | `65536`              | `Q4_K_M`     | `zaakirio/gemma-4-12b-it-uncensored-GGUF`  | Tools: Yes, Reasoning: Yes |
-| `qwen3.8-27b`            | `yitaishi`  | `11436` | `98304`              | `UD-Q4_K_XL` | `unsloth/Qwen3.8-27B-GGUF`                 | Tools: Yes, Reasoning: Yes |
-| `qwen3.8-27b-uncensored` | `yitaishi`  | `11436` | `98304`              | `UD-Q4_K_XL` | `ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF` | Tools: Yes, Reasoning: Yes |
-| `chroma1-hd`             | `yitaishi`  | `11437` | `1024x1024`          | `Q8_0`       | `silveroxides/Chroma1-HD-GGUF`             | Uncensored 8.9B Flux DiT   |
+| Model ID                                | Target Host | Port    | Context / Resolution | Quantization | Source Repository                                                    | Notes                      |
+| --------------------------------------- | ----------- | ------- | -------------------- | ------------ | -------------------------------------------------------------------- | -------------------------- |
+| `deepseek-v4-pro-qwen3.5-9b-uncensored` | `yifuwuqi`  | `11436` | `65536`              | `i1-Q6_K`    | `mradermacher/DeepSeek-V4-Pro-Qwen3.5-9B-UNCENSORED-heretic-i1-GGUF` | Tools: Yes, Reasoning: Yes |
+| `gemma-4-12b-uncensored`                | `yifuwuqi`  | `11436` | `65536`              | `Q4_K_M`     | `zaakirio/gemma-4-12b-it-uncensored-GGUF`                            | Tools: Yes, Reasoning: Yes |
+| `gemma-4-26b-a4b-uncensored`            | `yitaishi`  | `11436` | `98304`              | `Q4_K_M`     | `llmfan46/gemma-4-26B-A4B-it-ultra-uncensored-heretic-GGUF`          | Tools: Yes, Reasoning: Yes |
+| `qwen3.8-27b-uncensored`                | `yitaishi`  | `11436` | `98304`              | `UD-Q4_K_XL` | `ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF`                           | Tools: Yes, Reasoning: Yes |
+| `chroma1-hd`                            | `yitaishi`  | `11437` | `1024x1024`          | `Q8_0`       | `silveroxides/Chroma1-HD-GGUF`                                       | Uncensored 8.9B Flux DiT   |
 
 ______________________________________________________________________
 
@@ -73,11 +73,12 @@ ______________________________________________________________________
 
 ### 5.1 SillyTavern Companion (`modules/services/ai/sillytavern.nix`)
 
-- **Domain**: `https://companion.aset.love` (proxied to port `24000`).
-- **Security**: Strict systemd isolation under dedicated user `sillytavern`, ordered after `llama-cpp.service`. The LLM endpoint (`http://127.0.0.1:11436/v1` or `http://100.69.0.4:11436/v1`) and model are selected in the SillyTavern UI.
-- **Image Generation**: Connect the built-in **Image Generation** extension to `yitaishi` by selecting **Source**: `stable-diffusion.cpp` (not `AUTOMATIC1111 / SD WebUI`), **Server URL**: `http://100.69.0.4:11437`, **Sampler**: `euler`, **CFG Scale**: `3.5`, **Steps**: `20`, and **Resolution**: `1024x1024`.
-- **Manual Prompts**: Enable **Edit prompts before generation**, or use `/imagine extend=false edit=true seed=1234 width=1024 height=1024 steps=20 cfg=3.5 <prompt>`.
-- **Text-Only Local Models**: Disable **Send inline media** in Chat Completion settings. SillyTavern assumes custom OpenAI-compatible endpoints accept images, but the local Qwen models have no multimodal projector and reject attached images with HTTP 500.
+- **Domain**: `https://companion.aset.love` (proxied to loopback port `24000` via local ingress).
+- **Security & Isolation**: Dedicated non-root user `sillytavern` under strict systemd hardening, `StateDirectoryMode = "0700"`, `UMask = "0077"`, `0700` data directory permissions, `0600` config/settings, loopback-only (`listen = false`), single passwordless `default-user` (`enableUserAccounts = false`), and `minLogLevel = 1` (`INFO`) so prompt/reply debug payloads never reach journald or Loki.
+- **Declarative Config & Profiles**: Ordered after `llama-cpp.service`. `config.yaml` is generated via `pkgs.formats.yaml` (with `hostWhitelist.hosts = [ "companion.aset.love" ]`, `hostWhitelist.scan = false`, `extensions.autoUpdate = false`; SillyTavern populates omitted upstream defaults from `default/config.yaml` on startup), and `settings.json` receives an idempotent startup overlay derived directly from `models.nix` and `hosts.nix`:
+  - **Default Active Chat Profile**: `yifuwuqi / gemma-4-12b-uncensored` (`http://127.0.0.1:11436/v1`, `chat_completion_source = "custom"`, `openai_max_context = 65536`, `openai_max_tokens = 4096`, `stream_openai = true`, `temp_openai = 1.0`, `top_p_openai = 0.95`, `show_thoughts = true`, `reasoning_effort = "max"`, `verbosity = "low"`, `custom_include_body = "reasoning_effort: xhigh"`, `custom_prompt_post_processing = "semi_tools"`, `media_inlining = false` since local LLMs have `--no-mmproj`).
+  - **Connection Manager (`nix:*`)**: Exposes all four uncensored LLM profiles (`nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored`, `nix:yifuwuqi:gemma-4-12b-uncensored`, `nix:yitaishi:gemma-4-26b-a4b-uncensored`, and `nix:yitaishi:qwen3.8-27b-uncensored`), while preserving user-created profiles and unrelated UI state.
+  - **Image Generation (`sdcpp`)**: Preconfigured for `chroma1-hd` on `http://100.69.0.4:11437` (`sampler = "euler"`, `scale = 3.5`, `steps = 20`, `1024x1024`, `refine_mode = true` prompt editing).
 
 ### 5.2 Opencode Agent (`modules/services/opencode.nix`, `users/programs/opencode.nix`)
 

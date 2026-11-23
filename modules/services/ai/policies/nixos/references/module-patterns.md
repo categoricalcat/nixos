@@ -22,25 +22,32 @@ Use this reference when authoring or refactoring NixOS, Home Manager, or `flake-
 
 - Use `lib.mkEnableOption "<description>"` for boolean toggles and `lib.mkPackageOption pkgs "<pkg>" { }` for overridable package options.
 - Constrain option types strictly (`lib.types.port`, `lib.types.path`, `lib.types.ints.unsigned`, `lib.types.enum [ ... ]`, `lib.types.attrsOf (lib.types.submodule { ... })`). Avoid untyped `lib.types.attrs` or unconstrained `lib.types.str` when structure or domain bounds are known.
-- **RFC 42 `settings` pattern:** For services configured via structured files (TOML, YAML, JSON, INI), expose a freeform `settings` option backed by `pkgs.formats.<fmt>` so upstream keys work without manual wrapper boilerplate:
+- **RFC 42 `settings` pattern:** For services configured via structured files (TOML, YAML, JSON, INI), check `/etc/nix/inputs/nixpkgs/pkgs/pkgs-lib/formats.nix` and expose a freeform `settings` (or `config`) option backed by `pkgs.formats.<fmt>.type`. Do not mirror every nested upstream config key into hundreds of lines of nested `lib.types.submodule` declarations; use a single `submodule { freeformType = settingsFormat.type; options = { ... }; }` only for the minimal top-level options that genuinely require typed constraints/docs, and apply nested module defaults cleanly with `lib.mapAttrsRecursive (_: lib.mkDefault)` under `config = lib.mkIf cfg.enable`:
 
 ```nix
 let
-  settingsFormat = pkgs.formats.toml { };
+  settingsFormat = pkgs.formats.yaml { };
 in
 {
   options.services.example.settings = lib.mkOption {
     type = settingsFormat.type;
     default = { };
-    description = "Configuration written to example.toml.";
+    description = "Configuration written to example.yaml.";
   };
 
   config = lib.mkIf cfg.enable {
+    services.example.settings = lib.mapAttrsRecursive (_: lib.mkDefault) {
+      port = 8080;
+      logging.level = "info";
+    };
+
     systemd.services.example.serviceConfig.ExecStart =
-      "${lib.getExe cfg.package} --config ${settingsFormat.generate "example.toml" cfg.settings}";
+      "${lib.getExe cfg.package} --config ${settingsFormat.generate "example.yaml" cfg.settings}";
   };
 }
 ```
+
+- **Reuse `nixpkgs/lib` serialization and option combinators:** Before writing custom `runCommand` formatters/mergers or manual CLI/INI/YAML helpers, check `lib.generators` (`/etc/nix/inputs/nixpkgs/lib/generators.nix`), `lib.cli` (`toCommandLineShellGNU`, `toGNUCommandLine`), `lib.options` / `lib.modules` (`mkMergedOptionModule`, `mkAliasOptionModule`, `mkRemovedOptionModule`), and sibling NixOS modules in `/etc/nix/inputs/nixpkgs/nixos/modules/`. When the upstream daemon already deep-merges missing upstream defaults at startup (e.g. `_.defaultsDeep`), generate only the declarative overrides via `pkgs.formats.<fmt>.generate` rather than shelling out to `yq`/`remarshal` in `runCommand`.
 
 - Enforce cross-option and host invariants with `assertions` (and surface non-fatal deprecations or caveats via `warnings`).
 

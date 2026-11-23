@@ -19,7 +19,7 @@ let
       ruleRefs = [ "etiquette" ];
     };
     nixos = {
-      description = "Authoring, refactoring, and reviewing Nix code, NixOS/Home Manager modules, packages, overlays, and flakes. Read local source code from /etc/nix/inputs before searching online, follow nix.dev/Nixpkgs/RFC 166 conventions, and verify which host you are on.";
+      description = "Authoring, refactoring, and reviewing Nix code, NixOS/Home Manager modules, packages, overlays, and flakes. Read /etc/nix/inputs (including nixpkgs/lib, pkgs/pkgs-lib/formats.nix, and trivial-builders) before writing custom helpers or searching online; follow nix.dev/Nixpkgs/RFC 166 conventions, and verify which host you are on.";
       isRule = false;
       isSkill = true;
       ruleRefs = [

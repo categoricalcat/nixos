@@ -5,6 +5,7 @@ Use this reference when writing or updating packages, Python/language derivation
 ## Derivation structure (`callPackage` and `finalAttrs`)
 
 - Accept only required dependencies in the `callPackage` function header (`{ lib, stdenv, fetchFromGitHub, ... }:`). Never accept the entire `pkgs` set unless writing a package set or wrapper table.
+- Check `/etc/nix/inputs/nixpkgs/pkgs/build-support/trivial-builders/default.nix` (`replaceVars`, `writeTextFile`, `writeShellApplication`, `symlinkJoin`, `linkFarm`) and `/etc/nix/inputs/nixpkgs/lib/{cli,generators}.nix` before writing custom `runCommand` file-templating or wrapper derivations.
 - Use the fixed-point `finalAttrs:` form instead of `rec { ... }` whenever attributes self-reference (`version`, `src`, `pname`), including in `python3.pkgs.buildPythonPackage (finalAttrs: { ... })`, so `.overrideAttrs` propagates updates cleanly:
 
 ```nix

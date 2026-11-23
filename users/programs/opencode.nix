@@ -68,7 +68,7 @@ in
             mode = "primary";
             # Served by the Vulkan llama-server router (ROCm on the Ryzen 680M
             # APU corrupts prompts beyond ~4k tokens; Vulkan does not).
-            model = "local/gemma-4-12b";
+            model = "local/deepseek-v4-pro-qwen3.5-9b-uncensored";
             temperature = 0.2;
 
             # Gate via tools only. Do not set permission."*" = "deny" here:

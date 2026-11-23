@@ -418,6 +418,27 @@ in
           touch "$out"
         '';
 
+        sillytavern-settings-overlay =
+          let
+            yifuwuqiSt = self.nixosConfigurations.yifuwuqi;
+            stDefaultSettings = "${yifuwuqiSt.pkgs.sillytavern}/lib/node_modules/sillytavern/default/content/settings.json";
+            inherit (yifuwuqiSt.config.yi.services.sillytavern) settingsOverlay;
+          in
+          pkgs.runCommand "check-sillytavern-settings-overlay"
+            {
+              nativeBuildInputs = [
+                pkgs.diffutils
+                pkgs.jq
+              ];
+            }
+            ''
+              bash ${../modules/services/ai/sillytavern-settings-overlay-test.sh} \
+                ${lib.getExe settingsOverlay.package} \
+                ${stDefaultSettings} \
+                ${settingsOverlay.file}
+              touch "$out"
+            '';
+
         # A2/A4: pure-eval config contracts; failures throw above, before this
         # derivation exists. Building it prints the pass lines.
         contracts = pkgs.runCommand "check-config-contracts" { } ''
