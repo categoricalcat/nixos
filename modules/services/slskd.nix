@@ -132,10 +132,15 @@ in
       # Share gluetun's network namespace: outbound Soulseek traffic goes
       # through the VPN. The Web UI port is published via gluetun.
       dependsOn = [ "gluetun" ];
+      environment = {
+        # The image entrypoint re-sets umask from SLSKD_UMASK (Dockerfile
+        # default 0022) before exec, defeating podman's --umask. 0002 keeps
+        # slskd-created download dirs/files group-writable so soularr
+        # (different uid, shared media group) can move them for Lidarr.
+        SLSKD_UMASK = "0002";
+      };
       extraOptions = [
         "--network=container:gluetun"
-        # Group-writable dirs/files so Lidarr can delete sources on import
-        "--umask=0002"
       ];
       volumes = [
         "/var/lib/container-volumes/slskd:/app"
