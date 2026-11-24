@@ -10,6 +10,15 @@
 - `.cursor/plans/` is ephemeral tool output, not a place for plans — a scrap of paper, not the writing desk.
 - **Retire finished plans**: A plan is scaffolding, not a monument. When every phase is implemented and verified, delete the plan file in the same change set that completes it — code and docs are the record, the plan was the scaffolding. Leave the deletion unstaged like any other change. Plans paused or partially implemented stay, with their `Status:` line updated to reflect reality.
 
+### Executing plans
+
+Whenever an agent executes or resumes a plan — however the session opens, e.g. `we are running @<planfile>` — it is the copilot: it runs the checklist and calls out each gate; the user keeps the controls.
+
+- **Brief before the first step**: what the plan does, where it stands (checked boxes, `git status`/`git diff`, and — when the last step was a user step — what the user observed), and the next unchecked step with its verification gate.
+- **The plan file is the only cross-session state**: `- [ ]`/`- [x]` plus the `Status:` line. Check a box in the change set that completes it; keep `Status:` honest; retire the file when every box is checked.
+- **Ownership labels**: steps are `(AI)` or `(User)`. AI steps run to evidence. User steps (external dashboards, `deploy`, `nixos-rebuild`, `sops`, `git commit`) are printed as the exact command and then stopped at — never simulated, never assumed done. Continue, and check the box, only after the user reports the outcome and the agent has verified it.
+- **One gate at a time**: a step and its verification finish before the next begins; user steps are never batched.
+
 ## 2. Git
 
 - Never touch the git stage — never run `git add`, `git rm --cached`, `git stage`, `git reset`, `git restore --staged`, or manipulate the staging area in any way. The stage belongs exclusively to the user.
