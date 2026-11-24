@@ -10,6 +10,8 @@ in
     imports = [
       ./amplitube.nix
       ./home.nix
+      ./toontrack.nix
+      ./yabridge.nix
     ];
 
     # Amp Locker's default data folder; recursive keeps the folders writable

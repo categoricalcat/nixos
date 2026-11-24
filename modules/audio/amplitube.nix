@@ -5,9 +5,10 @@
   ...
 }:
 let
-  prefix = ".local/share/wineprefixes/ik-multimedia";
-  vst3 = "${config.home.homeDirectory}/${prefix}/drive_c/Program Files/Common Files/VST3";
-  wine = pkgs.wineWow64Packages.yabridge;
+  audio = import ./wine-launcher.nix { inherit pkgs; };
+  inherit (audio) mkLauncher mkPrefix wine;
+  inherit (mkPrefix config.home.homeDirectory "ik-multimedia") prefix vst3Dir;
+
   wineAsio = (pkgs.wineasio.override { wineWow64Packages.stable = wine; }).overrideAttrs (old: {
     # jackbridge dlopen()s a bare soname, which misses PipeWire JACK without LD_LIBRARY_PATH
     postPatch = (old.postPatch or "") + ''
@@ -31,48 +32,22 @@ let
 
   launcher =
     name: body:
-    pkgs.writeShellApplication {
-      inherit name;
-      runtimeInputs = [
-        pkgs.coreutils
-        pkgs.libnotify
-        pkgs.systemd
-        wine
-        wineAsio
-      ];
-      runtimeEnv = {
-        WINEARCH = "win64";
-        WINEDLLPATH = "${wineAsio}/lib/wine";
-        WINEDLLOVERRIDES = "winemenubuilder.exe=d";
-      };
-      text = ''
-        # Desktop-launched stdout/stderr is discarded; WineASIO reports JACK failures only there
-        exec > >(systemd-cat -t ${name}) 2>&1
-        export WINEPREFIX="$HOME/${prefix}"
-        ik="$WINEPREFIX/drive_c/Program Files/IK Multimedia"
-
-        need() {
-          [[ -f "$1" ]] && return
-          printf '%s\n' "$2" >&2
-          notify-send "IK Multimedia" "$2" || true
-          exit 1
-        }
-
-        if [[ ! -f "$WINEPREFIX/system.reg" ]]; then
-          mkdir -p "$WINEPREFIX"
-          # Wine Mono and Gecko are not bundled; skip their download prompts
-          WINEDLLOVERRIDES="$WINEDLLOVERRIDES;mscoree,mshtml=" wineboot --init
-          install -m0644 "$WINEDLLPATH/x86_64-windows/wineasio64.dll" "$WINEPREFIX/drive_c/windows/system32/"
-          # /s suppresses the result dialog; a bare /nix path would resolve against the current drive
-          wine regsvr32 /s "Z:$WINEDLLPATH/x86_64-unix/wineasio64.dll.so"
-        fi
-
-        ${body}
+    mkLauncher {
+      inherit name prefix;
+      title = "IK Multimedia";
+      runtimeInputs = [ wineAsio ];
+      runtimeEnv.WINEDLLPATH = "${wineAsio}/lib/wine";
+      init = ''
+        install -m0644 "$WINEDLLPATH/x86_64-windows/wineasio64.dll" "$WINEPREFIX/drive_c/windows/system32/"
+        # /s suppresses the result dialog; a bare /nix path would resolve against the current drive
+        wine regsvr32 /s "Z:$WINEDLLPATH/x86_64-unix/wineasio64.dll.so"
       '';
+      inherit body;
     };
 
   productManager = launcher "ik-product-manager" ''
-    exe="$ik/IK Product Manager/IK Product Manager.exe"
+    init_prefix
+    exe="$WINEPREFIX/drive_c/Program Files/IK Multimedia/IK Product Manager/IK Product Manager.exe"
     if [[ ! -f "$exe" ]]; then
       wine "${productManagerSetup}/Install IK Product Manager (v${productManagerVersion}).exe" /S
       wineserver -w
@@ -82,49 +57,17 @@ let
   '';
 
   amplitube = launcher "amplitube-5" ''
-    exe="$ik/AmpliTube 5/AmpliTube 5.exe"
+    exe="$WINEPREFIX/drive_c/Program Files/IK Multimedia/AmpliTube 5/AmpliTube 5.exe"
     need "$exe" "Install AmpliTube 5 from IK Product Manager first."
+    init_prefix
     # xwayland-satellite maps Wine dropdowns as separate windows, so niri's focus changes close them
     exec wine explorer /desktop=AmpliTube,1920x1080 "$(winepath -w "$exe")"
   '';
 in
 {
-  home.packages = [
-    pkgs.yabridge
-    pkgs.yabridgectl
-  ];
-
-  xdg.configFile."yabridgectl/config.toml".source =
-    (pkgs.formats.toml { }).generate "yabridgectl.toml"
-      {
-        plugin_dirs = [ vst3 ];
-        yabridge_home = "${pkgs.yabridge}/lib";
-        # Verification records the Wine version in this file, which is read-only
-        no_verify = true;
-      };
-
-  systemd.user = {
-    services.yabridge-sync = {
-      Unit = {
-        Description = "Bridge Windows VST3 plugins from the IK Multimedia prefix";
-        ConditionPathIsDirectory = vst3;
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart = "${lib.getExe pkgs.yabridgectl} sync";
-      };
-      Install.WantedBy = [ "default.target" ];
-    };
-
-    paths.yabridge-sync = {
-      Unit.Description = "Watch the IK Multimedia prefix for VST3 installs";
-      # The bundle folder appears before the installer finishes; its binary lands when the copy completes
-      Path.PathChanged = [
-        vst3
-        "${vst3}/AmpliTube 5.vst3/Contents/x86_64-win"
-      ];
-      Install.WantedBy = [ "default.target" ];
-    };
+  yi.audio.pluginPrefixes.ik-multimedia = {
+    inherit vst3Dir;
+    watch = [ "AmpliTube 5.vst3/Contents/x86_64-win" ];
   };
 
   xdg.desktopEntries = {
