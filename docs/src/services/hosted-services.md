@@ -4,7 +4,7 @@ The monolith server (`yifuwuqi`) runs several central web applications, manageme
 
 All services are configured in `modules/services/` and enabled selectively via `hosts/yifuwuqi/services.nix`. Most services are internal-only, bound to loopback (`127.0.0.1`) and fronted by the `yifuwuqi` local ingress (`modules/services/local-ingress.nix`), a single nginx listener on the LAN address that routes each domain to its backend. `yirukou`'s Nginx reverse proxy terminates TLS and forwards every domain to that ingress. A few services that cannot bind loopback (jellyfin, jellyseerr, homepage, lidarr) keep the LAN address and are fronted there too.
 
-Logins: Authelia is the one login in front of every browser-facing service ([the gate](dns-and-proxy.md#221-authelia-gate-forward-auth)), and Vaultwarden is the one store for every credential a person still holds. Services drop their own login wherever they can: the \*arr apps, Bazarr, slskd and Grafana have none, and OpenCode's password is presented by the ingress. The remaining exceptions are named. Cockpit logs into OS accounts (PAM), Forgejo and Seerr keep their own login behind the gate, and Jellyfin and Pinepods stay outside it for their native clients.
+Logins: Authelia is the one login in front of every browser-facing service ([the gate](dns-and-proxy.md#221-authelia-gate-forward-auth)). Services drop their own login wherever they can: the \*arr apps, Bazarr, slskd and Grafana have none, and OpenCode's password is presented by the ingress. The remaining exceptions are named. Cockpit logs into OS accounts (PAM), Forgejo and Seerr keep their own login behind the gate, and Jellyfin and Pinepods stay outside it for their native clients.
 
 ______________________________________________________________________
 
@@ -28,7 +28,7 @@ ______________________________________________________________________
   1. **Media**: Jellyfin, Jellyseerr, Pinepods (`pinepods.aset.love`, podcast catcher).
   1. **Arr Stack**: Sonarr, Radarr, Lidarr, Readarr, Bazarr, Prowlarr, Torrent Indexer, qBittorrent, Soulseek (`slskd`).
   1. **Monitoring**: Grafana (`grafana.aset.love`), GoAccess (`goaccess.aset.love`).
-  1. **Infrastructure**: Cockpit (with File browser), Forgejo, Opencode Agent, SillyTavern, Attic Binary Cache, Docs, Authelia, Vaultwarden.
+  1. **Infrastructure**: Cockpit (with File browser), Forgejo, Opencode Agent, SillyTavern, Attic Binary Cache, Docs, Authelia.
   1. **Network**: AdGuard Home, SearXNG.
 - **Widgets**: Real-time CPU, RAM, and root filesystem disk utilization monitors, plus an integrated search bar pointing to SearXNG.
 
@@ -92,20 +92,12 @@ Runs 5 coordinated OCI containers under Podman across two network segments:
 - **Storage**: PostgreSQL over the unix socket with peer auth: the unsuffixed instance runs as `authelia`, the role `pgDatabases` creates, so no database password exists. `services/authelia/storage-encryption-key` encrypts the TOTP secrets at rest. Session state is in-process (no Redis), so a restart logs everyone out.
 - **Backups**: `postgresqlBackup-authelia` dumps the database to `/var/backup/postgresql/authelia.sql.gz` on the `backups` maintenance slot; TOTP enrolments are the only state config cannot recreate.
 
-### 2.10 Vaultwarden (`modules/services/vaultwarden.nix`)
-
-- **Role**: The human credential store (Bitwarden-compatible). SOPS stays machine-facing; people read and write through Bitwarden clients at `https://vaultwarden.aset.love`.
-- **Gate**: Exempt, because Bitwarden clients call the identity and sync APIs directly and the vault's master-password login is stronger than the gate. Signups are closed; invite accounts from `/admin` with the `tokens/vaultwarden-admin` token.
-- **Storage**: PostgreSQL over the unix socket with peer auth (`vaultwarden` role and service account), loopback `127.0.0.1:24150`.
-- **Backups**: `postgresqlBackup-vaultwarden` dumps the database to `/var/backup/postgresql/vaultwarden.sql.gz`, and `backup-vaultwarden-data` archives the data folder (attachments, sends, the token-signing key) to `/var/backup/vaultwarden/data.tar.gz`. A restore needs both.
-
 ______________________________________________________________________
 
 ## 3. Key Source Files
 
 - `docs/service.nix`
 - `modules/services/authelia.nix`
-- `modules/services/vaultwarden.nix`
 - `modules/services/homepage.nix`
 - `modules/services/searxng.nix`
 - `modules/services/valkey.nix`

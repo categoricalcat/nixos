@@ -28,7 +28,7 @@ Nix only moves listen/proxy ports. After switching host ports to the `24xxx` ran
 
 - Access each service's web UI via their respective `*.aset.love` domains through Nginx. The Authelia gate on `yirukou` is the only login: Radarr, Sonarr, Lidarr, Readarr and Prowlarr run with `AuthenticationMethod=External` (`*__AUTH__METHOD`), Bazarr with no auth type, and slskd with web authentication disabled.
 - API clients (Prowlarr, Recyclarr, soularr, Seerr) keep using the API keys above over loopback, never the gated hostnames.
-- Seerr (`jellyseerr.aset.love`) still has its own login, which it cannot delegate; it sits behind the gate as well. Store its password in Vaultwarden.
+- Seerr (`jellyseerr.aset.love`) still has its own login, which it cannot delegate; it sits behind the gate as well.
 
 ## 2. Root Folders Configuration
 
@@ -120,6 +120,6 @@ Assigning a score alone does not force a preference; raise the profile's `min_fo
 
 Pinepods (`modules/services/pinepods.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. It runs with its own Postgres and Valkey sidecars on an internal container network; state lives under `/var/lib/container-volumes/pinepods`, with downloaded podcasts stored in `/persist/media/podcasts`:
 
-1. Open `https://pinepods.aset.love` and create the first admin account when prompted. Pinepods stays outside the Authelia gate so podcast and mobile clients can reach its API; store the account in Vaultwarden.
+1. Open `https://pinepods.aset.love` and create the first admin account when prompted. Pinepods stays outside the Authelia gate so podcast and mobile clients can reach its API.
 1. Import subscriptions via OPML (Settings → Import/Export) or add podcasts by search/RSS.
 1. Configure automatic downloads or download specific episodes directly from the web interface.

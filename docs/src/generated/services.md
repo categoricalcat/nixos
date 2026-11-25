@@ -33,7 +33,6 @@
 | yifuwuqi | sonarr | sonarr.aset.love | 24989 |
 | yifuwuqi | torrent-indexer | torrent-indexer.aset.love | 24181 |
 | yifuwuqi | valkey | — | 24379 |
-| yifuwuqi | vaultwarden | vaultwarden.aset.love | 24150 |
 | yirukou | adguardhome | adguardhome.aset.love | 3333 |
 | yirukou | ingress | — | 24120 |
 | yirukou | valkey | — | 24379 |

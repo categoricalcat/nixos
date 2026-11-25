@@ -124,7 +124,6 @@ tokens:
     localtonet-authtoken: string
     playit-agent: |
         SECRET_KEY=...
-    vaultwarden-admin: string
 samba:
     credentials:
         yi: |
@@ -144,7 +143,7 @@ services:
 
 PostgreSQL on `yifuwuqi` uses local Unix socket peer authentication. It creates
 service-matching roles and databases (`forgejo`, `atticd`, `grafana`,
-`vaultwarden`, `authelia`), so there are no PostgreSQL passwords to add to SOPS.
+`authelia`), so there are no PostgreSQL passwords to add to SOPS.
 
 Keep app identity secrets stable across database resets:
 
@@ -188,7 +187,6 @@ first):
 | `passwords/nextcloud`                      | plain password    | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one                   |
 | `passwords/opencode`                       | plain password    | OpenCode server password (`OPENCODE_PASSWORD`); the local ingress presents it, nobody types it            |
 | `passwords/yi`                             | crypt hash        | `yi`'s OS login hash (`hashedPasswordFile`): `nix shell nixpkgs#mkpasswd -c mkpasswd -m yescrypt`         |
-| `tokens/vaultwarden-admin`                 | raw token         | Vaultwarden `/admin` token, plain (not a PHC hash): `openssl rand -base64 48`                             |
 | `services/authelia/storage-encryption-key` | random string     | Encrypts Authelia's TOTP secrets at rest: `openssl rand -hex 32`. Keep stable; losing it loses every TOTP |
 | `services/authelia/users/yi`               | argon2id digest   | The Authelia login: `nix run nixpkgs#authelia -- crypto hash generate argon2` (prompts for the password)  |
 | `services/proton/wireguard_private_key`    | raw token         | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf`                |

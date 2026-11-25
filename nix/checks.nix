@@ -170,7 +170,7 @@ let
 
   # --- auth-gate -------------------------------------------------------------
   # Every served yirukou location answers only after Authelia, except the
-  # named exemptions (machine clients, native apps, the portal, the vault).
+  # named exemptions (machine clients, native apps, the portal).
   # A gate's auth_request target must be an internal location asking the
   # AuthRequest endpoint under the Authelia Host: any other target lets a
   # backend's catch-all 200 admit every request.
@@ -182,7 +182,6 @@ let
         ${svc.authelia.domain} = [ "/" ];
         ${svc.jellyfin.domain} = [ "/" ];
         ${svc.pinepods.domain} = [ "/" ];
-        ${svc.vaultwarden.domain} = [ "/" ];
         "dns.${addresses.baseDomain}" = [ "/dns-query" ];
       };
       gateTarget =

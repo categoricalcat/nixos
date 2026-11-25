@@ -1,11 +1,22 @@
-# Shared plumbing for the Wine plugin prefixes. Both plugin modules
-# (amplitube, toontrack) need the same prefix layout and the same launcher
-# skeleton; yabridge.nix consumes the prefix registry those modules populate.
+# Shared plumbing for the Wine plugin prefixes. amplitube.nix uses the launcher
+# skeleton; yabridge.nix consumes the prefix registry and the bridge packages.
 { pkgs }:
 let
-  # yabridge's stub hard-codes this exact Wine build as WINELOADER; running the
-  # prefixes and installers under the same build avoids wineserver version mismatches.
-  wine = pkgs.wineWow64Packages.yabridge;
+  # Single source of truth for the Wine every audio prefix runs on: the newest
+  # build in nixpkgs (staging). nixpkgs builds yabridge against
+  # wineWow64Packages.yabridge (Wine 9.21); the host stub hard-codes that
+  # WINELOADER, so rebuild the nixpkgs packages against staging.
+  wine = pkgs.wineWow64Packages.staging;
+  wineWow64Packages = pkgs.wineWow64Packages.extend (
+    _self: _super: {
+      yabridge = wine;
+    }
+  );
+
+  yabridge = pkgs.yabridge.override { inherit wineWow64Packages; };
+  yabridgectl = pkgs.yabridgectl.override {
+    inherit yabridge wineWow64Packages;
+  };
 
   # The prefix path is authored here only; modules pass it to the registry as an
   # absolute path and to their launcher as a path relative to $HOME.
@@ -36,6 +47,8 @@ let
       inherit name;
       runtimeInputs = [
         pkgs.coreutils
+        pkgs.diffutils
+        pkgs.gnugrep
         pkgs.libnotify
         pkgs.systemd
         wine
@@ -48,27 +61,74 @@ let
       // runtimeEnv;
       text = ''
         # Desktop-launched stdout/stderr are discarded; log via the journal when not on a tty
-        [[ -t 2 ]] || exec > >(systemd-cat -t ${name}) 2>&1
+        [[ -t 2 ]] || exec > >(systemd-cat -t ${pkgs.lib.escapeShellArg name}) 2>&1
         export WINEPREFIX="$HOME/${prefix}"
 
         need() {
           [[ -f "$1" ]] && return
           printf '%s\n' "$2" >&2
-          notify-send "${title}" "$2" || true
+          notify-send ${pkgs.lib.escapeShellArg title} "$2" || true
           exit 1
         }
 
+        # Wine copies builtins into the prefix once. The store mtime is 1, so
+        # .update-timestamp already matches a new Wine and wineboot will not
+        # recopy them; `wineboot --update` also loops explorer.exe on a prefix
+        # that has apps. Copy the builtins ourselves as writable 0644 (cp -a
+        # would leave 0444 store files that fail to overwrite on the next Wine
+        # update), skipping .a import libraries and preserving native DLLs. The
+        # "synced-rw" stamp supersedes earlier stamps so existing prefixes
+        # repair read-only builtins on the next launch.
+        marker="$WINEPREFIX/.nix-wine-build"
+        stamp="${wine} synced-rw"
+
+        copy_builtins() {
+          local src="$1" dest="$2" target name
+          [[ -d "$src" && -d "$dest" ]] || return 0
+          for target in "$src"/*; do
+            [[ -f "$target" ]] || continue
+            name="''${target##*/}"
+            [[ "$name" == *.a ]] && continue
+            if [[ -e "$dest/$name" && ! -f "$dest/$name" ]]; then
+              continue
+            fi
+            if [[ -f "$dest/$name" ]]; then
+              if [[ ! -L "$dest/$name" && -w "$dest/$name" ]] && cmp -s "$target" "$dest/$name"; then
+                continue
+              fi
+              grep -aqE 'Wine (builtin|placeholder) DLL' "$dest/$name" || continue
+            fi
+            install -m0644 "$target" "$dest/$name"
+          done
+        }
+
         init_prefix() {
-          [[ -f "$WINEPREFIX/system.reg" ]] && return
-          mkdir -p "$WINEPREFIX"
-          # Wine Mono and Gecko are not bundled; skip their download prompts
-          WINEDLLOVERRIDES="$WINEDLLOVERRIDES;mscoree,mshtml=" wineboot --init
-        ${init}  wineserver -w
+          if [[ -f "$marker" && "$(cat "$marker")" == "$stamp" ]]; then
+            return
+          fi
+          if [[ ! -f "$WINEPREFIX/system.reg" ]]; then
+            mkdir -p "$WINEPREFIX"
+            # Wine Mono and Gecko are not bundled; skip their download prompts
+            WINEDLLOVERRIDES="$WINEDLLOVERRIDES;mscoree,mshtml=" wineboot --init
+          else
+            wineserver -k || true
+            wineserver -w || true
+            copy_builtins "${wine}/lib/wine/x86_64-windows" "$WINEPREFIX/drive_c/windows/system32"
+            copy_builtins "${wine}/lib/wine/i386-windows" "$WINEPREFIX/drive_c/windows/syswow64"
+          fi
+        ${pkgs.lib.optionalString (init != "") "${init}\n"}  wineserver -w
+          printf '%s\n' "$stamp" > "$marker"
         }
 
         ${body}'';
     };
 in
 {
-  inherit mkLauncher mkPrefix wine;
+  inherit
+    mkLauncher
+    mkPrefix
+    wine
+    yabridge
+    yabridgectl
+    ;
 }

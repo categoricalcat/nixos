@@ -49,7 +49,6 @@
     ../../modules/services/homepage.nix
     ../../modules/services/ai/sillytavern.nix
     ../../modules/services/authelia.nix
-    ../../modules/services/vaultwarden.nix
   ];
 
   docs.enable = true;

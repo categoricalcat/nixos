@@ -78,10 +78,6 @@ let
     slskd = { };
     sonarr = { };
     torrent-indexer = { };
-    vaultwarden = {
-      bodySize = "512M";
-      authExempt = "Bitwarden clients call the identity and sync APIs directly, and the vault's master-password login is stronger than the gate";
-    };
   };
 
   extraFor = spec: ''

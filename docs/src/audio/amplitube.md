@@ -29,5 +29,5 @@ For REAPER, the `yabridge-sync` user service bridges the prefix's VST3 folder in
 
   ```bash
   WINEPREFIX=~/.local/share/wineprefixes/ik-multimedia WINEDLLOVERRIDES=winemenubuilder.exe=d \
-    nix shell nixpkgs#wineWow64Packages.yabridge -c wine "<installer.exe>"
+    nix shell nixpkgs#wineWow64Packages.staging -c wine "<installer.exe>"
   ```

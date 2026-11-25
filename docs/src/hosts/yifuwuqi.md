@@ -185,8 +185,7 @@ ______________________________________________________________________
 ## 8. General Administration & Hosted Services
 
 - **Homepage Dashboard**: Port 24082 (`homepage.aset.love`), 5-column layout with ping health checks and resource widgets.
-- **Authelia**: Port 24140 (`authelia.aset.love`), the one login behind every gated vhost; see [Hosted Services](../services/hosted-services.md#29-authelia-modulesservicesautheliamix).
-- **Vaultwarden**: Port 24150 (`vaultwarden.aset.love`), the human credential store; see [Hosted Services](../services/hosted-services.md#210-vaultwarden-modulesservicesvaultwardennix).
+- **Authelia**: Port 24140 (`authelia.aset.love`), the one login behind every gated vhost; see [Hosted Services](../services/hosted-services.md#29-authelia-modulesservicesauthelianix).
 - **Cockpit**: Port 24091 (`cockpit.aset.love`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, deferring queries to `yirukou` on `eno1` or the fallback DHCP DNS on `enp4s0`.

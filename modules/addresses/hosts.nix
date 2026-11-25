@@ -92,7 +92,6 @@ in
         forgejo = "forgejo";
         atticd = "atticd";
         grafana = "grafana";
-        vaultwarden = "vaultwarden";
         authelia = "authelia";
       };
       defaultContainerSubnet = "10.88.0.0/16";
@@ -384,13 +383,6 @@ in
           desktopIcon = "security-high.svg";
           domain = "authelia.${baseDomain}";
           port = 24140;
-        };
-        vaultwarden = {
-          name = "Vaultwarden";
-          group = "Infrastructure";
-          desktopIcon = "bitwarden.svg";
-          domain = "vaultwarden.${baseDomain}";
-          port = 24150;
         };
       };
 

@@ -14,10 +14,14 @@ let
     ;
 
   prefixes = attrValues config.yi.audio.pluginPrefixes;
+
+  # The bridge shares wine-launcher's Wine, so the host, the chainloader and the
+  # prefixes all speak one wineserver protocol version.
+  inherit (import ./wine-launcher.nix { inherit pkgs; }) yabridge yabridgectl;
 in
 {
-  # Each prefix owner (amplitube.nix, toontrack.nix) declares its own entry, so
-  # the prefix path and its VST3 directory are authored once and only consumed here.
+  # Each prefix owner (amplitube.nix) declares its own entry, so the prefix path
+  # and its VST3 directory are authored once and only consumed here.
   options.yi.audio.pluginPrefixes = mkOption {
     type = types.attrsOf (
       types.submodule {
@@ -44,15 +48,15 @@ in
 
   config = {
     home.packages = [
-      pkgs.yabridge
-      pkgs.yabridgectl
+      yabridge
+      yabridgectl
     ];
 
     xdg.configFile."yabridgectl/config.toml".source =
       (pkgs.formats.toml { }).generate "yabridgectl.toml"
         {
           plugin_dirs = map (p: p.vst3Dir) prefixes;
-          yabridge_home = "${pkgs.yabridge}/lib";
+          yabridge_home = "${yabridge}/lib";
           # Verification records the Wine version in this file, which is read-only
           no_verify = true;
         };
@@ -65,7 +69,7 @@ in
         };
         Service = {
           Type = "oneshot";
-          ExecStart = "${lib.getExe pkgs.yabridgectl} sync";
+          ExecStart = "${lib.getExe yabridgectl} sync";
         };
         Install.WantedBy = [ "default.target" ];
       };
