@@ -116,14 +116,28 @@ let
       gateHosts == expected
     ) "hosts running the ai gate ${toString gateHosts} != registry hosts ${toString expected}";
 
+  # --- yirukou vhost predicates (proxy-allowlist, auth-gate) ------------------
+  edgeVhosts = self.nixosConfigurations.yirukou.config.services.nginx.virtualHosts;
+  served =
+    loc:
+    loc.proxyPass != null
+    || loc.root != null
+    || loc.alias != null
+    || loc.tryFiles != null
+    || lib.hasInfix "proxy_pass" loc.extraConfig;
+  # Only subrequests reach an internal location; a client gets 404.
+  internal = loc: lib.elem "internal;" (lines loc.extraConfig);
+  onMtlsListener =
+    vhost: builtins.any (l: l.port == addresses.hosts.yirukou.services.ingress.port) vhost.listen;
+
   # --- proxy-allowlist -------------------------------------------------------
   # Every proxying/file-serving vhost/location enforces restrictedProxyConfig;
-  # static `return` test and redirect locations are exempt. The mTLS machine
-  # listener is exempt as a whole: its gate is the client certificate, and its
-  # location allowlist names the scraper instead of the LAN.
+  # static `return` test and redirect locations and internal subrequest
+  # targets are exempt. The mTLS machine listener is exempt as a whole: its
+  # gate is the client certificate, and its location allowlist names the
+  # scraper instead of the LAN.
   proxyAllowlist =
     let
-      cfg = self.nixosConfigurations.yirukou.config;
       lan = addresses.hosts.yirukou.network.lan;
       expected = [
         "allow ${lan.ipv4.cidr};"
@@ -131,19 +145,10 @@ let
         "deny all;"
       ];
       allowDeny = text: lib.filter (l: lib.hasPrefix "allow " l || lib.hasPrefix "deny " l) (lines text);
-      served =
-        loc:
-        loc.proxyPass != null
-        || loc.root != null
-        || loc.alias != null
-        || loc.tryFiles != null
-        || lib.hasInfix "proxy_pass" loc.extraConfig;
-      onMtlsListener =
-        vhost: builtins.any (l: l.port == addresses.hosts.yirukou.services.ingress.port) vhost.listen;
       violating = lib.concatMap (
         vname:
         let
-          vhost = cfg.services.nginx.virtualHosts.${vname};
+          vhost = edgeVhosts.${vname};
         in
         if onMtlsListener vhost then
           [ ]
@@ -154,12 +159,101 @@ let
             let
               loc = vhost.locations.${lname};
             in
-            lib.optional (served loc && allowDeny loc.extraConfig != expected) "${vname}/${lname}"
+            lib.optional (
+              served loc && !internal loc && allowDeny loc.extraConfig != expected
+            ) "${vname}/${lname}"
           ) (lib.attrNames vhost.locations)
-      ) (lib.attrNames cfg.services.nginx.virtualHosts);
+      ) (lib.attrNames edgeVhosts);
     in
     contract "proxy-allowlist" "yirukou" (violating == [ ])
       "locations whose allow/deny sequence is not exactly the registry LAN CIDRs then deny all: ${toString violating}";
+
+  # --- auth-gate -------------------------------------------------------------
+  # Every served yirukou location answers only after Authelia, except the
+  # named exemptions (machine clients, native apps, the portal, the vault).
+  # A gate's auth_request target must be an internal location asking the
+  # AuthRequest endpoint under the Authelia Host: any other target lets a
+  # backend's catch-all 200 admit every request.
+  authGate =
+    let
+      svc = addresses.hosts.yifuwuqi.services;
+      exempt = {
+        ${svc.attic.domain} = [ "/" ];
+        ${svc.authelia.domain} = [ "/" ];
+        ${svc.jellyfin.domain} = [ "/" ];
+        ${svc.pinepods.domain} = [ "/" ];
+        ${svc.vaultwarden.domain} = [ "/" ];
+        "dns.${addresses.baseDomain}" = [ "/dns-query" ];
+      };
+      gateTarget =
+        text:
+        lib.mapNullable (l: lib.removeSuffix ";" (lib.removePrefix "auth_request " l)) (
+          lib.findFirst (lib.hasPrefix "auth_request ") null (lines text)
+        );
+      endpointValid =
+        vhost: target:
+        let
+          loc = vhost.locations."= ${target}" or null;
+        in
+        loc != null
+        && internal loc
+        && lib.hasSuffix "/api/authz/auth-request" (toString loc.proxyPass)
+        && lib.elem "proxy_set_header Host ${svc.authelia.domain};" (lines loc.extraConfig);
+      # Grafana's auth.proxy is the only login it has left, so a gated location
+      # that forgets the header authenticates nobody and cannot be fixed by
+      # logging in: pin the propagation, not just the subrequest.
+      identityForwarded =
+        loc: lib.elem "proxy_set_header Remote-User $authelia_user;" (lines loc.extraConfig);
+      locationIssues =
+        vname: vhost: lname:
+        let
+          loc = vhost.locations.${lname};
+          target = gateTarget loc.extraConfig;
+        in
+        if !served loc || internal loc || lib.elem lname (exempt.${vname} or [ ]) then
+          [ ]
+        else if target == null then
+          [ "${vname}/${lname} is ungated" ]
+        else
+          lib.optional (!endpointValid vhost target) "${vname}/${lname} gates through invalid ${target}"
+          ++ lib.optional (!identityForwarded loc) "${vname}/${lname} drops the identity header";
+      violating = lib.concatMap (
+        vname:
+        let
+          vhost = edgeVhosts.${vname};
+        in
+        if onMtlsListener vhost then
+          [ ]
+        else
+          lib.optional (vhost.root != null) "${vname} serves a vhost root outside any gated location"
+          ++ lib.concatMap (locationIssues vname vhost) (lib.attrNames vhost.locations)
+      ) (lib.attrNames edgeVhosts);
+      stale = lib.concatLists (
+        lib.mapAttrsToList (
+          vname: lnames:
+          lib.optional (
+            !(edgeVhosts ? ${vname}) || !lib.all (l: edgeVhosts.${vname}.locations ? ${l}) lnames
+          ) "exemption ${vname} ${toString lnames} matches no location"
+        ) exempt
+      );
+    in
+    contractIssues "auth-gate" "yirukou" (violating ++ stale);
+
+  # --- vhost-naming ----------------------------------------------------------
+  # A service's hostname is its registry key, `<key>.<baseDomain>`: the gate,
+  # its exemptions and every client URI key off that one name.
+  vhostNaming = contractIssues "vhost-naming" "registry" (
+    lib.concatLists (
+      lib.mapAttrsToList (
+        host: h:
+        lib.mapAttrsToList (key: s: "${host}.${key} is ${s.domain}") (
+          lib.filterAttrs (key: s: s ? domain && s.domain != "${key}.${addresses.baseDomain}") (
+            h.services or { }
+          )
+        )
+      ) addresses.hosts
+    )
+  );
 
   # --- edge-no-tcp -----------------------------------------------------------
   # yirukou keeps filterForward on, opens no global TCP or port ranges (only
@@ -381,6 +475,8 @@ let
     ++ [
       gateCoverage
       proxyAllowlist
+      authGate
+      vhostNaming
       edgeNoTcp
       deploySshPort
     ];

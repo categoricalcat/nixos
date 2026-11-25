@@ -1,6 +1,6 @@
 # Inter-Host Traffic Through mTLS nginx
 
-## Status: DRAFT — written 2026-11-23, nothing implemented; the resolver hop itself is delegated to [mTLS on DNS](mtls-dns-plan.md)
+## Status: DRAFT — written 2026-11-23, updated 2026-11-25 with Phase 8 (listener migration); nothing implemented; the resolver hop itself is delegated to [mTLS on DNS](mtls-dns-plan.md)
 
 ## Objective
 
@@ -11,6 +11,11 @@ enumerated transport exception (SSH, ICMP, the tailnet's WireGuard) or is
 rejected by the sending host's firewall, and an eval-time contract stops new
 code from adding a plain flow.
 
+The same rule, applied at the listener instead of the hop: a service port is
+not an interface. Anything nginx can front binds loopback and owns no firewall
+rule at all; a port that still needs one is either a non-HTTP protocol or a
+named exception with a reason (Phase 8).
+
 "Between" means traffic a process on one host opens to an address of the
 other. Traffic `yirukou` merely routes — `yifuwuqi`'s WAN path, tailnet clients
 on the subnet route, LAN devices — is not inter-host service traffic and is
@@ -20,26 +25,28 @@ left alone.
 
 ### Repository-verified flows (2026-11-23)
 
-| #   | Flow                   | Path today                                                | Transport            | Status                          |
-| --- | ---------------------- | --------------------------------------------------------- | -------------------- | ------------------------------- |
-| 1   | Application proxy      | `yirukou` nginx to `10.42.0.2:24120`                      | mTLS, subject pinned | compliant                       |
-| 2   | Scrapes, probe fan-out | `yifuwuqi` Prometheus to `10.42.0.1:24120`                | mTLS                 | compliant                       |
-| 3   | Log push               | `yirukou` Vector to `10.42.0.2:24120/loki/`               | mTLS                 | compliant                       |
-| 4   | Hairpin clients        | `yifuwuqi` to `10.42.0.1:443`, then flow 1                | TLS, then mTLS       | compliant                       |
-| 5   | Resolver upstream      | `resolved` on `eno1` to `yirukou:53`                      | plain DNS            | [mTLS on DNS](mtls-dns-plan.md) |
-| 6   | Tailnet resolver       | `resolved` on `tailscale0` to MagicDNS, then `yirukou:53` | WireGuard, plain DNS | unplanned                       |
-| 7   | DHCP resolver          | `resolved` on `enp4s0` to `10.42.42.1:53`                 | plain DNS            | latent, unplanned               |
-| 8   | Cross-host DNS probes  | blackbox on each host to the other's `:53`                | plain DNS            | unplanned                       |
-| 9   | Reachability probes    | blackbox ICMP and smokeping, both ways                    | ICMP                 | exception                       |
-| 10  | Administration         | `ai-ssh`, deploy-rs, PKI push, Tailscale SSH              | SSH                  | exception                       |
-| 11  | Tailnet transport      | `tailscaled` to `tailscaled`, UDP 41641                   | WireGuard            | exception                       |
+| #   | Flow                   | Path today                                                | Transport             | Status                          |
+| --- | ---------------------- | --------------------------------------------------------- | --------------------- | ------------------------------- |
+| 1   | Application proxy      | `yirukou` nginx to `10.42.0.2:24120`                      | mTLS, subject pinned  | compliant                       |
+| 2   | Scrapes, probe fan-out | `yifuwuqi` Prometheus to `10.42.0.1:24120`                | mTLS                  | compliant                       |
+| 3   | Log push               | `yirukou` Vector to `10.42.0.2:24120/loki/`               | mTLS                  | compliant                       |
+| 4   | Hairpin clients        | `yifuwuqi` to `10.42.0.1:443`, then flow 1                | TLS, then mTLS        | compliant                       |
+| 5   | Resolver upstream      | `resolved` on `eno1` to `yirukou:53`                      | plain DNS             | [mTLS on DNS](mtls-dns-plan.md) |
+| 6   | Tailnet resolver       | `resolved` on `tailscale0` to MagicDNS, then `yirukou:53` | WireGuard, plain DNS  | unplanned                       |
+| 7   | DHCP resolver          | `resolved` on `enp4s0` to `10.42.42.1:53`                 | plain DNS             | latent, unplanned               |
+| 8   | Cross-host DNS probes  | blackbox on each host to the other's `:53`                | plain DNS             | unplanned                       |
+| 9   | Reachability probes    | blackbox ICMP and smokeping, both ways                    | ICMP                  | exception                       |
+| 10  | Administration         | `ai-ssh`, deploy-rs, PKI push, Tailscale SSH              | SSH                   | exception                       |
+| 11  | Tailnet transport      | `tailscaled` to `tailscaled`, UDP 41641                   | WireGuard             | exception                       |
+| 12  | LLM inference          | `yifuwuqi` (SillyTavern) to `yitaishi:11436`              | plain HTTP on tailnet | Phase 8                         |
+| 13  | Image inference        | `yirukou` to `yitaishi:11437`                             | plain HTTP on tailnet | Phase 8                         |
 
 - Flows 1–3 share one ingress port per host (`services.ingress.port = 24120`)
   and are built in [proxy-vhosts.nix](../../../modules/services/proxy-vhosts.nix),
   [prometheus.nix](../../../modules/services/monitoring/prometheus.nix) and
   [promtail.nix](../../../modules/services/monitoring/promtail.nix) from the
   peer relation in [mtls.nix](../../../modules/services/mtls.nix).
-- Flow 4's clients are the Nix substituter `cache.aset.love`
+- Flow 4's clients are the Nix substituter `attic.aset.love`
   ([attic/client.nix](../../../modules/services/attic/client.nix), on every
   host; on `yirukou` the first leg is local), the homepage pings
   ([homepage.nix](../../../modules/services/homepage.nix)), the GitHub runner's
@@ -59,12 +66,18 @@ left alone.
 
 Firewall:
 
-- `yifuwuqi`'s `eno1` opens SSH, 53, 139/445 and the 3000/6006 dev servers to
+- `yifuwuqi`'s `eno1` opens SSH, 53, 139/445, and the 3000/6006 dev servers to
   the whole LAN, `yirukou` included, and admits 24120 only from `10.42.0.1`
-  ([firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix)).
+  ([firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix)). Note what
+  is *not* there: no application port. Every backend binds loopback and is
+  reached through the local ingress, so the shape Phase 8 generalises already
+  holds on this host.
 - `yirukou`'s `br0` opens 53, 80, 443, 853, 3443 and SSH to the LAN,
   `yifuwuqi` included, and admits 24120 only from `10.42.0.2`
   ([firewall.nix](../../../hosts/yirukou/networking/firewall.nix)).
+- `yitaishi` opens 11436, 11437 and 4242 to the whole tailnet on `tailscale0`
+  ([services.nix](../../../hosts/yitaishi/services.nix)); `yixiaoqing` opens
+  4242\. The two AI listeners are HTTP and Phase 8b narrows them.
 - Neither host limits what it originates to the other. nixos-fw has no output
   hook; the only output-hook table today is the Forgejo runner's
   `sandbox-egress` ([forgejo-runner.nix](../../../modules/services/forgejo-runner.nix)).
@@ -143,6 +156,18 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
    guarantee in the change that makes it true, following the "current policy,
    never aspiration" rule at the top of
    [checks.nix](../../../nix/checks.nix).
+1. **Fronting a listener is not a way to comply.** A service moved behind
+   nginx for the sake of a rule is a listener migration, judged by whether the
+   app can bind loopback, not a transport change. It is in scope only where
+   the app is HTTP and the client can send `Host`; the disposition table above
+   is exhaustive, and adding a row needs an amendment here.
+1. **A service port is not an interface.** Every backend nginx can front binds
+   loopback, and the firewall rule for its port is deleted rather than
+   narrowed. `yifuwuqi` already obeys this — its `eno1` admits no application
+   port, only the ingress from the gateway. The residue is `3000`/`6006`.
+   Anything that keeps a rule is a non-HTTP protocol (DNS, DoT, DoH on the DDR
+   port, SMB, lan-mouse, WireGuard) or one of Decision 6's exceptions, and the
+   `listener-exposure` contract names it.
 
 Peer address sets come from the registry: for `yirukou` its LAN v4 and v6, VLAN
 42 v4 and v6, and tailnet v4; for `yifuwuqi` its LAN v4 and v6 and tailnet v4
@@ -156,6 +181,43 @@ passes):
 | ----------------------- | ------------------------------------------------------------ | ----- | ------------ |
 | `yifuwuqi` to `yirukou` | 24120 ingress, DNS stream port, 443 public vhosts, 24212, 22 | 41641 | ICMP, ICMPv6 |
 | `yirukou` to `yifuwuqi` | 24120 ingress, 24212, 22                                     | 41641 | ICMP, ICMPv6 |
+
+### Listener disposition
+
+Decision 1 rules out fronting a listener as a way to satisfy it; Decision 8
+says which listeners stop being ports at all. Every port open on any host
+today, and what happens to it:
+
+| Port(s)            | Host                     | Protocol    | Disposition                                        |
+| ------------------ | ------------------------ | ----------- | -------------------------------------------------- |
+| 3000, 6006         | `yifuwuqi`               | HTTP        | **Migrate**: vhosts on `yirukou`, bind loopback    |
+| 11436, 11437       | `yitaishi`               | HTTP        | **Narrow to `yirukou`**, see below                 |
+| 53                 | `yirukou`                | DNS         | keep: resolver for LAN, VLAN 42 and tailnet        |
+| 853                | `yirukou`                | DoT / DoQ   | keep: DDR advertises it, and DoT is not HTTP       |
+| 3443               | `yirukou`                | DoH         | keep: DDR advertises this exact port               |
+| 80, 443            | `yirukou`                | HTTP        | keep: the gate itself                              |
+| 24212              | all                      | SSH         | exception: the recovery lane (Decision 6)          |
+| 139, 445, 137, 138 | `yifuwuqi`               | SMB/NetBIOS | keep: no HTTP shape, and the clients are not nginx |
+| 4242               | `yitaishi`, `yixiaoqing` | lan-mouse   | keep: a game-input protocol, not a service         |
+| 51820, 41641       | all                      | WireGuard   | exception: transport (Decision 6)                  |
+
+Two entries deserve their reasons, because both look like candidates:
+
+- **`3443` cannot fold into `443`.** AdGuard's DDR answer is built from the
+  listener's own port (`makeDDRResponse` emits an `SVCBPort` per
+  `HTTPSListenAddrs` entry, `internal/dnsforward/process.go:212-220`), and
+  `tls.port_https = 3443` is what resolvers are told to use. Serving DoH on
+  `443` under the same name would mean advertising nginx — which terminates
+  TLS and could proxy `/dns-query` to AdGuard, since that vhost already
+  exists — so the migration is really "point DDR at nginx", a DNS change with
+  its own rollout, not a firewall edit.
+- **`11436`/`11437` are not inter-host in the sense of this plan.** They are
+  tailnet-only listeners on `yitaishi`, a host outside the peer pair, so
+  `mtls.nix`'s two-host `peer` throws there. Fronting them with nginx on
+  `yitaishi` costs a third leaf plus a third nginx instance; narrowing
+  `IPAddressAllow` to the gateway and the one client each is the smaller
+  change that achieves the same thing. `llama-cpp` already carries an
+  `IPAddressAllow`; `sd-cpp` allows the whole tailnet CGNAT range.
 
 ## Architecture
 
@@ -362,22 +424,78 @@ Acceptance:
 - [architecture-rollout-plan.md](architecture-rollout-plan.md): tick the lane,
   then delete this plan in the change set that completes its last phase.
 
+### Phase 8: Listener migration (no rule where nginx can front)
+
+Independent of Phases 2–6; it needs neither the allowlist nor the DNS cutover.
+The unit of work is one listener, and each completes on its own.
+
+**8a — `3000` and `6006` on `yifuwuqi`.** Two dev-server ports opened to the
+whole LAN for a user (`workd`) whose servers declare no port in this repo. Both
+are HTTP, so:
+
+- add registry entries with `domain`s like every other service, and vhosts to
+  [proxy-vhosts.nix](../../../modules/services/proxy-vhosts.nix) — they are
+  local to `yifuwuqi`, so `mkLocalVhosts` fronts them and `mkRemoteVhosts`
+  gates them on `yirukou` like the rest;
+- bind the dev servers to `127.0.0.1`, which is a per-user choice, not
+  something this repo can declare: the rule is deleted only after the bind
+  changes;
+- delete both lines from [firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix).
+
+If the dev servers cannot bind loopback, they are a Decision 11 exception and
+keep their rules with that reason recorded.
+
+**8b — `11436`/`11437` on `yitaishi`.** Not a fronting migration: narrow the
+listener instead.
+
+- [sd-cpp.nix](../../../modules/services/ai/sd-cpp.nix): `IPAddressAllow` is
+  `100.64.0.0/10`, i.e. every tailnet peer. Replace it with `localhost` plus
+  `yirukou`'s tailnet address, its only client (`sd-cpp.aset.love` proxies
+  there).
+- [llama-cpp.nix](../../../modules/services/ai/llama-cpp.nix): already
+  `localhost`-only; add `yifuwuqi`'s tailnet address, since SillyTavern on
+  `yifuwuqi` is the consumer
+  ([sillytavern.nix](../../../modules/services/ai/sillytavern.nix) builds
+  `http://<peer vpn>:<port>` for every peer entry).
+- Remove `11436` and `11437` from
+  [yitaishi/services.nix](../../../hosts/yitaishi/services.nix) only if the
+  systemd filters are enough; the firewall rule is the outer layer and can
+  stay as a second gate with the same two sources.
+
+**Contract: `listener-exposure`.** Every port in every host's
+`networking.firewall.interfaces` is either consumed by an nginx `proxyPass`
+somewhere in the fleet (so the rule is redundant), or listed in the closed
+exception table with a reason. First run lists the current residue, then each
+item leaves the list as its phase lands.
+
+Acceptance: `nix eval` shows no `3000`/`6006` on `yifuwuqi`; from a LAN client
+`curl -I http://10.42.0.2:3000` fails while the new vhost answers through the
+gate; `ss -ltnp` on `yitaishi` shows both AI listeners bound to loopback and
+the tailnet address only; a SillyTavern chat and one `sd-cpp.aset.love`
+generation still work.
+
 ## Files & LOC Budget
 
 About +140 Nix lines on top of [mTLS on DNS](mtls-dns-plan.md)'s own ~45.
 
-| File                                                                                              | Change                                  |
-| ------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `nix/peer-mtls-contract.nix` (new)                                                                | +70: the `peer-mtls` predicates         |
-| [checks.nix](../../../nix/checks.nix)                                                             | +2: import, append                      |
-| [mtls.nix](../../../modules/services/mtls.nix)                                                    | +35: port derivation, `mtls-peer` table |
-| [yirukou firewall.nix](../../../hosts/yirukou/networking/firewall.nix)                            | +8: input mirror, header line           |
-| [tailscale.nix](../../../modules/services/tailscale.nix)                                          | +8: `acceptDns`                         |
-| [prometheus.nix](../../../modules/services/monitoring/prometheus.nix)                             | +6/-1: probe filter                     |
-| [adguard-exporter/default.nix](../../../modules/services/monitoring/adguard-exporter/default.nix) | +2: loopback-only IP filter             |
-| [hosts/yifuwuqi/services.nix](../../../hosts/yifuwuqi/services.nix)                               | +1                                      |
-| [enp4s0.nix](../../../hosts/yifuwuqi/networking/interfaces/enp4s0.nix)                            | +1/-1                                   |
-| [monitoring.nix](../../../modules/addresses/monitoring.nix)                                       | comment only                            |
+| File                                                                                                               | Change                                  |
+| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| `nix/peer-mtls-contract.nix` (new)                                                                                 | +70: the `peer-mtls` predicates         |
+| [checks.nix](../../../nix/checks.nix)                                                                              | +2: import, append                      |
+| [mtls.nix](../../../modules/services/mtls.nix)                                                                     | +35: port derivation, `mtls-peer` table |
+| [yirukou firewall.nix](../../../hosts/yirukou/networking/firewall.nix)                                             | +8: input mirror, header line           |
+| [tailscale.nix](../../../modules/services/tailscale.nix)                                                           | +8: `acceptDns`                         |
+| [prometheus.nix](../../../modules/services/monitoring/prometheus.nix)                                              | +6/-1: probe filter                     |
+| [adguard-exporter/default.nix](../../../modules/services/monitoring/adguard-exporter/default.nix)                  | +2: loopback-only IP filter             |
+| [hosts/yifuwuqi/services.nix](../../../hosts/yifuwuqi/services.nix)                                                | +1                                      |
+| [enp4s0.nix](../../../hosts/yifuwuqi/networking/interfaces/enp4s0.nix)                                             | +1/-1                                   |
+| [monitoring.nix](../../../modules/addresses/monitoring.nix)                                                        | comment only                            |
+| [proxy-vhosts.nix](../../../modules/services/proxy-vhosts.nix)                                                     | +8: the two dev-server entries (8a)     |
+| [hosts.nix](../../../modules/addresses/hosts.nix)                                                                  | +8: their registry entries (8a)         |
+| [yifuwuqi firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix)                                           | -2: the 3000/6006 lines (8a)            |
+| [sd-cpp.nix](../../../modules/services/ai/sd-cpp.nix), [llama-cpp.nix](../../../modules/services/ai/llama-cpp.nix) | +2: narrow `IPAddressAllow` (8b)        |
+| [yitaishi/services.nix](../../../hosts/yitaishi/services.nix)                                                      | -2: drop the AI port rules (8b)         |
+| [checks.nix](../../../nix/checks.nix)                                                                              | +30: `listener-exposure`                |
 
 ## Rollout Order
 
@@ -390,17 +508,22 @@ flowchart TD
     p5["Phase 5: allowlist, log-only"]
     p6["Phase 6: enforce"]
     p7["Phase 7: docs and retirement"]
+    p8["Phase 8: listener migration"]
 
     p1 --> p2
     p1 --> p3
+    p1 --> p8
     p2 --> p4
     p3 --> p5
     p4 --> p5
     p5 --> p6
     p6 --> p7
+    p8 --> p7
 ```
 
 1. Phase 1 first: it is evaluation-only and guards every later change.
+1. Phase 8 is independent of 2–6 and can land in any slot; finish it before
+   Phase 5 so the log-only window starts with the dev-server chatter gone.
 1. Phases 2 and 3 are independent `yifuwuqi`-only generations; Phase 2 must
    land before the DNS cutover.
 1. Phase 4 keeps [mTLS on DNS](mtls-dns-plan.md)'s own order, `yirukou` before
@@ -420,8 +543,9 @@ flowchart TD
   SSH, DHCP, multicast mDNS.
 - Routed traffic, including tailnet clients that reach `yifuwuqi` as
   `10.42.0.1`.
-- Other mesh hosts. `image.aset.love` on `yirukou` proxies plain HTTP to
-  `yitaishi`'s tailnet listener; covering it needs a third host leaf.
+- Other mesh hosts as mTLS peers. `sd-cpp.aset.love` on `yirukou` proxies
+  plain HTTP to `yitaishi`'s tailnet listener; Phase 8b narrows who may reach
+  it, and covering the hop itself still needs a third host leaf.
 - Cloudflare Origin Pulls, the roadmap's conditional edge lane.
 - PKI changes. Every listener here reuses the existing leaves; the stream
   listener presents `yirukou-server`.
@@ -449,3 +573,14 @@ flowchart TD
   through the tailnet to `yirukou` instead. This is not inter-host traffic, but
   it is the silent downgrade the DNS plan's fail-closed decision rules out.
   Should `FallbackDNS` be emptied on `yifuwuqi`?
+- **The `3000`/`6006` dev servers are undeclared.** No module in this repo
+  starts them; the ports are opened for the `workd` user's own servers
+  ([workd.nix](../../../users/home/workd.nix) installs `nodejs`, nothing
+  listens). So 8a can front them only after the servers are told to bind
+  loopback, which is a user-side change this repo cannot enforce. Should they
+  become a declared service, or stay a documented exception until they do?
+- **DDR is the only thing pinning `3443`.** Folding AdGuard's DoH into the
+  existing `dns.aset.love` vhost on `443` is possible — nginx terminates TLS
+  there and already proxies `/dns-query` — but AdGuard answers DDR from its own
+  listener ports, so the change is "point DDR at nginx, or stop advertising
+  DDR". Worth doing only if `3443` is the last non-nginx listener left.

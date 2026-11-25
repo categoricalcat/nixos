@@ -9,6 +9,9 @@
 let
   inherit (config.networking) hostName;
   addrs = allAddresses.hosts.${hostName};
+  # Fixed address so the host firewall can name gluetun itself rather than
+  # every container subnet: the containers behind it inherit this identity.
+  gluetunNetwork = addrs.containers.gluetun.network;
 
   # Chromium aborts when fontconfig reports zero font families
   flaresolverrFonts = pkgs.makeFontsConf {
@@ -125,7 +128,9 @@ in
         "--device=/dev/net/tun:/dev/net/tun"
         "--sysctl=net.ipv6.conf.all.disable_ipv6=1"
         "--sysctl=net.ipv4.conf.all.src_valid_mark=1"
+        "--ip=${gluetunNetwork.ipv4.host}"
       ];
+      networks = [ gluetunNetwork.name ];
       environment = {
         VPN_SERVICE_PROVIDER = "protonvpn";
         VPN_TYPE = "wireguard";
@@ -219,6 +224,13 @@ in
         # module's plain definition, hence mkForce.
         Restart = lib.mkForce "always";
         ExecStartPre = lib.mkBefore [
+          # The network must exist before the container can claim its address.
+          # --disable-dns keeps parity with the default network gluetun runs on
+          # today: its resolver stays containers.conf's `network.dns_servers`
+          # (the host LAN address, which FIREWALL_OUTBOUND_SUBNETS already
+          # permits). An aardvark resolver on the bridge gateway would be routed
+          # into the tunnel and the VPN could never come up.
+          "${config.virtualisation.podman.package}/bin/podman network create --ignore --disable-dns --driver bridge --interface-name ${gluetunNetwork.interface} --subnet ${gluetunNetwork.ipv4.cidr} --gateway ${gluetunNetwork.ipv4.gateway} ${gluetunNetwork.name}"
           "${pkgs.systemd}/bin/systemctl stop ${lib.concatStringsSep " " gluetunConsumerUnits}"
           "${config.virtualisation.podman.package}/bin/podman rm -f --ignore ${lib.concatStringsSep " " gluetunConsumers}"
         ];

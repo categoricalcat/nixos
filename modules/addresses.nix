@@ -17,6 +17,7 @@ in
   inherit (network)
     baseDomain
     legacyDomain
+    email
     tailscale
     publicDnsResolvers
     privateDestinations

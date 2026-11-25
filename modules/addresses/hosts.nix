@@ -92,6 +92,8 @@ in
         forgejo = "forgejo";
         atticd = "atticd";
         grafana = "grafana";
+        vaultwarden = "vaultwarden";
+        authelia = "authelia";
       };
       defaultContainerSubnet = "10.88.0.0/16";
       containerSubnetPools = [
@@ -105,6 +107,9 @@ in
         }
       ];
       cloudflaredCidr = "10.89.0.0/24";
+      # Fixed so the firewall can name gluetun alone: it owns the network
+      # namespace that qBittorrent, slskd, soularr and torrent-indexer share.
+      gluetunCidr = "172.19.0.0/24";
       applicationSourceSubnets = [
         defaultContainerSubnet
       ]
@@ -217,7 +222,7 @@ in
           group = "Infrastructure";
           icon = "gitea.png";
           desktopIcon = "git.svg";
-          domain = "git.${baseDomain}";
+          domain = "forgejo.${baseDomain}";
           httpPort = 24200;
         };
         attic = {
@@ -225,7 +230,7 @@ in
           group = "Infrastructure";
           icon = "nixos.png";
           desktopIcon = "distributor-logo-nixos.svg";
-          domain = "cache.${baseDomain}";
+          domain = "attic.${baseDomain}";
           port = 24203;
           cacheName = "yi";
         };
@@ -296,7 +301,7 @@ in
           name = "Pinepods";
           group = "Media";
           desktopIcon = "podcast.svg";
-          domain = "cast.${baseDomain}";
+          domain = "pinepods.${baseDomain}";
           port = 24085;
         };
         flaresolverr = {
@@ -330,14 +335,14 @@ in
         homepage = {
           name = "Homepage";
           desktopIcon = "kfm_home.svg";
-          domain = "home.${baseDomain}";
+          domain = "homepage.${baseDomain}";
           port = 24082;
         };
         searxng = {
           name = "SearXNG";
           group = "Network";
           desktopIcon = "preferences-system-search.svg";
-          domain = "search.${baseDomain}";
+          domain = "searxng.${baseDomain}";
           port = 24888;
         };
         opencode = {
@@ -345,7 +350,7 @@ in
           group = "Infrastructure";
           icon = "terminal.png";
           desktopIcon = "utilities-terminal.svg";
-          domain = "agent.${baseDomain}";
+          domain = "opencode.${baseDomain}";
           port = 24010;
         };
         # One nginx listener on the LAN address fronts every proxied backend
@@ -362,7 +367,7 @@ in
           name = "SillyTavern";
           group = "Infrastructure";
           desktopIcon = "internet-chat.svg";
-          domain = "companion.${baseDomain}";
+          domain = "sillytavern.${baseDomain}";
           port = 24000;
         };
         docs = {
@@ -372,6 +377,20 @@ in
           desktopIcon = "devdocs.svg";
           domain = "docs.${baseDomain}";
           port = 24083;
+        };
+        authelia = {
+          name = "Authelia";
+          group = "Infrastructure";
+          desktopIcon = "security-high.svg";
+          domain = "authelia.${baseDomain}";
+          port = 24140;
+        };
+        vaultwarden = {
+          name = "Vaultwarden";
+          group = "Infrastructure";
+          desktopIcon = "bitwarden.svg";
+          domain = "vaultwarden.${baseDomain}";
+          port = 24150;
         };
       };
 
@@ -393,10 +412,25 @@ in
             host = "10.89.0.2";
           };
         };
+        gluetun.network = {
+          name = "gluetun";
+          interface = "gluetun0";
+          ipv4 = {
+            cidr = gluetunCidr;
+            gateway = "172.19.0.1";
+            host = "172.19.0.2";
+          };
+        };
 
         isolation = {
           inherit applicationSourceSubnets;
-          sourceSubnets = applicationSourceSubnets ++ [ cloudflaredCidr ];
+          # gluetun is deliberately absent from applicationSourceSubnets: its
+          # shared namespace makes it a caller in its own right, admitted to
+          # DNS and to Lidarr only.
+          sourceSubnets = applicationSourceSubnets ++ [
+            cloudflaredCidr
+            gluetunCidr
+          ];
         };
       };
     };
@@ -447,7 +481,7 @@ in
       services = {
         inherit (sharedServices) llama-cpp;
         sd-cpp = {
-          domain = "image.${baseDomain}";
+          domain = "sd-cpp.${baseDomain}";
           port = 11437;
         };
       };
@@ -565,7 +599,7 @@ in
           name = "AdGuard Home";
           group = "Network";
           icon = "adguard-home.png";
-          domain = "adguard.${baseDomain}";
+          domain = "adguardhome.${baseDomain}";
           port = 3333;
           dnsPort = 53;
           dnsBindHosts = [

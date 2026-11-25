@@ -27,7 +27,6 @@ in
   sops.secrets = {
     "services/slskd/username" = { };
     "services/slskd/password" = { };
-    "services/slskd/web_password" = { };
     "services/slskd/api_key" = { };
   };
 
@@ -46,9 +45,9 @@ in
       web:
         port: ${toString services.slskd.port}
         ip_address: 0.0.0.0
+        # The Authelia gate on yirukou is the only login in front of the UI.
         authentication:
-          username: slskd
-          password: ${config.sops.placeholder."services/slskd/web_password"}
+          disabled: true
           api_keys:
             soularr:
               key: ${config.sops.placeholder."services/slskd/api_key"}

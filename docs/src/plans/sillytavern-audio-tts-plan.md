@@ -4,7 +4,7 @@
 
 ## Objective
 
-Add local, uncensored Text-to-Speech (TTS) character voice synthesis to SillyTavern (`https://companion.aset.love`) with declarative NixOS configuration in `modules/services/ai/sillytavern.nix` (and `modules/services/ai/models.nix` / `modules/addresses/hosts.nix` if backed by a host daemon), zero cloud telemetry or content filtering, and preservation of user-assigned character `voiceMap` mappings across restarts.
+Add local, uncensored Text-to-Speech (TTS) character voice synthesis to SillyTavern (`https://sillytavern.aset.love`) with declarative NixOS configuration in `modules/services/ai/sillytavern.nix` (and `modules/services/ai/models.nix` / `modules/addresses/hosts.nix` if backed by a host daemon), zero cloud telemetry or content filtering, and preservation of user-assigned character `voiceMap` mappings across restarts.
 
 ## Current state
 
@@ -54,7 +54,7 @@ Add local, uncensored Text-to-Speech (TTS) character voice synthesis to SillyTav
 
 - Register the TTS service port in `modules/addresses.nix` / `modules/addresses/hosts.nix` and declare the model artifact in `modules/services/ai/models.nix` (with pinned SHA256 verification).
 - Create the hardened systemd service module under `modules/services/ai/` adopting `systemdHardening` (and register any required exceptions in `modules/hardening.nix` for the `hardening-baseline` contract in `nix/checks.nix`).
-- Route requests through SillyTavern's backend proxy (`/api/openai/custom/generate-voice`) or local ingress so browser clients on LAN (`https://companion.aset.love`) do not hit cross-origin / mixed-content blocks.
+- Route requests through SillyTavern's backend proxy (`/api/openai/custom/generate-voice`) or local ingress so browser clients on LAN (`https://sillytavern.aset.love`) do not hit cross-origin / mixed-content blocks.
 
 ### Phase 3 — Verification, Documentation, & Plan Retirement
 
@@ -68,7 +68,7 @@ Add local, uncensored Text-to-Speech (TTS) character voice synthesis to SillyTav
 - [ ] **1.1** Implement declarative `extension_settings.tts` defaults in `modules/services/ai/sillytavern.nix` and `voiceMap` preservation assertions in `modules/services/ai/sillytavern-settings-overlay-test.sh` (AI).
 - [ ] **2.1** If Tier 2 or Tier 3 is chosen, implement the TTS daemon module, `models.nix` entry, `addresses.nix` port, and `modules/hardening.nix` inventory entry (AI).
 - [ ] **2.2** Run `nix fmt -- --fail-on-change`, `nix flake check --no-build`, and build all affected checks and systemd units (AI).
-- [ ] **3.1** Switch target host(s) and verify character voice preview and message narration in `https://companion.aset.love` (User).
+- [ ] **3.1** Switch target host(s) and verify character voice preview and message narration in `https://sillytavern.aset.love` (User).
 - [ ] **3.2** Update documentation and retire `docs/src/plans/sillytavern-audio-tts-plan.md` in the completing change set (AI).
 
 ## Open questions

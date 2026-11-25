@@ -21,10 +21,15 @@ let
   # proxy hops. domain/port resolve from allAddresses.hosts.yifuwuqi.services.
   # websockets defaults to true; upstreamLan fronts a backend that cannot bind
   # loopback (container-facing, or the app has no bind option), everything
-  # else is loopback.
+  # else is loopback. Every entry sits behind the Authelia gate on yirukou
+  # unless it names an authExempt reason.
   proxiedServices = {
     attic = {
       websockets = false;
+      authExempt = "Nix substituters and attic push authenticate with Attic tokens and cannot follow a login redirect";
+    };
+    authelia = {
+      authExempt = "the login portal itself: gating it would loop the redirect";
     };
     bazarr = { };
     cockpit = {
@@ -44,6 +49,7 @@ let
     };
     jellyfin = {
       upstreamLan = true;
+      authExempt = "TV and mobile clients authenticate to Jellyfin directly and cannot complete a browser login";
     };
     jellyseerr = {
       upstreamLan = true;
@@ -55,7 +61,9 @@ let
       bodySize = "1G";
       longTimeouts = true;
     };
-    pinepods = { };
+    pinepods = {
+      authExempt = "podcast and mobile clients authenticate with Pinepods API keys and cannot complete a browser login";
+    };
     prowlarr = { };
     qbittorrent = { };
     radarr = { };
@@ -70,6 +78,10 @@ let
     slskd = { };
     sonarr = { };
     torrent-indexer = { };
+    vaultwarden = {
+      bodySize = "512M";
+      authExempt = "Bitwarden clients call the identity and sync APIs directly, and the vault's master-password login is stronger than the gate";
+    };
   };
 
   extraFor = spec: ''
@@ -85,6 +97,50 @@ let
   '';
 
   websockets = spec: spec.websockets or true;
+
+  ingressUrl =
+    host: "${if cfg.enable then "https" else "http"}://${monitoringLib.ingressAddress host}";
+
+  # Forward auth for yirukou's vhosts. A gated location answers only after
+  # Authelia's AuthRequest endpoint accepts the session cookie; its 401
+  # carries the portal URL (with the encoded `rd`) in Location, which becomes
+  # the client's 302. The subrequest crosses the same mTLS hop as proxied
+  # traffic, and its Host selects the Authelia vhost on the ingress: under any
+  # other Host the ingress would ask the backend itself, and a single-page
+  # app's catch-all 200 would admit every request (the auth-gate contract in
+  # nix/checks.nix pins both). Client Authorization headers belong to the
+  # backend's protocol, so the gate judges the cookie alone.
+  mkAuthGate =
+    { allAddresses }:
+    let
+      host = allAddresses.hosts.yifuwuqi;
+      endpoint = "/authelia-check";
+    in
+    {
+      directives = ''
+        auth_request ${endpoint};
+        auth_request_set $authelia_redirect $upstream_http_location;
+        auth_request_set $authelia_user $upstream_http_remote_user;
+        error_page 401 =302 $authelia_redirect;
+        proxy_set_header Remote-User $authelia_user;
+      '';
+      locations."= ${endpoint}" = {
+        proxyPass = "${ingressUrl host}/api/authz/auth-request";
+        # The recommended header set would send a second Host.
+        recommendedProxySettings = false;
+        extraConfig = ''
+          internal;
+          proxy_pass_request_body off;
+          proxy_set_header Content-Length "";
+          proxy_set_header Authorization "";
+          proxy_set_header Host ${host.services.authelia.domain};
+          proxy_set_header X-Original-Method $request_method;
+          proxy_set_header X-Original-URL $scheme://$host$request_uri;
+          proxy_set_header X-Forwarded-For $remote_addr;
+          ${optionalString cfg.enable cfg.upstreamTls}
+        '';
+      };
+    };
 
   resolve =
     services: name:
@@ -162,7 +218,7 @@ let
     // serverTls cfg.machineVerify;
 in
 {
-  inherit mkMachineVhost;
+  inherit mkMachineVhost mkAuthGate;
 
   # yirukou side: one vhost per domain, all upstreams to the yifuwuqi ingress
   # over mTLS. The ingress routes on the preserved Host header.
@@ -172,25 +228,28 @@ in
     { allAddresses, restrictedProxyConfig }:
     let
       host = allAddresses.hosts.yifuwuqi;
-      scheme = if cfg.enable then "https" else "http";
-      ingress = "${scheme}://${monitoringLib.ingressAddress host}";
+      authGate = mkAuthGate { inherit allAddresses; };
     in
     mapAttrs' (
       name: spec:
       let
         service = resolve host.services name;
+        gated = !(spec ? authExempt);
       in
       nameValuePair service.domain {
         useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
-        locations."/" = {
-          proxyPass = ingress;
-          proxyWebsockets = websockets spec;
-          extraConfig = ''
-            ${extraFor spec}
-            ${restrictedProxyConfig}
-            ${optionalString cfg.enable cfg.upstreamTls}
-          '';
+        locations = optionalAttrs gated authGate.locations // {
+          "/" = {
+            proxyPass = ingressUrl host;
+            proxyWebsockets = websockets spec;
+            extraConfig = ''
+              ${optionalString gated authGate.directives}
+              ${extraFor spec}
+              ${restrictedProxyConfig}
+              ${optionalString cfg.enable cfg.upstreamTls}
+            '';
+          };
         };
       }
     ) proxiedServices;

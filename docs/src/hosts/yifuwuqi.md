@@ -111,13 +111,13 @@ ______________________________________________________________________
 
 ### 4.1 Attic Binary Cache
 
-- **Attic Server (`atticd`)**: Binds `127.0.0.1:24203` behind the local ingress (`cache.aset.love`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
+- **Attic Server (`atticd`)**: Binds `127.0.0.1:24203` behind the local ingress (`attic.aset.love`), PostgreSQL backend, SOPS JWT authentication, chunk sizes 16KB–1MB (avg 256KB), daily garbage collection.
 - **Attic Watch-Store (`attic-watch-store.service`)**: Daemon running under user `nix-builder` that watches `/nix/store` and pushes new paths in real time (`-j 10`) via `http://127.0.0.1:24203`.
 - **Attic Closure-Keeper (`attic-closure-keeper.timer`)**: Runs every 15 minutes to guarantee all `-nixos-system-` closures are pinned and pushed.
 
 ### 4.2 Git Forge & Actions Runners
 
-- **Forgejo (`git.aset.love`)**: Binds `127.0.0.1:24200` behind the local ingress, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
+- **Forgejo (`forgejo.aset.love`)**: Binds `127.0.0.1:24200` behind the local ingress, PostgreSQL backend, Git LFS, repository mirroring, Forgejo Actions enabled (12h task timeout).
 - **Forgejo Actions Runner (`forgejo-runner-yifuwuqi`)**: Native host runner (`native:host` label) under `nix-builder` user. Systemd sandbox is intentionally relaxed so builds can access `/nix/store` and mount namespaces. Automatically injects Attic push credentials.
 - **GitHub Actions Runner**: Dedicated self-hosted runner targeting `categoricalcat/nixos` with `setup-ci-env` integration.
 - **Distributed Builder**: Pinned host keys in `secrets/keys.nix`, accepts up to 16 concurrent Nix build jobs.
@@ -145,10 +145,10 @@ ______________________________________________________________________
 
 - **Vulkan llama-cpp Router (`llama-cpp-node`)**: Runs `llama-server` in router mode (`--models-preset` + `--models-max 1`) with Vulkan acceleration (`vulkanSupport = true`) on `127.0.0.1:11436`.
   - Registered presets: **`deepseek-v4-pro-qwen3.5-9b-uncensored`** (`i1-Q6_K`, thinking enabled) and **`gemma-4-12b-uncensored`** (`Q4_K_M`, thinking forced on by the Heretic template, extracted into `reasoning_content` with unrestricted reasoning budget), both at 65,536 context length with FlashAttention, Q8 KV cache, single-slot execution, and a 5-minute idle unload.
-- **SillyTavern Companion UI**: Port 24000 (`companion.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening (`StateDirectoryMode = "0700"`, `UMask = "0077"`, `minLogLevel = 1`), depends on `llama-cpp.service`, and declares `config.yaml` (`pkgs.formats.yaml`) + an idempotent `settings.json` overlay from `models.nix` and `hosts.nix` (`gemma-4-12b-uncensored` default, plus `yifuwuqi` `deepseek-v4-pro-qwen3.5-9b-uncensored` and `yitaishi` `gemma-4-26b-a4b-uncensored` / `qwen3.8-27b-uncensored` profiles, `chroma1-hd` `sdcpp` backend).
-- **SearXNG Privacy Metasearch**: Port 24888 (`search.aset.love`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
+- **SillyTavern Companion UI**: Port 24000 (`sillytavern.aset.love`), runs under dedicated user `sillytavern` with strict systemd hardening (`StateDirectoryMode = "0700"`, `UMask = "0077"`, `minLogLevel = 1`), depends on `llama-cpp.service`, and declares `config.yaml` (`pkgs.formats.yaml`) + an idempotent `settings.json` overlay from `models.nix` and `hosts.nix` (`gemma-4-12b-uncensored` default, plus `yifuwuqi` `deepseek-v4-pro-qwen3.5-9b-uncensored` and `yitaishi` `gemma-4-26b-a4b-uncensored` / `qwen3.8-27b-uncensored` profiles, `chroma1-hd` `sdcpp` backend).
+- **SearXNG Privacy Metasearch**: Port 24888 (`searxng.aset.love`), routes all outgoing search queries through Tor SOCKS5 proxy (`127.0.0.1:9050`), uses Valkey DB 1 for rate limiting, generates ephemeral 32-byte secret on startup.
 - **Firecrawl Web Scraper**: 5-container Podman topology (`firecrawl-redis`, `firecrawl-postgres`, `firecrawl-rabbitmq`, `firecrawl-playwright`, `firecrawl`), integrated with local SearXNG as search provider.
-- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`agent.aset.love`), bound to loopback behind the local ingress (`yirukou` proxies to the ingress, which forwards to `127.0.0.1:24010`), authenticated with `passwords/opencode`.
+- **Opencode Daemon**: AI coding agent daemon running as `yi:yi` on port 24010 (`opencode.aset.love`), bound to loopback behind the local ingress (`yirukou` proxies to the ingress, which forwards to `127.0.0.1:24010`). People log in only at the Authelia gate; the ingress presents the server password (`passwords/opencode`) on every forwarded request.
 
 ______________________________________________________________________
 
@@ -164,7 +164,7 @@ Running in a secure hybrid arrangement: network-isolated containers share a Prot
 - **Native Host Media Daemons**:
   - Radarr (port 24878), Sonarr (port 24989), Lidarr (port 24686), Readarr (port 24787), Bazarr (port 24767), Prowlarr (port 24696).
   - Jellyfin Media Server (port 24096), Jellyseerr / Seerr (port 24055).
-  - Podgrab podcast catcher (port 24085, `cast.aset.love`): subscribes to external RSS feeds and downloads episodes to `/persist/media/podcasts`. Nothing is published.
+  - Podgrab podcast catcher (port 24085, `pinepods.aset.love`): subscribes to external RSS feeds and downloads episodes to `/persist/media/podcasts`. Nothing is published.
   - Recyclarr declarative quality profile sync.
 
 ______________________________________________________________________
@@ -172,7 +172,7 @@ ______________________________________________________________________
 ## 7. Monitoring & Central Observability
 
 - **Prometheus**: Port 24090, 30-day retention, 15-second scrape intervals, dynamic scrape job generation for all gang exporters.
-- **Grafana**: Port 24030 (`grafana.aset.love`), PostgreSQL backend, anonymous Viewer role, declarative Nix-provisioned dashboards (Systemd Units, Services Overview, Fail2ban, Prometheus, Loki, Grafana, Postgres, Valkey, AdGuard, Unbound).
+- **Grafana**: Port 24030 (`grafana.aset.love`), PostgreSQL backend, Authelia header login (`auth.proxy`), declarative Nix-provisioned dashboards (Systemd Units, Services Overview, Fail2ban, Prometheus, Loki, Grafana, Postgres, Valkey, AdGuard, Unbound).
 - **Loki**: Port 24100, TSDB schema v13, 7-day retention period.
 - **Vector**: Ships host journald logs directly to local Loki.
 - **Exporters Running**:
@@ -184,7 +184,9 @@ ______________________________________________________________________
 
 ## 8. General Administration & Hosted Services
 
-- **Homepage Dashboard**: Port 24082 (`home.aset.love`), 5-column layout with ping health checks and resource widgets.
+- **Homepage Dashboard**: Port 24082 (`homepage.aset.love`), 5-column layout with ping health checks and resource widgets.
+- **Authelia**: Port 24140 (`authelia.aset.love`), the one login behind every gated vhost; see [Hosted Services](../services/hosted-services.md#29-authelia-modulesservicesautheliamix).
+- **Vaultwarden**: Port 24150 (`vaultwarden.aset.love`), the human credential store; see [Hosted Services](../services/hosted-services.md#210-vaultwarden-modulesservicesvaultwardennix).
 - **Cockpit**: Port 24091 (`cockpit.aset.love`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
 - **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, deferring queries to `yirukou` on `eno1` or the fallback DHCP DNS on `enp4s0`.

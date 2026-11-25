@@ -35,8 +35,8 @@ After deployment the endpoints resolve as:
 
 | Endpoint             | Service        |
 | -------------------- | -------------- |
-| `git.aset.love`      | Forgejo mirror |
-| `cache.aset.love/yi` | Attic cache    |
+| `forgejo.aset.love`  | Forgejo mirror |
+| `attic.aset.love/yi` | Attic cache    |
 
 ## Secret Inventory
 
@@ -115,7 +115,7 @@ Expected state after the first switch:
 
 ## Forgejo Bootstrap
 
-Open `git.aset.love`.
+Open `forgejo.aset.love`.
 
 1. Create the first admin user.
 1. Create a read-only pull mirror from `https://github.com/categoricalcat/nixos`.
@@ -148,7 +148,7 @@ Then:
 1. Put `push_token` in SOPS as `tokens/attic-push-token`.
 1. Copy the public key from `attic cache info yi`.
 1. Replace the placeholder key in `modules/services/attic/client.nix`.
-1. Redeploy every host that should pull from `cache.aset.love/yi`.
+1. Redeploy every host that should pull from `attic.aset.love/yi`.
 
 ## Trigger Tokens
 
@@ -167,7 +167,7 @@ systemctl status forgejo forgejo-runner-yifuwuqi atticd attic-watch-store attic-
 Check the cache endpoint from a mesh host:
 
 ```bash
-curl -I https://cache.aset.love/yi/nix-cache-info
+curl -I https://attic.aset.love/yi/nix-cache-info
 ```
 
 Push test:

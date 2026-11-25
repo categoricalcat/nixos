@@ -3,6 +3,7 @@
 let
   baseDomain = "aset.love";
   legacyDomain = "fufu.land";
+  email = "catufuzgu@gmail.com";
 
   sharedDnsUpstreams = {
     opendns = [
@@ -81,6 +82,7 @@ in
   inherit
     baseDomain
     legacyDomain
+    email
     sharedDnsUpstreams
     ;
 

@@ -18,6 +18,7 @@ let
     ]
   );
   cloudflaredSource = addresses.containers.cloudflared.network.ipv4.host;
+  gluetunSource = addresses.containers.gluetun.network.ipv4.host;
 
   # The gateway reaches only the mTLS ingress, which fronts every proxied
   # backend and the Loki push path. No exporter or Loki port is exposed.
@@ -82,11 +83,12 @@ in
         ip saddr { ${containerSourceSubnets} } udp dport 53 accept comment "allow container dns udp"
         ip saddr { ${containerSourceSubnets} } tcp dport 53 accept comment "allow container dns tcp"
 
-        # 2. Exclude Cloudflared from application-container host APIs.
-        ip saddr { ${applicationContainerSourceSubnets} } tcp dport {
-          ${toString addresses.services.lidarr.port},
-          ${toString addresses.services.searxng.port}
-        } accept comment "allow containers to specific host apis"
+        # 2. Host APIs, named caller by caller. Lidarr carries no login of its
+        # own (the Authelia gate fronts the UI), so admitting every container
+        # subnet would hand any of them unauthenticated control: soularr is
+        # the only consumer and reaches the host as gluetun's address.
+        ip saddr ${gluetunSource} tcp dport ${toString addresses.services.lidarr.port} accept comment "allow soularr behind gluetun to lidarr"
+        ip saddr { ${applicationContainerSourceSubnets} } tcp dport ${toString addresses.services.searxng.port} accept comment "allow containers to searxng"
       '';
 
       extraForwardRules = ''

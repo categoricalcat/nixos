@@ -112,6 +112,7 @@ keys:
 passwords:
     nextcloud: string
     opencode: string
+    yi: string # crypt hash, not a password
 tokens:
     attic-server-jwt-env: |
         ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=<base64-rsa-key>
@@ -123,12 +124,17 @@ tokens:
     localtonet-authtoken: string
     playit-agent: |
         SECRET_KEY=...
+    vaultwarden-admin: string
 samba:
     credentials:
         yi: |
             username=...
             password=...
 services:
+    authelia:
+        storage-encryption-key: string
+        users:
+            yi: string # argon2id digest, not a password
     grafana:
         secret-key: string
     proton:
@@ -137,8 +143,8 @@ services:
 ```
 
 PostgreSQL on `yifuwuqi` uses local Unix socket peer authentication. It creates
-service-matching roles and databases (`forgejo`, `atticd`, `grafana`), so there
-are no PostgreSQL passwords to add to SOPS.
+service-matching roles and databases (`forgejo`, `atticd`, `grafana`,
+`vaultwarden`, `authelia`), so there are no PostgreSQL passwords to add to SOPS.
 
 Keep app identity secrets stable across database resets:
 
@@ -165,24 +171,28 @@ sops secrets/secrets.yaml
 Recipes (`openssl` is not on the default PATH; enter `nix shell nixpkgs#openssl`
 first):
 
-| SOPS key                                | Value format      | How to get it                                                                                             |
-| --------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
-| `tokens/attic-server-jwt-env`           | env file          | Generate locally; command below                                                                           |
-| `tokens/attic-push-token`               | raw token         | Generate with `atticd-atticadm` after `atticd` starts; command below                                      |
-| `tokens/forgejo-runner`                 | raw token         | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner                                |
-| `tokens/github-runner-nixos`            | raw token         | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                                     |
-| `keys/deploy`                           | PEM string        | Generated via `nix run .#secrets` (or `-- --rotate`) on any configured host                               |
-| `services/grafana/secret-key`           | random string     | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets                     |
-| `cloudflare_api_token`                  | env file          | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>`        |
-| `tokens/cloudflared`                    | raw token         | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token                 |
-| `tokens/playit-agent`                   | env file          | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...` |
-| `tokens/localtonet-authtoken`           | raw token         | Localtonet dashboard auth token                                                                           |
-| `tokens/deepseek`                       | raw API key       | DeepSeek console API key                                                                                  |
-| `nix/access-tokens`                     | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below                                             |
-| `passwords/nextcloud`                   | plain password    | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one                   |
-| `passwords/opencode`                    | plain password    | OpenCode web/API password (`OPENCODE_PASSWORD`); generate with `openssl rand -base64 24` or choose one    |
-| `services/proton/wireguard_private_key` | raw token         | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf`                |
-| `samba/credentials/yi`                  | credentials file  | SMB account credentials: `username=...` and `password=...`                                                |
+| SOPS key                                   | Value format      | How to get it                                                                                             |
+| ------------------------------------------ | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `tokens/attic-server-jwt-env`              | env file          | Generate locally; command below                                                                           |
+| `tokens/attic-push-token`                  | raw token         | Generate with `atticd-atticadm` after `atticd` starts; command below                                      |
+| `tokens/forgejo-runner`                    | raw token         | Forgejo UI: Site Administration -> Actions -> Runners -> Create new runner                                |
+| `tokens/github-runner-nixos`               | raw token         | GitHub repo: Settings -> Actions -> Runners -> New self-hosted runner                                     |
+| `keys/deploy`                              | PEM string        | Generated via `nix run .#secrets` (or `-- --rotate`) on any configured host                               |
+| `services/grafana/secret-key`              | random string     | Generate locally: `openssl rand -hex 32`. Keep stable; it encrypts Grafana DB secrets                     |
+| `cloudflare_api_token`                     | env file          | Cloudflare API token with DNS edit for the ACME zone, stored as `CLOUDFLARE_DNS_API_TOKEN=<token>`        |
+| `tokens/cloudflared`                       | raw token         | Cloudflare Zero Trust -> Networks -> Tunnels -> create/select tunnel -> copy tunnel token                 |
+| `tokens/playit-agent`                      | env file          | playit.gg agent setup token, stored as the full env line expected by the container, e.g. `SECRET_KEY=...` |
+| `tokens/localtonet-authtoken`              | raw token         | Localtonet dashboard auth token                                                                           |
+| `tokens/deepseek`                          | raw API key       | DeepSeek console API key                                                                                  |
+| `nix/access-tokens`                        | nix.conf fragment | Optional GitHub token for Nix flake fetches; see recipe below                                             |
+| `passwords/nextcloud`                      | plain password    | Initial Nextcloud admin password; generate with `openssl rand -base64 24` or choose one                   |
+| `passwords/opencode`                       | plain password    | OpenCode server password (`OPENCODE_PASSWORD`); the local ingress presents it, nobody types it            |
+| `passwords/yi`                             | crypt hash        | `yi`'s OS login hash (`hashedPasswordFile`): `nix shell nixpkgs#mkpasswd -c mkpasswd -m yescrypt`         |
+| `tokens/vaultwarden-admin`                 | raw token         | Vaultwarden `/admin` token, plain (not a PHC hash): `openssl rand -base64 48`                             |
+| `services/authelia/storage-encryption-key` | random string     | Encrypts Authelia's TOTP secrets at rest: `openssl rand -hex 32`. Keep stable; losing it loses every TOTP |
+| `services/authelia/users/yi`               | argon2id digest   | The Authelia login: `nix run nixpkgs#authelia -- crypto hash generate argon2` (prompts for the password)  |
+| `services/proton/wireguard_private_key`    | raw token         | ProtonVPN Dashboard -> Downloads -> WireGuard -> generate & copy `PrivateKey` from `.conf`                |
+| `samba/credentials/yi`                     | credentials file  | SMB account credentials: `username=...` and `password=...`                                                |
 
 Tokens generated by external UIs may expire if unused. If first deploy was long
 after generation and a runner/tunnel fails registration, generate a fresh token
@@ -456,8 +466,8 @@ nix run .#secrets
 
 ## Search (yifuwuqi)
 
-`search.aset.love` -> SearXNG (`modules/services/searxng.nix`). It does not use
-SOPS today and is not behind an authentication proxy.
+`searxng.aset.love` -> SearXNG (`modules/services/searxng.nix`). It does not use
+SOPS today; its only login is the Authelia gate on `yirukou`.
 
 The signing key is generated into `/run` before each service start:
 

@@ -37,7 +37,7 @@ in
 
       http = {
         # Admin UI is loopback-only: yirukou reaches its own through nginx
-        # (adguard.aset.love), yifuwuqi's is managed through an SSH tunnel.
+        # (adguardhome.aset.love), yifuwuqi's is managed through an SSH tunnel.
         address = "127.0.0.1:${
           toString allAddresses.hosts.${config.networking.hostName}.services.adguardhome.port
         }";
@@ -230,12 +230,21 @@ in
   systemd.services.adguardhome = {
     # Private LAN rewrites stay out of the public repo and Nix store
     # (docs/src/services/dns-and-proxy.md). A missing file skips cleanly.
+    #
+    # Never `yq -i`: in-place mode rewrites through a temp file and calls
+    # fchownat to restore ownership, and this unit's seccomp filter excludes
+    # @chown (upstream sets "~@privileged"), so the process dies on SIGSYS and
+    # preStart aborts with it. Merging to stdout and writing through the
+    # existing inode keeps both the ownership and the filter untouched.
     preStart = lib.mkAfter ''
       rewrites=/persist/keys/adguardhome/rewrites.yaml
       if [ -r "$rewrites" ]; then
-        ${lib.getExe pkgs.yq-go} -i \
-          '.filtering.rewrites += ((load("'"$rewrites"'") // []) | map({"enabled": true} * .))' \
-          "$STATE_DIRECTORY/AdGuardHome.yaml"
+        merged=$(
+          ${lib.getExe pkgs.yq-go} \
+            '.filtering.rewrites += ((load("'"$rewrites"'") // []) | map({"enabled": true} * .))' \
+            "$STATE_DIRECTORY/AdGuardHome.yaml"
+        )
+        printf '%s\n' "$merged" > "$STATE_DIRECTORY/AdGuardHome.yaml"
       fi
     '';
 

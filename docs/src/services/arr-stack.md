@@ -24,10 +24,11 @@ Nix only moves listen/proxy ports. After switching host ports to the `24xxx` ran
 - Jellyfin: the preStart only rewrites an existing `network.xml`, so a genuinely first deploy listens on the default port until one restart.
 - Unbound on `yirukou`: confirm it can reach its own Valkey at `/run/redis/redis.sock` (host-local; it no longer connects to `yifuwuqi`).
 
-## 1. Initial Authentication
+## 1. Authentication
 
-- Access each service's web UI via their respective `*.aset.love` domains through Nginx.
-- Follow initial setup prompts and establish authentication as needed.
+- Access each service's web UI via their respective `*.aset.love` domains through Nginx. The Authelia gate on `yirukou` is the only login: Radarr, Sonarr, Lidarr, Readarr and Prowlarr run with `AuthenticationMethod=External` (`*__AUTH__METHOD`), Bazarr with no auth type, and slskd with web authentication disabled.
+- API clients (Prowlarr, Recyclarr, soularr, Seerr) keep using the API keys above over loopback, never the gated hostnames.
+- Seerr (`jellyseerr.aset.love`) still has its own login, which it cannot delegate; it sits behind the gate as well. Store its password in Vaultwarden.
 
 ## 2. Root Folders Configuration
 
@@ -87,7 +88,7 @@ Scope is quality definitions (movie/series), the `All-in-One` quality profiles, 
 
 For music that torrent indexers can't provide (J-pop, indie, niche artists), the stack includes `slskd` + `soularr`:
 
-- **slskd**: Soulseek client running in the gluetun VPN namespace. Web UI at `https://slskd.aset.love` (login: `slskd` / the `services.slskd.web_password` secret). Downloads land in `/persist/media/downloads/soulseek`.
+- **slskd**: Soulseek client running in the gluetun VPN namespace. Web UI at `https://slskd.aset.love` (no login of its own; behind the Authelia gate). Downloads land in `/persist/media/downloads/soulseek`.
 - **soularr**: also in the gluetun namespace; runs every 5 minutes, scans Lidarr's wanted list, searches Soulseek, downloads, and asks Lidarr to import.
 
 Setup:
@@ -97,7 +98,7 @@ Setup:
 1. Add an album/artist in Lidarr (interactive search is optional — soularr picks up the wanted list automatically).
 1. Verify with `journalctl -u podman-soularr`.
 
-**Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. soularr reaches Lidarr because gluetun's `FIREWALL_OUTBOUND_SUBNETS` routes the host LAN address out of the tunnel (firewall and routing together — the `extraInputRules` rule in `hosts/yifuwuqi/networking/firewall.nix` only admits the port). The host's `extraInputRules` stays the port-level gate: `FIREWALL_OUTBOUND_SUBNETS` widens the namespace to the whole destination, so never widen the host rule to match. The arr web UIs bind loopback behind the `yifuwuqi` local ingress; Lidarr is the exception, bound to the LAN address so soularr (in the gluetun namespace) can reach it — the ingress fronts it there too.
+**Networking notes:** all traffic goes through the Proton VPN tunnel (gluetun). Inbound peer transfers to slskd are limited because the single Proton forwarded port belongs to qBittorrent; downloads are unaffected. soularr reaches Lidarr because gluetun's `FIREWALL_OUTBOUND_SUBNETS` routes the host LAN address out of the tunnel (firewall and routing together). The host's `extraInputRules` stays the port-level gate: `FIREWALL_OUTBOUND_SUBNETS` widens the namespace to the whole destination, so never widen the host rule to match. gluetun owns a fixed network (`containers.gluetun.network`, `172.19.0.0/24`, host `.2`), and the Lidarr rule admits that one address — Lidarr carries no login of its own now that the Authelia gate fronts the UI, so a subnet-wide rule would give every container unauthenticated control. The arr web UIs bind loopback behind the `yifuwuqi` local ingress; Lidarr is the exception, bound to the LAN address so soularr (in the gluetun namespace) can reach it — the ingress fronts it there too.
 
 **HTTP proxy:** gluetun also runs an unauthenticated HTTP proxy, published loopback-only at `127.0.0.1:8889` (port 8888 inside the namespace). Prowlarr's indexer proxy or an arr app's own proxy settings may point at it; the LAN and tailnet addresses no longer answer, so any stored consumer must use the loopback address.
 
@@ -119,6 +120,6 @@ Assigning a score alone does not force a preference; raise the profile's `min_fo
 
 Pinepods (`modules/services/pinepods.nix`) is a podcast catcher. It downloads other people's shows and does not publish any. It runs with its own Postgres and Valkey sidecars on an internal container network; state lives under `/var/lib/container-volumes/pinepods`, with downloaded podcasts stored in `/persist/media/podcasts`:
 
-1. Open `https://cast.aset.love` and create the first admin account when prompted.
+1. Open `https://pinepods.aset.love` and create the first admin account when prompted. Pinepods stays outside the Authelia gate so podcast and mobile clients can reach its API; store the account in Vaultwarden.
 1. Import subscriptions via OPML (Settings → Import/Export) or add podcasts by search/RSS.
 1. Configure automatic downloads or download specific episodes directly from the web interface.

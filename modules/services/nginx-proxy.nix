@@ -20,6 +20,7 @@ let
   cloudflareIpv4 = lib.filter (ns: !lib.hasInfix ":" ns) addresses.dns.cloudflare;
   acmeResolvers = map (ns: "--dns.resolvers=${ns}:53") cloudflareIpv4;
   proxyLib = import ./proxy-vhosts.nix { inherit lib config; };
+  authGate = proxyLib.mkAuthGate { inherit allAddresses; };
   yitaishi = allAddresses.hosts.yitaishi;
   sdCpp = yitaishi.services.sd-cpp;
   # The scraper is the central host, so the address half of the machine-path
@@ -37,7 +38,7 @@ in
 
   security.acme = {
     acceptTerms = true;
-    defaults.email = "admin@${allAddresses.baseDomain}";
+    defaults.email = allAddresses.email;
 
     certs."${allAddresses.legacyDomain}" = {
       domain = "*.${allAddresses.legacyDomain}";
@@ -144,12 +145,14 @@ in
       };
 
       # Secure AdGuard Web UI
-      "adguard.${allAddresses.baseDomain}" = {
+      "${addresses.services.adguardhome.domain}" = {
         useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}";
-          extraConfig = restrictedProxyConfig;
+        locations = authGate.locations // {
+          "/" = {
+            proxyPass = "http://127.0.0.1:${toString addresses.services.adguardhome.port}";
+            extraConfig = authGate.directives + restrictedProxyConfig;
+          };
         };
       };
 
@@ -168,20 +171,23 @@ in
         useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
 
-        locations."/" = {
-          root = "/var/lib/goaccess";
-          index = "index.html";
-          extraConfig = restrictedProxyConfig;
-        };
+        locations = authGate.locations // {
+          "/" = {
+            root = "/var/lib/goaccess";
+            index = "index.html";
+            extraConfig = authGate.directives + restrictedProxyConfig;
+          };
 
-        locations."/ws" = {
-          proxyPass = "http://127.0.0.1:7890";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_read_timeout 3600;
-            proxy_send_timeout 3600;
-            ${restrictedProxyConfig}
-          '';
+          "/ws" = {
+            proxyPass = "http://127.0.0.1:7890";
+            proxyWebsockets = true;
+            extraConfig = ''
+              ${authGate.directives}
+              proxy_read_timeout 3600;
+              proxy_send_timeout 3600;
+              ${restrictedProxyConfig}
+            '';
+          };
         };
       };
 
@@ -190,14 +196,17 @@ in
       "${sdCpp.domain}" = {
         useACMEHost = allAddresses.baseDomain;
         forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://${yitaishi.network.tailscale.ipv4.host}:${toString sdCpp.port}";
-          extraConfig = ''
-            client_max_body_size 128M;
-            proxy_read_timeout 1d;
-            proxy_send_timeout 1d;
-            ${restrictedProxyConfig}
-          '';
+        locations = authGate.locations // {
+          "/" = {
+            proxyPass = "http://${yitaishi.network.tailscale.ipv4.host}:${toString sdCpp.port}";
+            extraConfig = ''
+              ${authGate.directives}
+              client_max_body_size 128M;
+              proxy_read_timeout 1d;
+              proxy_send_timeout 1d;
+              ${restrictedProxyConfig}
+            '';
+          };
         };
       };
 

@@ -229,7 +229,7 @@ in
       '';
 
       serviceConfig = {
-        # Client-facing hosted service (companion.aset.love) behind the local
+        # Client-facing hosted service (sillytavern.aset.love) behind the local
         # ingress: loopback-only (listen = false in config.yaml) and
         # whitelistMode = false so LAN clients forwarded through nginx pass.
         ExecStart = lib.getExe' pkgs.sillytavern "sillytavern";

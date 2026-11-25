@@ -31,7 +31,7 @@ ______________________________________________________________________
 │  │ Grafana Visualization Server (:24030)                 │  │
 │  │ • PostgreSQL Backend                                  │  │
 │  │ • Declarative JSON / Nix Provisioned Dashboards       │  │
-│  │ • Anonymous Viewer Access                             │  │
+│  │ • Authelia Header Login (auth.proxy)                  │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                    yifuwuqi (Core Server)                   │
 └─────────────────────────────────────────────────────────────┘
@@ -177,7 +177,7 @@ ______________________________________________________________________
 
 - **Domain**: `https://grafana.aset.love` (proxied to port `24030`).
 - **Database Engine**: PostgreSQL socket connection (`type = "postgres"`, database `grafana`).
-- **Authentication**: Form login disabled, anonymous access enabled with default `Viewer` organization role.
+- **Authentication**: No login of its own. Form login is disabled and `auth.proxy` trusts the `Remote-User` header set by the Authelia gate on `yirukou`, accepted only from the loopback ingress. Users are created on first visit with the `Admin` organization role.
 - **Secrets**: `services/grafana/secret-key` managed via Sops-nix.
 - **Provisioned Data Sources**:
   - `Prometheus` (default, uid: `prometheus`, url: `http://127.0.0.1:24090`)

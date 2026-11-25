@@ -16,9 +16,11 @@ jobs:
     runs-on: native
     timeout-minutes: 500
     steps:
+      # Loopback: the public hostname sits behind the Authelia gate.
       - name: Checkout develop
         uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          github-server-url: http://127.0.0.1:24200
           ref: develop
           fetch-depth: 0
           persist-credentials: false

@@ -125,11 +125,15 @@ in
         root_url = "https://${grafana.domain}/";
       };
 
+      # The Authelia gate on yirukou is the only login; Grafana trusts the user
+      # it names, and only from the local ingress.
       auth.disable_login_form = true;
-      "auth.anonymous" = {
+      "auth.proxy" = {
         enabled = true;
-        org_role = "Admin";
+        header_name = "Remote-User";
+        whitelist = "127.0.0.1, ::1";
       };
+      users.auto_assign_org_role = "Admin";
 
       security = {
         disable_initial_admin_creation = true;

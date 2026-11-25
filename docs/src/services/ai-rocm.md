@@ -62,7 +62,7 @@ ______________________________________________________________________
 ## 4. Uncensored Image Generation (`modules/services/ai/sd-cpp.nix`)
 
 - **Engine (`pkgs.stable-diffusion-cpp`)**: Runs `sd-server` built with `vulkanSupport = true` and `rocmSupport = false`, pinned to `--backend vulkan0` on `yitaishi`'s RX 7900 XTX (`24 GiB` VRAM).
-- **Native Web UI**: Builds the frontend pinned inside the same stable-diffusion.cpp source and serves it at `https://image.aset.love` through yirukou (`http://100.69.0.4:11437/` over Tailscale). It exposes exact prompts, seeds, dimensions, guidance, init/reference/mask/control images, high-resolution passes, previews, and cancellation without loading another model server.
+- **Native Web UI**: Builds the frontend pinned inside the same stable-diffusion.cpp source and serves it at `https://sd-cpp.aset.love` through yirukou (`http://100.69.0.4:11437/` over Tailscale). It exposes exact prompts, seeds, dimensions, guidance, init/reference/mask/control images, high-resolution passes, previews, and cancellation without loading another model server.
 - **VRAM Coexistence (`--offload-to-cpu`)**: Keeps source parameters in host RAM, prefetches and caches GPU replicas while sampling, then reclaims them after the request so `qwen3.8-27b-uncensored` can load later. A 1024x1024 probe held the RX 7900 XTX at 100% utilization and 350–392 W with about 12 GiB total VRAM in use; idle usage returned to about 2 GiB.
 - **Verified Cache (`sd-cpp-fetch`)**: A background service verifies every artifact against its pinned SHA256 digest, downloading missing or mismatched weights into `/var/cache/sd-cpp` before starting `sd-server` without delaying activation.
 - **Network Scope**: Listens on port `11437`, restricted by systemd `IPAddressAllow = [ "localhost" "100.64.0.0/10" ]` and `yitaishi`'s `tailscale0` firewall rule.
@@ -73,16 +73,16 @@ ______________________________________________________________________
 
 ### 5.1 SillyTavern Companion (`modules/services/ai/sillytavern.nix`)
 
-- **Domain**: `https://companion.aset.love` (proxied to loopback port `24000` via local ingress).
+- **Domain**: `https://sillytavern.aset.love` (proxied to loopback port `24000` via local ingress).
 - **Security & Isolation**: Dedicated non-root user `sillytavern` under strict systemd hardening, `StateDirectoryMode = "0700"`, `UMask = "0077"`, `0700` data directory permissions, `0600` config/settings, loopback-only (`listen = false`), single passwordless `default-user` (`enableUserAccounts = false`), and `minLogLevel = 1` (`INFO`) so prompt/reply debug payloads never reach journald or Loki.
-- **Declarative Config & Profiles**: Ordered after `llama-cpp.service`. `config.yaml` is generated via `pkgs.formats.yaml` (with `hostWhitelist.hosts = [ "companion.aset.love" ]`, `hostWhitelist.scan = false`, `extensions.autoUpdate = false`; SillyTavern populates omitted upstream defaults from `default/config.yaml` on startup), and `settings.json` receives an idempotent startup overlay derived directly from `models.nix` and `hosts.nix`:
+- **Declarative Config & Profiles**: Ordered after `llama-cpp.service`. `config.yaml` is generated via `pkgs.formats.yaml` (with `hostWhitelist.hosts = [ "sillytavern.aset.love" ]`, `hostWhitelist.scan = false`, `extensions.autoUpdate = false`; SillyTavern populates omitted upstream defaults from `default/config.yaml` on startup), and `settings.json` receives an idempotent startup overlay derived directly from `models.nix` and `hosts.nix`:
   - **Default Active Chat Profile**: `yifuwuqi / gemma-4-12b-uncensored` (`http://127.0.0.1:11436/v1`, `chat_completion_source = "custom"`, `openai_max_context = 65536`, `openai_max_tokens = 4096`, `stream_openai = true`, `temp_openai = 1.0`, `top_p_openai = 0.95`, `show_thoughts = true`, `reasoning_effort = "max"`, `verbosity = "low"`, `custom_include_body = "reasoning_effort: xhigh"`, `custom_prompt_post_processing = "semi_tools"`, `media_inlining = false` since local LLMs have `--no-mmproj`).
   - **Connection Manager (`nix:*`)**: Exposes all four uncensored LLM profiles (`nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored`, `nix:yifuwuqi:gemma-4-12b-uncensored`, `nix:yitaishi:gemma-4-26b-a4b-uncensored`, and `nix:yitaishi:qwen3.8-27b-uncensored`), while preserving user-created profiles and unrelated UI state.
   - **Image Generation (`sdcpp`)**: Preconfigured for `chroma1-hd` on `http://100.69.0.4:11437` (`sampler = "euler"`, `scale = 3.5`, `steps = 20`, `1024x1024`, `refine_mode = true` prompt editing).
 
 ### 5.2 Opencode Agent (`modules/services/opencode.nix`, `users/programs/opencode.nix`)
 
-- **Domain**: `https://agent.aset.love` (proxied to port `24010`).
+- **Domain**: `https://opencode.aset.love` (proxied to port `24010`).
 - **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The Firecrawl MCP is registered only on `yifuwuqi`, where the Firecrawl API listens on `localhost:24002`; its tools are wired into the `research` (web-only lockdown), `build`, and `plan` agents there. Other hosts use the built-in default agent (remote Firecrawl use goes via `ssh`).
 
 ### 5.3 Firecrawl MCP Server (`packages/firecrawl-mcp`)

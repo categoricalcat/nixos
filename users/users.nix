@@ -25,6 +25,8 @@ let
     "docker"
   ];
   grantedGroups = builtins.filter (g: config.users.groups ? ${g}) capabilityGroups;
+  # Only hosts with a sops identity can decrypt the hash.
+  sopsHost = keys.hosts ? ${hostName};
 
   desktopGroups = [
     "audio"
@@ -33,6 +35,8 @@ let
   ];
 in
 {
+  sops.secrets."passwords/yi" = lib.mkIf sopsHost { neededForUsers = true; };
+
   users = {
     mutableUsers = true;
     defaultUserShell = lib.mkIf config.programs.zsh.enable pkgs.zsh;
@@ -87,6 +91,9 @@ in
           ]
           ++ grantedGroups
           ++ lib.optionals (config.host.desktopEnvironment != null) desktopGroups;
+          # With mutableUsers the hash is written only when the account is
+          # created: a fresh install, or every boot once / is ephemeral.
+          hashedPasswordFile = lib.mkIf sopsHost config.sops.secrets."passwords/yi".path;
         };
 
         nix-builder = {

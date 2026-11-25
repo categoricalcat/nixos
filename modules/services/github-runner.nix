@@ -13,7 +13,7 @@ let
   # Idiomatic Nix: generate a script to export our dynamic environment variables
   # to the GitHub Actions runner environment.
   setupCiEnv = pkgs.writeShellScriptBin "setup-ci-env" ''
-    echo "FORGEJO_INTERNAL_URL=https://${services.forgejo.domain}" >> "$GITHUB_ENV"
+    echo "FORGEJO_INTERNAL_URL=http://127.0.0.1:${toString services.forgejo.httpPort}" >> "$GITHUB_ENV"
     echo "FORGEJO_REPO=${forgejoRepo}" >> "$GITHUB_ENV"
     echo "GITHUB_REPO=${repo}" >> "$GITHUB_ENV"
   '';

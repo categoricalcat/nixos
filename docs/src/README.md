@@ -6,7 +6,7 @@ full index; this page orients you and tracks what is undecided.
 
 Four invariants shape everything else in this book:
 
-- **Forgejo is the git primary.** `git.aset.love` is writable origin; GitHub is
+- **Forgejo is the git primary.** `forgejo.aset.love` is writable origin; GitHub is
   a push mirror only.
 - **IPv4-only WAN by design.** On-net uses static ULA; GUA is gated on a
   prefix-delegation checklist, not a bug.

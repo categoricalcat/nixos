@@ -12,6 +12,15 @@ in
     enable = true;
     inherit package;
     inherit dataDir;
+    # Decouple database collations from glibc (version stays 1 across OS
+    # upgrades, avoiding template1 collation mismatch on CREATE DATABASE and
+    # index invalidation) while keeping UTF-8 and Unicode ctype.
+    initdbArgs = [
+      "--encoding=UTF8"
+      "--locale=C"
+      "--locale-provider=builtin"
+      "--builtin-locale=C.UTF-8"
+    ];
     ensureDatabases = databaseNames;
     ensureUsers =
       map (name: {

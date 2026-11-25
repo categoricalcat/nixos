@@ -9,6 +9,7 @@
 let
   secretDir = "/run/searx-secret";
   secretEnv = "${secretDir}/env";
+  searxng = allAddresses.hosts.${config.networking.hostName}.services.searxng;
 in
 {
   # Generate a fresh runtime secret before each start. Rotating it is acceptable
@@ -63,12 +64,12 @@ in
         # The firewall scopes exposure: eno1 allows only the gateway ingress and
         # Loki; tailscale0 has its own port list; containers get an explicit rule.
         bind_address = "0.0.0.0";
-        port = allAddresses.hosts.${config.networking.hostName}.services.searxng.port;
+        inherit (searxng) port;
         # `searx-init.service` runs envsubst over this YAML and loads
         # `EnvironmentFile=/run/searx-secret/env`, so `$SEARXNG_SECRET` here is
         # replaced with the runtime-generated value before SearXNG starts.
         secret_key = "$SEARXNG_SECRET";
-        base_url = "https://search.${allAddresses.baseDomain}/";
+        base_url = "https://${searxng.domain}/";
         image_proxy = true;
         limiter = false;
         public_instance = false;

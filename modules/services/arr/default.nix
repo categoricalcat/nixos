@@ -77,6 +77,10 @@ let
     PrivateUsers = lib.mkForce "identity";
     ReadWritePaths = [ "/persist/media" ];
   };
+
+  # The Authelia gate on yirukou is the only login in front of the UIs; API
+  # clients keep using the arr/*_api_key secrets.
+  externalAuth.method = "External";
 in
 {
   sops.secrets = {
@@ -126,6 +130,7 @@ in
         port = addrs.services.radarr.port;
         bindaddress = "127.0.0.1";
       };
+      settings.auth = externalAuth;
     };
     sonarr = {
       enable = true;
@@ -134,6 +139,7 @@ in
         port = addrs.services.sonarr.port;
         bindaddress = "127.0.0.1";
       };
+      settings.auth = externalAuth;
     };
     # soularr reaches Lidarr over the LAN address, so it keeps a non-loopback
     # bind; the local ingress fronts it there too (upstreamLan).
@@ -144,6 +150,7 @@ in
         port = addrs.services.lidarr.port;
         bindaddress = addrs.network.lan.ipv4.host;
       };
+      settings.auth = externalAuth;
     };
     readarr = {
       enable = true;
@@ -152,6 +159,7 @@ in
         port = addrs.services.readarr.port;
         bindaddress = "127.0.0.1";
       };
+      settings.auth = externalAuth;
     };
     bazarr = {
       enable = true;
@@ -160,6 +168,8 @@ in
         port = addrs.services.bazarr.port;
         ip = "127.0.0.1";
       };
+      # No login of its own; the Authelia gate on yirukou fronts the UI.
+      settings.auth.type = null;
     };
     jellyfin = {
       enable = true;
@@ -175,6 +185,7 @@ in
         port = addrs.services.prowlarr.port;
         bindaddress = "127.0.0.1";
       };
+      settings.auth = externalAuth;
     };
 
     recyclarr = {

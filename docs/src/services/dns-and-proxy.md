@@ -104,21 +104,23 @@ ______________________________________________________________________
 ├──────────────────────────────┬──────────────────────────────┤
 │ Virtual Host                 │ Backend Destination          │
 ├──────────────────────────────┼──────────────────────────────┤
-│ adguard.aset.love            │ 127.0.0.1:3333 (Local)       │
+│ adguardhome.aset.love        │ 127.0.0.1:3333 (Local)       │
 │ dns.aset.love                │ 127.0.0.1:3333/dns-query     │
 │ goaccess.aset.love           │ /var/lib/goaccess + :7890 ws │
 ├──────────────────────────────┼──────────────────────────────┤
 │ docs / grafana / cockpit /   │ 10.42.0.2:24120 (yifuwuqi    │
-│ search / cache / git / agent │ local ingress, mTLS;         │
-│ / companion / home / radarr  │ routes on Host to loopback)  │
-│ / sonarr / prowlarr / ...    │                              │
-│ image.aset.love              │ 100.69.0.4:11437 (yitaishi)  │
+│ searxng / attic / forgejo /  │ local ingress, mTLS;         │
+│ opencode / sillytavern /     │ routes on Host to loopback)  │
+│ homepage / authelia / ...    │                              │
+│ sd-cpp.aset.love             │ 100.69.0.4:11437 (yitaishi)  │
 └──────────────────────────────┴──────────────────────────────┘
 ```
 
+Every service hostname is its registry key (`<key>.aset.love`); the `vhost-naming` contract in `nix/checks.nix` rejects nicknames.
+
 `yifuwuqi`'s local ingress (`modules/services/local-ingress.nix`) is one nginx listener on the LAN address, port `24120` (`services.ingress.port`). It has one vhost per proxied domain pointing at the loopback backend (a few that cannot bind loopback — jellyfin, jellyseerr, homepage, lidarr — keep the LAN address, `upstreamLan`), and rejects unknown `Host` headers with `404`. Only `yirukou` may reach it (the `yifuwuqi` firewall allows the gateway only `24120`; the vhosts also `allow`/`deny`). It preserves the real client IP, scheme, and host from `yirukou`'s `X-Forwarded-*`/`X-Real-IP` headers.
 
-`image.aset.love` bypasses the `yifuwuqi` ingress because its backend runs on `yitaishi`; yirukou proxies directly to the backend's Tailscale-only listener.
+`sd-cpp.aset.love` bypasses the `yifuwuqi` ingress because its backend runs on `yitaishi`; yirukou proxies directly to the backend's Tailscale-only listener.
 
 ### 2.1 Automated ACME Wildcard Certificates
 
@@ -130,6 +132,18 @@ ______________________________________________________________________
 
 - `restrictedProxyConfig`: Injects explicit CIDR allow directives for the trusted LAN (IPv4 `10.42.0.0/24` and IPv6 `fd75:c55f:6d19:1::/64`), followed by `deny all;`. Enforced across all internal reverse-proxied virtual hosts on `yirukou` to ensure untrusted VLAN, overlay, and external networks cannot reach the proxy. Tailnet clients reach them through `yirukou`'s subnet route, SNAT'd to `10.42.0.1`. On `yifuwuqi` the local-ingress vhosts independently `allow` only `yirukou`'s LAN address (`10.42.0.1`) and `deny all`, so a direct peer that bypasses the gateway gets no backend access.
 - WebSocket proxying (`proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) enabled per-service on both hops (defaults on; disabled for attic, docs, forgejo, and searxng which do not use WebSockets).
+
+### 2.2.1 Authelia Gate (forward auth)
+
+Inside the LAN allowlist, every browser-facing location on `yirukou` also asks Authelia before it proxies (`mkAuthGate` in `modules/services/proxy-vhosts.nix`). The gate is the only login for services without one of their own.
+
+- Each gated location carries `auth_request /authelia-check;`. That internal location sends a body-less subrequest over the same mTLS hop to the `yifuwuqi` ingress with `Host: authelia.aset.love`, `X-Original-URL` and `X-Original-Method`, and Authelia's `/api/authz/auth-request` endpoint judges the session cookie. Client `Authorization` headers are dropped from the subrequest: they belong to the backend's protocol.
+- `2xx` proxies the request with `Remote-User` set to the Authelia user. `401` becomes a `302` to the `Location` Authelia returns: the portal, with the original URL encoded in `rd`. Anything else, including Authelia being down, fails closed with `500`.
+- One session cookie covers `aset.love`, so one login (password + TOTP; `access_control.default_policy = two_factor`) opens every gated host.
+- Exemptions are named, never accidental: a `proxiedServices` entry carries an `authExempt` reason (`attic`, `authelia`, `jellyfin`, `pinepods`, `vaultwarden`), and `dns.aset.love/dns-query` is a machine protocol. The `auth-gate` contract fails evaluation if any other served location lacks the gate, or if a gate's subrequest target is not that internal Authelia endpoint. Under any other `Host` the ingress would ask the backend itself, and a single-page app's catch-all `200` would admit every request.
+- The `yifuwuqi` ingress is not gated a second time: it admits only the `yirukou-client` certificate, so every browser request already crossed the gate.
+- Header logins: Grafana (`auth.proxy`) trusts `Remote-User` from the loopback ingress. Forgejo deliberately does not: its reverse-proxy auth trusts the header from any loopback client, so any local account on `yifuwuqi` could act as `yi`. It keeps its own login behind the gate until Authelia OIDC replaces it.
+- OpenCode cannot run without a password, so the ingress presents it: `opencode-ingress-credential.service` renders `proxy_set_header Authorization "Basic …"` from `passwords/opencode` into `/run/opencode-ingress-credential/`, which the opencode location includes by glob.
 
 ### 2.3 Inter-Host mTLS
 
@@ -151,5 +165,6 @@ ______________________________________________________________________
 - `modules/services/nginx-proxy.nix`
 - `modules/services/proxy-vhosts.nix`
 - `modules/services/local-ingress.nix`
+- `modules/services/authelia.nix`
 - `modules/services/cloudflared.nix`
 - `modules/addresses.nix`

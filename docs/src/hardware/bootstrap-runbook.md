@@ -220,7 +220,7 @@ systemctl status attic-closure-keeper.timer
 runuser -u forgejo -- forgejo admin user create \
   --admin \
   --username yi \
-  --email admin@aset.love \
+  --email catufuzgu@gmail.com \
   --password <temporary-password>
 
 # 2. Create the Forgejo Actions runner token
