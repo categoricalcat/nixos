@@ -75,8 +75,8 @@ registry by design; the topology diagram above shows where it sits.
   Minecraft. See [New Compute Host Research](hardware/new-compute-host-research.md).
 - **IPv6 GUA — gated.** Waiting on a PD large enough for LAN + VLAN plus
   Happy-Eyeballs validation. See [IPv6: ULA now, GUA later](networking/ipv6-ula-gua.md).
-- **mTLS phases 2–5, mTLS on DNS, and `yirukou` impermanence — active.** See
-  the **Architecture Plans & RFCs** section in the sidebar.
+- **Inter-host mTLS, the resolver hop, and `yirukou` impermanence — active.**
+  See the **Architecture Plans & RFCs** section in the sidebar.
 
 ## Source of truth
 

@@ -31,7 +31,6 @@ in
     ./networking.nix
     ../../secrets/sops.nix
     ../../users/users.nix
-    ../../modules/fido2.nix
     ../../packages/dev-certs/module.nix
     ../../modules/fonts.nix
     ../../modules/common.nix
@@ -49,9 +48,6 @@ in
     ../../modules/services/tailscale.nix
     ../../modules/services/tpm-fido2.nix
     ../../modules/services/samba/client.nix
-    # NixOS-side DMS module, used only for the lock-screen U2F PAM service
-    # (see programs.dank-material-shell below)
-    inputs.dms.nixosModules.dank-material-shell
     # ../../modules/services/power-profiles-daemon.nix
   ];
 
@@ -79,15 +75,6 @@ in
     inherit monitors;
   };
 
-  # DMS itself runs via Home Manager (modules/desktop/dms.nix); this NixOS-level
-  # instance exists only for lock-screen FIDO2/U2F unlock (dankshell-u2f PAM
-  # service), so its systemd unit stays off and deps come from the HM side.
-  programs.dank-material-shell = {
-    enable = true;
-    systemd.enable = false;
-    lockscreen.securityKey.enable = true;
-  };
-
   nixpkgs.config = {
     cudaSupport = false;
     rocmSupport = false;
@@ -99,8 +86,8 @@ in
   # };
 
   services.fprintd.enable = true;
+  environment.systemPackages = [ pkgs.gnome-control-center ];
   security = {
-    fido2.enable = true;
     # Disabled so Chrome defaults to QR-code (caBLE/hybrid) passkeys: tpm-fido
     # returns CTAP2_ERR_NO_CREDENTIALS without waiting for user presence, which
     # aborts Chrome's WebAuthn dialog before the QR flow can be used.
@@ -109,7 +96,6 @@ in
     pam.services = {
       login.fprintAuth = lib.mkDefault true;
       gdm-fingerprint.fprintAuth = true;
-      polkit-1.u2fAuth = true;
     };
   };
 

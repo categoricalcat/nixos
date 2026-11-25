@@ -20,7 +20,7 @@ Not owned here:
 - Network policy and service configuration on `yirukou` (retired plans; live rules in [yirukou](../hosts/yirukou.md)).
 - Certificates: live architecture in [dns-and-proxy.md](../services/dns-and-proxy.md),
   PKI runbook in [secrets.md](../services/secrets.md); the DNS
-  resolver hop is [mTLS on DNS](mtls-dns-plan.md).
+  resolver hop is [Phase 3 of Inter-Host mTLS](inter-host-mtls-plan.md#phase-3-resolver-hop-over-dot).
 
 Persists state the other plans rely on: `/var/lib/tailscale` (VPN to LAN subnet router), `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter` (security-monitor gates), and `/persist/keys` (sops, through which mTLS keys arrive).
 
@@ -333,9 +333,10 @@ Fleet sequencing is defined by the [Architecture Security Rollout](architecture-
 - **Fleet sequence**: [Architecture Security Rollout](architecture-rollout-plan.md) is the canonical dependency order.
 - **VPN to LAN**: the subnet router keeps its node key and approved route only if `/var/lib/tailscale` is persisted; confirmed by the tailscale acceptance check.
 - **Service Security**: its gates read `/var/cache/vulnix` and `/var/lib/prometheus-node-exporter`; both are persisted, and Decision 7 keeps the sweep honest.
-- **mTLS**: the [DNS lane](mtls-dns-plan.md) can deploy before this plan
-  while the root is persistent. `/persist/keys` staging is required only at
-  this cutover, so sops keeps decrypting into `/run/secrets`.
+- **mTLS**: the resolver hop in [Inter-Host mTLS](inter-host-mtls-plan.md) can
+  deploy before this plan while the root is persistent. `/persist/keys` staging
+  is required only at this cutover, so sops keeps decrypting into
+  `/run/secrets`.
 - **Release isolation**: all other `yirukou` changes ship in different generations.
 
 ______________________________________________________________________

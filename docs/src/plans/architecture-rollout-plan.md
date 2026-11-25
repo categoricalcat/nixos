@@ -1,6 +1,6 @@
 # Architecture Security Rollout
 
-## Status: ACTIVE — remaining lanes: mTLS on DNS, impermanence, conditional edge
+## Status: ACTIVE — remaining lanes: inter-host mTLS (resolver hop), impermanence, conditional edge
 
 ## Objective
 
@@ -16,8 +16,10 @@ acceptance checks.
 - [Impermanence on yirukou](impermanence-yirukou-plan.md) is not implemented:
   the flake has no impermanence input or module, and
   `hosts/yirukou/hardware.nix` still configures an Ext4 root.
-- [mTLS on DNS](mtls-dns-plan.md) is not implemented, and Cloudflare Origin
-  Pulls stay dormant until the `aset.love` canary.
+- [Inter-Host mTLS](inter-host-mtls-plan.md) is not implemented: the peer hops
+  are already mTLS, and the resolver hop, the probe relocation and the
+  listener migrations are not. Cloudflare Origin Pulls stay dormant until the
+  `aset.love` canary.
 - The apex `aset.love` vhost is the selected public-edge canary. It already
   serves its static response over HTTPS with the ACME certificate, but is not
   yet Cloudflare-authenticated or reachable from the WAN.
@@ -55,9 +57,11 @@ acceptance checks.
 
 ### DNS Lane — Resolver Hop
 
-Deploy [mTLS on DNS](mtls-dns-plan.md). It reuses the same CA and host
-certificates, adds one nginx stream listener on `yirukou` and one forwarder on
-`yifuwuqi`, and leaves every device-facing plain DNS path unchanged.
+Deploy Phase 3 of [Inter-Host mTLS](inter-host-mtls-plan.md): `eno1` points
+`resolved` at `yirukou`'s AdGuard DoT listener on `:853` under the
+`dns.aset.love` name, after the one-resolver-path phase removes the competing
+links. No new daemon, port or firewall rule, and every device-facing plain DNS
+path is unchanged.
 
 ### Dedicated Maintenance Lane — Impermanence
 
@@ -79,7 +83,7 @@ rejection in that same release.
 
 ```mermaid
 flowchart TD
-    mtlsDns["mTLS on DNS: resolver hop"]
+    mtlsInterHost["Inter-Host mTLS: resolver hop, probes, listeners"]
     impermanence["Impermanence: isolated yirukou release"]
     publicOrigin["Public Cloudflare origin"]
     mtlsEdge["Origin Pulls: aset.love canary"]
@@ -97,7 +101,8 @@ runtime gates pass.
 - [ ] From a LAN client other than `yifuwuqi`, confirm that
   `curl http://10.42.0.1:9100/metrics` fails (the Service Security Phase 1
   negative probe).
-- [ ] Deploy [mTLS on DNS](mtls-dns-plan.md).
+- [ ] Deploy the resolver hop in
+  [Inter-Host mTLS](inter-host-mtls-plan.md) (Phase 2 then Phase 3).
 - [ ] At a separate safe point, schedule and complete the
   [impermanence maintenance release](impermanence-yirukou-plan.md#rollout-order).
 - [ ] Deploy `aset.love` as the public Cloudflare canary with Authenticated
