@@ -8,7 +8,7 @@ AmpliTube 5 is a Windows application. On `yitaishi`, `modules/audio/amplitube.ni
 1. Open **IK Product Manager** from the app launcher. The first launch creates the prefix and installs Product Manager silently. Sign in, then install and authorize AmpliTube 5 with the default paths.
 1. Open **AmpliTube 5** from the app launcher and select WineASIO in its audio settings.
 
-For REAPER, the `yabridge-sync` user service bridges the prefix's VST3 folder into `~/.vst3/yabridge` at login, after every rebuild, and whenever an installation changes the plugin. Clear REAPER's VST cache and rescan once; if `~/.vst3` is missing from Preferences → Plug-ins → VST, add it. Do not add the raw Wine prefix to REAPER's plugin paths.
+For REAPER, the `yabridge-sync` user service bridges the prefix's VST3 folder into `~/.vst3/yabridge` at login, after every rebuild, and whenever an installation changes the plugin. REAPER does not expand `~` in its VST path, so the entry has to be `/home/yi/.vst3`. Clear REAPER's VST cache and rescan once. Do not add the raw Wine prefix to REAPER's plugin paths.
 
 ## Behavior
 

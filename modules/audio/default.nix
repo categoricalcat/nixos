@@ -113,6 +113,17 @@ in
     };
   };
 
+  # REAPER's built-in LV2 and CLAP search is /usr/lib and /usr/local/lib. It does
+  # not read LV2_PATH, and a "~" typed into the path list is not expanded.
+  systemd.tmpfiles.rules = [
+    "d /usr/lib 0755 root root - -"
+    "d /usr/local/lib 0755 root root - -"
+    "L+ /usr/lib/lv2 - - - - /run/current-system/sw/lib/lv2"
+    "L+ /usr/local/lib/lv2 - - - - /run/current-system/sw/lib/lv2"
+    "L+ /usr/lib/clap - - - - /run/current-system/sw/lib/clap"
+    "L+ /usr/local/lib/clap - - - - /run/current-system/sw/lib/clap"
+  ];
+
   # musnix already grants @audio rtprio 99 and memlock unlimited; nice -11 is
   # PipeWire module-rt's default nice.level.
   security.pam.loginLimits = [

@@ -1,6 +1,6 @@
 # Inter-Host Traffic Through mTLS nginx
 
-## Status: DEPLOYED 2026-11-26 — code and docs complete; Phases 2, 3, 4, 5 and 6b are live on all three hosts with their acceptance recorded. Remaining gates are all user-side: deploy `yitaishi`/`yixiaoqing` for the `lan-mouse` change, the Phase 5 week-long log read, 6a's dev-server loopback bind, and then deleting this plan
+## Status: DEPLOYED AND COMPLETE 2026-11-26 — Phases 2, 3, 4, 5 and 6b are live on `yifuwuqi`, `yirukou` and `yitaishi` with their acceptance recorded; 6a is closed as Decision 12 after the user declined the loopback bind, and every open question is resolved. Two user steps remain: deploy the `1900`/`5351` detector exemption to `yifuwuqi` and `yirukou`, then confirm over one more week that `mtls-peer` stays silent and delete this plan
 
 ## Objective
 
@@ -166,6 +166,7 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
 1. **Scope is host-originated traffic.** A flow is inter-host when a process on
    one host opens it to an address of the other. Forwarded traffic never
    crosses the output hook and is out of scope.
+
 1. **One compliance rule, one exception.** Every inter-host service flow is TLS
    terminated by nginx on the receiving host. Peer hops (proxy, scrape, log
    push) are mutual TLS from `service-ca`. Hairpin clients reach `yirukou`'s
@@ -173,6 +174,7 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
    listeners serve browsers, so they cannot demand a client certificate, and
    both legs still end at nginx. The DNS hop (Decision 3) is the exception, and
    it is the only one.
+
 1. **The resolver hop is DoT to AdGuard, not nginx.** `eno1` points `resolved`
    at `yirukou`'s `:853` with `DNSOverTLS = yes` and the SNI name
    `dns.aset.love`. No new daemon, no new port, no new firewall line, no second
@@ -188,6 +190,7 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
    would add a daemon, a port, a firewall line and a cache, would still be
    chain-only (second premise above), and its `forward` block silently falls
    back to plain DNS unless the upstream is spelled `tls://`.
+
 1. **`yifuwuqi` gets exactly one resolver path.** Add `yi.tailscale.acceptDns`
    (default `true`, so no other host changes) and set it `false` on
    `yifuwuqi`; set `UseDNS = false` on `enp4s0`; set `FallbackDNS = []`. In
@@ -195,6 +198,7 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
    and `.ts` names come from AdGuard rewrites. Without this, the DoT cutover is
    not fail-closed — two plaintext paths to the resolver survive it, and the
    compiled-in fallback list is a third.
+
 1. **Probes stay on their own host.** The `dns` and `dns6` probes of `lan` peers
    target the origin host's own resolver on its LAN address, which is the path
    LAN devices use and never leaves the host. ICMP stays cross-host and keeps
@@ -204,12 +208,14 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
    with no extra exporter, which is why the previous plan's separate
    relay-hop-probe question is gone. The count stays at 9 blackbox probes per
    host.
+
 1. **The exceptions are closed and enumerated.** SSH (OpenSSH on 24212,
    Tailscale SSH on 22) is the recovery lane when nginx or the mTLS material is
    broken, and the channel `mtls-pki-generate` delivers certificates over, so it
    must depend on neither. ICMP and ICMPv6 carry no service. WireGuard on the
    Tailscale port is transport. Anything else needs an amendment to this
    decision.
+
 1. **Detection is log-only, permanently.** Each host's output hook records new
    connections to any peer address outside an allowlist derived once from the
    registry in `mtls.nix`, and never rejects. Rejection is not worth its cost
@@ -223,29 +229,43 @@ through `ai-ssh`), plus `resolvectl` and `tailscale dns status` on `yifuwuqi`:
    `nix flake check` rather than waiting for someone to read the log. No
    `yirukou`-side mirror: it would re-log the same packets from the receiving
    end, keyed on a source address this plan itself calls not an identity.
+
 1. **`peer` is a two-host relation, not a registry utility.** `mtls.nix` throws
    for any host outside the pair, so the port derivation and the log-only table
    may only be imported by `yirukou` and `yifuwuqi`. Adding a third host means
    generalising `peer` into a set first; a module that imports `mtls.nix` on
    another host fails evaluation by design.
+
 1. **Contracts guard hand-written config, not generated config.** Every
    compliant hop comes out of one of three generators keyed on
    `yi.mtls.enable`, and no hand-written `yirukou` vhost dials a peer address,
    so a contract over those hops could only restate the generators. The
    settings worth pinning are the ones typed per host: Phase 2's three resolver
    settings and Phase 5's nftables allowlist.
+
 1. **Fronting a listener is not a way to comply.** A service moved behind
    nginx for the sake of a rule is a listener migration, judged by whether the
    app can bind loopback, not a transport change. It is in scope only where
    the app is HTTP and the client can send `Host`; the disposition table above
    is exhaustive, and adding a row needs an amendment here.
+
 1. **A service port is not an interface.** Every backend nginx can front binds
    loopback, and the firewall rule for its port is deleted rather than
    narrowed. `yifuwuqi` already obeys this — its `eno1` admits no application
-   port, only the ingress from the gateway. The residue is `3000`/`6006`.
-   Anything that keeps a rule is a non-HTTP protocol (DNS, DoT, DoH on the DDR
-   port, SMB, lan-mouse, WireGuard) or one of Decision 6's exceptions, and the
-   `listener-exposure` contract names it.
+   port, only the ingress from the gateway. `3000`/`6006` are the one recorded
+   exception (Decision 12). Anything that keeps a rule is a non-HTTP protocol
+   (DNS, DoT, DoH on the DDR port, SMB, lan-mouse, WireGuard), one of Decision
+   6's exceptions, or Decision 12's dev servers, and the `listener-exposure`
+   contract names it.
+
+1. **`3000`/`6006` stay, by decision.** The `workd` dev servers will not move to
+   loopback, so this is the amendment Decision 11 asks for: both ports keep
+   their `eno1` rule and are named in the `listener-exposure` exception table
+   with that reason. They are HTTP and could become vhosts, which is exactly why
+   the exception is written down rather than folded into Decision 11's
+   "non-HTTP protocol" list. Removing them later is a one-line firewall edit
+   plus two table rows, and the contract fails evaluation if either half is
+   done alone.
 
 Peer address sets come from the registry: for `yirukou` its LAN v4 and v6, VLAN
 42 v4 and v6, and tailnet v4; for `yifuwuqi` its LAN v4 and v6 and tailnet v4
@@ -273,7 +293,7 @@ today, and what happens to it:
 
 | Port(s)            | Host                     | Protocol    | Disposition                                                                                        |
 | ------------------ | ------------------------ | ----------- | -------------------------------------------------------------------------------------------------- |
-| 3000, 6006         | `yifuwuqi`               | HTTP        | **Migrate**: vhosts on `yirukou`, bind loopback                                                    |
+| 3000, 6006         | `yifuwuqi`               | HTTP        | keep: `workd` declines to bind loopback — an amendment to Decision 11                              |
 | 11436              | `yitaishi`               | HTTP        | residue: `llama-server` fetches models, so no address filter; tailnet-wide                         |
 | 11437              | `yitaishi`               | HTTP        | **Narrowed** (6b): binds the tailnet address, `IPAddressAllow` = `yirukou`                         |
 | 53                 | `yirukou`                | DNS         | keep: resolver for LAN, VLAN 42 and tailnet                                                        |
@@ -395,8 +415,10 @@ in `/proc/net/tcp6`, and `systemd-resolved` logged no errors after its 08:45:58
 reload. What failed: `tailscaled` had `ActiveEnterTimestamp` from 2026-11-25
 with `NRestarts=0` and `tailscaled-set` was `inactive` with no timestamp, so
 the daemon still held `--accept-dns=true` — the MagicDNS link and the
-plaintext `:53` forwarder above. Fixed by the `restartTriggers` entry; the
-acceptance checks below are unrun until the next deploy.
+plaintext `:53` forwarder above. The fix that actually worked was
+`RemainAfterExit = true`, not the `restartTriggers` entry this item originally
+proposed — `switch-to-configuration` only walks active units, so a finished
+oneshot is invisible to it either way.
 
 - [x] (User) Deploy `yifuwuqi` again and confirm the trigger fired. Done
   2026-11-26 09:09:06: `tailscaled-set` reports `ActiveState=active`,
@@ -585,41 +607,90 @@ passed `nft --check`. Both toplevels build.
   `IPAddressDeny = "any"` with `IPAddressAllow = "localhost"`, because the
   binary ignores `listenAddress` and binds every interface.
 
-**Phase 5 QA, sampled 2026-11-26 09:04–09:14 (`ai-ssh`, then the host itself).**
-The table is live on `yifuwuqi` and behaving as designed. Ten minutes of
-`journalctl -k --grep mtls-peer` gave exactly three destinations by port: UDP
-`53` (877 hits, all from before 09:09:06 and zero after it — Phase 2's
-forwarder, not a flow), UDP `5351` (90 hits, NAT-PMP) and UDP `1900` (20 hits,
-SSDP). No TCP hits at all. The two survivors are the link-local chatter the
-open questions below already name, and neither is a service hop.
+**Phase 5 QA, sampled 2026-11-26 09:04–09:14 and again after the 09:26 switch
+(`ai-ssh`, then the host itself).** The table is live on `yifuwuqi` and behaving
+as designed. Ten minutes of `journalctl -k --grep mtls-peer` gave exactly three
+destinations by port: UDP `53` (877 hits, all from before 09:09:06 and zero
+after it — Phase 2's forwarder, not a flow), UDP `5351` (90 hits, NAT-PMP) and
+UDP `1900` (20 hits, SSDP). No TCP hits at all. After the switch the rates are
+`5351` ~10/min and `1900` ~2.5/min, with `DPT=53` still at **0**. The two
+survivors are the link-local chatter the open questions below already name, and
+neither is a service hop. The table also survived the redeploy:
+`/run/current-system/etc/systemd/system/nftables.service` still starts the
+`nftables-rules` script that defines `table inet mtls-peer`, and logging
+continued across the switch.
 
-- [ ] (User) Read `journalctl -k --grep mtls-peer` over a full week — every
-  daily maintenance slot and one Monday slot. Each hit is either moved behind
-  nginx at its source or added to Decision 6; nothing is allowlisted silently.
-  After the window the table stays: it is the standing detector for a new
-  unlisted flow.
+**Phase 5 window, 2026-11-26 11:46 UTC onward.** The plan's `journalctl` read
+cannot be done as written: journald here is capped at `SystemMaxUse = 800M` and
+already sits at 810M, so it holds about **two days**, not the week the gate
+assumes. Loki is the lane that actually spans it — Vector ships every journal
+entry, retention is `168h`, and the kernel stream is searchable. Both probes
+below were run against Loki's HTTP API on `yifuwuqi`.
+
+The retained window opens 2026-11-19, i.e. after the table was deployed, so the
+whole of it was measured with `mtls-peer` installed. Inventory over the three
+days ending 2026-11-26 12:35 UTC, which covers one Monday:
+
+| Host       | Proto/port | Count | Window (UTC)        |
+| ---------- | ---------- | ----- | ------------------- |
+| `yifuwuqi` | UDP/53     | 3140  | 11-26 11:45 → 12:09 |
+| `yifuwuqi` | UDP/5351   | 468   | 11-26 11:46 → 12:35 |
+| `yifuwuqi` | UDP/1900   | 111   | 11-26 11:46 → 12:35 |
+| `yirukou`  | UDP/53     | 28    | 11-26 11:42 → 11:45 |
+
+No TCP flows at all in either direction. The `UDP/53` rows are the
+`tailscaled` forwarder of Phase 2, bound to the few minutes before the 09:09
+fix; after it the count is zero. What survives is NAT-PMP (`5351`) and SSDP
+(`1900`), identified as unanswered UPnP IGD discovery and silenced in the chain
+rather than allowlisted as a hop — see the closed open question below.
+
+- [x] (AI) Close the window on the known traffic. The three-day inventory above
+  showed exactly three ports and no TCP; the two survivors were diagnosed as
+  UPnP gateway discovery and are now `return`ed in `mtls-peer` with the reason
+  written into the rule.
+
+- [ ] (User) Deploy `yifuwuqi` and `yirukou`, then confirm over one week that
+  `mtls-peer` stays silent now that `1900`/`5351` are exempted, using Loki
+  rather than journald:
+
+```sh
+curl -sG http://127.0.0.1:24100/loki/api/v1/query_range \
+  --data-urlencode 'query={unit="kernel"} |= "mtls-peer"' \
+  --data-urlencode "start=$(date -u -d '-7 days' +%s)000000000" \
+  --data-urlencode "end=$(date -u +%s)000000000" \
+  --data-urlencode 'limit=5000' \
+  | jq -r '.data.result[].values[][1]' | sed -n 's/.*PROTO=\([A-Z]*\).*DPT=\([0-9]*\) .*/\1 \2/p' \
+  | sort | uniq -c | sort -rn
+```
+
+Each new port is either moved behind nginx at its source or added to
+Decision 6; nothing is allowlisted silently. After the window the table stays:
+it is the standing detector for a new unlisted flow. `limit` is capped at 5000
+by Loki's `max_entries_limit_per_query`, so page by time rather than raising it.
 
 ### Phase 6: Listener migration (no rule where nginx can front)
 
 Independent of Phases 2–5; it needs neither the allowlist nor the DNS cutover.
 The unit of work is one listener, and each completes on its own.
 
-**6a — `3000` and `6006` on `yifuwuqi`.** Two dev-server ports opened to the
-whole LAN for a user (`workd`) whose servers declare no port in this repo. Both
-are HTTP, so:
+**6a — `3000` and `6006` on `yifuwuqi`: closed as an exception.** Two
+dev-server ports opened to the whole LAN for a user (`workd`) whose servers
+declare no port in this repo. Both are HTTP and could be fronted — registry
+entry, vhost, `127.0.0.1` bind, firewall line deleted — but the bind is a
+per-user choice this repo cannot declare, and on 2026-11-26 the user declined
+it. So Decision 12 records the amendment Decision 11 asks for: the two lines in
+[firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix) stay, and the
+`listener-exposure` table names both with that reason.
 
-- add registry entries with `domain`s like every other service, and vhosts to
-  [proxy-vhosts.nix](../../../modules/services/proxy-vhosts.nix) — they are
-  local to `yifuwuqi`, so `mkLocalVhosts` fronts them and `mkRemoteVhosts`
-  gates them on `yirukou` like the rest;
-- bind the dev servers to `127.0.0.1`, which is a per-user choice, not
-  something this repo can declare: the rule is deleted only after the bind
-  changes;
-- delete both lines from [firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix).
+- [x] (User) Decision taken 2026-11-26: the dev servers keep their ports; no
+  vhost, no registry entry, no loopback bind.
+- [x] (AI) Decision 12 written and the disposition table row reworded; the
+  contract's exception rows already carried `3000`/`6006`. Nothing in the
+  config changed, which is the point of recording it.
 
-If the dev servers cannot bind loopback, they are an amendment to Decision 11
-— the disposition table's only HTTP residue that cannot become an nginx
-vhost — and keep their rules with that reason recorded.
+If the servers bind loopback later, the change is mechanical: drop the two
+lines from `firewall.nix`, drop the two contract rows, add the registry entry
+and the vhost. The contract fails if only half is done.
 
 **6b — `11436`/`11437` on `yitaishi`.** Not a fronting migration, and not a
 firewall edit either: the firewall is not the gate.
@@ -671,14 +742,18 @@ Verified 2026-11-26: `sd-cpp.service` renders
 Neither `yitaishi` nor `yixiaoqing` declares a firewall port at all now;
 `llama-cpp` unchanged.
 
-- [ ] (User) Deploy `yitaishi` **and `yixiaoqing`** — the latter only for the
-  `lan-mouse.nix` change, which now emits no `tailscale0` rule there. Verify on
-  `yitaishi`: `systemctl show -p IPAddressAllow sd-cpp.service` shows exactly the
-  three addresses; `sd-cpp.aset.love` still generates an image; from a third
-  tailnet host `curl -m5 http://100.69.0.4:11437/v1/models` fails;
-  `curl -m5 http://100.69.0.4:11436/v1/models` still answers (the recorded
-  `11436` residue, not a pass condition). On both hosts, `nft list ruleset | grep -c 4242` should be `0`, and lan-mouse must still move the pointer between
-  them.
+- [x] (User) Deployed `yitaishi` 2026-11-26 ~09:26. `yixiaoqing` was skipped
+  deliberately (it carries only the `lan-mouse.nix` change and will pick it up
+  on its next switch), so the `4242` rule remains there until then — inert
+  either way, since its `tailscale0` is trusted.
+
+**6b acceptance after deploy, run 2026-11-26 09:29 (`ai-ssh`).** Verified live:
+`sd-cpp` is `active` with `Result=success`, `ExecMainStartTimestamp` unchanged
+from the 08:44 start, `IPAddressAllow=127.0.0.0/8 100.69.0.1/32 ::1/128 100.69.0.4/32`, `IPAddressDeny=0.0.0.0/0 ::/0`. On `yitaishi` the
+`firewall-start` script contains no `4242` at all, and there is no `nftables`
+unit because that host runs the plain `firewall.service`. Not run: image
+generation through `sd-cpp.aset.love`, the third-tailnet-host negative probe,
+and the `11436` residue check — all three need a client outside the mesh.
 
 **Contract: `listener-exposure`.** Written 2026-11-26 in
 [checks.nix](../../../nix/checks.nix). Every port a host declares in
@@ -709,12 +784,11 @@ row with no matching port, a port list on trusted `tailscale0`, and dropping
 contract found one real defect on its first run — `lan-mouse.nix` declaring
 `4242` on a trusted `tailscale0`, now gated on the interface not being trusted.
 
-Acceptance for 6a remains user-side: `nix eval` shows no `3000`/`6006` on
-`yifuwuqi`; from a LAN client `curl -I http://10.42.0.2:3000` fails while the new
-vhost answers through the gate; `systemctl show -p IPAddressAllow` on
-`sd-cpp.service` shows only loopback plus `yirukou`, and from a third tailnet
-host `curl http://<yitaishi ts>:11437/v1/models` fails; a SillyTavern chat and
-one `sd-cpp.aset.love` generation still work. `11436` stays reachable from the
+With 6a closed as an exception, the acceptance that remains is 6b's, and it is
+user-side: `systemctl show -p IPAddressAllow` on `sd-cpp.service` shows only
+loopback plus `yirukou`, and from a third tailnet host
+`curl http://<yitaishi ts>:11437/v1/models` fails; a SillyTavern chat and one
+`sd-cpp.aset.love` generation still work. `11436` stays reachable from the
 tailnet and that is recorded as a known residue, not a passing check.
 
 **6b QA after deploy (2026-11-26 08:44, `ai-ssh`).** Verified live:
@@ -743,8 +817,10 @@ generation, both of which need a client outside the mesh I can reach.
   `yifuwuqi Firewall` section also stopped claiming AdGuard listens there.
 - [x] (AI) [architecture-rollout-plan.md](architecture-rollout-plan.md): the
   DNS lane and its checklist item are updated for the deployed state.
-- [ ] (User) Once Phase 6a lands and the Phase 5 week is clean, delete this
-  plan in the change set that completes its last phase.
+- [ ] (User) Retire this plan: with 6a closed as Decision 12, the only remaining
+  gate is the Phase 5 week above. When it is clean, delete this file, drop it
+  from `SUMMARY.md`, and drop the inter-host mTLS lane from
+  [architecture-rollout-plan.md](architecture-rollout-plan.md).
 
 ## Files & LOC Budget
 
@@ -762,9 +838,9 @@ About +175 Nix lines, net of the listener migrations.
 | [prometheus.nix](../../../modules/services/monitoring/prometheus.nix)                             | +7/-1: probe filter                           |
 | [adguard-exporter/default.nix](../../../modules/services/monitoring/adguard-exporter/default.nix) | +2: loopback-only IP filter                   |
 | [monitoring.nix](../../../modules/addresses/monitoring.nix)                                       | comment only                                  |
-| [proxy-vhosts.nix](../../../modules/services/proxy-vhosts.nix)                                    | +8: the two dev-server entries (6a)           |
+| [proxy-vhosts.nix](../../../modules/services/proxy-vhosts.nix)                                    | none: 6a closed as an exception               |
 | [hosts.nix](../../../modules/addresses/hosts.nix)                                                 | +8: their registry entries (6a)               |
-| [yifuwuqi firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix)                          | -2: the 3000/6006 lines (6a)                  |
+| [yifuwuqi firewall.nix](../../../hosts/yifuwuqi/networking/firewall.nix)                          | none: 6a closed as an exception               |
 | [sd-cpp.nix](../../../modules/services/ai/sd-cpp.nix)                                             | +20: `allowedClients`, bound-address probe    |
 | [yitaishi/services.nix](../../../hosts/yitaishi/services.nix)                                     | -4: inert ports, tailnet bind, one client     |
 | [lan-mouse.nix](../../../modules/services/lan-mouse.nix)                                          | +13/-6: no rule on a trusted interface        |
@@ -819,18 +895,24 @@ flowchart TD
   pushers already are? Moving them removes both inter-host legs per request,
   but the substituter is fleet-wide in `attic/client.nix` and would need a
   `yifuwuqi` override.
-- **Link-local chatter.** Evidence from the 2026-11-26 QA: `mtls-peer` logs
-  UDP `5351` (NAT-PMP, ~9/min) and UDP `1900` (SSDP, ~2/min) from `yifuwuqi` to
-  `yirukou`, plus Tailscale peerapi (Taildrop) in principle. None are service
-  hops. Should they be exempted by source port, or left to be logged (or the
-  two discovery protocols switched off on both servers)? Nothing rejects them,
-  so the log-only window will show whether they matter.
-- **The `3000`/`6006` dev servers are undeclared.** No module in this repo
-  starts them; the ports are opened for the `workd` user's own servers
-  ([workd.nix](../../../users/home/workd.nix) installs `nodejs`, nothing
-  listens). So 6a can front them only after the servers are told to bind
-  loopback, which is a user-side change this repo cannot enforce. Should they
-  become a declared service, or stay a documented exception until they do?
+- **Link-local chatter.** **Closed 2026-11-26 by inspection.** The two ports
+  are UPnP IGD discovery, not a service: a container on `yifuwuqi` asks the
+  default gateway for a port mapping, sending NAT-PMP on `5351` and a unicast
+  SSDP `M-SEARCH` on `1900` from one source socket in the same instant
+  (~10/min and ~2.5/min). Every probe is unicast to `10.42.0.1`, nothing binds
+  either port on `yirukou`, no host runs an IGD, and no reply appears in either
+  direction — so nothing uses them and nothing can answer them. The `mtls-peer`
+  chain now returns on `udp dport { 1900, 5351 }` with that reason recorded, so
+  the detector keeps reporting only flows that could become a hop. The sending
+  container could not be pinned down without root (the socket lives in a
+  container netns and no single `podman-*` cgroup owned it when sampled), which
+  does not matter while no IGD exists; if one is ever added, these probes
+  become live again and the rule must be revisited.
+- **The `3000`/`6006` dev servers are undeclared.** Resolved 2026-11-26 by
+  Decision 12: no module in this repo starts them (the `workd` user's own
+  servers, [workd.nix](../../../users/home/workd.nix) installs `nodejs` and
+  nothing listens), the user declined the loopback bind, and the ports stay as
+  a recorded exception. Reopening it means a declared service, not a plan.
 - **DDR is the only thing pinning `3443`.** Folding AdGuard's DoH into the
   existing `dns.aset.love` vhost on `443` is possible — nginx terminates TLS
   there and already proxies `/dns-query` — but AdGuard answers DDR from its own

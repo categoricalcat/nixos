@@ -50,6 +50,7 @@ in
     "Audio/ir"
     "Audio/reaper-fxchains"
     "Audio/tapf"
+    "Audio/sfz"
     "Music/midi-library/_user"
   ];
 
@@ -58,6 +59,13 @@ in
     # ReaPack .so (keep ReaPack self-update off so it never replaces the link)
     ".config/REAPER/UserPlugins/reaper_reapack-x86_64.so".source =
       "${pkgs.reaper-reapack-extension}/UserPlugins/reaper_reapack-x86_64.so";
+    "Audio/sfz/virtuosity-drums".source = pkgs.fetchFromGitHub {
+      name = "virtuosity-drums-0.925";
+      owner = "sfzinstruments";
+      repo = "virtuosity_drums";
+      tag = "v0.925";
+      hash = "sha256-F7PtbG+gn4PvPH/BwUTgkto+5ex2HB6B4ZTGTAYEO4M=";
+    };
   }
   // lib.mapAttrs' (
     name: entry: lib.nameValuePair "Music/midi-library/${name}" { source = unpack name entry; }

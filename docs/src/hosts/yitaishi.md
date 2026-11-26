@@ -60,7 +60,7 @@ ______________________________________________________________________
 
 ## 4. Pro-Audio Production DAW Studio
 
-Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM), `modules/audio/plugins.nix` (packages, custom derivations from `modules/audio/packages/`, Amp Locker data link), `modules/audio/home.nix` (yi's MIDI library and plugin folders), and `modules/audio/amplitube.nix` (Wine/yabridge/WineASIO):
+Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM), `modules/audio/plugins.nix` (packages, custom derivations from `modules/audio/packages/`, Audio Assault data links), `modules/audio/home.nix` (yi's MIDI library and plugin folders), and `modules/audio/amplitube.nix` (Wine/yabridge/WineASIO):
 
 ### 4.1 Real-Time Kernel & Low-Latency PipeWire
 
@@ -74,7 +74,7 @@ Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM
 
 - **DAWs & Audio Editors**: Reaper, Tenacity.
 - **MIDI Composition & Sequencing**: LMMS, Giada, Seq66, QMidiArp, Helio Workstation, MIDIVisualizer.
-- **Drum Synthesis & Samplers**: MT-PowerDrumKit, DrumGizmo (CrocellKit, MuldjordKit multi-mic drumkits), AVL Drumkits, Hydrogen, Geonkick, Drumkv1.
+- **Drum Synthesis & Samplers**: MT-PowerDrumKit 2.1.5.3 (VST3), Drum Locker 1.0.3 (VST3, LV2), Versilian Virtuosity Drums 0.925 (SFZ via `sfizz-ui` VST3/LV2 and `sfizz_jack`), DrumGizmo (CrocellKit, MuldjordKit multi-mic drumkits), AVL Drumkits, Hydrogen, Geonkick, Drumkv1.
 - **Synthesizers & Processors**: Vital, Surge-XT, Helm, Odin2, Dexed, Cardinal, Stochas, Fluidsynth, LSP-Plugins suite, Calf Studio Gear, Dragonfly Reverb, Guitarix, ToneLib, Neural Amp Modeler LV2, ChowDSP.
 - **Guitar Rig**: Rustortion (standalone, VST3, CLAP), Amp Locker 1.6.0 (standalone, VST3, LV2), KPP (Kapitonov Plugins Pack: tubeAmp profiler and pedals).
 - **Windows Amp Compatibility**: AmpliTube 5 runs from a dedicated `yi` Wine prefix, bridges its VST3 into REAPER with yabridge, and uses WineASIO over PipeWire JACK in standalone mode.
@@ -85,8 +85,11 @@ Configured via `modules/audio/default.nix` (realtime, PipeWire, WirePlumber, PAM
   - `~/Audio/ir/`: Speaker cabinet and room impulse responses (`.wav`).
   - `~/Audio/reaper-fxchains/`: Custom Reaper effect chain presets.
   - `~/Audio/tapf/`: KPP tubeAmp (`.tapf`) profiles; the factory profiles ship in `kpp_tubeamp.lv2/profiles/`.
+  - `~/Audio/sfz/`: SFZ instrument libraries (`virtuosity-drums/` linked from the store).
   - `~/Audio Assault/PluginData/Audio Assault/AmpLockerData/`: Amp Locker factory data, linked from the store.
-  - `~/.vst3`, `~/.lv2`, `~/.clap`, `~/.vst`: Plugin search paths.
+  - `~/Audio Assault/PluginData/Audio Assault/DrumLockerData/`: Drum Locker factory data, linked from the store.
+  - `~/.vst3`, `~/.lv2`, `~/.clap`, `~/.vst`: writable directories for plugins installed outside Nix.
+  - `/usr/lib/{lv2,clap}` and `/usr/local/lib/{lv2,clap}`: symlinks to the system profile. Those are REAPER's built-in LV2 and CLAP search paths.
 
 ______________________________________________________________________
 

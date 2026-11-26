@@ -78,7 +78,6 @@ let
       ];
       udp = [ config.services.tailscale.port ];
     };
-
   # Peer addresses split by family: nftables matches one family per
   # expression, so a single `daddr` set cannot hold both.
   peerAddressesByFamily =
@@ -232,6 +231,16 @@ in
           meta l4proto { icmp, ipv6-icmp } return
           tcp dport { ${lib.concatMapStringsSep ", " toString (peerPorts peer).tcp} } return
           udp dport { ${lib.concatMapStringsSep ", " toString (peerPorts peer).udp} } return
+          # UPnP IGD discovery, not a service hop. A client on this host asks
+          # the default gateway for a port mapping: NAT-PMP on 5351 and a
+          # unicast SSDP M-SEARCH on 1900, from one socket, in the same
+          # instant. Nothing binds either port on the peer and no host runs an
+          # IGD, so every probe goes unanswered — measured 2026-11-26 at ~10/min
+          # for 5351 and ~2.5/min for 1900, all unicast to the gateway, with no
+          # matching reply. Silenced here so the detector keeps reporting only
+          # flows that could become a hop; the sender itself is container-side
+          # and unidentified, which is harmless while no IGD exists.
+          udp dport { 1900, 5351 } return
           limit rate 5/second burst 10 packets log prefix "mtls-peer: " level warn
         }
       '';

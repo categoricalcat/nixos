@@ -13,10 +13,16 @@ in
       ./yabridge.nix
     ];
 
-    # Amp Locker's default data folder; recursive keeps the folders writable
-    home.file."Audio Assault/PluginData/Audio Assault/AmpLockerData" = {
-      source = "${audioPkgs.amp-locker}/share/amp-locker/AmpLockerData";
-      recursive = true;
+    # Audio Assault default data folders; recursive keeps the folders writable
+    home.file = {
+      "Audio Assault/PluginData/Audio Assault/AmpLockerData" = {
+        source = "${audioPkgs.amp-locker}/share/amp-locker/AmpLockerData";
+        recursive = true;
+      };
+      "Audio Assault/PluginData/Audio Assault/DrumLockerData" = {
+        source = "${audioPkgs.drum-locker}/share/drum-locker/DrumLockerData";
+        recursive = true;
+      };
     };
   };
 
@@ -75,7 +81,7 @@ in
     pkgs.vital
     pkgs.helm
     pkgs.odin2
-    pkgs.sfizz
+    pkgs.sfizz-ui
     pkgs.samplv1
     pkgs.synthv1
     pkgs.padthv1
@@ -100,7 +106,7 @@ in
 
     # Drums
     audioPkgs.mt-power-drum-kit
-    # audioPkgs.drum-locker
+    audioPkgs.drum-locker
     pkgs.drumgizmo
     pkgs.x42-avldrums
     pkgs.hydrogen
