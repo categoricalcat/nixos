@@ -94,7 +94,12 @@
         };
 
         perSystem =
-          { config, pkgs, ... }:
+          {
+            config,
+            lib,
+            pkgs,
+            ...
+          }:
           {
             packages = {
               zero-parades = pkgs.callPackage ./packages/zero-parades { };
@@ -111,7 +116,12 @@
               '';
               gateway-failover = pkgs.testers.runNixOSTest ./packages/gateway-failover/test.nix;
               dr-recovery = pkgs.testers.runNixOSTest (import ./secrets/test.nix { sopsNix = sops-nix; });
-            };
+              # `nix flake check` builds checks and only evaluates packages.
+              # Alias `default` is zero-parades. `doCheck` runs as part of the build.
+            }
+            // lib.mapAttrs' (name: drv: lib.nameValuePair "package-${name}" drv) (
+              removeAttrs config.packages [ "default" ]
+            );
           };
 
         systems = [

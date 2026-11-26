@@ -1,8 +1,9 @@
 // Repo-wide flat config, shipped inside the eslint-env derivation (the
 // wrapper passes --config). Plugin imports resolve against this derivation's
 // node_modules — the repo root never needs a node_modules.
-// Prettier owns formatting (treefmt); eslint-config-prettier (last entry)
-// keeps every ruleset above out of formatting's way.
+// treefmt runs Prettier, then `eslint --fix`. eslint-config-prettier (last
+// entry) keeps the rulesets above out of Prettier's way; what eslint still
+// fixes (block padding, import order) is applied by `nix fmt`.
 import js from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
 import prettierConfig from "eslint-config-prettier";

@@ -107,14 +107,16 @@ export function requireUrl(
     throw new TypeError(`${tool}: url must be a non-empty string`);
   }
 
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
+  // `new URL` throws on a non-absolute input. `URL.canParse` is that
+  // decision as a boolean, so a bare path is a rejected value rather than
+  // a caught exception. The constructor runs only after canParse is true.
+  if (!URL.canParse(url)) {
     throw new Error(
       `${tool}: url must be an absolute http(s) URL (${LOCAL_FILE_HINT}), got: ${url}`,
     );
   }
+
+  const parsed = new URL(url);
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     const fileHint = parsed.protocol === "file:" ? `; ${LOCAL_FILE_HINT}` : "";

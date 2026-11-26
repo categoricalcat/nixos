@@ -9,7 +9,8 @@ in
     (prefixed "nixos" (
       lib.mapAttrs (_: host: host.config.system.build.toplevel) self.nixosConfigurations
     ))
-    (prefixed "package" self.packages.${system})
+    # package-<name> already lives in checks, so flake check and hydraJobs
+    # build the same derivation.
     (prefixed "shell" self.devShells.${system})
   ];
 }

@@ -2,7 +2,11 @@
 { lib, ... }:
 {
   perSystem =
-    { pkgs, ... }:
+    {
+      config,
+      pkgs,
+      ...
+    }:
     {
       treefmt = {
         projectRootFile = "flake.nix";
@@ -102,6 +106,17 @@
             options = [ "--replace" ];
             includes = [ "*.sh" ];
             excludes = [ ".envrc" ];
+            priority = 1;
+          };
+          # After Prettier (priority 0). `nix fmt` applies every auto-fix;
+          # a remaining eslint error fails the format, same as the check.
+          eslint = {
+            command = lib.getExe config.packages.eslint-env;
+            options = [ "--fix" ];
+            includes = [
+              "*.js"
+              "*.ts"
+            ];
             priority = 1;
           };
         };
