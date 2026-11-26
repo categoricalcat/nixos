@@ -16,9 +16,13 @@ acceptance checks.
 - [Impermanence on yirukou](impermanence-yirukou-plan.md) is not implemented:
   the flake has no impermanence input or module, and
   `hosts/yirukou/hardware.nix` still configures an Ext4 root.
-- [Inter-Host mTLS](inter-host-mtls-plan.md) is not implemented: the peer hops
-  are already mTLS, and the resolver hop, the probe relocation and the
-  listener migrations are not. Cloudflare Origin Pulls stay dormant until the
+- [Inter-Host mTLS](inter-host-mtls-plan.md) is deployed for its resolver lane:
+  Phases 2, 3, 4, 5 and 6b are live on all three hosts and their runtime
+  acceptance passes — `yifuwuqi` resolves only over DoT to `yirukou`'s AdGuard
+  with plaintext `:53` at zero, the four LAN `dns`/`dns6` self-probes return
+  `1`, and the log-only `mtls-peer` table is installed and checked. What
+  remains is 6a's dev-server firewall rules, the Phase 5 week-long log read,
+  and deleting the plan. Cloudflare Origin Pulls stay dormant until the
   `aset.love` canary.
 - The apex `aset.love` vhost is the selected public-edge canary. It already
   serves its static response over HTTPS with the ACME certificate, but is not
@@ -57,11 +61,13 @@ acceptance checks.
 
 ### DNS Lane — Resolver Hop
 
-Deploy Phase 3 of [Inter-Host mTLS](inter-host-mtls-plan.md): `eno1` points
-`resolved` at `yirukou`'s AdGuard DoT listener on `:853` under the
-`dns.aset.love` name, after the one-resolver-path phase removes the competing
-links. No new daemon, port or firewall rule, and every device-facing plain DNS
-path is unchanged.
+Deployed 2026-11-26. `eno1` on `yifuwuqi` points `resolved` at `yirukou`'s
+AdGuard DoT listener on `:853` under the `dns.aset.love` name, after the
+one-resolver-path phase removed the competing links — `UseDNS = false` on
+`enp4s0`, `acceptDns = false` on `tailscale0`, empty `FallbackDNS`. No new
+daemon, port or firewall rule, and every device-facing plain DNS path is
+unchanged; acceptance is recorded in the
+[Inter-Host mTLS](inter-host-mtls-plan.md) plan.
 
 ### Dedicated Maintenance Lane — Impermanence
 
@@ -101,8 +107,9 @@ runtime gates pass.
 - [ ] From a LAN client other than `yifuwuqi`, confirm that
   `curl http://10.42.0.1:9100/metrics` fails (the Service Security Phase 1
   negative probe).
-- [ ] Deploy the resolver hop in
-  [Inter-Host mTLS](inter-host-mtls-plan.md) (Phase 2 then Phase 3).
+- [x] Deploy the resolver hop in
+  [Inter-Host mTLS](inter-host-mtls-plan.md) (Phase 2 then Phase 3), verified
+  2026-11-26.
 - [ ] At a separate safe point, schedule and complete the
   [impermanence maintenance release](impermanence-yirukou-plan.md#rollout-order).
 - [ ] Deploy `aset.love` as the public Cloudflare canary with Authenticated

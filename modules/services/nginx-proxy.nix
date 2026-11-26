@@ -122,6 +122,20 @@ in
           serverName = "_";
         };
 
+      # Catch-all: unmatched Host headers land here instead of on the
+      # alphabetically-first vhost (adguardhome), so unknown URLs return 404
+      # rather than the AdGuard UI. add_header does not fire on 404 without
+      # `always`, so the body content type comes from default_type.
+      "_" = {
+        default = true;
+        useACMEHost = allAddresses.baseDomain;
+        forceSSL = true;
+        locations."/".extraConfig = ''
+          default_type text/plain;
+          return 404 "unknown host\n";
+        '';
+      };
+
       # Local test vhost
       "yirukou.local" = {
         serverName = "yirukou.local";

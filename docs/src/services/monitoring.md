@@ -140,10 +140,13 @@ Two rules trim the fan-out:
   families, which is where the v4-vs-v6 comparison lives. Flipping the flag to
   `true` restores the mirrored internet probes and smokeping targets for peers
   that have `v6`.
-- A host never probes its own peer entry, in blackbox or smokeping. Its own
-  AdGuard -> Unbound chain is already measured by the `adguard` and `unbound`
-  exporters, so each host probes the other host plus the internet peers: 9
-  blackbox probes and 5 smokeping targets per host.
+- A host never probes its own peer entry for ICMP, HTTP or smokeping: pinging
+  itself measures nothing the exporters do not already cover. The `dns` and
+  `dns6` layers are the one exception — the self-probe runs through the local
+  stub, the resolver hop and AdGuard, so it is what keeps that chain under test
+  without a second exporter. Each host therefore issues 9 blackbox probes and 5
+  smokeping targets, and `probe_success{layer=~"dns6?", scope="lan"}` has four
+  series whose `peer` equals their `host`.
 
 Blackbox modules (`blackbox.yml`) are named after the layer and all set
 `ip_protocol_fallback: false`, so a module never silently answers over the other

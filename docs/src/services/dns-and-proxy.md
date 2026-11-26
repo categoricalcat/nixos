@@ -4,35 +4,50 @@ The homelab runs a dual-host recursive DNS pipeline and an Nginx reverse proxy i
 
 ______________________________________________________________________
 
-## 1. Dual DNS Pipeline Architecture
+## 1. DNS Architecture
+
+One recursive pipeline, on `yirukou`, and one stub that forwards to it.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    LAN & Mesh Clients                       │
-└──────────────┬──────────────────────────────┬───────────────┘
-               │ Query (DHCP: 10.42.0.1)      │ Query (DHCP: 10.42.0.2)
-               ▼                              ▼
-┌─────────────────────────────┐┌─────────────────────────────┐
-│      yirukou DNS Node       ││      yifuwuqi DNS Node      │
-│  ┌───────────────────────┐  ││  ┌───────────────────────┐  │
-│  │ AdGuard Home (:53)    │  ││  │ AdGuard Home (:53)    │  │
-│  │ 64MB Cache, Hagezi    │  ││  │ 64MB Cache, Hagezi    │  │
-│  │ Local DNS Rewrites    │  ││  │ Local DNS Rewrites    │  │
-│  └───────────┬───────────┘  ││  └───────────┬───────────┘  │
-│              │ [::1]:5335    │              │ [::1]:5335
-│  ┌───────────▼───────────┐  ││  ┌───────────▼───────────┐  │
-│  │ Unbound Resolver      │  ││  │ Unbound Resolver      │  │
-│  │ (Recursive DNS)       │  ││  │ (Recursive DNS)       │  │
-│  └───────────┬───────────┘  ││  └───────────┬───────────┘  │
-│              │ unix socket   │              │ unix socket
-│  ┌───────────▼───────────┐  ││  ┌───────────▼───────────┐  │
-│  │ Valkey L2 Cache       │  ││  │ Valkey L2 Cache       │  │
-│  │ (1gb, local only)     │  ││  │ (512mb, local only)   │  │
-│  └───────────────────────┘  ││  └───────────────────────┘  │
-└─────────────────────────────┘└─────────────────────────────┘
+└──────────┬───────────────────────────────────┬──────────────┘
+           │ Query (DHCP: 10.42.0.1,           │ Query (DHCP: 10.42.0.2,
+           │ RDNSS fd75:c55f:6d19:1::1)        │ RDNSS fd75:c55f:6d19:1::2)
+           │                                   ▼
+           │                    ┌─────────────────────────────┐
+           │                    │  yifuwuqi systemd-resolved  │
+           │                    │  stub :53, Cache = "no"     │
+           │                    └──────────────┬──────────────┘
+           │                          DoT :853 │ #dns.aset.love
+           ▼                                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      yirukou DNS Node                       │
+│  ┌───────────────────────┐                                  │
+│  │ AdGuard Home (:53)    │                                  │
+│  │ 64MB Cache, Hagezi    │                                  │
+│  │ Local DNS Rewrites    │                                  │
+│  └───────────┬───────────┘                                  │
+│              │ [::1]:5335                                    │
+│  ┌───────────▼───────────┐                                  │
+│  │ Unbound Resolver      │                                  │
+│  │ (Recursive DNS)       │                                  │
+│  └───────────┬───────────┘                                  │
+│              │ unix socket                                   │
+│  ┌───────────▼───────────┐                                  │
+│  │ Valkey L2 Cache       │                                  │
+│  │ (1gb, local only)     │                                  │
+│  └───────────────────────┘                                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Both `yirukou` (router) and `yifuwuqi` (server) run identical, synchronized DNS modules (`modules/services/adguardhome.nix` and `modules/services/unbound.nix`). Kea DHCP distributes both IPs (`10.42.0.1` and `10.42.0.2`) to all network clients for seamless resolver redundancy; IPv6 clients receive `fd75:c55f:6d19:1::1` (or `fd75:c55f:6d19:2::1` on VLAN 42) through RA RDNSS, since there is no DHCPv6 server.
+Only `yirukou` runs AdGuard Home and Unbound (`modules/services/adguardhome.nix`,
+`modules/services/unbound.nix`); it is the LAN's recursive resolver. Kea DHCP
+still hands out both `10.42.0.1` and `10.42.0.2`, and RA RDNSS both ULAs, so
+clients keep a second address to try — but the second address is now
+`yifuwuqi`'s `systemd-resolved` stub, which answers no query locally and
+forwards every one of them to `yirukou`'s AdGuard over DNS-over-TLS. The stub is
+the whole of `yifuwuqi`'s resolver: no AdGuard, no Unbound, no cache.
 
 Local DNS is dual-stack over the LAN ULA with IPv6 preferred and IPv4 kept as
 fallback everywhere: host resolvers list the ULA or `::1` before IPv4, and
@@ -41,17 +56,21 @@ depends on public IPv6 — there is no IPv6 default route or egress, so public
 domains and all proxy/backend traffic are contacted over IPv4. Background:
 [IPv6 ULA vs GUA](../networking/ipv6-ula-gua.md).
 
+The stub is a single encrypted hop, not a second cache. `yifuwuqi` never
+resolves anything on its own behalf either: `eno1` carries `Domains = ~.` and
+the two DoT upstreams, while `enp4s0` runs `UseDNS = false`, `tailscale0` runs
+with `acceptDns = false`, and `FallbackDNS` is empty. Losing `eno1` therefore
+leaves that host with no resolver at all rather than a silent plaintext one;
+the `resolver-path` contract in `nix/checks.nix` pins all three.
+
 ### 1.1 AdGuard Home (The Edge Filter)
 
-- **Binding**: both hosts bind explicit addresses; the `::` wildcard is gone.
+- **Binding**: `yirukou` binds explicit addresses; the `::` wildcard is gone.
   Because the RDNSS targets are now static ULAs instead of rotating link-local
   addresses, `yirukou` can list them directly: `::1`, `fd75:c55f:6d19:1::1`,
   `fd75:c55f:6d19:2::1`, `127.0.0.1`, `10.42.0.1`, and its Tailscale address.
   It also binds VLAN 42's `10.42.42.1` for DHCPv4 clients.
-  No listener binds a WAN address. `yifuwuqi` binds `::1`,
-  `fd75:c55f:6d19:1::2`, and its IPv4 addresses, so it does not contend with
-  aardvark-dns on the container bridges. Web management remains IPv4 on port
-  `24333` on `yifuwuqi` and `3333` on `yirukou`.
+  No listener binds a WAN address. Web management is IPv4 on port `3333`.
 - **Memory Caching**: 64 MiB in-memory cache (`cache_enabled = true`, `cache_optimistic = true`, `cache_ttl_max = 300`) with `GOMEMLIMIT = 2560MiB`.
 - **Filtering Blocklists**:
   - `Hagezi Multi PRO` (Tracker & malware protection; `Hagezi Multi PRO++` stays defined but disabled)
@@ -74,9 +93,8 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   false so ULA AAAA answers work.
 - **Blocking**: Custom-IP blocking returns RFC 7534 AS112 `192.175.48.1` for A
   and `2620:4f:8000::1` for AAAA. Only yirukou assigns the sinkhole addresses
-  on `br0`; both AdGuard instances return them. Clients hold no IPv6 default
-  route, so the blocked AAAA is unreachable and fails immediately without a
-  round trip.
+  on `br0`. Clients hold no IPv6 default route, so the blocked AAAA is
+  unreachable and fails immediately without a round trip.
 
 ### 1.2 Unbound (The Recursive Root Resolver)
 
@@ -84,8 +102,8 @@ domains and all proxy/backend traffic are contacted over IPv4. Background:
   IPv4 and IPv6 loopback.
 - **Transport**: `do-ip6` stays `yes` because disabling it would also remove
   the `::1` listener AdGuard uses. Iteration to the internet is IPv4 in
-  practice, since neither host has an IPv6 default route.
-- **Host-local Valkey L2 Cache**: Configured with `module-config: "validator cachedb iterator"`. Each host runs its own Valkey and reaches it over the unix socket `/run/redis/redis.sock`; the cache survives Unbound restarts and reboots via RDB snapshots. The cache is intentionally not shared and never crosses the LAN: `cachedb` is synchronous, and the thread waiting on redis cannot serve other DNS queries, so upstream warns that frequent timeouts make Unbound "effectively unusable with this backend". A shared instance meant either resolver stalled whenever the link to the cache host dropped.
+  practice, since `yirukou` has no IPv6 default route.
+- **Host-local Valkey L2 Cache**: Configured with `module-config: "validator cachedb iterator"`. `yirukou` runs its own Valkey and reaches it over the unix socket `/run/redis/redis.sock`; the cache survives Unbound restarts and reboots via RDB snapshots. It is never shared across the LAN: `cachedb` is synchronous, and the thread waiting on redis cannot serve other DNS queries, so upstream warns that frequent timeouts make Unbound "effectively unusable with this backend". A shared instance meant the resolver stalled whenever the link to the cache host dropped.
 - **Stale-While-Revalidate (SWR)**: `serve-expired = "yes"`, `serve-expired-ttl = 86400`, `serve-expired-reply-ttl = 30` ensures queries are answered immediately from cache while background tasks revalidate expiring records.
 - **Control Socket & Metrics**: Control socket `/run/unbound/unbound.ctl` allows CLI inspection via `unbound-control` and feeds the Prometheus `unbound-exporter` with extended metrics.
 
@@ -117,6 +135,8 @@ ______________________________________________________________________
 ```
 
 Every service hostname is its registry key (`<key>.aset.love`); the `vhost-naming` contract in `nix/checks.nix` rejects nicknames.
+
+A catch-all vhost (`server_name _;`, `default_server` on 443 and the port-80 redirect listener) answers unmatched `Host` headers with `404 unknown host`. Without it, nginx falls back to the alphabetically-first vhost (`adguardhome.aset.love`) and unknown subdomains render the AdGuard UI.
 
 `yifuwuqi`'s local ingress (`modules/services/local-ingress.nix`) is one nginx listener on the LAN address, port `24120` (`services.ingress.port`). It has one vhost per proxied domain pointing at the loopback backend (a few that cannot bind loopback — jellyfin, jellyseerr, homepage, lidarr — keep the LAN address, `upstreamLan`), and rejects unknown `Host` headers with `404`. Only `yirukou` may reach it (the `yifuwuqi` firewall allows the gateway only `24120`; the vhosts also `allow`/`deny`). It preserves the real client IP, scheme, and host from `yirukou`'s `X-Forwarded-*`/`X-Real-IP` headers.
 
@@ -154,6 +174,14 @@ Every hop between `yirukou` and `yifuwuqi` is mutual TLS on that one ingress por
 - Upstreams name the peer (`proxy_ssl_name <peer>.lan`) rather than the IP: nginx matches with `X509_check_host()`, which never matches an `IP:` SAN.
 - The default vhost on each listener carries the machine paths. Prometheus and Vector cannot set `Host`, so they land there: `/<exporter>/` and, on `yifuwuqi`, `/loki/`. Those locations allow only the addresses that may connect and require a client certificate, but pin no subject — their callers are the scrape and log shippers.
 - Minting and distribution are in [secrets.md](secrets.md#internal-service-mtls-certificates); there is no per-host enrolment step.
+
+#### The one hop that is not mTLS
+
+`systemd-resolved` has no client-certificate option at all, so the resolver hop cannot be mutual. `yifuwuqi`'s stub reaches `yirukou`'s AdGuard DoT listener on `:853` with `DNSOverTLS = "yes"` and the name `dns.aset.love`: server-authenticated TLS, verified against the `aset.love` ACME wildcard rather than `service-ca`. That is the only inter-host flow that does not terminate at nginx, and it is an exception recorded here rather than an unstated gap. What it does not change: `:53` and `:853` stay open to LAN and VLAN 42 clients, so the certificate is relay authentication, not admission control — AdGuard's `bind_hosts` and the interface firewall are.
+
+#### Egress allowlist, log-only
+
+`modules/services/mtls.nix` also emits an `mtls-peer` nftables table on both hosts. It matches locally generated packets destined to a peer address and, for a new connection outside the allowlist, logs `mtls-peer:` at warn and accepts. It never rejects: admission is already enforced by the peer certificates, the per-location nginx allowlists and the per-interface firewall, and the output hook cannot tell a Tailnet client's forwarded traffic from the host's own. The allowlist is derived from the same registry as the ingress port, so a new flow shows up in `journalctl -k --grep mtls-peer` instead of failing silently. SSH, ICMP and WireGuard are the enumerated exceptions; see [sysctl-firewall.md](../networking/sysctl-firewall.md#inter-host-egress-allowlist).
 
 ______________________________________________________________________
 

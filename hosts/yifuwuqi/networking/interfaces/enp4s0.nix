@@ -18,7 +18,9 @@
         };
 
         dhcpV4Config = {
-          UseDNS = true;
+          # eno1 is the resolver: the fallback uplink must not add its router's
+          # DNS as a second path.
+          UseDNS = false;
           UseRoutes = false;
           UseGateway = true;
           RouteMetric = addresses.network.secondary.routeMetric;

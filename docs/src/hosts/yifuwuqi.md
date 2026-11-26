@@ -32,10 +32,10 @@ ______________________________________________________________________
 
 | Interface    | Type     | Address / Subnet                         | Role                                                                                                             |
 | ------------ | -------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `eno1`       | Physical | `10.42.0.2/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492, DNS `yirukou`, `Domains = ~.`)                                       |
-| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseGateway = true` at metric 200, `UseRoutes = false`, `UseDNS = true`)              |
+| `eno1`       | Physical | `10.42.0.2/24`, `fd75:c55f:6d19:1::2/64` | Primary dual-stack LAN interface (MTU 1492, DoT to `yirukou:853`, `Domains = ~.`)                                |
+| `enp4s0`     | Physical | Dynamic DHCPv4 in `192.168.0.0/24`       | Secondary/Fallback uplink (`UseGateway = true` at metric 200, `UseRoutes = false`, `UseDNS = false`)             |
 | `wlp2s0`     | Wireless | Disabled                                 | Wireless interface explicitly powered down (`ActivationPolicy = down`)                                           |
-| `tailscale0` | Tunnel   | `100.69.0.6/32`                          | Tailscale subnet router for `192.168.0.1/32` (`exitNodeHost = null`, no route acceptance, Tailscale SSH enabled) |
+| `tailscale0` | Tunnel   | `100.69.0.6/32`                          | Tailscale subnet router for `192.168.0.1/32` (`exitNodeHost = null`, `acceptDns = false`, Tailscale SSH enabled) |
 
 ### Network Tuning & Sysctl
 
@@ -52,11 +52,19 @@ ______________________________________________________________________
 - **Per-interface DNS & secondary stub**: `systemd-resolved` runs with
   `Cache = "no"`, `DNSStubListener = "yes"`, and `DNSStubListenerExtra` bound to
   `::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, and `100.69.0.6`.
-  `eno1` configures `yirukou` (`fd75:c55f:6d19:1::1`, `10.42.0.1`) with
-  `Domains = ~.`, while `enp4s0` sets `UseDNS = true`. Queries from the host,
-  Podman containers, and LAN/Tailscale clients using `yifuwuqi` as secondary
-  DNS defer to `yirukou` while `eno1` has carrier and automatically fall back
-  to `enp4s0` when `eno1` is down, with zero RAM cache or disk writes.
+  `eno1` is the host's only resolver path: it carries `Domains = ~.` and points
+  at `yirukou`'s AdGuard DoT listener (`fd75:c55f:6d19:1::1`, `10.42.0.1` on
+  `:853`) under the `dns.aset.love` name with `DNSOverTLS = "yes"`. The other
+  two paths are deliberately closed — `enp4s0` sets `UseDNS = false` so the
+  fallback uplink cannot inject its router as a resolver, `tailscale0` runs with
+  `acceptDns = false` so MagicDNS adds no second `~.` link, and
+  `FallbackDNS = []` clears the compiled-in public list. A lost `eno1` therefore
+  leaves no resolver at all rather than a silent plaintext one, which is the
+  visible failure. Queries from the host and from LAN/Tailscale clients using
+  `yifuwuqi` as secondary DNS cross that single encrypted hop; containers still
+  DNAT to the local stub on `10.42.0.2:53`, which then forwards over the same
+  hop rather than locally. `resolved` keeps `Cache = "no"`, so nothing is
+  buffered in RAM or written to disk.
 - **Container Isolation Firewall**: Strict nftables rules permitting container subnets (`10.88.0.0/16`, `172.17-18.0.0/16`, `10.89.0.0/24`) to reach host DNS (`10.42.0.2` `systemd-resolved` stub and local `aardvark-dns` bridge gateways) and specific service APIs (Lidarr 24686, SearXNG 24888) while dropping all forwarding to private subnets, redirecting any non-local TCP/UDP `53` container query to `10.42.0.2:53` (`yifuwuqi-dns`), and rejecting off-net container DoT/DoQ (`853`) and DoH (`443` to `publicDnsResolvers.ipv4`).
 - **Tailscale UDP GRO**: `tailscale-udp-gro.service` sets
   `rx-udp-gro-forwarding on rx-gro-list off` on `eno1` and `enp4s0` at boot,
@@ -188,7 +196,7 @@ ______________________________________________________________________
 - **Authelia**: Port 24140 (`authelia.aset.love`), the one login behind every gated vhost; see [Hosted Services](../services/hosted-services.md#29-authelia-modulesservicesauthelianix).
 - **Cockpit**: Port 24091 (`cockpit.aset.love`), server admin web console with plugins `cockpit-podman`, `cockpit-files`, `cockpit-dockermanager`, `cockpit-machines`, `cockpit-zfs`.
 - **Cloudflared**: OCI container connecting Cloudflare Tunnel to remote endpoints.
-- **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, deferring queries to `yirukou` on `eno1` or the fallback DHCP DNS on `enp4s0`.
+- **Secondary DNS Stub (`systemd-resolved`)**: Listens on explicit host addresses (`::1`, `fd75:c55f:6d19:1::2`, `127.0.0.1`, `10.42.0.2`, `100.69.0.6` via `DNSStubListenerExtra`, leaving container bridge gateways to `aardvark-dns`) with `Cache = "no"`, forwarding every query over DoT to `yirukou` on `eno1` only.
 - **Service Sandboxing**: Loki, Vector, opencode, SillyTavern, Seerr,
   `llama-cpp`, and `llama-cpp-idle-unload` adopt the `systemdHardening`
   baseline from `modules/hardening.nix`, whose per-unit exception inventory

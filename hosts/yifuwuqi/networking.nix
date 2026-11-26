@@ -23,6 +23,10 @@
   services.resolved.settings.Resolve = {
     DNSStubListener = "yes";
     DNSStubListenerExtra = addresses.dns.stubListenAddresses;
+    # Emptying this renders `FallbackDNS=` and clears the compiled-in public
+    # list, so a lost eno1 leaves no third resolver path behind. That failure
+    # is visible: eno1 also carries every LAN-facing service on this host.
+    FallbackDNS = [ ];
   };
 
   systemd.network = {

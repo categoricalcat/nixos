@@ -55,6 +55,51 @@ let
     lib.optionals config.services.nginx.enable [ "nginx" ]
     ++ lib.optionals config.services.prometheus.enable [ "prometheus" ]
     ++ lib.optionals config.services.vector.enable [ "vector" ];
+
+  # Ports the peer may open to `target`, derived once from the registry so the
+  # nftables allowlist below is generated rather than retyped. SSH and
+  # Tailscale are Decision 6 exceptions and are listed here because the table
+  # only logs: an exception that is absent would show up as noise, not as a
+  # break.
+  peerPorts =
+    target:
+    let
+      t = allAddresses.hosts.${target};
+    in
+    {
+      tcp = [
+        t.services.ingress.port
+        t.ssh.listenPort
+        22
+      ]
+      ++ lib.optionals (target == monitoring.proxyHost) [
+        853 # AdGuard DoT: the resolver hop (Decision 3)
+        443 # public vhosts, hairpin clients
+      ];
+      udp = [ config.services.tailscale.port ];
+    };
+
+  # Peer addresses split by family: nftables matches one family per
+  # expression, so a single `daddr` set cannot hold both.
+  peerAddressesByFamily =
+    target:
+    let
+      all = lib.unique (
+        let
+          t = allAddresses.hosts.${target};
+        in
+        [
+          t.network.lan.ipv4.host
+          t.network.lan.ipv6.host
+          t.network.vpn.ipv4.host
+        ]
+        ++ lib.optional (t.network.vpn ? ipv6) t.network.vpn.ipv6.host
+      );
+    in
+    {
+      v4 = lib.filter (a: !lib.hasInfix ":" a) all;
+      v6 = lib.filter (lib.hasInfix ":") all;
+    };
 in
 {
   options.yi.mtls = {
@@ -167,5 +212,29 @@ in
     systemd.services = lib.genAttrs mtlsUsers (_: {
       serviceConfig.SupplementaryGroups = [ "mtls" ];
     });
+
+    # Log-only peer-egress detector (Decision 7). Shares priority `filter` with
+    # the Forgejo runner's `sandbox-egress` table: both are `policy accept`,
+    # they key on disjoint selectors (destination address here, `skuid` there),
+    # and this one never returns a verdict. It only sees locally generated
+    # packets, so routed tailnet and WAN traffic is untouched.
+    networking.nftables.tables.mtls-peer = {
+      family = "inet";
+      content = ''
+        chain output {
+          type filter hook output priority filter; policy accept;
+          ip daddr { ${lib.concatStringsSep ", " (peerAddressesByFamily peer).v4} } jump to_peer
+          ip6 daddr { ${lib.concatStringsSep ", " (peerAddressesByFamily peer).v6} } jump to_peer
+        }
+
+        chain to_peer {
+          ct state established,related return
+          meta l4proto { icmp, ipv6-icmp } return
+          tcp dport { ${lib.concatMapStringsSep ", " toString (peerPorts peer).tcp} } return
+          udp dport { ${lib.concatMapStringsSep ", " toString (peerPorts peer).udp} } return
+          limit rate 5/second burst 10 packets log prefix "mtls-peer: " level warn
+        }
+      '';
+    };
   };
 }

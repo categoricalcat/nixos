@@ -12,11 +12,6 @@
     ../../modules/services/ai/sd-cpp.nix
   ];
 
-  networking.firewall.interfaces.${addresses.network.vpn.interface}.allowedTCPPorts = [
-    addresses.services.llama-cpp.port
-    addresses.services.sd-cpp.port
-  ];
-
   services = {
     llama-cpp-node = {
       enable = true;
@@ -27,10 +22,15 @@
       ];
     };
 
+    # The only client is `sd-cpp.aset.love` on yirukou, so the listener and the
+    # unit's own address filter both name that one peer. `llama-cpp-node` above
+    # cannot be narrowed the same way: `llama-server` dials HuggingFace when it
+    # loads a preset model, so an address filter would break its fetch.
     sd-cpp-node = {
       enable = true;
       backend = "vulkan";
-      listenAddress = "0.0.0.0";
+      listenAddress = addresses.network.vpn.ipv4.host;
+      allowedClients = [ allAddresses.hosts.yirukou.network.vpn.ipv4.host ];
     };
 
     lan-mouse.settings = {

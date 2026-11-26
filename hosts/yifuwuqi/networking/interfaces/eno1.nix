@@ -1,5 +1,13 @@
-{ addresses, ... }:
-
+# AdGuard's DoT listener validates against the ACME wildcard, and its
+# `server_name` is dns.<baseDomain>. Without the name `resolved` cannot check
+# the certificate, and `DNSOverTLS = "yes"` would then be unauthenticated
+# encryption rather than a verified hop.
+{
+  addresses,
+  allAddresses,
+  lib,
+  ...
+}:
 {
   systemd.network = {
     networks = {
@@ -7,7 +15,12 @@
         matchConfig.Name = addresses.network.lan.interface;
         networkConfig = {
           DHCP = "no";
-          DNS = addresses.dns.lanUpstreams;
+          # systemd.network(5) requires brackets when a port follows an IPv6
+          # address, so the v6 upstream is spelled [addr]:853#name.
+          DNS = map (
+            addr: "${if lib.hasInfix ":" addr then "[${addr}]" else addr}:853#dns.${allAddresses.baseDomain}"
+          ) addresses.dns.lanUpstreams;
+          DNSOverTLS = "yes";
           Domains = [ "~." ];
           MulticastDNS = "yes";
           IPv6AcceptRA = "no";

@@ -34,8 +34,9 @@ let
       resolver = true;
     }
     {
-      # Each host's own AdGuard -> Unbound chain is reached over its LAN
-      # address, which loopback probes could not express for both families.
+      # Probed on this host's own LAN address, so the `dns`/`dns6` self-probe
+      # crosses the local stub, the resolver hop and AdGuard in one request.
+      # The host has run no Unbound since the resolver moved to yirukou.
       name = "yifuwuqi";
       scope = "lan";
       tier = "1-lan";

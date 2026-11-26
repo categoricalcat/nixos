@@ -31,6 +31,7 @@ Apply these domain rules whenever authoring, refactoring, or reviewing Nix expre
 - **Store secret hygiene:** Anything interpolated into a Nix string or read via `builtins.readFile` lands world-readable (`0444`) in `/nix/store`. Bind `config.sops.secrets.<name>.path` at runtime via systemd `LoadCredential` / `EnvironmentFile` or service-native file directives.
 - **Module laziness and merging:** Keep `imports` static (never conditioned on `config`), never combine `lib.mkIf` blocks with shallow `//` (use `lib.mkMerge`), and avoid Import From Derivation (IFD).
 - **Executables and shell-in-Nix:** Prefer `lib.getExe` / `lib.getExe'` over `"${pkg}/bin/..."`, and prefer `pkgs.writeShellApplication` (or standalone `.sh` files checked by `treefmt`) over `pkgs.writeShellScriptBin` or unchecked inline bash heredocs.
+- **Proportionate verification:** Scale the eval to the edit. A small local change (one file, one option, one host) is verified with `nix eval` on the affected `toplevel.drvPath` plus formatting and lint on the touched files; a build only if the change alters a derivation's content. Reserve `nix flake check --no-build` for large or cross-cutting changes — a `flake.nix`/`flake.lock` edit, a new module or host, a `nix/checks.nix` contract change, or several hosts' module graphs at once — because it re-evaluates every output for little extra signal on a narrow edit.
 
 ## 5. Route the task
 

@@ -87,6 +87,10 @@ in
         DynamicUser = true;
         WorkingDirectory = "/";
         PrivateTmp = true;
+        # The binary ignores `listenAddress` and binds every interface, so the
+        # firewall is not what keeps :9617 off the LAN — this filter is.
+        IPAddressDeny = "any";
+        IPAddressAllow = "localhost";
         # Hardening
         CapabilityBoundingSet = [ "" ];
         DeviceAllow = [ "" ];

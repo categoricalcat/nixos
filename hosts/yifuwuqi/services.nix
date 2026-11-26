@@ -72,6 +72,9 @@
     # on, so on-LAN peers see 100% packet loss to this host.
     exitNodeHost = null;
     acceptRoutes = false;
+    # MagicDNS off: eno1 is the one resolver path this host is allowed, and a
+    # second `~.` link from tailscale0 would race it and survive a DoT cutover.
+    acceptDns = false;
     ssh = true;
   };
 

@@ -409,6 +409,134 @@ let
       lib.attrNames hardening.units
     );
 
+  # --- resolver-path ---------------------------------------------------------
+  # yifuwuqi keeps exactly one resolver path (eno1 -> yirukou's DoT listener),
+  # and that path is encrypted. Nothing generates these settings: they are
+  # hand-written per host, and dropping any one of them silently adds a
+  # plaintext path rather than breaking anything, which is the case a runtime
+  # check cannot see. A DHCP-backed link is the future-facing half: a new
+  # interface with DHCP on inherits the lease's DNS unless it refuses it.
+  resolverPath =
+    let
+      cfg = self.nixosConfigurations.yifuwuqi.config;
+      networks = cfg.systemd.network.networks;
+      # A DHCP-backed link that accepts the lease's DNS is a plaintext resolver
+      # path that no `DNS=` inspection would reveal.
+      leaseDnsLinks = lib.attrNames (
+        lib.filterAttrs (
+          _: n: ((n.networkConfig or { }).DHCP or "no") != "no" && ((n.dhcpV4Config or { }).UseDNS or false)
+        ) networks
+      );
+      carriesServers = lib.filterAttrs (_: n: ((n.networkConfig or { }).DNS or [ ]) != [ ]) networks;
+      # `DNSOverTLS = "yes"` is the strict profile: no plaintext fallback. The
+      # name after `#` is what makes the certificate checkable at all.
+      plainLinks = lib.attrNames (
+        lib.filterAttrs (_: n: ((n.networkConfig or { }).DNSOverTLS or "no") != "yes") carriesServers
+      );
+      unnamedUpstreams = lib.concatMap (
+        n: lib.filter (s: !lib.hasInfix "#" s) ((networks.${n}.networkConfig or { }).DNS or [ ])
+      ) (lib.attrNames carriesServers);
+    in
+    contractIssues "resolver-path" "yifuwuqi" (
+      lib.optional (leaseDnsLinks != [ ]) "DHCP links accept the lease DNS: ${toString leaseDnsLinks}"
+      ++ lib.optional cfg.yi.tailscale.acceptDns "yi.tailscale.acceptDns is true, so tailscaled adds a MagicDNS link"
+      ++ lib.optional (
+        (((cfg.services.resolved.settings or { }).Resolve or { }).FallbackDNS or null) != [ ]
+      ) "FallbackDNS is not empty, so a lost eno1 falls back to the compiled-in public list"
+      ++ lib.optional (
+        plainLinks != [ ]
+      ) "links carry DNS servers without DNSOverTLS = yes: ${toString plainLinks}"
+      ++
+        lib.optional (unnamedUpstreams != [ ])
+          "upstreams have no #server-name, so their certificate is unverifiable: ${toString unnamedUpstreams}"
+    );
+
+  # --- listener-exposure -----------------------------------------------------
+  # Decision 11's disposition table as a closed list: every port a host opens
+  # must be here with the reason it is not an nginx vhost, and every row here
+  # must still match a declared port. The table is deliberately hand-written,
+  # not derived: deriving it would restate the config and notice nothing, while
+  # a closed list makes a new port fail until someone records its disposition.
+  #
+  # A port list on an interface in `trustedInterfaces` is always a finding:
+  # nixpkgs' input chain accepts the whole interface before `input-allow` is
+  # consulted, so the list reads as a scope and enforces nothing.
+  listenerExceptions = {
+    yifuwuqi = {
+      tcp = {
+        "53" = "systemd-resolved stub: LAN, tailnet and container DNS";
+        "139" = "Samba NetBIOS session, no HTTP shape";
+        "445" = "Samba SMB, no HTTP shape";
+        "3000" = "workd dev server: Phase 6a residue until it binds loopback";
+        "6006" = "workd dev server: Phase 6a residue until it binds loopback";
+        "24212" = "OpenSSH, the recovery lane (Decision 6)";
+      };
+      udp = {
+        "53" = "systemd-resolved stub";
+        "137" = "NetBIOS name service, no HTTP shape";
+        "138" = "NetBIOS datagram service, no HTTP shape";
+      };
+    };
+    yirukou = {
+      tcp = {
+        "53" = "AdGuard Home: the LAN, VLAN 42 and tailnet resolver";
+        "80" = "nginx: the port-80 redirect and hairpin clients";
+        "443" = "nginx: the gate itself and the public vhosts";
+        "853" = "AdGuard DoT/DoQ: DDR advertises it, and it is the resolver hop";
+        "3443" = "AdGuard DoH: DDR advertises this exact port";
+        "24212" = "OpenSSH, the recovery lane (Decision 6)";
+      };
+      udp = {
+        "53" = "AdGuard Home";
+        "67" = "Kea DHCPv4 server";
+        "853" = "AdGuard DoQ: DDR advertises it";
+        "51820" = "WireGuard on the WAN interfaces, transport (Decision 6)";
+      };
+    };
+    yitaishi = { };
+    yixiaoqing = { };
+  };
+
+  listenerExposure = lib.map (
+    host:
+    let
+      fw = self.nixosConfigurations.${host}.config.networking.firewall;
+      exceptions = listenerExceptions.${host} or { };
+      declared =
+        proto:
+        map toString (
+          lib.unique (
+            lib.concatMap (
+              iface:
+              (fw.interfaces.${iface}."allowed${proto}" or [ ])
+              ++ (fw.interfaces.${iface}."allowed${proto}Ranges" or [ ])
+            ) (lib.attrNames fw.interfaces)
+          )
+        );
+      # `TCPPorts` is the firewall option suffix; `tcp` is the table key.
+      protoIssues =
+        key: suffix:
+        let
+          listed = declared suffix;
+          allowed = exceptions.${key} or { };
+          unlisted = lib.filter (p: !(allowed ? ${p})) listed;
+          # An exception that no port list carries any more is a stale row: the
+          # disposition changed and the table was not updated with it.
+          staleRows = lib.filter (p: !lib.elem p listed) (lib.attrNames allowed);
+        in
+        lib.optional (unlisted != [ ]) "${suffix} with no exception: ${toString unlisted}"
+        ++ lib.optional (staleRows != [ ]) "${suffix} exceptions matching no port: ${toString staleRows}";
+      trustedWithPorts = lib.filter (iface: fw.interfaces.${iface} or { } != { }) fw.trustedInterfaces;
+    in
+    contractIssues "listener-exposure" host (
+      protoIssues "tcp" "TCPPorts"
+      ++ protoIssues "udp" "UDPPorts"
+      ++ lib.optional (
+        trustedWithPorts != [ ]
+      ) "trusted interfaces carry port lists, which enforce nothing: ${toString trustedWithPorts}"
+    )
+  ) (lib.attrNames self.nixosConfigurations);
+
   # --- deploy registry derivation (A4) ---------------------------------------
   deployNodes = lib.attrNames self.deploy.nodes;
   registryDeployable = lib.attrNames (lib.filterAttrs (_: host: host.deploy) addresses.hosts);
@@ -478,6 +606,8 @@ let
       vhostNaming
       edgeNoTcp
       deploySshPort
+      resolverPath
+      listenerExposure
     ];
 in
 {

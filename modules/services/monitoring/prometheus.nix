@@ -67,30 +67,40 @@ let
     { metrics_path = "/loki/metrics"; } // ingressTls
   );
 
-  # One blackbox probe job for every (scrape host x probe), minus the host's
-  # own peer entry: pinging itself measures nothing the adguard and unbound
-  # exporters do not already cover. The blackbox module name equals the
-  # probe's layer.
+  # One blackbox probe job for every (scrape host x probe). A host skips its
+  # own peer entry for every layer except DNS: ICMP and HTTP self-probes
+  # measure nothing the exporters do not already cover, but the `dns`/`dns6`
+  # self-probe is what keeps the resolver chain under test — on `yifuwuqi` that
+  # chain is stub -> DoT -> AdGuard -> Unbound, so the relay hop is measured
+  # without a second exporter. The blackbox module name equals the probe's
+  # layer.
+  selfProbeable = probe: probe.scope == "lan" && lib.hasPrefix "dns" probe.layer;
   probeScrapeConfig = {
     job_name = "probe";
     metrics_path = "/blackbox/probe";
     static_configs = lib.concatMap (
       host:
-      map (probe: {
-        targets = [ probe.target ];
-        labels = {
-          inherit host;
-          inherit (probe)
-            layer
-            family
-            peer
-            scope
-            tier
-            ;
-          __param_module = probe.layer;
-          __tmp_address = exporterTarget host;
-        };
-      }) (lib.filter (probe: probe.peer != host) monitoring.probes)
+      map
+        (probe: {
+          targets = [ probe.target ];
+          labels = {
+            inherit host;
+            inherit (probe)
+              layer
+              family
+              peer
+              scope
+              tier
+              ;
+            __param_module = probe.layer;
+            __tmp_address = exporterTarget host;
+          };
+        })
+        (
+          lib.filter (
+            probe: if selfProbeable probe then probe.peer == host else probe.peer != host
+          ) monitoring.probes
+        )
     ) monitoring.scrapeHosts;
     relabel_configs = [
       {

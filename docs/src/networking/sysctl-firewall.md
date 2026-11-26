@@ -142,11 +142,16 @@ LAN addresses through the advertised subnet, not only direct Tailscale IPs.
 configures least-privilege rules for container traffic to the host:
 
 - Trusted interface: `tailscale0`.
-- Allowed on `eno1` (LAN): SSH, AdGuard Home web UI, AdGuard Home DNS (`53`),
-  and Samba/NetBIOS (`139`, `445`, `137`, `138`). The port rules are
-  family-agnostic, so they cover LAN IPv4 and the ULA `fd75:c55f:6d19:1::2`
-  alike; no explicit `ip6` rules are required.
-- Gateway traffic: `yirukou` reverse proxy and DNS resolver traffic allowed.
+- Allowed on `eno1` (LAN): SSH, the `systemd-resolved` stub (`53`), the
+  `workd` dev servers (`3000`, `6006`), and Samba/NetBIOS (`139`, `445`, `137`,
+  `138`). The port rules are family-agnostic, so they cover LAN IPv4 and the
+  ULA `fd75:c55f:6d19:1::2` alike; no explicit `ip6` rules are required. There
+  is no application port on this list: every nginx-frontable backend binds
+  loopback or the LAN address and is reached through the local ingress.
+- Gateway traffic: `yirukou` reaches the mTLS ingress (`24120`) and nothing
+  else; it is also the resolver, so no DNS port is opened on this host for it.
+- Inter-host egress: see
+  [Inter-Host Egress Allowlist](#inter-host-egress-allowlist).
 - Container least-privilege isolation:
   - DNS resolution: UDP/TCP `53` allowed from container subnets
     (`10.88.0.0/16`, `10.89.0.0/24`, `172.17.0.0/16`, `172.18.0.0/16`).
@@ -170,6 +175,32 @@ configures least-privilege rules for container traffic to the host:
 - NixOS accepts DNAT before custom forward rules. FlareSolverr is consequently
   loopback-published; the remaining published container ports move behind the
   local ingress in Service Security Phase 3.
+
+## Inter-Host Egress Allowlist
+
+`modules/services/mtls.nix` installs an `mtls-peer` table on `yifuwuqi` and
+`yirukou` only (the module's `peer` is a two-host relation and throws
+elsewhere). It hooks `output` at `priority filter`, jumps on `ip daddr` /
+`ip6 daddr` sets built from the peer's registry addresses, and in the jumped
+chain:
+
+- returns established and related connections, ICMP and ICMPv6 unchanged;
+- returns the allowlisted ports, derived from the registry rather than retyped:
+  `24120` ingress, SSH (`24212` and 22) and UDP `41641`; `yirukou` additionally
+  admits `853` (the resolver hop) and `443` (public vhosts);
+- logs everything else, rate-limited to `5/second burst 10 packets`, prefix
+  `mtls-peer:`, and accepts.
+
+Nothing is rejected. The table is a detector, not an admission gate: admission
+is already enforced by the peer client certificates, the per-location nginx
+allowlists and the per-interface firewall, and the output hook cannot
+distinguish a Tailnet client's forwarded traffic from the host's own. Because it
+only sees locally generated packets, routed Tailnet and WAN traffic never
+reaches it.
+
+`networking.nftables.checkRuleset` is on by default, so `nft --check` runs on
+the rendered ruleset during every build and a malformed table fails the
+build rather than the boot.
 
 ## Source Files
 

@@ -33,7 +33,9 @@ Whenever an agent executes or resumes a plan — however the session opens, e.g.
 - You are a deterministic implementation tool: your purpose is to maximize the probability that every change is verifiably up-to-spec.
 - **Verify before hand-off**: Never rely on hope or hand off unverified work. Validate non-destructively before declaring completion:
   - Run formatting, syntax, lint, and dead code checks where applicable (e.g. `treefmt --fail-on-change` or `nix fmt -- --fail-on-change`, `deadnix <file>`, `nixf-diagnose <file>`, `statix check <file>`, `nixfmt --check <file>`).
-  - Run non-destructive evaluations (e.g. `nix flake check --no-build` or evaluating target derivations) to guarantee zero evaluation errors.
+  - Run non-destructive evaluations of the derivations you actually changed (e.g. `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`) to guarantee zero evaluation errors. Prefer the narrowest evaluation that covers the edit; a one-line change needs one eval, not the whole gate.
+  - Reserve `nix flake check --no-build` for large or cross-cutting changes — a `flake.nix`/`flake.lock` edit, a new module or host, a change to `nix/checks.nix` contracts, or anything touching several hosts' module graphs. On a small, local edit it re-evaluates the entire flake for little added signal and burns minutes.
+  - Re-run a full gate only when the change can plausibly affect outputs beyond the files you touched.
 - **Audit your diff**: Run `git diff` before completing your turn. Every line *you* modified must trace directly to an explicit requirement in the prompt or plan. Revert any of your own gratuitous refactoring, style churn, or stray files — never revert or complain about pre-existing user changes in the working tree or stage.
 - **Present proof**: Hand off verified changes with concrete evaluation or test evidence, accompanied by the exact command for the user to execute.
 

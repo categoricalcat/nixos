@@ -24,12 +24,19 @@ in
   };
 
   config = lib.mkIf (cfg.settings != { }) {
-    networking.firewall.interfaces = {
-      ${config.services.tailscale.interfaceName} = lib.mkIf config.services.tailscale.enable {
-        allowedTCPPorts = [ 4242 ];
-        allowedUDPPorts = [ 4242 ];
-      };
-    };
+    # A trusted interface is accepted wholesale by nixpkgs' `input` chain
+    # before `input-allow` is consulted, so a port list on one enforces
+    # nothing and only reads as a scope. Client-mode hosts trust
+    # `tailscale0`; a server-mode host does not and needs the rule.
+    networking.firewall.interfaces =
+      lib.mkIf
+        (!lib.elem config.services.tailscale.interfaceName config.networking.firewall.trustedInterfaces)
+        {
+          ${config.services.tailscale.interfaceName} = lib.mkIf config.services.tailscale.enable {
+            allowedTCPPorts = [ 4242 ];
+            allowedUDPPorts = [ 4242 ];
+          };
+        };
 
     home-manager.users.yi = {
       home.packages = [ pkgs.lan-mouse ];

@@ -61,6 +61,25 @@ let
   tailscaleDeps = lib.optional (
     config.services.tailscale.enable && cfg.listenAddress != "127.0.0.1" && cfg.listenAddress != "::1"
   ) "tailscaled.service";
+
+  # A wildcard bind answers on loopback too, so it is the one case where a
+  # loopback probe is correct; any other bind address has no loopback listener.
+  wildcardBind = lib.elem cfg.listenAddress [
+    "0.0.0.0"
+    "::"
+  ];
+
+  # `postStart` proves the server answers before the unit goes active, so it
+  # has to dial the address the server actually bound. A tailnet-only bind has
+  # no loopback listener, so probing 127.0.0.1 there would hang until the
+  # TimeoutStartSec budget ran out and then fail the start.
+  probeHost =
+    if wildcardBind then
+      "127.0.0.1"
+    else if lib.hasInfix ":" cfg.listenAddress then
+      "[${cfg.listenAddress}]"
+    else
+      cfg.listenAddress;
 in
 {
   options.services.sd-cpp-node = {
@@ -79,6 +98,17 @@ in
       type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address sd-server listens on.";
+    };
+
+    allowedClients = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Extra addresses admitted by the unit's `IPAddressDeny = "any"` filter,
+        on top of loopback. Empty leaves the unit open to every address that
+        can reach `listenAddress`, which is only correct when that address is
+        already private to the host.
+      '';
     };
   };
 
@@ -159,7 +189,7 @@ in
         environment.HOME = cacheDir;
 
         postStart = ''
-          until curl -fso /dev/null http://127.0.0.1:${toString addresses.services.sd-cpp.port}/v1/models; do
+          until curl -fso /dev/null http://${lib.escapeShellArg probeHost}:${toString addresses.services.sd-cpp.port}/v1/models; do
             sleep 0.2
           done
         '';
@@ -204,10 +234,15 @@ in
           ];
           TimeoutStartSec = "15min";
           IPAddressDeny = "any";
+          # The filter matches sources on ingress and destinations on egress,
+          # so a specific bind address has to be listed for the unit's own
+          # readiness probe to reach it. Only this host holds that address, and
+          # WireGuard authenticates peers, so it cannot be spoofed.
           IPAddressAllow = [
             "localhost"
-            "100.64.0.0/10"
-          ];
+          ]
+          ++ cfg.allowedClients
+          ++ lib.optional (!wildcardBind) cfg.listenAddress;
           Restart = "on-failure";
           RestartSec = 5;
         };

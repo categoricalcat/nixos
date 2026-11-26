@@ -37,6 +37,17 @@ in
       description = "Whether client-mode hosts should accept advertised Tailscale subnet routes.";
     };
 
+    acceptDns = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether tailscaled may point systemd-resolved at MagicDNS. A host that
+        must keep exactly one resolver path turns this off, because
+        `--accept-dns=true` adds a second `~.` link resolver alongside the one
+        networkd declares.
+      '';
+    };
+
     exitNodeHost = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -62,13 +73,13 @@ in
       baseFlags =
         if isServer then
           [
-            "--accept-dns=true"
+            "--accept-dns=${lib.boolToString cfg.acceptDns}"
             "--advertise-routes=${lib.concatStringsSep "," cfg.advertiseRoutes}"
             "--advertise-exit-node=${if cfg.routingMode == "both" then "true" else "false"}"
           ]
         else
           [
-            "--accept-dns=true"
+            "--accept-dns=${lib.boolToString cfg.acceptDns}"
             "--accept-routes=${if cfg.acceptRoutes then "true" else "false"}"
             # An empty value to `--exit-node` clears the pref, so a host
             # that previously had one assigned drops it on the next rebuild.
@@ -85,6 +96,18 @@ in
         extraUpFlags = runtimeFlags;
         extraSetFlags = runtimeFlags;
       };
+
+      # nixpkgs makes `tailscaled-set` a oneshot `wantedBy` the daemon, so it
+      # runs only when `tailscaled` starts. That is why a deploy declaring
+      # `--accept-dns=false` left the daemon holding `true`: the switch did not
+      # restart `tailscaled`, so the setter never ran. A finished oneshot is
+      # `inactive (dead)`, and `switch-to-configuration` walks only active
+      # units, so it is invisible there too — a changed unit file cannot restart
+      # it. `RemainAfterExit` keeps it `active (exited)`, which puts it back in
+      # that walk: the start script embeds every flag, so a flag change alters
+      # the unit file and the next switch re-runs `tailscale set`. The daemon is
+      # never restarted.
+      systemd.services.tailscaled-set.serviceConfig.RemainAfterExit = true;
 
       networking.firewall = {
         # Clients trust the overlay wholesale (lan-mouse, distributed builds);
