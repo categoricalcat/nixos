@@ -112,7 +112,6 @@ in
 
       environment = {
         HOME = opencodeHome;
-        OPENCODE_ENABLE_EXA = "0";
         XDG_CONFIG_HOME = opencodeConfigHome;
         OPENCODE_CONFIG = opencodeConfigPath;
       };

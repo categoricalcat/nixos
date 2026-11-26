@@ -5,16 +5,16 @@
   ...
 }:
 let
-  ai = import ../../modules/services/ai/models.nix { inherit lib; };
+  inherit (import ../../modules/services/ai/models.nix { inherit lib; }) opencodeModelsForHost;
   inherit (import ../../modules/addresses.nix) hosts;
   hostName = if osConfig == null then null else osConfig.networking.hostName;
   # Firecrawl's API listens on yifuwuqi's localhost only, so the MCP (declared
   # in users/home/mcp.nix via programs.mcp) and the research agent exist there
-  # alone; other hosts use the built-in default agent and reach Firecrawl by ssh.
+  # alone; other hosts keep only the built-in agents.
   onYifuwuqi = hostName == "yifuwuqi";
 
   # yifuwuqi's router listens on loopback only, so only yifuwuqi can reach it.
-  llamaProviders = lib.filterAttrs (host: _: host != "yifuwuqi" || hostName == "yifuwuqi") {
+  llamaProviders = lib.filterAttrs (host: _: host != "yifuwuqi" || onYifuwuqi) {
     yifuwuqi = {
       id = "local";
       name = "Local (yifuwuqi)";
@@ -24,17 +24,13 @@ let
       name = "Workstation (yitaishi)";
     };
   };
-  # Shared by every agent that gets the firecrawl tools: explicit enable (MCP
-  # tools default on, this documents intent) plus non-interactive allow. One
-  # name list derives both sets; the top-level permission block reuses the
-  # permission set instead of repeating the names.
-  firecrawlToolNames = [
-    "firecrawl_map"
-    "firecrawl_scrape"
-    "firecrawl_search"
-  ];
-  firecrawlTools = lib.genAttrs firecrawlToolNames (_: true);
-  firecrawlPermission = lib.genAttrs firecrawlToolNames (_: "allow");
+
+  rule = action: resource: effect: { inherit action resource effect; };
+  allow = action: resource: rule action resource "allow";
+  deny = action: resource: rule action resource "deny";
+  # Scoped to build and plan only; putting this globally would override
+  # explore/general's built-in `subagent * deny`.
+  subagentAsk = [ (rule "subagent" "*" "ask") ];
 in
 {
   config = {
@@ -44,100 +40,140 @@ in
       # Pulls the shared firecrawl MCP server from programs.mcp (users/home/mcp.nix)
       # on yifuwuqi without duplicating its store path or endpoint URLs.
       enableMcpIntegration = true;
+      # Fails the build when a key no longer exists in the OpenCode 2 schema
+      # (`contextWindow`, `tools`, `variant`, … were all silently dropped in
+      # the v1 → v2 migration and only surfaced at runtime).
+      validateFiles.config = true;
 
       settings = {
-        model = "deepseek/deepseek-v4-flash";
-        default_agent = lib.mkIf onYifuwuqi "research";
-        enabled_providers = [ "deepseek" ] ++ lib.mapAttrsToList (_: p: p.id) llamaProviders;
-        agent = {
-          plan = {
-            variant = "max";
+        model = "deepseek/deepseek-flash";
+        # Research is read-only/web-only and cannot edit or run shell commands,
+        # so it is opt-in rather than the default for every session.
+        default_agent = "build";
+        # Built-in websearch ships Exa (mcp.exa.ai); disable it on all hosts
+        # (yifuwuqi serves local SearXNG via firecrawl_search).
+        websearch = false;
+
+        # Ordered policies: `tool.use` runs as a post-evaluation hook in
+        # Permission.evaluate across every agent and after saved approvals, so
+        # invariant secret/shell/websearch denies cannot be shadowed by agent
+        # allows or leaked into locked-down built-in agents (summary/title).
+        policies = [
+          (deny "provider.use" "*")
+          (deny "websearch.use" "*")
+          (deny "tool.use" "websearch:*")
+        ]
+        ++ lib.map (id: allow "provider.use" id) (
+          [ "deepseek" ] ++ lib.mapAttrsToList (_: p: p.id) llamaProviders
+        )
+        # OpenCode 2's wildcard matcher turns `*` into `.*` with no globstar
+        # semantics, and FileAccess resolves interior paths relative without a
+        # leading `/` while directory reads have no trailing `/`. The 4 forms
+        # match exact dirs and descendants both relative and absolute (so
+        # `*/secrets*` also covers `/run/secrets`) without blocking
+        # `docs/src/services/secrets.md` or `ai-ssh.md`. `external_directory`
+        # additionally gates grep/glob/shell outside the workspace.
+        ++ lib.map (p: deny "tool.use" "${p.action}:${p.pattern}") (
+          lib.cartesianProduct {
+            action = [
+              "read"
+              "edit"
+              "external_directory"
+            ];
+            pattern =
+              lib.concatMap
+                (dir: [
+                  dir
+                  "${dir}/*"
+                  "*/${dir}"
+                  "*/${dir}/*"
+                ])
+                [
+                  "secrets"
+                  "persist/keys"
+                  ".ssh"
+                ];
           }
-          // lib.optionalAttrs onYifuwuqi {
-            tools = firecrawlTools;
-            permission = firecrawlPermission;
+        )
+        # Remote-access and privileged binaries are denied outright; `ai-ssh`
+        # is the only sanctioned remote lane (read-only, server-enforced).
+        # `rtk ssh*` is denied too because `rtk` is installed in the user
+        # environment (users/home/common.nix).
+        ++ lib.map (cmd: deny "tool.use" "shell:${cmd}") [
+          "mosh*"
+          "nix switch*"
+          "nixos-rebuild boot*"
+          "nixos-rebuild switch*"
+          "nixos-rebuild test*"
+          "rsync*"
+          "rtk ssh*"
+          "scp*"
+          "sops*"
+          "ssh*"
+          "sshfs*"
+          "sudo*"
+        ];
+
+        # Plain values only: settings is a JSON option, so host-conditional
+        # agents use `lib.optionalAttrs` rather than `mkIf`. `build` and `plan`
+        # inherit built-in `* * allow` (covering MCP `firecrawl_*` on yifuwuqi)
+        # and only add `subagent * ask`; omitting top-level `permissions` keeps
+        # `summary`, `title`, `explore`, and `general` at their built-in bounds.
+        agents = {
+          build.permissions = subagentAsk;
+          # `#max` selects the model variant; v2 dropped the agent-level `variant` key.
+          plan = {
+            model = "deepseek/deepseek-flash#max";
+            permissions = subagentAsk;
           };
-          # build keeps its default toolset and gains the firecrawl research
-          # tools; research additionally locks out everything else.
-          build = lib.mkIf onYifuwuqi {
-            tools = firecrawlTools;
-            permission = firecrawlPermission;
-          };
-          research = lib.mkIf onYifuwuqi {
+        }
+        // lib.optionalAttrs onYifuwuqi {
+          research = {
             description = "Current web research through local SearXNG search and Firecrawl scrape/map";
             mode = "primary";
             # Served by the Vulkan llama-server router (ROCm on the Ryzen 680M
             # APU corrupts prompts beyond ~4k tokens; Vulkan does not).
             model = "local/deepseek-v4-pro-qwen3.5-9b-uncensored";
-            temperature = 0.2;
-
-            # Gate via tools only. Do not set permission."*" = "deny" here:
-            # OpenCode last-match can let that blanket deny win over
-            # firecrawl_* allows when rules are merged.
-            # Search + scrape verified e2e (2026-11-17, via
-            # packages/firecrawl-mcp; search against SearXNG, scrape against
-            # the self-hosted instance); map added 2026-11-20, same MCP.
-            tools = firecrawlTools // {
-              "*" = false;
-            };
-            permission = firecrawlPermission;
+            request.body.temperature = 0.2;
+            # OpenCode 2 evaluates agent permissions last-match-wins, so the
+            # blanket deny comes first and explicit allows follow; invariant
+            # secret denies apply globally via `policies` (`tool.use`).
+            permissions = [
+              (deny "*" "*")
+            ]
+            ++ lib.map (action: allow action "*") [
+              "read"
+              "grep"
+              "glob"
+              "skill"
+              "webfetch"
+              "question"
+              "firecrawl_map"
+              "firecrawl_scrape"
+              "firecrawl_search"
+            ]
+            ++ [
+              (rule "read" "*.env" "ask")
+              (rule "read" "*.env.*" "ask")
+              (allow "read" "*.env.example")
+            ];
           };
         };
-        provider = {
-          deepseek.options.apiKey = "{file:/run/secrets/tokens/deepseek}";
+
+        providers = {
+          deepseek.settings.apiKey = "{file:/run/secrets/tokens/deepseek}";
         }
         // lib.mapAttrs' (
           host: p:
           lib.nameValuePair p.id {
             inherit (p) name;
-            npm = "@ai-sdk/openai-compatible";
-            options.baseURL = "http://${
+            package = "@ai-sdk/openai-compatible";
+            settings.baseURL = "http://${
               if hostName == host then "127.0.0.1" else hosts.${host}.network.vpn.ipv4.host
             }:${toString hosts.${host}.services.llama-cpp.port}/v1";
-            models = ai.opencodeModelsForHost host;
+            models = opencodeModelsForHost host;
           }
         ) llamaProviders;
-
-        # Own zero-dependency MCP server (packages/firecrawl-mcp), declared once
-        # in users/home/mcp.nix (programs.mcp.servers.firecrawl) and pulled in
-        # via enableMcpIntegration on yifuwuqi: natively named tools
-        # search/scrape/map -> OpenCode registers the canonical
-        # firecrawl_search / firecrawl_scrape / firecrawl_map, with small flat
-        # schemas. search queries the local SearXNG JSON API 1:1 and lossless
-        # (categories, engines, language, time_range, pageno, timeout_limit,
-        # with safesearch pinned to 0 so filtering is always off; category
-        # names come from the instance's own GET /config
-        # listing) and returns SearXNG's whole JSON answer verbatim; scrape and
-        # map stay on the Firecrawl API.
-
-        permission = {
-          webfetch = "allow";
-          websearch = "allow";
-          question = "allow";
-          task = "ask";
-
-          # Raw remote-access binaries are denied outright; the only sanctioned
-          # lane is `ai-ssh <host> <command>` (read-only gate, server-enforced).
-          # The repo rule prefixes shell commands with `rtk`, so that form is
-          # denied too. Anything not listed here keeps the default (ask).
-          # No overlapping patterns => no order dependence.
-          bash = {
-            "ssh*" = "deny";
-            "scp*" = "deny";
-            "sshfs*" = "deny";
-            "mosh*" = "deny";
-            "rtk ssh*" = "deny";
-            "rsync*" = "deny";
-            "sudo*" = "deny";
-            "sops*" = "deny";
-            "nixos-rebuild switch*" = "deny";
-            "nixos-rebuild boot*" = "deny";
-            "nixos-rebuild test*" = "deny";
-            "nix switch*" = "deny";
-            "ai-ssh*" = "allow";
-          };
-        }
-        // firecrawlPermission;
       };
     };
   };

@@ -71,12 +71,13 @@ let
 
   skillFiles = skill: file: map (target: "${target}/${skill}/${file}") agentSkillDirs;
   skillPaths = name: skillFiles name "SKILL.md";
+  # OpenCode 2 has no per-rule directory: always-on rules reach it as
+  # ~/.config/opencode/AGENTS.md (below) and as skills.
   rulePaths = name: [
     ".cursor/rules/${name}.mdc"
     ".claude/rules/${name}.md"
     ".agents/rules/${name}.md"
     ".gemini/config/rules/${name}.md"
-    ".opencode/rules/${name}.md"
   ];
 
   makePolicyFile =
@@ -127,9 +128,12 @@ let
     skill: policy: distribute (ref: skillFiles skill "references/${ref}") (_: lib.id) policy.references
   ) skillPolicies;
 
-  # Zed has no per-rule files: always-on rules live in one personal AGENTS.md.
-  # Skills reach Zed via ~/.agents/skills (see agentSkillDirs).
-  zedInstructions = pkgs.writeText "zed-AGENTS.md" (
+  # One markdown document from the always-on rule policies, shared by every
+  # agent runner that takes a single global AGENTS.md (Zed and OpenCode 2).
+  # OpenCode 2 loads ~/.config/opencode/AGENTS.md into every session without a
+  # tool call, so always-on rules apply even when an agent has no `read` access;
+  # skills reach Zed via ~/.agents/skills (see agentSkillDirs).
+  globalAgentsFile = pkgs.writeText "AGENTS.md" (
     lib.concatStringsSep "\n" (
       lib.mapAttrsToList (name: policy: "# ${name}\n\n${policy.body}") rulePolicies
     )
@@ -139,9 +143,12 @@ let
     (distribute skillPaths makeSkillFile skillPolicies)
     // (distribute rulePaths makeRuleFile rulePolicies)
     // referenceFiles
-    // {
-      ".config/zed/AGENTS.md" = zedInstructions;
-    };
+    // lib.optionalAttrs (rulePolicies != { }) (
+      lib.genAttrs [
+        ".config/zed/AGENTS.md"
+        ".config/opencode/AGENTS.md"
+      ] (_: globalAgentsFile)
+    );
 in
 {
   home = {

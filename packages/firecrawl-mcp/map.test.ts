@@ -53,6 +53,15 @@ test("map rejects out-of-bounds limits and bad types", async () => {
     [{ includeSubdomains: "no" }, /includeSubdomains/],
     [{ search: 7 }, /search/],
     [{ url: "" }, /url/],
+    [{ url: "file:///etc/hosts" }, /file: is not supported.*file tools/],
+    [{ url: "/home/yi/models.nix" }, /absolute http\(s\) URL.*file tools/],
+    [
+      { url: "ftp://example.com" },
+      /^map: ftp: is not supported \(http and https only\)$/,
+    ],
+    [{ url: "http:foo" }, /absolute http\(s\) URL/],
+    [{ url: "  https://example.com  " }, /absolute http\(s\) URL/],
+    [{ url: "https://example.com\n" }, /absolute http\(s\) URL/],
   ]);
 });
 

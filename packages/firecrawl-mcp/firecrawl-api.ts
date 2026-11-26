@@ -91,6 +91,12 @@ export function optionalInt(
   return value;
 }
 
+const LOCAL_FILE_HINT =
+  "local files are read with the file tools, never through Firecrawl";
+
+// Absolute http(s) URL only. Agents ask for `file://` (and bare paths) when
+// they want a local file; Firecrawl answers those with an opaque "Bad
+// Request", so reject them here with a message that names the right tool.
 export function requireUrl(
   tool: string,
   arguments_: Record<string, unknown>,
@@ -99,6 +105,35 @@ export function requireUrl(
 
   if (!isNonEmptyString(url)) {
     throw new TypeError(`${tool}: url must be a non-empty string`);
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(
+      `${tool}: url must be an absolute http(s) URL (${LOCAL_FILE_HINT}), got: ${url}`,
+    );
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    const fileHint = parsed.protocol === "file:" ? `; ${LOCAL_FILE_HINT}` : "";
+    throw new Error(
+      `${tool}: ${parsed.protocol} is not supported (http and https only)${fileHint}`,
+    );
+  }
+
+  // WHATWG URL strips surrounding whitespace/control chars and accepts
+  // slashless special-scheme URLs like `http:foo`; reject them so we never
+  // forward a malformed raw string to Firecrawl.
+  if (
+    !/^https?:\/\//i.test(url) ||
+    url.trim() !== url ||
+    /[\t\r\n]/.test(url)
+  ) {
+    throw new Error(
+      `${tool}: url must be an absolute http(s) URL, got: ${url}`,
+    );
   }
 
   return url;

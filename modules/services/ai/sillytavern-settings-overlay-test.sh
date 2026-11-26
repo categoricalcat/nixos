@@ -43,9 +43,9 @@ assert_idempotent() {
 assert_jq '
   .main_api == "openai"
   and .oai_settings.chat_completion_source == "custom"
-  and .oai_settings.custom_model == "gemma-4-12b-uncensored"
+  and .oai_settings.custom_model == "mag-mell-12b-uncensored"
   and .oai_settings.custom_url == "http://127.0.0.1:11436/v1"
-  and .oai_settings.openai_max_context == 65536
+  and .oai_settings.openai_max_context == 32768
   and .oai_settings.max_context_unlocked == true
   and .oai_settings.openai_max_tokens == 4096
   and .oai_settings.temp_openai == 1.0
@@ -73,11 +73,11 @@ assert_jq '
 ' "$target" "initial seed missed expected sd settings or upstream prompts"
 
 assert_jq '
-  .extension_settings.connectionManager.selectedProfile == "nix:yifuwuqi:gemma-4-12b-uncensored"
+  .extension_settings.connectionManager.selectedProfile == "nix:yifuwuqi:mag-mell-12b-uncensored"
   and ([.extension_settings.connectionManager.profiles[].id] == [
         "nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored",
-        "nix:yifuwuqi:gemma-4-12b-uncensored",
-        "nix:yitaishi:gemma-4-26b-a4b-uncensored",
+        "nix:yifuwuqi:mag-mell-12b-uncensored",
+        "nix:yitaishi:cydonia-24b-uncensored",
         "nix:yitaishi:qwen3.8-27b-uncensored"
       ])
   and ([.extension_settings.connectionManager.profiles[] | has("contextLength")] | any | not)
@@ -116,8 +116,8 @@ assert_jq '
   and .extension_settings.connectionManager.selectedProfile == "user-uuid-1"
   and ([.extension_settings.connectionManager.profiles[].id] == [
         "nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored",
-        "nix:yifuwuqi:gemma-4-12b-uncensored",
-        "nix:yitaishi:gemma-4-26b-a4b-uncensored",
+        "nix:yifuwuqi:mag-mell-12b-uncensored",
+        "nix:yitaishi:cydonia-24b-uncensored",
         "nix:yitaishi:qwen3.8-27b-uncensored",
         "user-uuid-1"
       ])
@@ -125,17 +125,17 @@ assert_jq '
 assert_idempotent
 
 # 4a. Selecting another valid nix:* profile stays selected and syncs its endpoint and contextLength.
-jq '.extension_settings.connectionManager.selectedProfile = "nix:yitaishi:gemma-4-26b-a4b-uncensored"' \
+jq '.extension_settings.connectionManager.selectedProfile = "nix:yitaishi:cydonia-24b-uncensored"' \
   "$target" >"${target}.tmp"
 mv -f "${target}.tmp" "$target"
 "$overlay_bin" "$target" "$default_file" "$overlay_json"
 assert_jq '
   .main_api == "openai"
-  and .extension_settings.connectionManager.selectedProfile == "nix:yitaishi:gemma-4-26b-a4b-uncensored"
+  and .extension_settings.connectionManager.selectedProfile == "nix:yitaishi:cydonia-24b-uncensored"
   and .oai_settings.chat_completion_source == "custom"
   and .oai_settings.custom_url == "http://100.69.0.4:11436/v1"
-  and .oai_settings.custom_model == "gemma-4-26b-a4b-uncensored"
-  and .oai_settings.openai_max_context == 98304
+  and .oai_settings.custom_model == "cydonia-24b-uncensored"
+  and .oai_settings.openai_max_context == 65536
 ' "$target" "valid user-selected nix profile was overwritten or endpoint/context did not sync"
 assert_idempotent
 
@@ -146,11 +146,11 @@ mv -f "${target}.tmp" "$target"
 "$overlay_bin" "$target" "$default_file" "$overlay_json"
 assert_jq '
   .main_api == "openai"
-  and .extension_settings.connectionManager.selectedProfile == "nix:yifuwuqi:gemma-4-12b-uncensored"
+  and .extension_settings.connectionManager.selectedProfile == "nix:yifuwuqi:mag-mell-12b-uncensored"
   and .oai_settings.chat_completion_source == "custom"
   and .oai_settings.custom_url == "http://127.0.0.1:11436/v1"
-  and .oai_settings.custom_model == "gemma-4-12b-uncensored"
-  and .oai_settings.openai_max_context == 65536
+  and .oai_settings.custom_model == "mag-mell-12b-uncensored"
+  and .oai_settings.openai_max_context == 32768
 ' "$target" "removed nix selectedProfile did not fall back to default or restore endpoint"
 assert_idempotent
 

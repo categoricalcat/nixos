@@ -120,7 +120,21 @@ test("scrape forwards its options and rejects out-of-bounds ones", async () => {
     [{ includeTags: [""] }, /includeTags/],
     [{ onlyMainContent: "yes" }, /onlyMainContent/],
     [{ url: "" }, /url/],
+    // Firecrawl answers non-http schemes with a bare "Bad Request"; fail here
+    // with an actionable message instead.
+    [{ url: "file:///etc/hosts" }, /file: is not supported.*file tools/],
+    [{ url: "/home/yi/models.nix" }, /absolute http\(s\) URL.*file tools/],
+    [
+      { url: "ftp://example.com" },
+      /^scrape: ftp: is not supported \(http and https only\)$/,
+    ],
+    [{ url: "http:foo" }, /absolute http\(s\) URL/],
+    [{ url: "  https://example.com  " }, /absolute http\(s\) URL/],
+    [{ url: "https://example.com\n" }, /absolute http\(s\) URL/],
   ]);
+
+  await callTool("scrape", { url: "HTTPS://example.com" });
+  assert.deepEqual(captured, { url: "HTTPS://example.com" });
 });
 
 test("scrape preserves HTTP status when Firecrawl returns a JSON null error body", async () => {

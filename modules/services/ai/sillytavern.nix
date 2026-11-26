@@ -60,7 +60,7 @@ let
   );
 
   defaultHost = "yifuwuqi";
-  defaultModel = "gemma-4-12b-uncensored";
+  defaultModel = "mag-mell-12b-uncensored";
   defaultProfileId = "nix:${defaultHost}:${defaultModel}";
   defaultProfile = lib.findFirst (p: p.id == defaultProfileId) null profiles;
 

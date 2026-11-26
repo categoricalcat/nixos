@@ -1,10 +1,10 @@
 # Declarative local LLM and diffusion model registry.
 #
-# Sized for Q8_0 KV cache on each host's Vulkan device:
+# Sized for Q8_0 KV cache (34/32 B/elem) on each host's Vulkan device:
 #   - yifuwuqi: Radeon 680M APU (4 GiB carved VRAM + 9.65 GiB GTT out of 19.3 GiB RAM)
-#     -> Gemma 4 12B (~6.87 GiB weights, 7381381760 B + ~0.9 GB 64k KV cache via
-#        its 8 global-attention layers; 128k fits GTT too, but ~73-107 tok/s UMA
-#        prefill makes >64k prompts impractical)
+#     -> Mag Mell 12B (~6.96 GiB i1-Q4_K_M weights, 7477206400 B + ~2.66 GiB 32k
+#        KV cache via its 40 full-attention layers; 64k KV would take ~5.31 GiB
+#        and squeeze both the 13.65 GiB GPU cap and the 19.3 GiB shared host RAM)
 #     -> DeepSeek-V4-Pro-Qwen3.5-9B (~7.04 GiB i1-Q6_K weights, 7558903968 B +
 #        ~1.1 GiB 64k KV cache via 8 full-attention + 24 DeltaNet layers)
 #   - yitaishi: Radeon RX 7900 XTX (24 GiB GDDR6)
@@ -12,8 +12,10 @@
 #        via its 16 full-attention layers, 48 DeltaNet layers stay constant;
 #        128k would need ~4.3 GB KV and leave <0.5 GiB VRAM next to the measured
 #        ~2 GiB idle desktop and sd-cpp's demand cache)
-#     -> Gemma 4 26B-A4B MoE (~15.64 GiB weights, 16796015136 B, 3.8B active +
-#        ~1.2 GiB 96k KV cache via 5 global + 25 sliding-window layers)
+#     -> Cydonia 24B (~13.35 GiB i1-Q4_K_M weights, 14333911392 B + ~5.31 GiB
+#        64k KV cache via its 40 full-attention layers; 96k KV would take
+#        ~7.97 GiB and exceed 24 GiB VRAM once compute buffers and the ~2 GiB
+#        idle desktop are counted)
 #     -> Chroma1-HD Q8_0 (CPU-backed weights, demand-cached on the GPU while rendering)
 { lib }:
 let
@@ -31,30 +33,33 @@ let
       };
     };
 
-    "gemma-4-12b-uncensored" = {
+    "mag-mell-12b-uncensored" = {
       targetHost = "yifuwuqi";
-      tools = true;
-      # The Heretic template force-prefills the thought channel on every turn,
-      # so thinking cannot be disabled; `reasoning = false` only added
-      # `reasoning-format=none`, leaking raw thought markers into `content`.
-      # Keep reasoning on with unrestricted budget so llama.cpp's gemma4 parser
-      # extracts full thoughts into `reasoning_content`.
-      reasoning = true;
-      contextLength = 65536;
+      # Plain ChatML RP merge with neither tool-call syntax nor thought channel;
+      # keep both off so OpenCode never emits tool calls or expects
+      # `reasoning_content`, and llama.cpp sets `reasoning-format=none`.
+      tools = false;
+      reasoning = false;
+      contextLength = 32768;
       llamaCpp = {
-        hfRepo = "zaakirio/gemma-4-12b-it-uncensored-GGUF";
-        quant = "Q4_K_M";
+        # Multi-stage merge of Mistral-Nemo RP/prose tunes (R1 revision); imatrix Q4_K_M quant.
+        hfRepo = "mradermacher/MN-12B-Mag-Mell-R1-i1-GGUF";
+        quant = "i1-Q4_K_M";
       };
     };
 
-    "gemma-4-26b-a4b-uncensored" = {
+    "cydonia-24b-uncensored" = {
       targetHost = "yitaishi";
-      tools = true;
-      reasoning = true;
-      contextLength = 98304;
+      # Mistral-Small-3.2 RP tune; GGUF template supports user/system/assistant
+      # only (raises on `tool` role) and has no thought channel.
+      tools = false;
+      reasoning = false;
+      contextLength = 65536;
       llamaCpp = {
-        hfRepo = "llmfan46/gemma-4-26B-A4B-it-ultra-uncensored-heretic-GGUF";
-        quant = "Q4_K_M";
+        # Heretic v1.1.0 abliteration (5/100 refusals, 0.0447 KL) over Cydonia
+        # v4.3, a Mistral-Small-3.2-24B RP tune; imatrix Q4_K_M quant.
+        hfRepo = "mradermacher/Cydonia-24B-v4.3-heretic-i1-GGUF";
+        quant = "i1-Q4_K_M";
       };
     };
 
@@ -104,22 +109,35 @@ let
       };
     };
 
+  # OpenCode 2 model shape: `limit` bounds the request, `capabilities` decides
+  # which tool calls the client may emit. Every local build runs --no-mmproj,
+  # so input is text only; llama-server takes `max_tokens` and answers with
+  # `reasoning_content` only for reasoning-enabled models (setting
+  # `reasoningField` unconditionally implies `requireReasoning` in OpenCode 2).
+  # llama-server sets no n_predict ceiling, so `output` is the per-request cap
+  # the client asks for, sized to leave the context to the prompt.
   opencodeModelsForHost =
     host:
-    lib.mapAttrs (
-      name: m:
-      {
-        inherit name;
-        contextWindow = m.contextLength;
-      }
-      // lib.optionalAttrs m.tools {
-        tools = true;
-        tool_call = true;
+    lib.mapAttrs (_: m: {
+      limit = {
+        context = m.contextLength;
+        output = 8192;
+      };
+      compatibility = {
+        maxTokensField = "max_tokens";
       }
       // lib.optionalAttrs m.reasoning {
-        reasoning = true;
+        reasoningField = "reasoning_content";
+      };
+      capabilities = {
+        inherit (m) tools;
+        input = [ "text" ];
+        output = [ "text" ];
       }
-    ) (modelsForHost host);
+      // lib.optionalAttrs m.reasoning {
+        reasoning.supported = true;
+      };
+    }) (modelsForHost host);
 in
 {
   inherit imageModelsForHost modelsForHost opencodeModelsForHost;

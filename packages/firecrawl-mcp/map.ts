@@ -33,7 +33,13 @@ export const mapDefinition = {
           "rather than filtering them; limit cuts the list before ranking).",
         type: "string",
       },
-      url: { description: "Base URL to map.", format: "uri", type: "string" },
+      url: {
+        description:
+          "Base URL to map; absolute http(s) URL only (a site, never a " +
+          "local path).",
+        format: "uri",
+        type: "string",
+      },
     },
     required: ["url"],
     type: "object",

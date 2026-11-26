@@ -51,7 +51,13 @@ export const scrapeDefinition = {
         minimum: SCRAPE_TIMEOUT_MIN_MS,
         type: "integer",
       },
-      url: { description: "Page to scrape.", format: "uri", type: "string" },
+      url: {
+        description:
+          "Page to scrape; absolute http(s) URL only (local files are read " +
+          "with the file tools, never through Firecrawl).",
+        format: "uri",
+        type: "string",
+      },
       waitFor: {
         description: `Wait ms after load, integer 0-${WAIT_FOR_MAX_MS}; at most half of timeout when both are set.`,
         maximum: WAIT_FOR_MAX_MS,

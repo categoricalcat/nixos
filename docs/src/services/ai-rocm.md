@@ -11,8 +11,8 @@ ______________________________________________________________________
 │                     yifuwuqi (24/7 Core Server)                         │
 │  AMD Ryzen 9 6900HX · Radeon 680M APU (4 GiB VRAM + 9.65 GiB GTT)       │
 │  llama-cpp.service (Vulkan RADV · 127.0.0.1:11436 · --models-max 1)     │
-│   ├─ deepseek-v4-pro-qwen3.5-9b-uncensored  (i1-Q6_K · 64k · think on)  │
-│   └─ gemma-4-12b-uncensored                 (Q4_K_M  · 64k · think on)  │
+│   ├─ deepseek-v4-pro-qwen3.5-9b-uncensored  (i1-Q6_K  · 64k · think on) │
+│   └─ mag-mell-12b-uncensored                (i1-Q4_K_M · 32k · think off)│
 └───────────────────┬───────────────────────────────┬─────────────────────┘
                     │ loopback                      │ loopback
                     ▼                               ▼
@@ -26,7 +26,7 @@ ______________________________________________________________________
 │                     yitaishi (24 GiB Workstation)                       │
 │  AMD Ryzen 7 7700X · Radeon RX 7900 XTX (24 GiB GDDR6 · gfx1100)        │
 │  llama-cpp.service (Vulkan RADV · 127.0.0.1,100.69.0.4:11436 · max 1)   │
-│   ├─ gemma-4-26b-a4b-uncensored  (Q4_K_M    · 96k ctx · thinking on)    │
+│   ├─ cydonia-24b-uncensored      (i1-Q4_K_M · 64k ctx · thinking off)   │
 │   └─ qwen3.8-27b-uncensored      (UD-Q4_K_XL · 96k ctx · thinking on)   │
 │  sd-cpp.service (Vulkan RADV · 0.0.0.0:11437 · tailscale0 + localhost)  │
 │   └─ chroma1-hd                  (Q8_0 · 1024x1024 · --offload-to-cpu)  │
@@ -47,13 +47,13 @@ ______________________________________________________________________
 
 ## 3. Central Model Registry (`modules/services/ai/models.nix`)
 
-`models.nix` declares two hardware-sized uncensored LLM models per host (all Heretic-abliterated) plus the uncensored `chroma1-hd` diffusion model on `yitaishi`:
+`models.nix` declares two hardware-sized uncensored LLM models per host (one Heretic-abliterated reasoning/tool model and one uncensored roleplay model) plus the uncensored `chroma1-hd` diffusion model on `yitaishi`:
 
 | Model ID                                | Target Host | Port    | Context / Resolution | Quantization | Source Repository                                                    | Notes                      |
 | --------------------------------------- | ----------- | ------- | -------------------- | ------------ | -------------------------------------------------------------------- | -------------------------- |
 | `deepseek-v4-pro-qwen3.5-9b-uncensored` | `yifuwuqi`  | `11436` | `65536`              | `i1-Q6_K`    | `mradermacher/DeepSeek-V4-Pro-Qwen3.5-9B-UNCENSORED-heretic-i1-GGUF` | Tools: Yes, Reasoning: Yes |
-| `gemma-4-12b-uncensored`                | `yifuwuqi`  | `11436` | `65536`              | `Q4_K_M`     | `zaakirio/gemma-4-12b-it-uncensored-GGUF`                            | Tools: Yes, Reasoning: Yes |
-| `gemma-4-26b-a4b-uncensored`            | `yitaishi`  | `11436` | `98304`              | `Q4_K_M`     | `llmfan46/gemma-4-26B-A4B-it-ultra-uncensored-heretic-GGUF`          | Tools: Yes, Reasoning: Yes |
+| `mag-mell-12b-uncensored`               | `yifuwuqi`  | `11436` | `32768`              | `i1-Q4_K_M`  | `mradermacher/MN-12B-Mag-Mell-R1-i1-GGUF`                            | Tools: No, Reasoning: No   |
+| `cydonia-24b-uncensored`                | `yitaishi`  | `11436` | `65536`              | `i1-Q4_K_M`  | `mradermacher/Cydonia-24B-v4.3-heretic-i1-GGUF`                      | Tools: No, Reasoning: No   |
 | `qwen3.8-27b-uncensored`                | `yitaishi`  | `11436` | `98304`              | `UD-Q4_K_XL` | `ajgazin/Qwen3.8-27B-Heretic-Dynamic-GGUF`                           | Tools: Yes, Reasoning: Yes |
 | `chroma1-hd`                            | `yitaishi`  | `11437` | `1024x1024`          | `Q8_0`       | `silveroxides/Chroma1-HD-GGUF`                                       | Uncensored 8.9B Flux DiT   |
 
@@ -76,14 +76,18 @@ ______________________________________________________________________
 - **Domain**: `https://sillytavern.aset.love` (proxied to loopback port `24000` via local ingress).
 - **Security & Isolation**: Dedicated non-root user `sillytavern` under strict systemd hardening, `StateDirectoryMode = "0700"`, `UMask = "0077"`, `0700` data directory permissions, `0600` config/settings, loopback-only (`listen = false`), single passwordless `default-user` (`enableUserAccounts = false`), and `minLogLevel = 1` (`INFO`) so prompt/reply debug payloads never reach journald or Loki.
 - **Declarative Config & Profiles**: Ordered after `llama-cpp.service`. `config.yaml` is generated via `pkgs.formats.yaml` (with `hostWhitelist.hosts = [ "sillytavern.aset.love" ]`, `hostWhitelist.scan = false`, `extensions.autoUpdate = false`; SillyTavern populates omitted upstream defaults from `default/config.yaml` on startup), and `settings.json` receives an idempotent startup overlay derived directly from `models.nix` and `hosts.nix`:
-  - **Default Active Chat Profile**: `yifuwuqi / gemma-4-12b-uncensored` (`http://127.0.0.1:11436/v1`, `chat_completion_source = "custom"`, `openai_max_context = 65536`, `openai_max_tokens = 4096`, `stream_openai = true`, `temp_openai = 1.0`, `top_p_openai = 0.95`, `show_thoughts = true`, `reasoning_effort = "max"`, `verbosity = "low"`, `custom_include_body = "reasoning_effort: xhigh"`, `custom_prompt_post_processing = "semi_tools"`, `media_inlining = false` since local LLMs have `--no-mmproj`).
-  - **Connection Manager (`nix:*`)**: Exposes all four uncensored LLM profiles (`nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored`, `nix:yifuwuqi:gemma-4-12b-uncensored`, `nix:yitaishi:gemma-4-26b-a4b-uncensored`, and `nix:yitaishi:qwen3.8-27b-uncensored`), while preserving user-created profiles and unrelated UI state.
+  - **Default Active Chat Profile**: `yifuwuqi / mag-mell-12b-uncensored` (`http://127.0.0.1:11436/v1`, `chat_completion_source = "custom"`, `openai_max_context = 32768`, `openai_max_tokens = 4096`, `stream_openai = true`, `temp_openai = 1.0`, `top_p_openai = 0.95`, `show_thoughts = true`, `reasoning_effort = "max"`, `verbosity = "low"`, `custom_include_body = "reasoning_effort: xhigh"`, `custom_prompt_post_processing = "semi_tools"`, `media_inlining = false` since local LLMs have `--no-mmproj`).
+  - **Connection Manager (`nix:*`)**: Exposes all four uncensored LLM profiles (`nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored`, `nix:yifuwuqi:mag-mell-12b-uncensored`, `nix:yitaishi:cydonia-24b-uncensored`, and `nix:yitaishi:qwen3.8-27b-uncensored`), while preserving user-created profiles and unrelated UI state.
   - **Image Generation (`sdcpp`)**: Preconfigured for `chroma1-hd` on `http://100.69.0.4:11437` (`sampler = "euler"`, `scale = 3.5`, `steps = 20`, `1024x1024`, `refine_mode = true` prompt editing).
 
 ### 5.2 Opencode Agent (`modules/services/opencode.nix`, `users/programs/opencode.nix`)
 
 - **Domain**: `https://opencode.aset.love` (proxied to port `24010`).
-- **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The Firecrawl MCP is registered only on `yifuwuqi`, where the Firecrawl API listens on `localhost:24002`; its tools are wired into the `research` (web-only lockdown), `build`, and `plan` agents there. Other hosts use the built-in default agent (remote Firecrawl use goes via `ssh`).
+- **Providers**: Exposes `deepseek` and `yitaishi` (`127.0.0.1:11436` on `yitaishi`, `100.69.0.4:11436` over Tailscale elsewhere) everywhere, plus `local` (`127.0.0.1:11436`) only on `yifuwuqi`, whose router is loopback-only. The Firecrawl MCP is registered only on `yifuwuqi`, where the Firecrawl API listens on `localhost:24002`; its tools are wired into the `research`, `build`, and `plan` agents there.
+- **Config shape (OpenCode 2)**: everything lives in v2 keys — `policies` (`provider.use`, `websearch.use`, and `tool.use`), per-agent `agents.<name>.permissions`, `websearch = false`, and `providers.<id>.{package,settings,models}` with per-model `limit`/`capabilities`/`compatibility` (`reasoningField` is emitted only for reasoning-enabled models). `agent.tools`, `agent.permission`, `enabled_providers`, `agent.variant`, and `contextWindow` are v1 keys that v2 silently drops or migrates into a trailing `* * deny`; `programs.opencode.validateFiles.config` fails the build if one returns.
+- **Invariant denies (`policies`)**: `tool.use` runs as a post-evaluation hook in `Permission.evaluate` across every agent and after saved approvals, avoiding both agent-rule shadowing and top-level `permissions` leakage into locked-down built-in agents (`summary`, `title`, `explore`, `general`). It denies built-in `websearch` (disabling the bundled Exa plugin on all hosts alongside `websearch = false` and `websearch.use`), the forbidden `shell:*` binaries (leaving `ai-ssh` allowed), and secret directories (`secrets`, `persist/keys`, `.ssh`) on `read`/`edit`/`external_directory` using the four exact `U2` wildcard forms (`dir`, `dir/*`, `*/dir`, `*/dir/*` — `U2` turns `*` into `.*` with no globstar semantics, and `FileAccess` produces relative paths without leading `/` inside the workspace and paths without trailing `/` for directory reads). Boundary: `external_directory` gates `grep`/`glob`/`shell` outside the workspace (`/run/secrets`, `/persist/keys`, `~/.ssh`), whereas workspace-interior `grep`/`glob` checks only the search pattern (`secrets/` in git holds only sops ciphertext), and starting a session with `cwd` directly inside a secret directory omits the parent segment.
+- **Agents**: on all hosts, `build` is the default and `plan` uses `#max` reasoning, both with `subagent` set to `ask`. On `yifuwuqi`, `build` and `plan` inherit the Firecrawl MCP tools under built-in `* * allow`, and `research` is added as a read-only, web-only primary agent (allows `read`/`grep`/`glob`/`skill`, `webfetch`, `question`, and the three `firecrawl_*` tools after a blanket deny — no `edit`, `shell`, `subagent`, or built-in `websearch`).
+- **Always-on rules**: `~/.config/opencode/AGENTS.md` is generated from the `isRule` policies (sharing a single `AGENTS.md` derivation with Zed), so the etiquette and code-quality bodies load into every session without a tool call; skills under `~/.opencode/skills` remain available for task-specific guidance.
 
 ### 5.3 Firecrawl MCP Server (`packages/firecrawl-mcp`)
 

@@ -9,8 +9,8 @@ Add local, uncensored Text-to-Speech (TTS) character voice synthesis to SillyTav
 ## Current state
 
 - **LLM & image topology** (`modules/services/ai/models.nix`, `modules/services/ai/llama-cpp.nix`, `modules/services/ai/sd-cpp.nix`):
-  - `yifuwuqi` (Radeon 680M APU, 4 GiB carved VRAM + 9.65 GiB GTT out of 19.3 GiB RAM) serves `deepseek-v4-pro-qwen3.5-9b-uncensored` (`i1-Q6_K`, STEM/OpenCode `research` default) and `gemma-4-12b-uncensored` (`Q4_K_M`, 24/7 roleplay default) via `llama-server` router (`--models-max 1`, `--no-mmproj`).
-  - `yitaishi` (Radeon RX 7900 XTX, 24 GiB VRAM) serves `qwen3.8-27b-uncensored` (`UD-Q4_K_XL`, STEM/reasoning) and `gemma-4-26b-a4b-uncensored` (`Q4_K_M`, roleplay MoE) via `llama-server` router (`--models-max 1`), plus `chroma1-hd` (`Q8_0`) via `sd-server` (`--offload-to-cpu`).
+  - `yifuwuqi` (Radeon 680M APU, 4 GiB carved VRAM + 9.65 GiB GTT out of 19.3 GiB RAM) serves `deepseek-v4-pro-qwen3.5-9b-uncensored` (`i1-Q6_K`, 64k, STEM/OpenCode `research` default) and `mag-mell-12b-uncensored` (`i1-Q4_K_M`, 32k, 24/7 roleplay default) via `llama-server` router (`--models-max 1`, `--no-mmproj`).
+  - `yitaishi` (Radeon RX 7900 XTX, 24 GiB VRAM) serves `qwen3.8-27b-uncensored` (`UD-Q4_K_XL`, 96k, STEM/reasoning) and `cydonia-24b-uncensored` (`i1-Q4_K_M`, 64k, roleplay) via `llama-server` router (`--models-max 1`), plus `chroma1-hd` (`Q8_0`) via `sd-server` (`--offload-to-cpu`).
 - **SillyTavern TTS extension** (`pkgs.sillytavern` `1.19.1`, `public/scripts/extensions/tts/`):
   - Upstream `defaultSettings` (`public/scripts/extensions/tts/index.js`) defaults `currentProvider` to `"ElevenLabs"` (cloud) with `ttsEnabled = false`.
   - SillyTavern `1.19.1` ships native client providers for:
