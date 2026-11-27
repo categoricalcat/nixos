@@ -21,8 +21,10 @@ if [ -e "$target" ]; then
     exit 1
   fi
   base_file="$target"
+  is_initial="false"
 else
   base_file="$default_file"
+  is_initial="true"
 fi
 
 tmp_file=""
@@ -36,10 +38,21 @@ trap cleanup EXIT
 tmp_file="$(mktemp "${target_dir}/.settings.json.XXXXXX")"
 chmod 0600 "$tmp_file"
 
-jq --slurpfile overlay "$overlay_file" '
+jq --slurpfile overlay "$overlay_file" --argjson is_initial "$is_initial" '
+  def fillMissing($defaults):
+    reduce ($defaults | to_entries[]) as $entry (.;
+      if .[$entry.key] == null then
+        .[$entry.key] = $entry.value
+      elif ((.[$entry.key] | type) == "object" and ($entry.value | type) == "object") then
+        .[$entry.key] |= fillMissing($entry.value)
+      else
+        .
+      end
+    );
+
   ($overlay[0]) as $o
   | ($o.extension_settings.connectionManager.profiles // []) as $rawNixProfiles
-  | ($rawNixProfiles | map(del(.contextLength))) as $nixProfiles
+  | ($rawNixProfiles | map(del(.contextLength, .oaiSettings, .reasoningSettings))) as $nixProfiles
   | ($o.extension_settings.connectionManager.selectedProfile // null) as $defaultSelected
   | ((.extension_settings.connectionManager.profiles // [])
       | map(select(((.id? // "") | tostring | startswith("nix:")) | not))) as $userProfiles
@@ -53,23 +66,30 @@ jq --slurpfile overlay "$overlay_file" '
      end) as $nextSelected
   | ($rawNixProfiles | map(select(.id == $nextSelected)) | .[0] // null) as $activeNix
   | ($o
-      | del(.extension_settings.connectionManager)
+      | del(.extension_settings.connectionManager, .seedPowerUser)
       | if $activeNix != null then
-          .oai_settings = ((.oai_settings // {}) + {
+          .oai_settings = ((.oai_settings // {}) + ($activeNix.oaiSettings // {}) + {
             chat_completion_source: ($activeNix.api // .oai_settings.chat_completion_source),
             custom_url: ($activeNix."api-url" // .oai_settings.custom_url),
             custom_model: ($activeNix.model // .oai_settings.custom_model),
             openai_max_context: ($activeNix.contextLength // .oai_settings.openai_max_context)
           })
         else
-          del(
-            .main_api,
-            .oai_settings.chat_completion_source,
-            .oai_settings.custom_url,
-            .oai_settings.custom_model,
-            .oai_settings.openai_max_context
-          )
+          del(.main_api, .oai_settings)
         end) as $scalarOverlay
+  | ($o.seedPowerUser // {}) as $seedPU
+  | .power_user = (
+      if $is_initial then
+        ((.power_user // {}) * $seedPU)
+      else
+        ((.power_user // {}) | fillMissing($seedPU))
+      end
+      | if $activeNix != null then
+          .reasoning = ((.reasoning // {}) * ($activeNix.reasoningSettings // {}))
+        else
+          .
+        end
+    )
   | (. * $scalarOverlay)
   | .extension_settings.connectionManager = (
       (.extension_settings.connectionManager // {})

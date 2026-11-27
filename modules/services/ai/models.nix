@@ -150,5 +150,10 @@ let
     }) (modelsForHost host);
 in
 {
-  inherit defaultModels imageModelsForHost modelsForHost opencodeModelsForHost;
+  inherit
+    defaultModels
+    imageModelsForHost
+    modelsForHost
+    opencodeModelsForHost
+    ;
 }

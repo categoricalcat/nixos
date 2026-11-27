@@ -15,6 +15,10 @@ let
   cfg = config.yi.services.sillytavern;
   stRoot = "${pkgs.sillytavern}/lib/node_modules/sillytavern";
   yifuwuqiSt = allAddresses.hosts.yifuwuqi.services.sillytavern;
+  stateDir = "/var/lib/SillyTavern";
+  dataDir = "${stateDir}/data";
+  userDataDir = "${dataDir}/${cfg.userHandle}";
+  presetsDir = "${userDataDir}/OpenAI Settings";
 
   entriesForService =
     service: mkHostEntries:
@@ -32,19 +36,182 @@ let
       lib.concatLists
     ];
 
-  profiles = entriesForService "llama-cpp" (
+  modelPresets = {
+    "mag-mell-12b-uncensored" = {
+      # Plain ChatML RP merge: author recommends Temp 1.25 + MinP 0.2 without XTC/penalties;
+      # keep DRY gentle across long RP turns and remove top_k/top_p clipping.
+      temperature = 1.25;
+      topP = 1.0;
+      topK = 0;
+      minP = 0.2;
+      presencePenalty = 0.0;
+      promptPostProcessing = "merge";
+      reasoningTemplate = "Blank";
+      dry = {
+        multiplier = 0.5;
+        base = 1.75;
+        allowedLength = 3;
+        penaltyLastN = 2048;
+      };
+    };
+    "cydonia-24b-uncensored" = {
+      # Mistral V7 Tekken RP baseline: Temp 0.85 + MinP 0.05 + DRY, with
+      # top_k/top_p clipping disabled.
+      temperature = 0.85;
+      topP = 1.0;
+      topK = 0;
+      minP = 0.05;
+      presencePenalty = 0.0;
+      promptPostProcessing = "merge";
+      reasoningTemplate = "Blank";
+      dry = {
+        multiplier = 0.8;
+        base = 1.75;
+        allowedLength = 2;
+        penaltyLastN = 2048;
+      };
+    };
+    "deepseek-v4-pro-qwen3.5-9b-uncensored" = {
+      # Qwen3.5 distillation: use its recommended thinking samplers and normalize
+      # unsupported non-leading system roles with `semi_tools`.
+      temperature = 1.0;
+      topP = 0.95;
+      topK = 20;
+      minP = 0.0;
+      presencePenalty = 1.5;
+      promptPostProcessing = "semi_tools";
+      reasoningTemplate = "Think XML";
+    };
+    "qwen3.8-27b-uncensored" = {
+      # Official thinking-mode samplers; its template throws on non-leading
+      # system roles, so normalize them with `semi_tools`.
+      temperature = 1.0;
+      topP = 0.95;
+      topK = 20;
+      minP = 0.0;
+      presencePenalty = 0.0;
+      promptPostProcessing = "semi_tools";
+      reasoningTemplate = "Think XML";
+    };
+  };
+
+  hostedModels = entriesForService "llama-cpp" (
     hostName: endpoint:
     lib.mapAttrsToList (model: modelCfg: {
-      id = "nix:${hostName}:${model}";
-      mode = "cc";
-      name = "${hostName} / ${model}";
-      api = "custom";
-      "api-url" = "${endpoint}/v1";
-      inherit model;
-      inherit (modelCfg) contextLength;
-      exclude = [ ];
+      inherit
+        hostName
+        endpoint
+        model
+        modelCfg
+        ;
     }) (ai.modelsForHost hostName)
   );
+
+  specFor =
+    model:
+    assert lib.assertMsg (
+      modelPresets ? ${model}
+    ) "yi.services.sillytavern: model '${model}' has no SillyTavern preset.";
+    modelPresets.${model};
+  presetNameFor = model: "Nix - ${model}";
+  maxTokensFor = modelCfg: if modelCfg.reasoning then 16384 else 4096;
+
+  configuredModels = map (
+    entry:
+    entry
+    // {
+      spec = specFor entry.model;
+      presetName = presetNameFor entry.model;
+    }
+  ) hostedModels;
+
+  # SillyTavern's `custom` Chat Completions backend omits top_k, min_p, repeat_penalty,
+  # and DRY from its OpenAI body and merges custom_include_body last.
+  formatCustomIncludeBody =
+    spec:
+    lib.concatStringsSep "\n" (
+      [
+        "top_k: ${builtins.toJSON spec.topK}"
+        "min_p: ${builtins.toJSON spec.minP}"
+        "repeat_penalty: 1"
+      ]
+      ++ lib.optionals (spec ? dry) [
+        "dry_multiplier: ${builtins.toJSON spec.dry.multiplier}"
+        "dry_base: ${builtins.toJSON spec.dry.base}"
+        "dry_allowed_length: ${builtins.toJSON spec.dry.allowedLength}"
+        "dry_penalty_last_n: ${builtins.toJSON spec.dry.penaltyLastN}"
+      ]
+    );
+
+  mkSharedOaiConfig =
+    modelCfg: spec:
+    {
+      max_context_unlocked = true;
+      openai_max_tokens = maxTokensFor modelCfg;
+      stream_openai = true;
+      show_thoughts = modelCfg.reasoning;
+      custom_include_body = formatCustomIncludeBody spec;
+      custom_prompt_post_processing = spec.promptPostProcessing;
+      media_inlining = false;
+    }
+    // lib.optionalAttrs (modelCfg ? reasoningEffort) {
+      reasoning_effort = modelCfg.reasoningEffort;
+    };
+
+  mkOaiSettings =
+    model: modelCfg: spec:
+    (mkSharedOaiConfig modelCfg spec)
+    // {
+      preset_settings_openai = presetNameFor model;
+      temp_openai = spec.temperature;
+      top_p_openai = spec.topP;
+      top_k_openai = spec.topK;
+      min_p_openai = spec.minP;
+      top_a_openai = 0.0;
+      freq_pen_openai = 0.0;
+      pres_pen_openai = spec.presencePenalty;
+      repetition_penalty_openai = 1.0;
+      bind_preset_to_connection = true;
+    };
+
+  mkOaiPreset =
+    modelCfg: spec:
+    (mkSharedOaiConfig modelCfg spec)
+    // {
+      openai_max_context = modelCfg.contextLength;
+      inherit (spec) temperature;
+      top_p = spec.topP;
+      top_k = spec.topK;
+      min_p = spec.minP;
+      top_a = 0.0;
+      frequency_penalty = 0.0;
+      presence_penalty = spec.presencePenalty;
+      repetition_penalty = 1.0;
+    };
+
+  profiles = map (entry: {
+    id = "nix:${entry.hostName}:${entry.model}";
+    mode = "cc";
+    name = "${entry.hostName} / ${entry.model}";
+    api = "custom";
+    "api-url" = "${entry.endpoint}/v1";
+    inherit (entry) model;
+    preset = entry.presetName;
+    "prompt-post-processing" = entry.spec.promptPostProcessing;
+    "reasoning-template" = entry.spec.reasoningTemplate;
+    # Transient Nix metadata stripped by overlayScript before writing settings.json.
+    inherit (entry.modelCfg) contextLength;
+    oaiSettings = mkOaiSettings entry.model entry.modelCfg entry.spec;
+    reasoningSettings = reasoningTemplateData.${entry.spec.reasoningTemplate};
+    exclude = [ ];
+  }) configuredModels;
+
+  presetFiles = map (entry: {
+    name = entry.presetName;
+    file = jsonFormat.generate "sillytavern-oai-preset-${entry.model}.json" (
+      mkOaiPreset entry.modelCfg entry.spec
+    );
+  }) configuredModels;
 
   sdEntries = entriesForService "sd-cpp" (
     hostName: endpoint:
@@ -62,6 +229,22 @@ let
   defaultModel = ai.defaultModels.sillytavern;
   defaultProfileId = "nix:${defaultModel.targetHost}:${defaultModel.name}";
   defaultProfile = lib.findFirst (p: p.id == defaultProfileId) null profiles;
+  defaultSpec = specFor defaultModel.name;
+
+  reasoningTemplateData = {
+    Blank = {
+      name = "Blank";
+      prefix = "";
+      suffix = "";
+      separator = "";
+    };
+    "Think XML" = {
+      name = "Think XML";
+      prefix = "<think>";
+      suffix = "</think>";
+      separator = "\n";
+    };
+  };
 
   overlayScript = pkgs.writeShellApplication {
     name = "sillytavern-settings-overlay";
@@ -112,6 +295,12 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
+        assertion = lib.all (
+          entry: maxTokensFor entry.modelCfg < entry.modelCfg.contextLength
+        ) hostedModels;
+        message = "yi.services.sillytavern: every model context must exceed its SillyTavern output-token cap.";
+      }
+      {
         assertion = defaultProfile != null;
         message = "yi.services.sillytavern: default profile '${defaultProfileId}' missing from models.nix + allAddresses.";
       }
@@ -133,13 +322,14 @@ in
     yi.services.sillytavern = {
       config = lib.mapAttrsRecursive (_: lib.mkDefault) {
         inherit (yifuwuqiSt) port;
-        dataRoot = "/var/lib/SillyTavern/data";
+        dataRoot = dataDir;
         listen = false;
+        browserLaunch.enabled = false;
         whitelistMode = false;
         enableUserAccounts = false;
         basicAuthMode = false;
         hostWhitelist = {
-          enabled = false;
+          enabled = true;
           scan = false;
           hosts = [ yifuwuqiSt.domain ];
         };
@@ -152,26 +342,17 @@ in
 
       settings = lib.mapAttrsRecursive (_: lib.mkDefault) {
         main_api = "openai";
-        oai_settings = {
+        seedPowerUser = {
+          auto_fix_generated_markdown = true;
+          reasoning = reasoningTemplateData.${defaultSpec.reasoningTemplate} // {
+            auto_parse = true;
+          };
+        };
+        oai_settings = (mkOaiSettings defaultModel.name defaultModel defaultSpec) // {
           chat_completion_source = "custom";
           custom_url = if defaultProfile != null then defaultProfile."api-url" else "";
           custom_model = defaultModel.name;
           openai_max_context = if defaultProfile != null then defaultProfile.contextLength else 4095;
-          max_context_unlocked = true;
-          openai_max_tokens = 4096;
-          stream_openai = true;
-          temp_openai = 1.0;
-          top_p_openai = 0.95;
-          show_thoughts = true;
-          reasoning_effort = "max";
-          verbosity = "low";
-          # SillyTavern's custom backend drops reasoning_effort for non-OpenAI
-          # model names; Qwen 3.8 rejects `max` and accepts `xhigh` cleanly.
-          custom_include_body = "reasoning_effort: xhigh";
-          # Consolidate leading system prompts and turn mid-chat system injects
-          # into user messages (Qwen 3.8 errors on non-leading system roles).
-          custom_prompt_post_processing = "semi_tools";
-          media_inlining = false;
         };
         extension_settings =
           lib.optionalAttrs (sdEntries != [ ]) {
@@ -207,24 +388,40 @@ in
       ];
 
       environment = {
-        HOME = "/var/lib/SillyTavern";
+        HOME = stateDir;
         XDG_DATA_HOME = "/var/lib";
       };
 
       preStart = ''
-        install -d -m 0700 /var/lib/SillyTavern/data
-        chmod 0700 /var/lib/SillyTavern /var/lib/SillyTavern/data
-        chmod -R go= /var/lib/SillyTavern/data
+        install -d -m 0700 ${lib.escapeShellArg dataDir}
+        chmod 0700 ${
+          lib.escapeShellArgs [
+            stateDir
+            dataDir
+          ]
+        }
 
         # Copy rather than symlink config.yaml so startup default backfills and
         # atomic writes succeed under 0600 ownership.
-        rm -f /var/lib/SillyTavern/config.yaml
-        install -m 0600 "${configYaml}" /var/lib/SillyTavern/config.yaml
+        rm -f ${lib.escapeShellArg "${stateDir}/config.yaml"}
+        install -m 0600 "${configYaml}" ${lib.escapeShellArg "${stateDir}/config.yaml"}
+
+        presets_dir=${lib.escapeShellArg presetsDir}
+        install -d -m 0700 "$presets_dir"
+        rm -f -- "$presets_dir"/Nix\ -\ *.json
+        ${lib.concatStringsSep "\n" (
+          map (
+            preset:
+            "install -m 0600 ${lib.escapeShellArg "${preset.file}"} ${lib.escapeShellArg "${presetsDir}/${preset.name}.json"}"
+          ) presetFiles
+        )}
 
         ${lib.escapeShellArg (lib.getExe overlayScript)} \
-          ${lib.escapeShellArg "/var/lib/SillyTavern/data/${cfg.userHandle}/settings.json"} \
+          ${lib.escapeShellArg "${userDataDir}/settings.json"} \
           ${lib.escapeShellArg "${stRoot}/default/content/settings.json"} \
           "${nixOverlayJson}"
+
+        chmod -R go= ${lib.escapeShellArg dataDir}
       '';
 
       serviceConfig = {
@@ -237,7 +434,7 @@ in
         StateDirectory = "SillyTavern";
         StateDirectoryMode = "0700";
         UMask = "0077";
-        WorkingDirectory = "/var/lib/SillyTavern";
+        WorkingDirectory = stateDir;
 
         Restart = "always";
         Type = "simple";
