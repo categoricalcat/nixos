@@ -12,15 +12,20 @@
 #        via its 16 full-attention layers, 48 DeltaNet layers stay constant;
 #        128k would need ~4.3 GB KV and leave <0.5 GiB VRAM next to the measured
 #        ~2 GiB idle desktop and sd-cpp's demand cache)
-#     -> Cydonia 24B (~13.35 GiB i1-Q4_K_M weights, 14333911392 B + ~5.31 GiB
+#     -> Cydonia 24B (~13.35 GiB i1-Q4_K_M weights, 14333911360 B + ~5.31 GiB
 #        64k KV cache via its 40 full-attention layers; 96k KV would take
 #        ~7.97 GiB and exceed 24 GiB VRAM once compute buffers and the ~2 GiB
 #        idle desktop are counted)
 #     -> Chroma1-HD Q8_0 (CPU-backed weights, demand-cached on the GPU while rendering)
 { lib }:
 let
+  defaultModelIds = {
+    opencodeResearch = "deepseek-v4-pro-qwen3.5-9b-uncensored";
+    sillytavern = "mag-mell-12b-uncensored";
+  };
+
   models = {
-    "deepseek-v4-pro-qwen3.5-9b-uncensored" = {
+    ${defaultModelIds.opencodeResearch} = {
       targetHost = "yifuwuqi";
       tools = true;
       reasoning = true;
@@ -33,7 +38,7 @@ let
       };
     };
 
-    "mag-mell-12b-uncensored" = {
+    ${defaultModelIds.sillytavern} = {
       targetHost = "yifuwuqi";
       # Plain ChatML RP merge with neither tool-call syntax nor thought channel;
       # keep both off so OpenCode never emits tool calls or expects
@@ -56,9 +61,9 @@ let
       reasoning = false;
       contextLength = 65536;
       llamaCpp = {
-        # Heretic v1.1.0 abliteration (5/100 refusals, 0.0447 KL) over Cydonia
+        # Heretic v1.2.0 MPOA abliteration (14/100 refusals, 0.0069 KL) over Cydonia
         # v4.3, a Mistral-Small-3.2-24B RP tune; imatrix Q4_K_M quant.
-        hfRepo = "mradermacher/Cydonia-24B-v4.3-heretic-i1-GGUF";
+        hfRepo = "mradermacher/Cydonia-24B-v4.3-heretic-v4-i1-GGUF";
         quant = "i1-Q4_K_M";
       };
     };
@@ -76,6 +81,8 @@ let
       };
     };
   };
+
+  defaultModels = lib.mapAttrs (_: name: models.${name} // { inherit name; }) defaultModelIds;
 
   modelsForHost = host: lib.filterAttrs (_: m: m.targetHost == host) models;
 
@@ -114,14 +121,17 @@ let
   # so input is text only; llama-server takes `max_tokens` and answers with
   # `reasoning_content` only for reasoning-enabled models (setting
   # `reasoningField` unconditionally implies `requireReasoning` in OpenCode 2).
-  # llama-server sets no n_predict ceiling, so `output` is the per-request cap
-  # the client asks for, sized to leave the context to the prompt.
+  # llama-server sets no n_predict ceiling. OpenCode fits `max_tokens` to the
+  # room left in the window, then clamps it to `output`, and compaction packs
+  # the transcript up to that same clamp. Below its 16k reserve the summary is
+  # left too little room and a length finish fails the session, so reasoning
+  # models use OpenCode's own 32k ceiling.
   opencodeModelsForHost =
     host:
     lib.mapAttrs (_: m: {
       limit = {
         context = m.contextLength;
-        output = 8192;
+        output = if m.reasoning then 32768 else 8192;
       };
       compatibility = {
         maxTokensField = "max_tokens";
@@ -140,5 +150,5 @@ let
     }) (modelsForHost host);
 in
 {
-  inherit imageModelsForHost modelsForHost opencodeModelsForHost;
+  inherit defaultModels imageModelsForHost modelsForHost opencodeModelsForHost;
 }

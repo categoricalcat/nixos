@@ -12,6 +12,16 @@ overlay_bin="$1"
 default_file="$2"
 overlay_json="$3"
 
+alternate_profile_id="$(
+  jq -er '
+    .oai_settings.custom_url as $default_url
+    | .extension_settings.connectionManager.profiles
+    | map(select(."api-url" != $default_url))
+    | (first // error("no profile uses a different endpoint"))
+    | .id
+  ' "$overlay_json"
+)"
+
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
@@ -21,7 +31,7 @@ assert_jq() {
   local expr="$1"
   local file="$2"
   local msg="$3"
-  if ! jq -e "$expr" "$file" >/dev/null; then
+  if ! jq -e --slurpfile overlay "$overlay_json" "$expr" "$file" >/dev/null; then
     printf 'FAIL: %s\n' "$msg" >&2
     exit 1
   fi
@@ -41,11 +51,12 @@ assert_idempotent() {
 [ "$(stat -c '%a' "$target")" = "600" ]
 
 assert_jq '
-  .main_api == "openai"
+  ($overlay[0]) as $expected
+  | .main_api == "openai"
   and .oai_settings.chat_completion_source == "custom"
-  and .oai_settings.custom_model == "mag-mell-12b-uncensored"
-  and .oai_settings.custom_url == "http://127.0.0.1:11436/v1"
-  and .oai_settings.openai_max_context == 32768
+  and .oai_settings.custom_model == $expected.oai_settings.custom_model
+  and .oai_settings.custom_url == $expected.oai_settings.custom_url
+  and .oai_settings.openai_max_context == $expected.oai_settings.openai_max_context
   and .oai_settings.max_context_unlocked == true
   and .oai_settings.openai_max_tokens == 4096
   and .oai_settings.temp_openai == 1.0
@@ -60,9 +71,10 @@ assert_jq '
 ' "$target" "initial seed missed expected oai_settings or upstream defaults"
 
 assert_jq '
-  .extension_settings.sd.source == "sdcpp"
+  ($overlay[0]) as $expected
+  | .extension_settings.sd.source == "sdcpp"
   and .extension_settings.sd.sdcpp_url == "http://100.69.0.4:11437"
-  and .extension_settings.sd.model == "chroma1-hd"
+  and .extension_settings.sd.model == $expected.extension_settings.sd.model
   and .extension_settings.sd.width == 1024
   and .extension_settings.sd.height == 1024
   and .extension_settings.sd.steps == 20
@@ -73,13 +85,11 @@ assert_jq '
 ' "$target" "initial seed missed expected sd settings or upstream prompts"
 
 assert_jq '
-  .extension_settings.connectionManager.selectedProfile == "nix:yifuwuqi:mag-mell-12b-uncensored"
-  and ([.extension_settings.connectionManager.profiles[].id] == [
-        "nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored",
-        "nix:yifuwuqi:mag-mell-12b-uncensored",
-        "nix:yitaishi:cydonia-24b-uncensored",
-        "nix:yitaishi:qwen3.8-27b-uncensored"
-      ])
+  ($overlay[0]) as $expected
+  | .extension_settings.connectionManager.selectedProfile
+      == $expected.extension_settings.connectionManager.selectedProfile
+  and ([.extension_settings.connectionManager.profiles[].id]
+      == [$expected.extension_settings.connectionManager.profiles[].id])
   and ([.extension_settings.connectionManager.profiles[] | has("contextLength")] | any | not)
 ' "$target" "initial connectionManager profiles/selectedProfile mismatch"
 
@@ -106,7 +116,8 @@ mv -f "${target}.tmp" "$target"
 "$overlay_bin" "$target" "$default_file" "$overlay_json"
 
 assert_jq '
-  .customUserPref == "keep-me"
+  ($overlay[0]) as $expected
+  | .customUserPref == "keep-me"
   and .power_user.default_persona == "persona.png"
   and .main_api == "textgenerationwebui"
   and .oai_settings.chat_completion_source == "openrouter"
@@ -114,28 +125,27 @@ assert_jq '
   and .oai_settings.custom_model == "user-custom-model"
   and .oai_settings.openai_max_context == 131072
   and .extension_settings.connectionManager.selectedProfile == "user-uuid-1"
-  and ([.extension_settings.connectionManager.profiles[].id] == [
-        "nix:yifuwuqi:deepseek-v4-pro-qwen3.5-9b-uncensored",
-        "nix:yifuwuqi:mag-mell-12b-uncensored",
-        "nix:yitaishi:cydonia-24b-uncensored",
-        "nix:yitaishi:qwen3.8-27b-uncensored",
-        "user-uuid-1"
-      ])
+  and ([.extension_settings.connectionManager.profiles[].id]
+      == ([$expected.extension_settings.connectionManager.profiles[].id] + ["user-uuid-1"]))
 ' "$target" "user state preservation or stale nix profile GC failed"
 assert_idempotent
 
 # 4a. Selecting another valid nix:* profile stays selected and syncs its endpoint and contextLength.
-jq '.extension_settings.connectionManager.selectedProfile = "nix:yitaishi:cydonia-24b-uncensored"' \
+jq --arg profile_id "$alternate_profile_id" \
+  '.extension_settings.connectionManager.selectedProfile = $profile_id' \
   "$target" >"${target}.tmp"
 mv -f "${target}.tmp" "$target"
 "$overlay_bin" "$target" "$default_file" "$overlay_json"
 assert_jq '
-  .main_api == "openai"
-  and .extension_settings.connectionManager.selectedProfile == "nix:yitaishi:cydonia-24b-uncensored"
+  .extension_settings.connectionManager.selectedProfile as $selected
+  | ($overlay[0].extension_settings.connectionManager.profiles
+      | first(.[] | select(.id == $selected))) as $expected
+  | .main_api == "openai"
+  and .extension_settings.connectionManager.selectedProfile == $expected.id
   and .oai_settings.chat_completion_source == "custom"
-  and .oai_settings.custom_url == "http://100.69.0.4:11436/v1"
-  and .oai_settings.custom_model == "cydonia-24b-uncensored"
-  and .oai_settings.openai_max_context == 65536
+  and .oai_settings.custom_url == $expected."api-url"
+  and .oai_settings.custom_model == $expected.model
+  and .oai_settings.openai_max_context == $expected.contextLength
 ' "$target" "valid user-selected nix profile was overwritten or endpoint/context did not sync"
 assert_idempotent
 
@@ -145,12 +155,14 @@ jq '.extension_settings.connectionManager.selectedProfile = "nix:yifuwuqi:gemma-
 mv -f "${target}.tmp" "$target"
 "$overlay_bin" "$target" "$default_file" "$overlay_json"
 assert_jq '
-  .main_api == "openai"
-  and .extension_settings.connectionManager.selectedProfile == "nix:yifuwuqi:mag-mell-12b-uncensored"
+  ($overlay[0]) as $expected
+  | .main_api == "openai"
+  and .extension_settings.connectionManager.selectedProfile
+      == $expected.extension_settings.connectionManager.selectedProfile
   and .oai_settings.chat_completion_source == "custom"
-  and .oai_settings.custom_url == "http://127.0.0.1:11436/v1"
-  and .oai_settings.custom_model == "mag-mell-12b-uncensored"
-  and .oai_settings.openai_max_context == 32768
+  and .oai_settings.custom_url == $expected.oai_settings.custom_url
+  and .oai_settings.custom_model == $expected.oai_settings.custom_model
+  and .oai_settings.openai_max_context == $expected.oai_settings.openai_max_context
 ' "$target" "removed nix selectedProfile did not fall back to default or restore endpoint"
 assert_idempotent
 

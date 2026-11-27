@@ -59,9 +59,8 @@ let
     }) (ai.imageModelsForHost hostName)
   );
 
-  defaultHost = "yifuwuqi";
-  defaultModel = "mag-mell-12b-uncensored";
-  defaultProfileId = "nix:${defaultHost}:${defaultModel}";
+  defaultModel = ai.defaultModels.sillytavern;
+  defaultProfileId = "nix:${defaultModel.targetHost}:${defaultModel.name}";
   defaultProfile = lib.findFirst (p: p.id == defaultProfileId) null profiles;
 
   overlayScript = pkgs.writeShellApplication {
@@ -156,7 +155,7 @@ in
         oai_settings = {
           chat_completion_source = "custom";
           custom_url = if defaultProfile != null then defaultProfile."api-url" else "";
-          custom_model = defaultModel;
+          custom_model = defaultModel.name;
           openai_max_context = if defaultProfile != null then defaultProfile.contextLength else 4095;
           max_context_unlocked = true;
           openai_max_tokens = 4096;

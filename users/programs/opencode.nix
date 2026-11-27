@@ -5,7 +5,7 @@
   ...
 }:
 let
-  inherit (import ../../modules/services/ai/models.nix { inherit lib; }) opencodeModelsForHost;
+  ai = import ../../modules/services/ai/models.nix { inherit lib; };
   inherit (import ../../modules/addresses.nix) hosts;
   hostName = if osConfig == null then null else osConfig.networking.hostName;
   # Firecrawl's API listens on yifuwuqi's localhost only, so the MCP (declared
@@ -24,6 +24,8 @@ let
       name = "Workstation (yitaishi)";
     };
   };
+  researchModel = ai.defaultModels.opencodeResearch;
+  cloudModel = "deepseek/deepseek-flash";
 
   rule = action: resource: effect: { inherit action resource effect; };
   allow = action: resource: rule action resource "allow";
@@ -46,7 +48,7 @@ in
       validateFiles.config = true;
 
       settings = {
-        model = "deepseek/deepseek-flash";
+        model = cloudModel;
         # Research is read-only/web-only and cannot edit or run shell commands,
         # so it is opt-in rather than the default for every session.
         default_agent = "build";
@@ -123,7 +125,7 @@ in
           build.permissions = subagentAsk;
           # `#max` selects the model variant; v2 dropped the agent-level `variant` key.
           plan = {
-            model = "deepseek/deepseek-flash#max";
+            model = "${cloudModel}#max";
             permissions = subagentAsk;
           };
         }
@@ -131,9 +133,9 @@ in
           research = {
             description = "Current web research through local SearXNG search and Firecrawl scrape/map";
             mode = "primary";
-            # Served by the Vulkan llama-server router (ROCm on the Ryzen 680M
-            # APU corrupts prompts beyond ~4k tokens; Vulkan does not).
-            model = "local/deepseek-v4-pro-qwen3.5-9b-uncensored";
+            # Follow the registry default so model upgrades do not require a
+            # second agent edit.
+            model = "${llamaProviders.${researchModel.targetHost}.id}/${researchModel.name}";
             request.body.temperature = 0.2;
             # OpenCode 2 evaluates agent permissions last-match-wins, so the
             # blanket deny comes first and explicit allows follow; invariant
@@ -171,7 +173,7 @@ in
             settings.baseURL = "http://${
               if hostName == host then "127.0.0.1" else hosts.${host}.network.vpn.ipv4.host
             }:${toString hosts.${host}.services.llama-cpp.port}/v1";
-            models = opencodeModelsForHost host;
+            models = ai.opencodeModelsForHost host;
           }
         ) llamaProviders;
       };
