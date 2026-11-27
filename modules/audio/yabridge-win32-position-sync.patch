@@ -1,0 +1,193 @@
+Sync Win32 editor window coordinates with X11 parent root offsets on Wine 9.22+.
+
+Wine 9.22+ maps X11 pointer input via root_to_virtual_screen() against the
+Win32-side window rect, which winex11.drv leaves untouched for unmanaged
+embedded windows and which xwayland-satellite never updates via X11
+ConfigureNotify when moving floating windows in niri. Convert X11 root offsets
+to Win32 virtual-screen coordinates (SM_XVIRTUALSCREEN / SM_YVIRTUALSCREEN) and
+sync via SetWindowPos() on initial open, ReparentNotify, ConfigureNotify,
+ConfigureRequest (ICCCM §4.1.5), and EnterNotify.
+
+Upstream references:
+- https://github.com/robbert-vdh/yabridge/pull/489
+- https://github.com/robbert-vdh/yabridge/pull/489#issuecomment-3467165624
+
+--- a/src/wine-host/editor.h
++++ b/src/wine-host/editor.h
+@@ -16,6 +16,7 @@
+ 
+ #pragma once
+ 
++#include <chrono>
+ #include <memory>
+ #include <optional>
+ 
+@@ -325,6 +326,12 @@ class Editor {
+      */
+     std::array<int16_t, 2> get_parent_window_offset();
+ 
++    /**
++     * Reposition our Win32 window to the given X11 root window coordinates,
++     * converted to Win32 virtual-screen coordinates.
++     */
++    void sync_win32_position(int16_t x, int16_t y);
++
+     /**
+      * Reparent `child` to `new_parent`. This includes the flush.
+      */
+@@ -410,6 +417,9 @@ class Editor {
+      * The X11 window handle of the window belonging to `win32_window_`.
+      */
+     const xcb_window_t wine_window_;
++    std::optional<std::array<int, 2>> last_win32_position_;
++    std::optional<std::array<int16_t, 2>> pending_win32_sync_;
++    std::chrono::steady_clock::time_point last_position_change_{};
+     /**
+      * The toplevel X11 window `parent_window_` is contained in, or
+      * `parent_window_` if the host doesn't do any fancy window embedding. We'll
+--- a/src/wine-host/editor.cpp
++++ b/src/wine-host/editor.cpp
+@@ -77,8 +77,9 @@ constexpr uint32_t parent_event_mask =
+  *       opening it.
+  */
+ constexpr uint32_t wrapper_event_mask =
+-    XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+-    XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
++    XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
++    XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_KEY_PRESS |
++    XCB_EVENT_MASK_KEY_RELEASE;
+ 
+ /**
+  * The name of the X11 property on the root window used to denote the active
+@@ -402,6 +403,15 @@ Editor::Editor(MainContext& main_context,
+     xcb_flush(x11_connection_.get());
+ 
+     do_reparent(wine_window_, wrapper_window_.window_);
++
++    try {
++        const std::array<int16_t, 2> offset = get_parent_window_offset();
++        sync_win32_position(offset[0], offset[1]);
++    } catch (const std::runtime_error& error) {
++        std::cerr << "Could not set the initial editor window position:"
++                  << std::endl;
++        std::cerr << error.what() << std::endl;
++    }
+ }
+ 
+ void Editor::resize(uint16_t width, uint16_t height) {
+@@ -484,12 +494,41 @@ std::array<int16_t, 2> Editor::get_parent_window_offset() {
+     return {coord_reply->dst_x, coord_reply->dst_y};
+ }
+ 
++void Editor::sync_win32_position(int16_t x, int16_t y) {
++    const int win32_x = x + GetSystemMetrics(SM_XVIRTUALSCREEN);
++    const int win32_y = y + GetSystemMetrics(SM_YVIRTUALSCREEN);
++
++    if (last_win32_position_ && (*last_win32_position_)[0] == win32_x &&
++        (*last_win32_position_)[1] == win32_y) {
++        return;
++    }
++    last_win32_position_ = {{win32_x, win32_y}};
++
++    logger_.log_editor_trace([&]() {
++        return "DEBUG: Syncing win32 window position to (" +
++               std::to_string(win32_x) + ", " + std::to_string(win32_y) +
++               ") from X11 root position (" + std::to_string(x) + ", " +
++               std::to_string(y) + ")";
++    });
++
++    SetWindowPos(win32_window_.handle_, nullptr, win32_x, win32_y, 0, 0,
++                 SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
++                     SWP_NOSENDCHANGING | SWP_DEFERERASE);
++}
++
+ void Editor::handle_x11_events() noexcept {
+     // NOTE: Ardour will unmap the window instead of closing the editor. When
+     //       the window is unmapped `wine_window_` doesn't exist and any X11
+     //       function calls involving it will fail. All functions called from
+     //       here should be able to handle that cleanly.
+     try {
++        if (pending_win32_sync_ &&
++            std::chrono::steady_clock::now() - last_position_change_ > 150ms) {
++            const std::array<int16_t, 2> position = *pending_win32_sync_;
++            pending_win32_sync_.reset();
++            sync_win32_position(position[0], position[1]);
++        }
++
+         std::unique_ptr<xcb_generic_event_t> generic_event;
+         while (generic_event.reset(xcb_poll_for_event(x11_connection_.get())),
+                generic_event != nullptr) {
+@@ -523,6 +562,8 @@ void Editor::handle_x11_events() noexcept {
+                     });
+ 
+                     redetect_host_window();
++                    pending_win32_sync_ = get_parent_window_offset();
++                    last_position_change_ = std::chrono::steady_clock::now();
+ 
+                     // If the `editor_force_dnd` option is set, we'll strip
+                     // `XdndAware` from all of `wine_window_`'s ancestors
+@@ -648,6 +689,29 @@ void Editor::handle_x11_events() noexcept {
+                                 XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY,
+                             reinterpret_cast<char*>(&translated_event));
+                         xcb_flush(x11_connection_.get());
++
++                        pending_win32_sync_ = {
++                            {translated_event.x, translated_event.y}};
++                        last_position_change_ =
++                            std::chrono::steady_clock::now();
++                    }
++
++                    if (event->window == wine_window_ && !is_synthetic_event &&
++                        (event->x != 0 || event->y != 0)) {
++                        logger_.log_editor_trace([&]() {
++                            return "DEBUG: Wine moved its window to (" +
++                                   std::to_string(event->x) + ", " +
++                                   std::to_string(event->y) +
++                                   "), pinning it back to the wrapper origin";
++                        });
++
++                        const uint16_t value_mask =
++                            XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y;
++                        const std::array<uint32_t, 2> values{0, 0};
++                        xcb_configure_window(x11_connection_.get(),
++                                             wine_window_, value_mask,
++                                             values.data());
++                        xcb_flush(x11_connection_.get());
+                     }
+                 } break;
+                 // We're listening for `ConfigureRequest` events on the wrapper
+@@ -672,6 +736,21 @@ void Editor::handle_x11_events() noexcept {
+                                                          event->height};
+                     xcb_configure_window(x11_connection_.get(), wine_window_,
+                                          value_mask, values.data());
++
++                    const std::array<int16_t, 2> offset =
++                        get_parent_window_offset();
++                    xcb_configure_notify_event_t notify{};
++                    notify.response_type = XCB_CONFIGURE_NOTIFY;
++                    notify.event = wine_window_;
++                    notify.window = wine_window_;
++                    notify.x = offset[0];
++                    notify.y = offset[1];
++                    notify.width = event->width;
++                    notify.height = event->height;
++                    xcb_send_event(x11_connection_.get(), false, wine_window_,
++                                   XCB_EVENT_MASK_STRUCTURE_NOTIFY |
++                                       XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY,
++                                   reinterpret_cast<char*>(&notify));
+                     xcb_flush(x11_connection_.get());
+                 } break;
+                 // We're listening for `MapRequest` events on the wrapper
+@@ -730,6 +809,12 @@ void Editor::handle_x11_events() noexcept {
+ 
+                     if (window == parent_window_ ||
+                         window == wrapper_window_.window_) {
++                        if (event_type == XCB_ENTER_NOTIFY) {
++                            pending_win32_sync_.reset();
++                            const std::array<int16_t, 2> offset =
++                                get_parent_window_offset();
++                            sync_win32_position(offset[0], offset[1]);
++                        }
+                         // In case the WM somehow does not support
+                         // `_NET_ACTIVE_WINDOW`, a more naive focus grabbing
+                         // method implemented in the `WM_PARENTNOTIFY` handler

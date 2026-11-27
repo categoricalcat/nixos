@@ -1,0 +1,143 @@
+Keep JUCE popup menus override-redirect under Wine 10+/11.
+
+JUCE creates popup menus, drop shadows, and tooltips with WS_POPUP | WS_SYSMENU.
+Wine 10+ treats WS_POPUP windows with WS_SYSMENU as WM-managed top-level windows
+(winex11.drv is_window_managed), causing xwayland-satellite / niri focus changes
+to dismiss them immediately. Strip WS_SYSMENU from captionless, non-resizable
+popup windows via a thread-scoped WH_CBT hook while an editor is open
+(disable with YABRIDGE_NO_POPUP_FIX=1).
+
+Upstream reference:
+- https://github.com/robbert-vdh/yabridge/pull/544
+- https://github.com/robbert-vdh/yabridge/issues/521
+
+--- a/src/wine-host/editor.h
++++ b/src/wine-host/editor.h
+@@ -126,6 +126,20 @@ class DeferredWin32Window {
+     std::shared_ptr<xcb_connection_t> x11_connection_;
+ };
+ 
++class PopupStyleFixer {
++   public:
++    explicit PopupStyleFixer(Logger& logger);
++    ~PopupStyleFixer() noexcept;
++
++    PopupStyleFixer(const PopupStyleFixer&) = delete;
++    PopupStyleFixer& operator=(const PopupStyleFixer&) = delete;
++    PopupStyleFixer(PopupStyleFixer&& other) noexcept;
++    PopupStyleFixer& operator=(PopupStyleFixer&& other) noexcept;
++
++   private:
++    bool active_ = false;
++};
++
+ /**
+  * TODO: This documentation needs to be updated with the recent changes to how
+  *       embedding is handled.
+@@ -452,4 +466,6 @@ class Editor {
+      * `supports_ewmh_active_window()`.
+      */
+     mutable std::optional<bool> supports_ewmh_active_window_cache_;
++
++    PopupStyleFixer popup_style_fixer_;
+ };
+--- a/src/wine-host/editor.cpp
++++ b/src/wine-host/editor.cpp
+@@ -204,6 +204,87 @@ xcb_window_t get_x11_handle(HWND win32_handle) noexcept;
+  */
+ ATOM get_window_class() noexcept;
+ 
++namespace {
++
++bool popup_fix_tracing = false;
++int popup_fix_users = 0;
++HHOOK popup_fix_hook = nullptr;
++
++LRESULT CALLBACK popup_fix_cbt_proc(int code, WPARAM wParam, LPARAM lParam) {
++    if (code == HCBT_CREATEWND) {
++        const HWND window = reinterpret_cast<HWND>(wParam);
++        const LONG style = GetWindowLong(window, GWL_STYLE);
++        const LONG ex_style = GetWindowLong(window, GWL_EXSTYLE);
++
++        if (!(style & WS_CHILD) && (style & WS_POPUP) &&
++            (style & WS_CAPTION) != WS_CAPTION && !(style & WS_THICKFRAME) &&
++            (style & WS_SYSMENU) && !(ex_style & WS_EX_APPWINDOW)) {
++            SetWindowLong(window, GWL_STYLE, style & ~WS_SYSMENU);
++
++            if (popup_fix_tracing) {
++                std::cerr << "DEBUG: Removed WS_SYSMENU from popup window "
++                          << window << std::hex << " (style 0x" << style
++                          << ", exstyle 0x" << ex_style << std::dec
++                          << ") so Wine won't let the window manager manage it"
++                          << std::endl;
++            }
++        }
++    }
++
++    return CallNextHookEx(nullptr, code, wParam, lParam);
++}
++
++}  // namespace
++
++PopupStyleFixer::PopupStyleFixer(Logger& logger)
++    : active_(getenv("YABRIDGE_NO_POPUP_FIX") == nullptr) {
++    if (!active_) {
++        return;
++    }
++
++    if (popup_fix_users == 0) {
++        popup_fix_tracing = logger.editor_tracing_;
++        popup_fix_hook = SetWindowsHookEx(WH_CBT, popup_fix_cbt_proc, nullptr,
++                                          GetCurrentThreadId());
++        if (!popup_fix_hook) {
++            active_ = false;
++            std::cerr << "Could not install popup style hook: Win32 error "
++                      << GetLastError() << std::endl;
++            return;
++        }
++    }
++
++    ++popup_fix_users;
++}
++
++PopupStyleFixer::~PopupStyleFixer() noexcept {
++    if (!active_ || --popup_fix_users > 0) {
++        return;
++    }
++
++    if (popup_fix_hook) {
++        UnhookWindowsHookEx(popup_fix_hook);
++        popup_fix_hook = nullptr;
++    }
++}
++
++PopupStyleFixer::PopupStyleFixer(PopupStyleFixer&& other) noexcept
++    : active_(other.active_) {
++    other.active_ = false;
++}
++
++PopupStyleFixer& PopupStyleFixer::operator=(PopupStyleFixer&& other) noexcept {
++    if (this != &other) {
++        if (active_ && --popup_fix_users == 0 && popup_fix_hook) {
++            UnhookWindowsHookEx(popup_fix_hook);
++            popup_fix_hook = nullptr;
++        }
++        active_ = other.active_;
++        other.active_ = false;
++    }
++    return *this;
++}
++
+ DeferredWin32Window::DeferredWin32Window(
+     MainContext& main_context,
+     std::shared_ptr<xcb_connection_t> x11_connection,
+@@ -348,7 +421,8 @@ Editor::Editor(MainContext& main_context,
+       host_window_(find_host_window(*x11_connection_,
+                                     parent_window_,
+                                     xcb_wm_window_role_property_)
+-                       .value_or(parent_window_)) {
++                       .value_or(parent_window_)),
++      popup_style_fixer_(logger) {
+     logger.log_editor_trace([&]() {
+         return "DEBUG: host_window: " + std::to_string(host_window_);
+     });

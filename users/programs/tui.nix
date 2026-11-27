@@ -103,6 +103,8 @@ in
             explicit_theme_hue = "dark";
             default_mode = "locked";
             keybinds._props.preset = "unlock-first";
+            # Alt+f/n/p/h/l belong to the shell's Emacs keymap, not to Zellij.
+            keybinds._props.secondary = "Ctrl Alt";
             show_startup_tips = false;
             show_release_notes = false;
             pane_frames = false;

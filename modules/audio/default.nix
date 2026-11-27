@@ -48,10 +48,10 @@ in
         "context.properties" = {
           "default.clock.rate" = 96000;
           "default.clock.allowed-rates" = rates;
-          # 256 @ 96k ≈ 2.67 ms; keep non-power-of-two quanta unrounded if tuned.
-          "default.clock.quantum" = 256;
-          "default.clock.min-quantum" = 256;
-          "default.clock.max-quantum" = 256;
+          # 512 @ 96k ≈ 5.33 ms; keep non-power-of-two quanta unrounded if tuned.
+          "default.clock.quantum" = 512;
+          "default.clock.min-quantum" = 512;
+          "default.clock.max-quantum" = 512;
           "clock.power-of-two-quantum" = false;
         };
       };

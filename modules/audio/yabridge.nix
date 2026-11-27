@@ -20,8 +20,8 @@ let
   inherit (import ./wine-launcher.nix { inherit pkgs; }) yabridge yabridgectl;
 in
 {
-  # Each prefix owner (amplitube.nix) declares its own entry, so the prefix path
-  # and its VST3 directory are authored once and only consumed here.
+  # Each prefix owner (amplitube.nix, toontrack.nix) declares its own entry, so
+  # the prefix path and its VST3 directory are authored once and only consumed here.
   options.yi.audio.pluginPrefixes = mkOption {
     type = types.attrsOf (
       types.submodule {
@@ -76,7 +76,10 @@ in
 
       paths.yabridge-sync = {
         Unit.Description = "Watch the Wine prefixes for VST3 installs";
-        Path.PathChanged = concatMap (p: [ p.vst3Dir ] ++ map (w: "${p.vst3Dir}/${w}") p.watch) prefixes;
+        Path.PathChanged = [
+          "${config.xdg.configHome}/yabridgectl/config.toml"
+        ]
+        ++ concatMap (p: [ p.vst3Dir ] ++ map (w: "${p.vst3Dir}/${w}") p.watch) prefixes;
         Install.WantedBy = [ "default.target" ];
       };
     };

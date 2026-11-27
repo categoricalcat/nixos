@@ -1,5 +1,5 @@
-# Shared plumbing for the Wine plugin prefixes. amplitube.nix uses the launcher
-# skeleton; yabridge.nix consumes the prefix registry and the bridge packages.
+# Shared plumbing for the Wine plugin prefixes. amplitube.nix and toontrack.nix
+# use the launcher skeleton; yabridge.nix consumes the prefix registry and bridge packages.
 { pkgs }:
 let
   # Single source of truth for the Wine every audio prefix runs on: the newest
@@ -13,10 +13,28 @@ let
     }
   );
 
-  yabridge = pkgs.yabridge.override { inherit wineWow64Packages; };
-  yabridgectl = pkgs.yabridgectl.override {
-    inherit yabridge wineWow64Packages;
-  };
+  # yabridge 5.1.1 breaks mouse input on Wine >= 9.22 (robbert-vdh/yabridge#382).
+  # Track upstream master (ICCCM sub-WM + REAPER BadWindow detach fix #531) plus
+  # PR #489 (multi-monitor Win32 position sync) and PR #544 (JUCE popup menus)
+  # until nixpkgs ships a release past 5.1.1.
+  yabridge = (pkgs.yabridge.override { inherit wineWow64Packages; }).overrideAttrs (old: {
+    version = "5.1.1-unstable-2026-11-08";
+    src = pkgs.fetchFromGitHub {
+      owner = "robbert-vdh";
+      repo = "yabridge";
+      rev = "7529c2d67330f7507649e903ce90782b58153a95";
+      hash = "sha256-uJ3fLmmp1X4jUmNkYUWpS5jhNxJZLJsFMWXd918XHTY=";
+    };
+    buildInputs = old.buildInputs ++ [ pkgs.asio ];
+    postPatch = builtins.replaceStrings [ "cp packagefiles/asio/* asio\n" ] [ "" ] old.postPatch;
+    patches =
+      pkgs.lib.filter (p: !(pkgs.lib.hasInfix "drop-32-bit" (baseNameOf (toString p)))) old.patches
+      ++ [
+        ./yabridge-win32-position-sync.patch
+        ./yabridge-juce-popup-menus.patch
+      ];
+  });
+  yabridgectl = pkgs.yabridgectl.override { inherit wineWow64Packages; };
 
   # The prefix path is authored here only; modules pass it to the registry as an
   # absolute path and to their launcher as a path relative to $HOME.
@@ -80,7 +98,9 @@ let
         # "synced-rw" stamp supersedes earlier stamps so existing prefixes
         # repair read-only builtins on the next launch.
         marker="$WINEPREFIX/.nix-wine-build"
-        stamp="${wine} synced-rw"
+        stamp="${wine} synced-rw ${
+          builtins.hashString "sha256" (builtins.toJSON { inherit init runtimeEnv; })
+        }"
 
         copy_builtins() {
           local src="$1" dest="$2" target name

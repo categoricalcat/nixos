@@ -10,6 +10,7 @@ in
     imports = [
       ./amplitube.nix
       ./home.nix
+      ./toontrack.nix
       ./yabridge.nix
     ];
 
