@@ -66,7 +66,7 @@ jq --slurpfile overlay "$overlay_file" --argjson is_initial "$is_initial" '
      end) as $nextSelected
   | ($rawNixProfiles | map(select(.id == $nextSelected)) | .[0] // null) as $activeNix
   | ($o
-      | del(.extension_settings.connectionManager, .seedPowerUser)
+      | del(.extension_settings.connectionManager, .seedPowerUser, .themePowerUser)
       | if $activeNix != null then
           .oai_settings = ((.oai_settings // {}) + ($activeNix.oaiSettings // {}) + {
             chat_completion_source: ($activeNix.api // .oai_settings.chat_completion_source),
@@ -78,6 +78,7 @@ jq --slurpfile overlay "$overlay_file" --argjson is_initial "$is_initial" '
           del(.main_api, .oai_settings)
         end) as $scalarOverlay
   | ($o.seedPowerUser // {}) as $seedPU
+  | ($o.themePowerUser // {}) as $themePU
   | .power_user = (
       if $is_initial then
         ((.power_user // {}) * $seedPU)
@@ -89,6 +90,7 @@ jq --slurpfile overlay "$overlay_file" --argjson is_initial "$is_initial" '
         else
           .
         end
+      | . + $themePU
     )
   | (. * $scalarOverlay)
   | .extension_settings.connectionManager = (

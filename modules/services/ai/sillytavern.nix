@@ -255,6 +255,67 @@ let
     text = builtins.readFile ./sillytavern-settings-overlay.sh;
   };
 
+  # Bundled Noto Sans has no CJK, so Chinese falls back to another face.
+  # These four files are the text faces in maple-mono.NF-CN-unhinted.
+  mapleMono = (import ../../theme-assets.nix { inherit pkgs; }).fonts.mapleMono;
+  themeFontCss = pkgs.writeText "sillytavern-theme-font.css" (
+    ''
+      /* nix-theme-font:start */
+    ''
+    +
+      lib.concatMapStrings
+        (face: ''
+          @font-face {
+            font-family: "${mapleMono.name}";
+            font-style: ${face.style};
+            font-weight: ${toString face.weight};
+            font-display: swap;
+            src: local("${mapleMono.name} ${face.local}"), url("/theme-fonts/${face.file}") format("truetype");
+          }
+        '')
+        [
+          {
+            weight = 400;
+            style = "normal";
+            local = "Regular";
+            file = "MapleMono-NF-CN-Regular.ttf";
+          }
+          {
+            weight = 400;
+            style = "italic";
+            local = "Italic";
+            file = "MapleMono-NF-CN-Italic.ttf";
+          }
+          {
+            weight = 700;
+            style = "normal";
+            local = "Bold";
+            file = "MapleMono-NF-CN-Bold.ttf";
+          }
+          {
+            weight = 700;
+            style = "italic";
+            local = "Bold Italic";
+            file = "MapleMono-NF-CN-BoldItalic.ttf";
+          }
+        ]
+    + ''
+      :root {
+        --mainFontFamily: "${mapleMono.name}", "Noto Sans", sans-serif;
+        --monoFontFamily: "${mapleMono.name}", "Noto Sans Mono", ui-monospace, monospace;
+      }
+      /* nix-theme-font:end */
+    ''
+  );
+  themeFontScript = pkgs.writeShellApplication {
+    name = "sillytavern-theme-font";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gawk
+    ];
+    text = builtins.readFile ./sillytavern-theme-font.sh;
+  };
+
   configYaml = yamlFormat.generate "sillytavern-config.yaml" cfg.config;
   nixOverlayJson = jsonFormat.generate "sillytavern-nix-overlay.json" cfg.settings;
 in
@@ -289,6 +350,17 @@ in
         file = nixOverlayJson;
       };
       description = "Evaluated settings.json overlay package and JSON payload shared with flake checks.";
+    };
+
+    themeFont = lib.mkOption {
+      type = lib.types.attrsOf lib.types.package;
+      internal = true;
+      readOnly = true;
+      default = {
+        package = themeFontScript;
+        file = themeFontCss;
+      };
+      description = "user.css theme-font splice and the CSS block it installs.";
     };
   };
 
@@ -385,6 +457,7 @@ in
       restartTriggers = [
         configYaml
         nixOverlayJson
+        themeFontCss
       ];
 
       environment = {
@@ -421,6 +494,10 @@ in
           ${lib.escapeShellArg "${stRoot}/default/content/settings.json"} \
           "${nixOverlayJson}"
 
+        ${lib.escapeShellArg (lib.getExe themeFontScript)} \
+          ${lib.escapeShellArg "${dataDir}/_css/user.css"} \
+          ${themeFontCss}
+
         chmod -R go= ${lib.escapeShellArg dataDir}
       '';
 
@@ -446,6 +523,16 @@ in
       // {
         SystemCallFilter = lib.splitString " " "@system-service ~@privileged @chown";
       };
+    };
+
+    # Same peer allow as the local-ingress proxy location: only yirukou
+    # reaches this vhost. local() skips the download when the face is installed.
+    services.nginx.virtualHosts.${yifuwuqiSt.domain}.locations."/theme-fonts/" = {
+      alias = "${mapleMono.package}/share/fonts/truetype/";
+      extraConfig = ''
+        allow ${allAddresses.hosts.yirukou.network.lan.ipv4.host};
+        deny all;
+      '';
     };
   };
 }

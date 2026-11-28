@@ -664,6 +664,20 @@ in
               touch "$out"
             '';
 
+        sillytavern-theme-font =
+          pkgs.runCommand "check-sillytavern-theme-font"
+            {
+              nativeBuildInputs = [
+                pkgs.diffutils
+                pkgs.gnugrep
+              ];
+            }
+            ''
+              bash ${../modules/services/ai/sillytavern-theme-font-test.sh} \
+                ${lib.getExe self.nixosConfigurations.yifuwuqi.config.yi.services.sillytavern.themeFont.package}
+              touch "$out"
+            '';
+
         # A2/A4: pure-eval config contracts; failures throw above, before this
         # derivation exists. Building it prints the pass lines.
         contracts = pkgs.runCommand "check-config-contracts" { } ''

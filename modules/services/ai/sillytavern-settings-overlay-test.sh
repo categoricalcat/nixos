@@ -44,8 +44,11 @@ assert_jq '
   ($overlay[0]) as $expected
   | .main_api == "openai"
   and (has("seedPowerUser") | not)
+  and (has("themePowerUser") | not)
   and (.oai_settings | contains($expected.oai_settings))
   and (.power_user | contains($expected.seedPowerUser))
+  and .power_user.theme == $expected.themePowerUser.theme
+  and .power_user.main_text_color == $expected.themePowerUser.main_text_color
 ' "$target" "initial seed missed expected oai_settings, power_user RP defaults, or upstream defaults"
 
 assert_jq '
@@ -69,7 +72,9 @@ assert_idempotent
 # 3. Preserve user profile, user endpoint/samplers/power_user edits, unrelated keys, and GC stale nix:*.
 jq '
   .customUserPref = "keep-me"
-  | .power_user.default_persona = "persona.png"
+  |   .power_user.default_persona = "persona.png"
+  | .power_user.theme = "Dark Lite"
+  | .power_user.main_text_color = "rgba(1, 2, 3, 1)"
   | .power_user.reasoning.auto_parse = false
   | del(.power_user.reasoning.separator)
   | .main_api = "textgenerationwebui"
@@ -93,6 +98,8 @@ assert_jq '
   ($overlay[0]) as $expected
   | .customUserPref == "keep-me"
   and .power_user.default_persona == "persona.png"
+  and .power_user.theme == $expected.themePowerUser.theme
+  and .power_user.main_text_color == $expected.themePowerUser.main_text_color
   and .power_user.reasoning.auto_parse == false
   and .power_user.reasoning.separator == $expected.seedPowerUser.reasoning.separator
   and .main_api == "textgenerationwebui"

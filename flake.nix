@@ -13,8 +13,8 @@
     }:
     let
       global = {
-        version = "26.05";
-        homeVersion = "26.05";
+        version = "27.05";
+        homeVersion = "26.11";
       };
     in
     # https://flake.parts/module-arguments.html
@@ -132,7 +132,7 @@
     );
 
   inputs = {
-    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable-small/nixexprs.tar.zst";
 
     # Community mesa-git (Mesa main) + binary cache; used by yitaishi's
     # default mesa-git driver set.
